@@ -6,9 +6,9 @@ A corporate and life sim set in a fictional American city. This is a playtest bu
 
 Open `index.html` in a browser. With GitHub Pages switched on for this repository, the game plays at the Pages address for the repo.
 
-The game opens on a main menu. Continue or start a new game from there, or open the engine sandbox or any of the component tests.
+The game opens on a main menu. Continue or start a new game from there, or open the engine sandbox, the design studios or the first prototype. They open in the same tab, with a button back to the menu.
 
-`engine.html` is the street engine on its own, with buttons for time of day, weather, season and sound, for checking how the city looks and sounds.
+`engine.html` is the street engine on its own, with the debug menu: time of day, weather, season, events, sound, jumping to places around the city, police and stats. It covers what the art test and sound test used to.
 
 ## What is in this build
 
@@ -40,6 +40,6 @@ The game opens on a main menu. Continue or start a new game from there, or open 
 - `engine.html` is the engine test page
 - `portraits.js` holds the portrait art, loaded after the city starts
 - `music` holds the songs for the radio and venues
-- `tests` holds every standalone component test, each a single page that opens from the main menu
+- `tests` holds the first prototype, the Portrait Creator, the Car Designer, the Brand Studio and the Grand Prix Track Designer, each a single page that opens from the main menu
 
 Saves are kept in the browser on the device you play on.

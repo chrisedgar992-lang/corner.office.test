@@ -154,6 +154,12 @@ textarea.io{width:100%;background:var(--btn);color:var(--text);border:1px solid 
 .ffbox{background:var(--panel);border:1px solid var(--acc);border-radius:12px;padding:10px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 18px;min-width:260px;font:13px var(--ui)}
 .ffbox b{font:600 18px var(--num);color:var(--acc)}.ffbox i{grid-column:1 / span 2;height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden}.ffbox i em{display:block;height:100%;background:var(--acc)}
 .ffbox small{grid-column:1 / span 2;color:var(--muted);font-size:11.5px}.ffbox kbd{font:600 11px var(--num);border:1px solid var(--line);border-radius:4px;padding:0 5px}
+/* tests open over the menu in the same tab */
+#testview{position:fixed;inset:0;z-index:50;background:#0a0c0f;display:flex;flex-direction:column}
+.tvbar{display:flex;align-items:center;gap:14px;padding:calc(8px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 8px max(12px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line);font:13px var(--ui);color:var(--text)}
+.tvbar button{background:var(--btn);border:1px solid var(--acc);color:var(--text);border-radius:8px;padding:6px 12px;font:inherit;cursor:pointer}
+#testview iframe{flex:1;border:0;width:100%;background:#fff}
+.tgrid button{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--text);font:inherit;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px}.tgrid button:hover{border-color:var(--acc);background:rgba(214,163,71,.08)}
 /* title screen */
 #title{position:fixed;inset:0;z-index:40;overflow-y:auto;background:linear-gradient(90deg,rgba(8,10,13,.94),rgba(8,10,13,.78) 55%,rgba(8,10,13,.35));padding-block:calc(40px + env(safe-area-inset-top,0px)) 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));font:14px var(--ui);color:var(--text)}
 .tbox{max-width:760px;display:flex;flex-direction:column;gap:14px}
@@ -223,6 +229,7 @@ body.titling #ghud,body.titling #menuBtn,body.titling #useBtn,body.titling #phon
 <div id="phone" hidden><div class="ph"><div id="phbar"></div><div id="phhead"></div><div id="phbody"></div></div></div>
 <div id="ff" hidden></div>
 <div id="title" hidden></div>
+<div id="testview" hidden></div>
 <div id="dlg" hidden></div>
 <div id="modal" class="modal" hidden><div class="panel" id="panel"></div></div>
 <div id="fade"></div>
@@ -857,7 +864,7 @@ for (const n of NODES) if (n.signal && n.wE) {
   n.off = TR() * 44;
 }
 const CYCLE = 44;
-function lightFor(n, e, t) { if (!n.phase) return 'g'; const ph = n.phase.get(e) || 0, u = (t + n.off) % CYCLE, start = ph ? 22 : 0, v = (u - start + CYCLE) % CYCLE; return v < 18 ? 'g' : v < 21 ? 'a' : 'r'; }
+function lightFor(n, e, t) { if (!n.phase) return 'g'; const ph = n.phase.get(e) || 0, u = (t + n.off) % CYCLE, start = ph ? 22 : 0, v = (u - start + CYCLE) % CYCLE; return v < 17 ? 'g' : v < 20 ? 'a' : 'r'; } // 17 s green, 3 s amber, then 2 s with every way red so the junction clears
 const TURNS = new Map();
 function turnSeg(a, b) {
   const key = a.id * 100000 + b.id; let t = TURNS.get(key); if (t) return t;
@@ -881,12 +888,12 @@ function chooseNext(seg, car) {
   const side = turnSide(seg, r[0]); r.sort((p, q) => p.k - q.k);
   return side < -.5 ? r[r.length - 1] : side > .5 ? r[0] : r[Math.min(seg.k, r.length - 1)];
 }
-const CARS = [];
+const CARS = []; let CID = 1;
 function placeCar(seg, s, v) {
   const z = C.districtAt(seg.pts[0][0], seg.pts[0][1]), r = TR();
   const type = (z === 'core' || z === 'cbd' || z === 'mid') && r > .985 ? 'police' : seg.e.kind === 'major' && r < .05 ? 'bus' : (z === 'core' || z === 'cbd') && r < .16 ? 'taxi' : (z === 'docks' || seg.e.kind === 'ind') && r < .4 ? 'van' : r < .3 ? 'suv' : r < .36 ? 'van' : 'sedan';
   const T = CARTYPES[type], col = type === 'taxi' ? [178, 148, 52] : type === 'bus' ? [62, 74, 82] : type === 'police' ? [226, 228, 232] : CARCOL[Math.floor(TR() * CARCOL.length)];
-  const c = { seg, s, v, speed: v, type, T, L: T.L, W: T.W, col, vf: .88 + TR() * .2, next: null, x: 0, y: 0, a: 0, ang: 0, wait: 0, brake: 0 };
+  const c = { id: CID++, seg, s, v, speed: v, type, T, L: T.L, W: T.W, col, vf: .88 + TR() * .2, next: null, x: 0, y: 0, a: 0, ang: 0, wait: 0, brake: 0 };
   c.next = chooseNext(seg); insertCar(seg, c); CARS.push(c); return c;
 }
 function insertCar(seg, c) { const a = seg.cars; let i = a.length; while (i > 0 && a[i - 1].s > c.s) i--; a.splice(i, 0, c); }
@@ -903,6 +910,8 @@ function mustStop(c) {
   const sg = c.seg; if (sg.turn || c.siren) return Infinity;
   const n = sg.to, left = sg.len - c.s - c.L / 2; if (left > 45) return Infinity;
   if (!c.next) return left - 1;
+  // do not enter the junction unless there is room to get all the way through it on the far side
+  if (left < 20 && c.next.len > c.L + 2) { const q = c.next.cars[0], t = TURNS.get(sg.id * 100000 + c.next.id); let room = q ? q.s - q.L / 2 : c.next.len; if (t) for (const o of t.cars) room -= o.L + 1.5; if (room < c.L + 1.5) return left - 1.2; }
   if (n.signal && n.phase) { const Lq = lightFor(n, sg.e, simT); if (Lq === 'r' || (Lq === 'a' && left > 12)) return left - 4.8; return Infinity; }
   if (!n.wE || n.wE.length < 3) return Infinity;
   const busy = n.inside || 0;
@@ -915,18 +924,32 @@ function mustStop(c) {
 const PGRID = new Map();
 function pedGrid() { PGRID.clear(); for (const p of PEDS) { const key = (Math.floor(p.x / 2) * 4096 + Math.floor(p.y / 2)) | 0; let a = PGRID.get(key); if (!a) PGRID.set(key, a = []); a.push(p); } }
 function peopleNear(x, y, r, fn) { const g0 = Math.floor((x - r) / 2), g1 = Math.floor((x + r) / 2), h0 = Math.floor((y - r) / 2), h1 = Math.floor((y + r) / 2); for (let i = g0; i <= g1; i++) for (let j = h0; j <= h1; j++) { const a = PGRID.get((i * 4096 + j) | 0); if (a) for (const o of a) fn(o); } }
+// cars on a 10 m grid so each one can see what is in front of it, whatever lane or turn it is on
+const CGRID = new Map();
+function carGrid() { CGRID.clear(); for (const c of CARS) { const key = (Math.floor(c.x / 10) * 8192 + Math.floor(c.y / 10)) | 0; let a = CGRID.get(key); if (!a) CGRID.set(key, a = []); a.push(c); } }
+function carsNear(x, y, r, fn) { const g0 = Math.floor((x - r) / 10), g1 = Math.floor((x + r) / 10), h0 = Math.floor((y - r) / 10), h1 = Math.floor((y + r) / 10); for (let i = g0; i <= g1; i++) for (let j = h0; j <= h1; j++) { const a = CGRID.get((i * 8192 + j) | 0); if (a) for (const o of a) fn(o); } }
+// is o in the path just in front of c? returns the free distance, or Infinity
+function pathGap(c, o, ca, sa) { const dx = o.x - c.x, dy = o.y - c.y, f = dx * ca + dy * sa; if (f <= 0 || f > 22) return Infinity;
+  const rel = Math.abs(Math.sin(o.a - c.a)), half = o.W / 2 + rel * (o.L - o.W) / 2, along = o.L / 2 * (1 - rel) + o.W / 2 * rel;
+  if (Math.abs(-dx * sa + dy * ca) > c.W / 2 + half + .25) return Infinity; return f - c.L / 2 - along - .8; }
 function updateCars(dt) {
+  carGrid(); for (const c of CARS) c.w0 = c.wait; // waits as they were at the start of the frame, so two cars agree on who goes first
   for (const n of NODES) n.inside = 0;
   for (const t of TURNS.values()) if (t.cars.length) { const n = t.node; n.inside = (n.inside || 0) + t.cars.length; n.insideFrom = t.from.e; }
   const pc = player.driving ? PCAR : null, walker = !player.driving && !INSIDE ? player : null;
   for (const c of CARS) {
     const v0 = Math.min(limMS(c.seg.turn ? c.seg.from.e : c.seg.e) * c.vf * (c.siren ? 1.5 : 1), c.seg.turn ? c.seg.vmax * (c.siren ? 1.3 : 1) : 99);
-    let [gap, vl] = aheadOf(c); const st = mustStop(c); if (st < gap) { gap = st; vl = 0; }
+    let [gap, vl] = aheadOf(c); c.why = 'lane'; const st = mustStop(c); if (st < gap) { gap = st; vl = 0; c.why = 'stop'; }
     const ca = Math.cos(c.a), sa = Math.sin(c.a);
-    const blockBy = (x, y, half, v) => { const dx = x - c.x, dy = y - c.y, f = dx * ca + dy * sa, lat = Math.abs(-dx * sa + dy * ca); if (f > 0 && f < 40 && lat < c.W / 2 + half) { const g2 = f - c.L / 2 - half - .6; if (g2 < gap) { gap = g2; vl = v; } } };
+    const blockBy = (x, y, half, v) => { const dx = x - c.x, dy = y - c.y, f = dx * ca + dy * sa, lat = Math.abs(-dx * sa + dy * ca); if (f > 0 && f < 40 && lat < c.W / 2 + half) { const g2 = f - c.L / 2 - half - .6; if (g2 < gap) { gap = g2; vl = v; c.why = 'ped'; } } };
     if (pc) blockBy(PCAR.x, PCAR.y, PCAR.T.L / 2, Math.max(0, PCAR.speed));
     if (walker) blockBy(walker.x, walker.y, .5, 0);
     peopleNear(c.x + ca * 10, c.y + sa * 10, 11, o => blockBy(o.x, o.y, .45, 0));
+    // other cars crossing in front, on turns or other lanes: give way rather than drive through them. When two cars each have
+    // the other in front of them, the one that got there first goes, so they never lock each other up
+    carsNear(c.x + ca * 10, c.y + sa * 10, 13, o => { if (o === c || o.seg === c.seg) return; const g2 = pathGap(c, o, ca, sa); if (g2 >= gap) return;
+      if (pathGap(o, c, Math.cos(o.a), Math.sin(o.a)) < Infinity && (o.w0 < c.w0 - .3 || (Math.abs(o.w0 - c.w0) <= .3 && o.id > c.id))) return;
+      gap = g2; vl = Math.max(0, o.v * Math.cos(o.a - c.a)); c.why = 'cross'; c.whyO = o; });
     // intelligent driver model: smooth to the limit, brake for the car, person or stop line ahead
     const ss = 2.2 + c.v * 1.1 + c.v * (c.v - vl) / (2 * Math.sqrt(2.2 * 3.2));
     let acc = 2.2 * (1 - (c.v / Math.max(1, v0)) ** 4 - (ss / Math.max(.3, gap)) ** 2);
@@ -3107,7 +3130,7 @@ function paintHair(g, L, col, cheek, rr, OUT, lw, blur, noBlur) {
   if (t === 'bun') { const b = new Path2D(); b.ellipse(0, -.13, .14, .11, 0, 0, TAU); const bg = g.createRadialGradient(-.04, -.17, .02, 0, -.13, .14); bg.addColorStop(0, col(hair, 1.3)); bg.addColorStop(1, col(hair, .65)); g.fillStyle = bg; g.fill(b); g.lineWidth = lw; g.strokeStyle = 'rgba(16,12,12,.45)'; g.stroke(b); }
   if (t === 'pony') { g.strokeStyle = col(hair, .85); g.lineWidth = .07; g.lineCap = 'round'; g.beginPath(); g.moveTo(.38, .1); g.quadraticCurveTo(.52, .35, .46, .7); g.stroke(); }
 }
-function nearestPed() { let best = null, bd = 2.4; for (const p of (INSIDE ? INSIDE.npcs : PEDS)) { const d = Math.hypot(p.x - player.x, p.y - player.y); if (d < bd) { bd = d; best = p; } } return best; }
+function nearestPed() { let best = null, bd = 2.4; for (const p of (INSIDE ? INSIDE.npcs : PEDS)) { if (p.sleep || p.hidden) continue; const d = Math.hypot(p.x - player.x, p.y - player.y); if (d < bd) { bd = d; best = p; } } return best; }
 function updatePrompt() {
   routeTick();
   if (talk) { tP.style.display = 'none'; return; }
@@ -3379,8 +3402,8 @@ function drawFurn(f) {
     case 'mtable': { const w = f.w || 3.2, d = f.d || 1.2; fbox(f, 0, 0, w, d, .71, .76, [70, 72, 76]); fbox(f, 0, 0, .3, d * .6, 0, .71, [50, 52, 56]); break; }
     case 'sofa': { const w = f.w || 2.1; const cc = c || [84, 90, 104]; fbox(f, 0, .05, w, .8, .1, .44, cc); fbox(f, 0, .38, w, .2, .1, .85, mulc(cc, .9)); for (const sx of [-1, 1]) fbox(f, sx * (w / 2 - .1), .05, .2, .8, .1, .62, mulc(cc, .95)); for (let i = 0; i < 3; i++) fbox(f, -w / 3 + i * w / 3, .0, w / 3 - .06, .6, .44, .52, mixc(cc, [255, 255, 255], .06)); fbox(f, w / 2 - .45, .22, .32, .14, .52, .78, [190, 150, 90]); break; }
     case 'armchair': { const cc = c || [110, 80, 60]; fbox(f, 0, .05, .85, .8, .1, .44, cc); fbox(f, 0, .36, .85, .18, .1, .85, mulc(cc, .9)); for (const sx of [-1, 1]) fbox(f, sx * .34, .05, .17, .8, .1, .62, mulc(cc, .95)); break; }
-    case 'stereo': { fbox(f, 0, 0, .8, .4, 0, .45, [60, 46, 36]); fbox(f, 0, .02, .46, .3, .45, .58, [26, 26, 28]); fbox(f, 0, .17, .4, .005, .49, .55, f.on ? [120, 220, 150] : [44, 48, 52]); for (const sx of [-1, 1]) { fbox(f, sx * .31, 0, .16, .18, .45, .76, [30, 30, 32]); fbox(f, sx * .31, .095, .1, .005, .55, .68, f.on ? [70, 70, 76] : [52, 52, 56]); } break; }
-    case 'tvunit': { fbox(f, 0, 0, 1.8, .45, 0, .5, [54, 50, 48]); fbox(f, 0, .12, 1.4, .06, .5, 1.3, [18, 18, 20]); fbox(f, 0, .155, 1.34, .005, .54, 1.26, n > .1 ? [70, 110, 160] : [36, 40, 46]); break; }
+    case 'stereo': { fbox(f, 0, 0, .8, .4, 0, .45, [60, 46, 36]); fbox(f, 0, .02, .46, .3, .45, .58, [26, 26, 28]); fbox(f, 0, -.135, .4, .005, .49, .55, f.on ? [120, 220, 150] : [44, 48, 52]); for (const sx of [-1, 1]) { fbox(f, sx * .31, 0, .16, .18, .45, .76, [30, 30, 32]); fbox(f, sx * .31, -.095, .1, .005, .55, .68, f.on ? [70, 70, 76] : [52, 52, 56]); } break; }
+    case 'tvunit': { fbox(f, 0, 0, 1.8, .45, 0, .5, [54, 50, 48]); fbox(f, 0, .12, 1.4, .06, .5, 1.3, [18, 18, 20]); fbox(f, 0, .085, 1.34, .005, .54, 1.26, n > .1 ? [70, 110, 160] : [36, 40, 46]); break; }
     case 'fridge': { fbox(f, 0, 0, .75, .7, 0, 1.85, [214, 216, 218], [224, 226, 228]); fbox(f, 0, -.351, .74, .01, 1.2, 1.22, [140, 142, 146]); fbox(f, .28, -.36, .03, .03, .55, 1.1, [120, 122, 126]); fbox(f, .28, -.36, .03, .03, 1.3, 1.65, [120, 122, 126]); if (f.magnets) for (let i = 0; i < 4; i++) fbox(f, -.2 + i * .1, -.355, .05, .01, 1.4 + (i % 2) * .15, 1.45 + (i % 2) * .15, [[200, 60, 60], [60, 120, 200], [220, 190, 60], [80, 160, 90]][i]); break; }
     case 'counter': { const w = f.w || 2.4; fbox(f, 0, 0, w, .62, 0, .88, [204, 200, 192]); fbox(f, 0, 0, w + .02, .64, .88, .92, [80, 80, 82], [96, 96, 98]); if (f.kettle) drawCyl(f.x + (f.rot ? 0 : .5), f.y + (f.rot ? .5 : 0), .1, .92, 1.15, [60, 62, 66]); if (f.cabinets !== false) fbox(f, 0, .2, w, .35, 1.5, 2.3, [210, 206, 198]); break; }
     case 'stove': { fbox(f, 0, 0, .62, .62, 0, .92, [60, 62, 66], [30, 30, 32]); for (const sx of [-1, 1]) for (const sy of [-1, 1]) { const p = f.rot ? [f.x + sy * .14, f.y + sx * .14] : [f.x + sx * .14, f.y + sy * .14]; const q = P(p[0], p[1], .93); ctx.strokeStyle = 'rgba(110,110,110,.9)'; ctx.lineWidth = Math.max(1, k * .02); ctx.beginPath(); ctx.arc(q[0], q[1], k * LS(.93) * .08, 0, TAU); ctx.stroke(); } if (f.pot) drawCyl(f.x - (f.rot ? 0 : .14), f.y - (f.rot ? .14 : 0), .12, .93, 1.1, [150, 152, 156]); break; }
@@ -3418,17 +3441,17 @@ function buildShareHouse(ox, oy) {
   // Jess's room (north west)
   F(I, 'bed', 1.0, 2.0, { col: [130, 90, 110] }); F(I, 'bedside', 1.0, .5, { lamp: true }); F(I, 'wardrobe', 4.6, .45); F(I, 'desk', 4.3, 3.9, { laptop: true, w: 1.2 }); F(I, 'chair', 4.3, 3.35, { rot: 2 }); F(I, 'plant', .5, 4.0);
   // bathroom
-  F(I, 'shower', .6, 5.1); F(I, 'toilet', .4, 6.9, { rot: 1 }); F(I, 'basin', 2.4, 4.85); F(I, 'washer', 4.9, 7.1);
+  F(I, 'shower', .6, 5.1); F(I, 'toilet', .4, 6.9, { rot: 1 }); F(I, 'basin', 2.4, 4.85, { rot: 2 }); F(I, 'washer', 4.9, 7.1);
   // Rob's room (south west)
-  F(I, 'bed', 1.0, 10.3, { col: [70, 90, 76] }); F(I, 'bedside', 1.0, 8.05, { lamp: true }); F(I, 'shelf', 4.9, 8.0, { rot: 1, w: 1.2 }); F(I, 'desk', 4.4, 11.5, { monitor: true, w: 1.5 }); F(I, 'chair', 4.4, 10.95); F(I, 'laundry', 2.6, 8.3, {});
+  F(I, 'bed', 1.0, 10.3, { col: [70, 90, 76] }); F(I, 'bedside', 1.0, 8.05, { lamp: true }); F(I, 'shelf', 4.9, 8.0, { rot: 1, w: 1.2 }); F(I, 'desk', 4.4, 11.5, { monitor: true, w: 1.5 }); F(I, 'chair', 4.4, 10.95, { rot: 2 }); F(I, 'laundry', 2.6, 8.3, {});
   // your room (north east), with space still to fill
   F(I, 'bed', 13.9, 1.6, { double: true, col: [70, 84, 110] }); F(I, 'bedside', 12.75, .45, { lamp: true }); F(I, 'wardrobe', 8.0, .45); F(I, 'desk', 10.6, .45, { laptop: true, w: 1.3 }); F(I, 'chair', 10.6, 1.0, {}); F(I, 'rug', 12.2, 2.6, { w: 1.8, d: 1.2, col: [90, 96, 110] });
   // kitchen along the east wall, dining table in the middle
-  F(I, 'fridge', 14.55, 4.75); F(I, 'counter', 14.62, 6.05, { rot: 1, w: 1.7, kettle: true }); F(I, 'stove', 14.62, 7.25, { rot: 1, pot: true }); F(I, 'sink', 14.62, 8.0, { rot: 1 });
+  F(I, 'fridge', 14.55, 4.75, { rot: 3 }); F(I, 'counter', 14.62, 6.05, { rot: 3, w: 1.7, kettle: true }); F(I, 'stove', 14.62, 7.25, { rot: 3, pot: true }); F(I, 'sink', 14.62, 8.0, { rot: 3 });
   I.furn.find(f => f.t === 'fridge').magnets = true;
-  F(I, 'table', 10.6, 6.2, { w: 1.7, d: .9, bowl: true }); for (const [cx2, cy2, r] of [[10.1, 5.4, 0], [11.1, 5.4, 0], [10.1, 7.0, 2], [11.1, 7.0, 2]]) F(I, 'chair', cx2, cy2, { rot: r });
+  F(I, 'table', 10.6, 6.2, { w: 1.7, d: .9, bowl: true }); for (const [cx2, cy2, r] of [[10.1, 5.4, 2], [11.1, 5.4, 2], [10.1, 7.0, 0], [11.1, 7.0, 0]]) F(I, 'chair', cx2, cy2, { rot: r }); // chairs face the table
   // lounge: sofa faces the TV on the south wall, well clear of the front door
-  F(I, 'rug', 12.0, 10.3, { w: 3.0, d: 2.0, col: [128, 76, 60] }); F(I, 'sofa', 12.0, 9.2, { w: 2.3, rot: 2 }); F(I, 'armchair', 9.5, 10.3, { rot: 3 }); F(I, 'tvunit', 12.0, 11.65); F(I, 'stereo', 13.62, 11.7); F(I, 'plant', 14.5, 11.5); F(I, 'lamp', 8.0, 11.5); F(I, 'shelf', 7.55, 9.7, { rot: 1, w: 1.0 });
+  F(I, 'rug', 12.0, 10.3, { w: 3.0, d: 2.0, col: [128, 76, 60] }); F(I, 'sofa', 12.0, 9.2, { w: 2.3, rot: 2 }); F(I, 'armchair', 9.5, 10.3, { rot: 1 }); F(I, 'tvunit', 12.0, 11.65); F(I, 'stereo', 13.62, 11.7); F(I, 'plant', 14.5, 11.5); F(I, 'lamp', 8.0, 11.5); F(I, 'shelf', 7.55, 9.7, { rot: 1, w: 1.0 });
   F(I, 'plant', 6.9, 11.5); I.xtree = [14.2, 9.3, .16]; I.pumpkins = [[10.6, 6.2], [6.6, 11.3]];
   // housemates
   I.npcs.push(roomNPC(I, 'Jess', 'casual', { fem: true, hair: 'pony', hairC: [96, 58, 36], skin: SKIN[1], top: [120, 60, 70], young: true, seed: 2204 }, [[13.75, 5.0], [13.8, 7.25], [12.4, 7.6], [13.8, 8.0]], 'Housemate. Studying nursing.'));
@@ -3472,13 +3495,13 @@ function buildOffice(ox, oy) {
   for (let i = 0; i < 2; i++) F(I, 'lift', 15 + i * 6, 9.3, { rot: 2 });
   F(I, 'plant', 14, 16); F(I, 'plant', 22, 16);
   // corner offices with a desk and a window view
-  F(I, 'desk', 2.6, 2.4, { monitor: true, w: 1.8 }); F(I, 'officechair', 2.6, 3.1, {}); F(I, 'armchair', 4.6, 5.4, { rot: 2 }); F(I, 'plant', .6, 6.3);
+  F(I, 'desk', 2.6, 2.4, { monitor: true, w: 1.8 }); F(I, 'officechair', 2.6, 3.1, {}); F(I, 'armchair', 4.6, 5.4, { rot: 0 }); F(I, 'plant', .6, 6.3);
   F(I, 'desk', 33.4, 2.4, { monitor: true, w: 1.8 }); F(I, 'officechair', 33.4, 3.1, {}); F(I, 'shelf', 30.6, 1.2, { rot: 1, w: 1.4 });
   // glass meeting rooms along the west wall
   for (const y0 of [10, 17]) { F(I, 'glasswall', 5.5, y0 + 2.5, { w: .08, d: 5 }); F(I, 'glasswall', 2.75, y0, { w: 5.5, d: .08 }); F(I, 'mtable', 2.6, y0 + 2.5, { w: 1.2, d: 3.0 }); for (let j = 0; j < 3; j++) { F(I, 'officechair', 1.6, y0 + 1.5 + j, {}); F(I, 'officechair', 3.6, y0 + 1.5 + j, {}); } }
   // kitchen and break area (south east)
   F(I, 'counter', 31, 25.6, { w: 4.5, kettle: true }); F(I, 'fridge', 34.9, 25.5); F(I, 'sink', 28.3, 25.6); F(I, 'table', 30, 21.5, { w: 2.2, d: 1.0 }); F(I, 'waterc', 26.5, 19); F(I, 'printer', 25, 7.8);
-  for (const [x, y, r] of [[29.3, 20.8, 0], [30.7, 20.8, 0], [29.3, 22.2, 2], [30.7, 22.2, 2]]) F(I, 'chair', x, y, { rot: r, col: [180, 70, 50] });
+  for (const [x, y, r] of [[29.3, 20.8, 2], [30.7, 20.8, 2], [29.3, 22.2, 0], [30.7, 22.2, 0]]) F(I, 'chair', x, y, { rot: r, col: [180, 70, 50] });
   // open plan banks of desks, facing each other in pairs
   const seats = [];
   const bank = (x0, y0, n) => { for (let i = 0; i < n; i++) { const x = x0 + i * 1.7; F(I, 'workdesk', x, y0, { mug: R() < .4, papers: R() < .5 }); F(I, 'officechair', x, y0 + .75, {}); seats.push([x, y0 + .7, 0, -1]); F(I, 'workdesk', x, y0 - 1.62, { rot: 2, mug: R() < .4 }); F(I, 'officechair', x, y0 - 2.37, { rot: 2 }); seats.push([x, y0 - 2.32, 0, 1]); } };
@@ -3565,6 +3588,28 @@ function blockedInside(x, y, r) {
   for (const s of I.solids) if (lx > s.x0 - r && lx < s.x1 + r && ly > s.y0 - r && ly < s.y1 + r) return true;
   return false;
 }
+// ---------- walking indoors: a quarter metre grid of where people fit, and A* routes around desks and through doorways ----------
+function navGrid(I) { if (I.nav) return I.nav; const cs = .25, gw = Math.ceil(I.w / cs), gh = Math.ceil(I.h / cs), free = new Uint8Array(gw * gh);
+  for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) free[j * gw + i] = blockedInside(I.ox + (i + .5) * cs, I.oy + (j + .5) * cs, .26) ? 0 : 1;
+  return I.nav = { cs, gw, gh, free }; }
+function navCell(N, I, x, y) { const i = Math.max(0, Math.min(N.gw - 1, Math.floor((x - I.ox) / N.cs))), j = Math.max(0, Math.min(N.gh - 1, Math.floor((y - I.oy) / N.cs))); return [i, j]; }
+function navNearestFree(N, i, j) { if (N.free[j * N.gw + i]) return [i, j]; for (let r = 1; r < 12; r++) for (let dj = -r; dj <= r; dj++) for (let di = -r; di <= r; di++) { if (Math.max(Math.abs(di), Math.abs(dj)) !== r) continue; const a = i + di, b = j + dj; if (a >= 0 && b >= 0 && a < N.gw && b < N.gh && N.free[b * N.gw + a]) return [a, b]; } return null; }
+function navLine(N, I, ax, ay, bx, by) { const d = Math.hypot(bx - ax, by - ay), n = Math.ceil(d / .1); for (let k2 = 1; k2 < n; k2++) { const t = k2 / n, [i, j] = navCell(N, I, ax + (bx - ax) * t, ay + (by - ay) * t); if (!N.free[j * N.gw + i]) return false; } return true; }
+function navPath(I, ax, ay, bx, by) {
+  const N = navGrid(I), s0 = navNearestFree(N, ...navCell(N, I, ax, ay)), g0 = navNearestFree(N, ...navCell(N, I, bx, by)); if (!s0 || !g0) return null;
+  const W2_ = N.gw, start = s0[1] * W2_ + s0[0], goal = g0[1] * W2_ + g0[0], gs = new Float32Array(N.free.length).fill(1e9), from = new Int32Array(N.free.length).fill(-1), open = [start], closed = new Uint8Array(N.free.length);
+  const h = c => { const x = c % W2_, y = (c / W2_) | 0; return Math.hypot(x - g0[0], y - g0[1]); }; gs[start] = 0; const fs = new Map([[start, h(start)]]);
+  let it = 0;
+  while (open.length && it++ < 20000) { let bi = 0; for (let q = 1; q < open.length; q++) if (fs.get(open[q]) < fs.get(open[bi])) bi = q; const c = open[bi]; open[bi] = open[open.length - 1]; open.pop();
+    if (c === goal) break; if (closed[c]) continue; closed[c] = 1; const x = c % W2_, y = (c / W2_) | 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { if (!dx && !dy) continue; const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W2_ || ny >= N.gh) continue; const nc = ny * W2_ + nx; if (!N.free[nc] || closed[nc]) continue;
+      if (dx && dy && (!N.free[y * W2_ + nx] || !N.free[ny * W2_ + x])) continue; // no cutting corners
+      const g = gs[c] + (dx && dy ? 1.414 : 1); if (g < gs[nc]) { gs[nc] = g; from[nc] = c; fs.set(nc, g + h(nc)); open.push(nc); } } }
+  if (from[goal] < 0 && goal !== start) return null;
+  const cells = []; for (let c = goal; c >= 0; c = from[c]) { cells.push([I.ox + (c % W2_ + .5) * N.cs, I.oy + (((c / W2_) | 0) + .5) * N.cs]); if (c === start) break; } cells.reverse();
+  // pull the route tight: keep a corner only where you cannot see past it
+  const out = []; let a = [ax, ay]; for (let q = 1; q < cells.length; q++) if (!navLine(N, I, a[0], a[1], cells[q][0], cells[q][1])) { out.push(cells[q - 1]); a = cells[q - 1]; }
+  out.push(navLine(N, I, a[0], a[1], bx, by) ? [bx, by] : cells[cells.length - 1]); return out; }
 function updateInside(dt) {
   const I = INSIDE;
   // exits trigger when you walk into them
@@ -3573,13 +3618,18 @@ function updateInside(dt) {
   for (const n of I.npcs) {
     n.moving = false; if (n.sit || n.fixed || talk && talk.p === n) continue;
     if (n.idle > 0) { n.idle -= dt; continue; }
-    if (!n.route.length) { if (!n.pts) continue; n.wi = (n.wi + 1) % n.pts.length; n.route = [n.pts[n.wi]]; n.idle = rnd(2, 6); continue; }
+    if (!n.route.length) { if (!n.pts) continue; n.wi = (n.wi + 1) % n.pts.length; const T = n.pts[n.wi]; n.route = navPath(I, n.x, n.y, T[0], T[1]) || [T]; n.idle = rnd(2, 6); continue; }
     const [tx, ty] = n.route[0], dx = tx - n.x, dy = ty - n.y, d = Math.hypot(dx, dy);
     if (d < .1) { n.route.shift(); continue; }
     let ux = dx / d, uy = dy / d; const st = n.speed * dt;
     let nx = n.x + ux * st, ny = n.y + uy * st;
     if (blockedInside(nx, ny, .22)) { let ok = false; for (const a of [.7, -.7, 1.3, -1.3, 2, -2]) { const c = Math.cos(a), s = Math.sin(a), ax = ux * c - uy * s, ay = ux * s + uy * c; if (!blockedInside(n.x + ax * st, n.y + ay * st, .22)) { nx = n.x + ax * st; ny = n.y + ay * st; ok = true; break; } } if (!ok) { n.route.shift(); continue; } }
-    const pd = Math.hypot(player.x - nx, player.y - ny); if (pd < .55) continue;
+    // people in the way: the player and other walkers. Step around them if there is room, otherwise wait, and find another way after a few seconds
+    const crowded = (x, y) => Math.hypot(player.x - x, player.y - y) < .55 || I.npcs.some(o => o !== n && !o.hidden && !o.sleep && (o.sit || o.fixed || !o.pts || (o.uid || 0) < (n.uid || 0)) && Math.hypot(o.x - x, o.y - y) < .5 && Math.hypot(o.x - x, o.y - y) < Math.hypot(o.x - n.x, o.y - n.y)); // between two walkers, one always has right of way so they never wait on each other
+    if (crowded(nx, ny)) { let ok = false; for (const a of [.6, -.6, 1.2, -1.2]) { const c = Math.cos(a), s2 = Math.sin(a), ax = ux * c - uy * s2, ay = ux * s2 + uy * c, qx = n.x + ax * st, qy = n.y + ay * st; if (!blockedInside(qx, qy, .22) && !crowded(qx, qy)) { nx = qx; ny = qy; ok = true; break; } }
+      if (!ok && d < 1.3 && n.route.length === 1) { n.route.shift(); n.idle = rnd(1, 3); continue; } // someone is already standing where they were headed: close enough
+      if (!ok) { n.blockT = (n.blockT || 0) + dt; if (n.blockT > 3) { n.blockT = 0; const T = n.route[n.route.length - 1]; n.route = navPath(I, n.x, n.y, T[0], T[1]) || n.route; n.idle = .6; } continue; } }
+    n.blockT = 0;
     n.x = nx; n.y = ny; n.moving = true; n.phase += dt * n.speed * 4.6; n.hx = ux; n.hy = uy;
   }
 }
@@ -4334,7 +4384,7 @@ function frameBody(now) {
     if (player.driving) { cx = tx; cy = ty; } else { cx += (tx - cx) * Math.min(1, dt * 4); cy += (ty - cy) * Math.min(1, dt * 4); }
   }
   k = PXM * zoom; CT = Math.cos(ROT); ST = Math.sin(ROT);
-  const t0 = performance.now(); if (typeof LOOKOUT !== 'undefined' && LOOKOUT.open) return; if (INSIDE) renderInterior(); else renderScene(); renderMs = renderMs * .9 + (performance.now() - t0) * .1;
+  const t0 = performance.now(); if ((typeof LOOKOUT !== 'undefined' && LOOKOUT.open) || window.SKIP_RENDER) return; if (INSIDE) renderInterior(); else renderScene(); renderMs = renderMs * .9 + (performance.now() - t0) * .1;
   const hh = Math.floor(hour) % 24, mm = Math.floor((hour - Math.floor(hour)) * 60);
   ctEl.textContent = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
   cwEl.textContent = { clear: 'Clear', rain: 'Rain', snow: 'Snow', fog: 'Fog' }[weather] + ' · ' + { spring: 'Spring', summer: 'Summer', autumn: 'Autumn', winter: 'Winter' }[season] + (event === 'halloween' ? ' · Halloween' : event === 'december' ? ' · Holidays' : event === 'nye' ? " · New Year's Eve" : '');
@@ -5204,11 +5254,24 @@ window.GAME = (() => {
     { id: 'rob_rent', text: 'Heads up, the landlord texted. Rent goes out Sunday night, like always.', choices: [{ text: 'Thanks for the reminder', effects: { rel: { rob: 2 } } }] },
     { id: 'rob_food', when: { stat: ['hunger', '>=', 55] }, text: 'You look starving. There is leftover pasta in the fridge if you want it.', choices: [{ text: 'You are a lifesaver', effects: [{ need: { hunger: -30 } }, { rel: { rob: 4 } }], reply: 'Do the dishes and we are even.' }, { text: 'I will grab something later', effects: {} }] },
     { id: 'rob_out', when: S2 => { const h = CORE.parts(S2.time).h; return h >= 17 && h < 23; }, text: 'A few of us are heading to the bar later. You should come, you never come.', choices: [{ text: 'Alright, one drink', effects: [{ rel: { rob: 5 } }, { flag: 'rob_bar' }], reply: 'One drink. Sure. That is what you said last time.' }, { text: 'Not tonight, early start', effects: { rel: { rob: -1 } }, reply: 'Boring! Fine, fine.' }] },
+    { id: 'rob_couchmovie', when: () => robWhere() === 'couch', text: 'I have seen this movie six times and I still think the dog makes it. Sit down, it is getting good.', choices: [{ text: 'Go on then, scoot over', effects: [{ rel: { rob: 4 } }, { need: { mood: 3 } }], reply: 'Snacks are on the table. Do not touch the green ones.' }, { text: 'Maybe later', effects: {} }] },
+    { id: 'rob_toast', when: () => robWhere() === 'kitchen', text: 'Settle something for me. Butter then jam, or jam then butter?', choices: [{ text: 'Butter first, obviously', effects: { rel: { rob: 3 } }, reply: 'Thank you. Jess is a monster.' }, { text: 'Jam first', effects: { rel: { rob: 1 } }, reply: 'Get out of my kitchen.' }] },
+    { id: 'rob_cook', when: () => robWhere() === 'kitchen' && gHour() > 17, text: 'I am attempting a curry. If you smell burning, that is the flavour.', choices: [{ text: 'Smells good actually', effects: [{ rel: { rob: 4 } }], reply: 'Really? Do not lie to me, I bruise easily.' }, { text: 'Should I open a window?', effects: { rel: { rob: 1 } }, reply: 'Rude. Accurate, but rude.' }] },
+    { id: 'rob_morning', when: () => gHour() < 12, text: 'Morning. Is it still morning? I have lost all sense of time since I stopped working.', choices: [{ text: 'Just about', effects: { rel: { rob: 2 } }, reply: 'Great. Second breakfast it is.' }, { text: 'You should set an alarm', effects: { rel: { rob: -1 } }, reply: 'An alarm for what? To be unemployed earlier?' }] },
+    { id: 'rob_interview', text: 'I got an interview! Thursday. Sales job. I do not know anything about sales but I talk a lot, so.', choices: [{ text: 'You will kill it', effects: [{ rel: { rob: 5 } }, { need: { mood: 2 } }], reply: 'Right? Right. I am going to wear the shirt with the buttons.' }, { text: 'Want to practise on me?', effects: [{ rel: { rob: 6 } }], reply: 'Okay. Hello. I am Rob. I would like money. How was that?' }] },
+    { id: 'rob_landlord', text: 'The landlord came by to look at the leak. He looked at it. Then he left. That was the whole visit.', choices: [{ text: 'Classic', effects: { rel: { rob: 2 } } }, { text: 'I will chase him up', effects: [{ rel: { rob: 4 } }], reply: 'You are the responsible one now. Congratulations.' }] },
+    { id: 'rob_jess', text: 'Jess has exams. If she asks, we are both very quiet, studious people.', choices: [{ text: 'Very quiet. Very studious.', effects: { rel: { rob: 3 } }, reply: 'Exactly. Now help me move the speaker away from her wall.' }] },
+    { id: 'rob_gym', text: 'I am thinking of joining a gym. Thinking about it is the first step. I have been on the first step for a year.', choices: [{ text: 'Come running with me sometime', effects: [{ rel: { rob: 4 } }], reply: 'Running? Like on purpose? We will see.' }, { text: 'Thinking counts', effects: { rel: { rob: 2 } }, reply: 'That is what I keep telling myself.' }] },
+    { id: 'rob_music', when: () => S.stereo && S.stereo.on, text: 'Good tune, right? I have been trying to get Jess into this. She says it sounds like a microwave.', choices: [{ text: 'It is great', effects: { rel: { rob: 3 } }, reply: 'A person of taste. Finally.' }, { text: 'It does sound a bit like a microwave', effects: { rel: { rob: -1 } }, reply: 'Wow. Both of you. Wow.' }] },
+    { id: 'rob_bills', when: S2 => CORE.parts(S2.time).dow >= 4, text: 'Power bill came. It is a big one. I may have left the heater on in my room. For a month.', choices: [{ text: 'We will split it', effects: [{ rel: { rob: 5 } }], reply: 'You are a good person. Better than me, financially.' }, { text: 'You can cover the extra', effects: { rel: { rob: -1 } }, reply: 'Fair. Painful, but fair.' }] },
     { id: 'rob_chat', text: 'Did you hear the new place downtown is doing two dollar tacos on Tuesdays?', choices: [{ text: 'We have to go', effects: [{ rel: { rob: 3 } }, { need: { mood: 2 } }] }, { text: 'Two dollars? What is in them?', effects: [{ rel: { rob: 2 } }], reply: 'Best not to ask. That is the magic.' }] },
   ];
   async function talkRob() { const mood = S.rels.rob.score;
     const pool = ROB_TALK.filter(e => { if (S.seen['rob:' + e.id] && S.time - S.seen['rob:' + e.id] < 1440 * 2) return false; if (!e.when) return true; if (typeof e.when === 'function') return e.when(S); try { return CR.test(e.when, S, Math.random); } catch (x) { return true; } });
-    const e = pool.length ? pool[Math.floor(Math.random() * pool.length)] : { text: mood > 50 ? 'All good, mate? I am just watching the game.' : 'Hey.', choices: [{ text: 'All good' }] };
+    // when he has nothing new to say, what he says depends on what he is doing, and never the same line twice running
+    const w = robWhere(), h = gHour(), idle = (w === 'couch' ? ['Shh, this is the good bit.', 'I am three episodes deep. Do not judge me.', 'Have you seen the remote? I am sitting on it. Never mind.', mood > 50 ? 'All good, mate? Pull up some couch.' : 'Hey.'] : w === 'kitchen' ? ['There is coffee in the pot if you want it.', 'We are out of milk. That is not a hint. It is a hint.', 'Do you want toast? I am making toast regardless.'] : ['Hey. What is up?']).concat(h >= 22 ? ['I should go to bed. I will not, but I should.'] : h < 11 ? ['Too early for words. Talk to me after coffee.'] : []);
+    const fresh = idle.filter(t => t !== talkRob.last), line = fresh[Math.floor(Math.random() * fresh.length)] || idle[0]; talkRob.last = line;
+    const e = pool.length ? pool[Math.floor(Math.random() * pool.length)] : { text: line, choices: [{ text: 'All good' }, { text: 'Catch you later' }] };
     if (e.id) S.seen['rob:' + e.id] = S.time; await say('Rob', VOICES.rob, e.text, e.choices, robLook(), mood > 40 ? 'happy' : 'neutral'); CR.passMinutes(S, 10); }
 
   // ---------------- work ----------------
@@ -5325,7 +5388,7 @@ window.GAME = (() => {
   function placeRob() { if (roomKey() !== 'house') return; const w = robWhere(); placeNPC('Rob', w === 'couch' ? [12.0, 9.15, 0, 1] : w === 'kitchen' ? [10.1, 5.4, 0, 1, .5] : w === 'robroom' ? [1.0, 9.6, 0, 1, .5] : null, w === 'robroom' ? [1.0, 9.55, 0, 1, .5, [70, 90, 76]] : null); }
   function nearFurn(pred, r = 1.3) { const I = INSIDE; let best = null, bd = r; for (const f of I.furn) { if (!pred(f)) continue; const [w, d] = FURN[f.t] ? FURN[f.t].size(f) : [1, 1], odd = f.rot === 1 || f.rot === 3, hw = (odd ? d : w) / 2, hd = (odd ? w : d) / 2;
       const lx = player.x - I.ox, ly = player.y - I.oy, dx = Math.max(Math.abs(lx - f.x) - hw, 0), dy = Math.max(Math.abs(ly - f.y) - hd, 0), dd = Math.hypot(dx, dy); if (dd < bd) { bd = dd; best = f; } } return best; }
-  function nearNPC(r = 1.8) { let best = null, bd = r; for (const n of INSIDE.npcs) { if (!n.name || n.hidden || n.sleep) continue; const d = Math.hypot(n.x - player.x, n.y - player.y); if (d < bd) { bd = d; best = n; } } return best; }
+  function nearNPC(r = 1.8) { let best = null, bd = r; for (const n of INSIDE.npcs) { if (!n.name || n.hidden || n.sleep || (n.name === 'Rob' && robWhere() === 'robroom')) continue; const d = Math.hypot(n.x - player.x, n.y - player.y); if (d < bd) { bd = d; best = n; } } return best; }
   function nearLift() { const I = INSIDE; for (const e of I.exits) if (e.to !== 'street' && Math.hypot(player.x - I.ox - e.x, player.y - I.oy - e.y) < e.r + .6) return e; return null; }
   const MYBED = f => f.t === 'bed' && f.double, MYDESK = f => f.t === 'desk' && f.laptop && f.x > 8;
   let near = null, wasRoom = null;
@@ -5344,7 +5407,7 @@ window.GAME = (() => {
   async function useRoom(f) {
     const N = S.player.needs, h = gHour();
     if (f.id === 'lift') { fadeTo('', '', () => { enterInteriorSwap(f.to); }, 250); return; }
-    if (f.id === 'npc') { const nm = f.n.name; if (nm === 'Rob') return talkRob(); return say(nm, VOICE.forPerson(nm, f.n.L && f.n.L.fem ? 'f' : 'm', 30), { Jess: 'Hey! I am cramming for a pharmacology exam. Do not let me near the couch.', Grace: 'Good morning. Meridian is on thirty two, the lifts are just behind me.', Tom: 'Lanyard on you? Go on through.' }[nm] || 'Hi there.', [{ text: 'See you later', effects: { need: { mood: 1 } } }], f.n.L); }
+    if (f.id === 'npc') { const nm = f.n.name; if (nm === 'Rob') { if (robWhere() === 'robroom' || f.n.sleep) return toast('Rob is fast asleep.', 2); return talkRob(); } return say(nm, VOICE.forPerson(nm, f.n.L && f.n.L.fem ? 'f' : 'm', 30), { Jess: 'Hey! I am cramming for a pharmacology exam. Do not let me near the couch.', Grace: 'Good morning. Meridian is on thirty two, the lifts are just behind me.', Tom: 'Lanyard on you? Go on through.' }[nm] || 'Hi there.', [{ text: 'See you later', effects: { need: { mood: 1 } } }], f.n.L); }
     if (f.id === 'work') return atWork(f.f); if (f.id === 'coffee') return menu('Office kitchen', 'Free coffee, one of the good things about the job.', [{ t: 'Make a coffee', s: 'Free, energy up', fn: () => { CR.passMinutes(S, 10); need('energy', 10); toast('Strong and bitter.'); closeMenu(); } }]);
     if (f.id === 'bed') return sleepPanel();
     if (f.id === 'fridge') { if (!S.items.meals) return toast('The fridge is empty. Takeout places sell meals to take home.');
@@ -5549,16 +5612,18 @@ window.GAME = (() => {
 
   // ---------------- the title screen ----------------
   // The demo starts from here rather than dropping you into the city. Every component test we built opens from it too.
-  const TESTS = [['prototype', 'Corner Office prototype', 'The first playable build', 'TKYJjEtcqDUWaY5ENquB2v'], ['art', 'Art Test', 'The street art style and the plaza', 'NjbP97ovpuhTTZ1678RtZH'], ['terrain', 'Terrain Test', 'Hills, rivers and the ranges', 'SqEAVn8DWLWEoNNehThM1W'], ['scale', 'Scale Test', 'People, cars and buildings to scale', 'EQgrioA939j2mgt6fnruYG'], ['lookout', 'Lookout View', 'The view from The Ranges', 'Y9gWMzYWFecr3v3dfRwj6W'], ['city-plan', 'City Plan', 'The street plan and districts', '6c4RCcX7LpDodBxkNngtJC'], ['city', 'City', 'The full generated city', 'Eg799z1vgdUCqzvYH1xC1Z'],
-    ['sound', 'Sound Test', 'The city soundscape', '3zW4k3ti4s4ayYh77oFwQP'], ['voices', 'Voices', 'Muted horn conversation voices', '155BUCR27qfEHafa2WjbbS'], ['portraits', 'Portrait Creator', 'Faces, hair and clothes', 'RuXMxrcc9dcgMDu8EnXva1'], ['car-designer', 'Car Designer', 'Car models and handling', '7tsBmn67ooPgBmrmYtES5Q'], ['brand-studio', 'Brand Studio', 'Logos and signage styles', 'Brbd3YmeA7t9vdXujV6cZX'], ['track-designer', 'Grand Prix Track Designer', 'Race circuit layouts', 'Vd9gfWgnhLE2HKEsenKXo2'], ['foundations', 'Foundations', 'Core rules, clock and saves', '6NB2QeArQHjhgLfwad623n']];
-  let titleOpen = false, testBase = null;
+  const TESTS = [['prototype', 'Corner Office prototype', 'The first playable build'], ['portraits', 'Portrait Creator', 'Faces, hair and clothes'], ['car-designer', 'Car Designer', 'Car models and handling'], ['brand-studio', 'Brand Studio', 'Logos and signage styles'], ['track-designer', 'Grand Prix Track Designer', 'Race circuit layouts']];
+  let titleOpen = false, testBase = 'tests/';
   function showTitle() { titleOpen = true; document.body.classList.add('titling'); const last = store.load('auto'), T = $('title');
-    const href = (slug, id) => testBase ? testBase + slug + '.html' : 'https://claude.ai/artifact/' + id;
-    T.innerHTML = `<div class="tbox"><h1>Corner Office</h1><p class="tsub">Test build</p><div class="tmain">${last ? `<button id="tCont"><b>Continue</b><span>${esc(CR.fmtDate(last.time))}, ${esc(CR.fmtTime(last.time))}</span></button>` : ''}<button id="tNew"><b>New game</b><span>Move into the share house with Rob</span></button><a class="tlink" href="${testBase ? 'engine.html' : 'https://claude.ai/artifact/RoSytWWvWgXxmRKxzTHSTR'}" target="_blank" rel="noopener"><b>Engine sandbox</b><span>The city with every debug control</span></a></div>
-      <h2>Component tests</h2><div class="tgrid">${TESTS.map(([slug, n, d, id]) => `<a href="${href(slug, id)}" target="_blank" rel="noopener"><b>${n}</b><span>${d}</span></a>`).join('')}</div><p class="tfoot">Tests open in a new tab. Sound starts after your first key press or click.</p></div>`;
-    T.hidden = false; if ($('tCont')) $('tCont').onclick = () => startGame(store.load('auto')); $('tNew').onclick = () => { if (last && !$('tNew').dataset.sure) { $('tNew').dataset.sure = 1; $('tNew').querySelector('span').textContent = 'This replaces your autosave. Click again to start over'; return; } startGame(null); }; }
+    T.innerHTML = `<div class="tbox"><h1>Corner Office</h1><p class="tsub">Test build</p><div class="tmain">${last ? `<button id="tCont"><b>Continue</b><span>${esc(CR.fmtDate(last.time))}, ${esc(CR.fmtTime(last.time))}</span></button>` : ''}<button id="tNew"><b>New game</b><span>Move into the share house with Rob</span></button><button data-open="engine.html|Engine sandbox"><b>Engine sandbox</b><span>The city with the full debug menu, art and sound tests included</span></button></div>
+      <h2>Design studios and tests</h2><div class="tgrid">${TESTS.map(([slug, n, d]) => `<button data-open="${testBase}${slug}.html|${n}"><b>${n}</b><span>${d}</span></button>`).join('')}</div><p class="tfoot">Sound starts after your first key press or click.</p></div>`;
+    T.hidden = false; if ($('tCont')) $('tCont').onclick = () => startGame(store.load('auto')); $('tNew').onclick = () => { if (last && !$('tNew').dataset.sure) { $('tNew').dataset.sure = 1; $('tNew').querySelector('span').textContent = 'This replaces your autosave. Click again to start over'; return; } startGame(null); };
+    for (const b of T.querySelectorAll('[data-open]')) b.onclick = () => { const [src, name] = b.dataset.open.split('|'); openTest(src, name); }; }
+  // a test or the sandbox opens over the menu in this same tab; the city behind stops drawing while it is up
+  function openTest(src, name) { const V = $('testview'); V.innerHTML = `<div class="tvbar"><button id="tvBack">‹ Main menu</button><b>${esc(name)}</b></div><iframe src="${src}" title="${esc(name)}" allow="autoplay; fullscreen"></iframe>`; V.hidden = false; window.SKIP_RENDER = true; if (AU.on) auStop();
+    $('tvBack').onclick = closeTest; setTimeout(() => { try { V.querySelector('iframe').focus(); } catch (e) { } }, 300); }
+  function closeTest() { const V = $('testview'); V.hidden = true; V.innerHTML = ''; window.SKIP_RENDER = false; }
   // tests sit beside the page on GitHub; on claude.ai they open as their own artifacts
-  try { fetch('tests/manifest.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(j => { if (j) { testBase = 'tests/'; if (titleOpen) showTitle(); } }, () => { }); } catch (e) { }
   function startGame(saved) { titleOpen = false; document.body.classList.remove('titling'); $('title').hidden = true; startSound();
     if (saved) { load(saved); toast('Welcome back.'); } else { S = upgrade(fresh()); startAtHome(); skyForDay(); drawHud(); intro(); } phoneBadge(); }
 
@@ -5579,6 +5644,7 @@ window.GAME = (() => {
   }
   function key(e) {
     const tg = e.target && e.target.tagName; if (tg === 'TEXTAREA' || (tg === 'INPUT' && e.target.type !== 'range')) return true;
+    if (!$('testview').hidden) { if (e.code === 'Escape' && e.target === document.body) closeTest(); return true; }
     if (titleOpen) return e.code !== 'F12';
     if (!S) return false;
     if (FF) { if (e.code === 'Space' || e.code === 'Enter') FF.skip = true; return true; }
