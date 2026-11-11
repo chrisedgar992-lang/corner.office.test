@@ -5506,8 +5506,10 @@ window.GAME = (() => {
     const box = P2.querySelector('.opts'); opts.forEach((o, i) => { const b = document.createElement('button'); b.innerHTML = `<span>${i + 1}. ${o.t}</span><small>${o.s || ''}</small>`; b.disabled = !!o.off || !o.fn; b.onclick = () => o.fn(); box.appendChild(b); });
     const lv = document.createElement('button'); lv.innerHTML = '<span>Leave</span><small>Esc</small>'; lv.onclick = closeMenu; box.appendChild(lv); $('modal').hidden = false; menu.keys = opts.map(o => o.off || !o.fn ? null : o.fn); }
   const drawMenuAgain = () => { if (lastMenu && modalOpen) menu(...lastMenu); };
-  function closeMenu() { $('modal').hidden = true; modalOpen = false; menu.keys = null; music.venue(null); G.hold = !!(dlgOpen || fading); }
-  function pauseMenu() { const P0 = S.player, J = P0.job, sk = Object.entries(P0.skills).map(([kq, v]) => `<span>${kq[0].toUpperCase() + kq.slice(1)}</span><b>level ${CR.levelOf(v)}</b>`).join('');
+  function closeMenu() { pauseSound(false); $('modal').hidden = true; modalOpen = false; menu.keys = null; music.venue(null); G.hold = !!(dlgOpen || fading); }
+  let soundPaused = false;
+  function pauseSound(on) { if (on && !soundPaused) { soundPaused = true; try { if (AC && AU.on) AC.suspend(); } catch (e) { } music.hush(true); } else if (!on && soundPaused) { soundPaused = false; try { if (AC && AU.on) AC.resume(); } catch (e) { } music.hush(false); } }
+  function pauseMenu() { pauseSound(true); const P0 = S.player, J = P0.job, sk = Object.entries(P0.skills).map(([kq, v]) => `<span>${kq[0].toUpperCase() + kq.slice(1)}</span><b>level ${CR.levelOf(v)}</b>`).join('');
     modalOpen = true; G.hold = true; const P2 = $('panel');
     P2.innerHTML = `<h2>Paused</h2><div class="kv"><span>Date</span><b>${CR.fmtDate(S.time)} ${CR.fmtTime(S.time)}</b><span>Age</span><b>${CR.ageOn(S.time, P0.birth)}</b><span>Job</span><b>${LADDER[J.level].t}</b><span>Shifts worked</span><b>${J.shifts}</b><span>Performance</span><b>${Math.round(J.perf)}</b><span>Cash</span><b>${money(P0.cash)}</b><span>Bank</span><b>${money(P0.bank)}</b><span>Meals in the fridge</span><b>${S.items.meals || 0}</b>${sk}</div>
       <h2 style="font-size:14px">Sound</h2><div id="sndrow"><span>City sound</span><button id="bSnd">${AU.on ? 'On' : 'Off'}</button>${['master', 'amb', 'traffic', 'people', 'music'].map(kq => `<span>${{ master: 'Master', amb: 'Ambience', traffic: 'Traffic', people: 'People', music: 'Venue music' }[kq]}</span><input type="range" min="0" max="100" value="${Math.round(AU.vol[kq] * 100)}" data-v="${kq}" style="accent-color:var(--acc)">`).join('')}</div><h2 style="font-size:14px">Saves</h2><div id="slots" class="opts"></div><textarea class="io" id="io" rows="2" placeholder="Save code"></textarea><div class="row"><button id="bExp">Copy save code</button><button id="bImp">Load save code</button><button id="bNew">New game</button></div><div class="sub2" id="ioMsg"></div>
@@ -5675,7 +5677,7 @@ window.GAME = (() => {
       phoneShuffle() { Q.phone.order = order(); Q.phone.idx = 0; Q.phone.on = true; if (src === 'phone') fromQ('phone'); else sync(); },
       // the stereo at home
       stereoPick(i) { Q.stereo.idx = Q.stereo.order.indexOf(i); if (src === 'stereo') fromQ('stereo'); else sync(); }, stereoStep(d) { step('stereo', d); },
-      tracks: TRACKS };
+      hush(h) { if (h) el.pause(); else if (src && cur && src !== 'radio-off') { const pr = el.play(); if (pr) pr.catch(() => { }); } }, tracks: TRACKS };
   })();
 
   // ---------------- the stereo in the share house ----------------
@@ -5920,6 +5922,8 @@ window.GAME = (() => {
     gameDay = Math.floor(S.time / 1440);
     if (FF) ffTick(dt);
     const paused = modalOpen || dlgOpen || fading || mapOpen || !!talk || phoneOpen || !!FF;
+    // the big map freezes the street the same way the menu and phone do
+    if (mapOpen && !G.hold) { G.hold = true; tick.mapHeld = true; } else if (!mapOpen && tick.mapHeld) { tick.mapHeld = false; G.hold = !!(modalOpen || dlgOpen || fading || phoneOpen); }
     if (!paused) runClock(dt);
     if (seated && !paused) { need('energy', dt * .004); if (seated.st.bench) need('mood', dt * .003); }
     if ((tick.pl = (tick.pl || 0) - dt) < 0) { tick.pl = .5; checkPlans(); parkPatrol(); fineCheck(); music.level(); const st = INSIDE && INSIDE.furn.find(f => f.t === 'stereo'); if (st) st.on = !!S.stereo.on; }
