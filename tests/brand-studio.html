@@ -1,0 +1,1136 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<meta charset="utf-8">
+<title>Corner Office Brand Studio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Inter:wght@400;500;600;800&family=Montserrat:wght@400;600;800&family=Space+Grotesk:wght@400;700&family=Josefin+Sans:wght@400;700&family=Oswald:wght@400;600&family=Barlow+Condensed:wght@400;700&family=Bebas+Neue&family=Anton&family=Archivo+Black&family=Bungee&family=Righteous&family=Playfair+Display:wght@400;700;900&family=DM+Serif+Display&family=Abril+Fatface&family=Roboto+Slab:wght@400;700&family=Cinzel:wght@400;700&family=Lobster&family=Pacifico&family=Caveat:wght@400;700&family=Permanent+Marker&display=swap" rel="stylesheet">
+<style>
+/* one dark workshop look, matching the car designer. Left: brand settings. Centre: logo editor and previews. Right: the selected layer */
+:root{--bg:#121417;--panel:#1a1d21;--panel2:#20242a;--line:#30353c;--text:#e7e9ec;--muted:#9ba2aa;--acc:#d6a347;--btn:#23272d;--good:#7fbf7a;--bad:#e07a62;
+  --ui:"IBM Plex Sans",system-ui,-apple-system,sans-serif;--num:"IBM Plex Mono",ui-monospace,monospace;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:13px/1.4 var(--ui)}
+.app{display:grid;grid-template-columns:260px minmax(0,1fr) 310px;gap:10px;align-items:start;padding-block:10px;padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px))}
+.col{display:flex;flex-direction:column;gap:10px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+h1{font-size:15px;margin:0;font-weight:600}
+h2{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0;font-weight:500}
+.hint{color:var(--muted);font-size:11.5px;text-wrap:pretty;margin:0}
+button,select,input[type=text],input[type=number],textarea{background:var(--btn);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:5px 8px;font:inherit;font-size:12px}
+textarea{width:100%;font-family:var(--num);font-size:11px;resize:vertical}
+button{cursor:pointer}
+button:hover,button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{border-color:var(--acc);outline:none}
+button.on{border-color:var(--acc);color:var(--acc)}
+button:disabled{opacity:.45;cursor:default}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.row>select,.row>input[type=text]{flex:1;min-width:0}
+label.f{display:grid;grid-template-columns:78px minmax(0,1fr) 42px;gap:6px;align-items:center;font-size:12px;color:var(--muted)}
+label.f input[type=range]{width:100%;accent-color:var(--acc)}
+label.f output{font-family:var(--num);font-size:11px;color:var(--text);text-align:right}
+label.t{display:grid;grid-template-columns:78px minmax(0,1fr);gap:6px;align-items:center;font-size:12px;color:var(--muted)}
+label.t>*{min-width:0}
+.pal{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.pal label{display:flex;flex-direction:column;gap:3px;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.pal input[type=color]{width:100%;height:30px;border:1px solid var(--line);border-radius:6px;background:none;padding:0;cursor:pointer}
+.sw{display:flex;gap:4px;flex-wrap:wrap}
+.sw button{width:24px;height:24px;padding:0;border-radius:50%;border:2px solid var(--line)}
+.sw button.on{border-color:var(--acc);box-shadow:0 0 0 2px var(--bg) inset}
+.sw button.none{background:repeating-linear-gradient(45deg,#2a2e34 0 4px,#3a3f47 4px 8px)}
+.list{display:flex;flex-direction:column;gap:2px;max-height:260px;overflow:auto}
+.item{display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:6px;cursor:pointer;border:1px solid transparent;background:none;text-align:left;width:100%;font-size:12px}
+.item:hover{background:var(--panel2)}
+.item.sel{border-color:var(--acc);background:var(--panel2)}
+.item canvas{flex:none;border-radius:4px;background:#2a2e34}
+.item span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item em{font-style:normal;color:var(--muted);font-size:11px}
+.item .eye{opacity:.6;padding:2px 5px;font-size:11px}
+.stage{position:relative;width:100%;max-width:560px;align-self:center;aspect-ratio:1}
+.stage canvas{width:100%;height:100%;display:block;border-radius:8px;touch-action:none;cursor:default}
+.picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:4px;max-height:260px;overflow:auto}
+#iconCats button{font-size:11px;padding:3px 7px}
+.picker button{padding:3px;aspect-ratio:1;display:flex;align-items:center;justify-content:center}
+.picker canvas{width:34px;height:34px}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.prev canvas{width:100%;display:block;border-radius:8px;background:#0d0f12}
+.kbd{font-family:var(--num);font-size:10.5px;color:var(--muted)}
+.msg{font-size:11.5px;color:var(--good);min-height:1em}
+.warn{color:var(--bad)}
+[hidden]{display:none!important}
+@media (max-width:1180px){.app{grid-template-columns:250px minmax(0,1fr)}.right{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}}
+@media (max-width:760px){.app{grid-template-columns:minmax(0,1fr);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}.right{display:flex}}
+</style>
+<div class="app">
+  <div class="col">
+    <div class="card"><h1>Brand Studio</h1><p class="hint">Design a business brand. The game stores it as a small recipe and draws it on signs, awnings, uniforms, vans and packaging.</p></div>
+    <div class="card"><h2>Business</h2>
+      <label class="t">Name<input type="text" id="bName" maxlength="40"></label>
+      <label class="t">Tagline<input type="text" id="bTag" maxlength="50" placeholder="Optional"></label>
+      <label class="t">Type<select id="bType"></select></label>
+      <label class="t">Established<input type="text" id="bEst" maxlength="4" placeholder="Year, optional"></label>
+    </div>
+    <div class="card"><h2>Colours</h2>
+      <div class="pal" id="pal"></div>
+      <div class="row"><button id="bPalSug">Suggest for this type</button><button id="bPalSwap">Swap primary and secondary</button></div>
+      <p class="hint" id="contrastNote"></p>
+    </div>
+    <div class="card"><h2>Name lettering</h2>
+      <label class="t">Font<select id="fFont"></select></label>
+      <label class="t">Weight<select id="fW"></select></label>
+      <label class="t">Case<select id="fCase"><option value="upper">UPPER CASE</option><option value="none">As typed</option><option value="lower">lower case</option></select></label>
+      <label class="f">Spacing<input type="range" id="fLs" min="-0.05" max="0.4" step="0.01"><output id="fLsO"></output></label>
+      <label class="t">Colour<div class="sw" id="fInk"></div></label>
+      <label class="t">Lockup<select id="bLock"><option value="side">Mark beside name</option><option value="stack">Mark above name</option><option value="mark">Mark only</option><option value="word">Name only</option></select></label>
+    </div>
+    <div class="card"><h2>Saved brands</h2>
+      <div class="list" id="saved"></div>
+      <div class="row"><button id="bNew">New</button><button id="bDup">Duplicate</button><button id="bDel">Delete</button></div>
+      <div class="row" id="delConfirm" hidden><span class="hint warn">Delete this brand?</span><button id="bDelYes">Delete</button><button id="bDelNo">Keep</button></div>
+    </div>
+    <div class="card"><h2>NPC brands, test tool</h2>
+      <p class="hint">Not part of the player's designer. NPC businesses of every type get a brand built from kits for that type. The seed is the lot's permanent ID, so the same shop always looks the same.</p>
+      <label class="t">Type<select id="nType"></select></label>
+      <label class="t">Lot ID<input type="text" id="nSeed" value="lot-7f3a21"></label>
+      <div class="row"><button id="bGen">Generate</button><button id="bReroll">New lot ID</button></div>
+    </div>
+    <div class="card"><h2>Brand code</h2>
+      <p class="hint">Copy a brand out as text, or paste one in.</p>
+      <textarea id="io" rows="3" spellcheck="false"></textarea>
+      <div class="row"><button id="bExp">Copy code</button><button id="bImp">Load code</button></div>
+      <div class="msg" id="ioMsg"></div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><h2>Logo mark</h2>
+        <div class="row"><button id="bUndo" title="Undo (Ctrl Z)">Undo</button><button id="bRedo" title="Redo (Ctrl Shift Z)">Redo</button>
+          <select id="stageBg" title="Background behind the mark"><option value="check">Checker</option><option value="l">On light</option><option value="p">On primary</option><option value="w">On white</option><option value="k">On black</option></select>
+          <button id="bGrid" class="on">Guides</button></div></div>
+      <div class="stage"><canvas id="cv"></canvas></div>
+      <p class="hint">Drag a layer to move it. Drag the square corner to resize and the round knob to rotate. Shift snaps rotation to 15 degrees, Alt turns off centre snapping. Arrow keys nudge, Delete removes.</p>
+      <div class="row"><h2 style="margin-right:auto">Add</h2><button id="addShape" class="on">Shape</button><button id="addIcon">Icon</button><button id="addText">Text</button></div>
+      <div class="tabs" id="iconCats" hidden></div>
+      <div class="picker" id="picker"></div>
+    </div>
+    <div class="card prev">
+      <div class="row" style="justify-content:space-between"><h2>Where it shows</h2>
+        <div class="tabs" id="tabs"></div></div>
+      <div class="row" id="prevCtl"></div>
+      <canvas id="pv"></canvas>
+      <p class="hint" id="pvNote"></p>
+    </div>
+  </div>
+
+  <div class="col right">
+    <div class="card"><h2>Layers</h2><div class="list" id="layers"></div>
+      <div class="row"><button id="lUp">Up</button><button id="lDown">Down</button><button id="lDup">Duplicate</button><button id="lDel">Delete</button></div></div>
+    <div class="card" id="props"></div>
+  </div>
+</div>
+<script>
+// ================= BRAND core: brand recipes, logo drawing, signs, NPC brand generator =================
+// A brand is a small recipe (palette slots, fonts, layered mark, lockup, sign style). The game stores the recipe and draws it
+// anywhere with the same functions, so a recolour or rename updates every sign, uniform and van at once.
+const BRAND = (() => {
+  // ---------- path helpers ----------
+  const circ = (x, y, r) => `M${x - r} ${y}A${r} ${r} 0 1 0 ${x + r} ${y}A${r} ${r} 0 1 0 ${x - r} ${y}Z`;
+  const ell = (x, y, rx, ry) => `M${x - rx} ${y}A${rx} ${ry} 0 1 0 ${x + rx} ${y}A${rx} ${ry} 0 1 0 ${x - rx} ${y}Z`;
+  const rr = (x, y, w, h, r) => `M${x + r} ${y}H${x + w - r}Q${x + w} ${y} ${x + w} ${y + r}V${y + h - r}Q${x + w} ${y + h} ${x + w - r} ${y + h}H${x + r}Q${x} ${y + h} ${x} ${y + h - r}V${y + r}Q${x} ${y} ${x + r} ${y}Z`;
+  const rect = (x, y, w, h) => `M${x} ${y}H${x + w}V${y + h}H${x}Z`;
+  const poly = (n, R, rot = 0, cx = 0, cy = 0) => { let s = ''; for (let i = 0; i < n; i++) { const a = rot + i * 2 * Math.PI / n - Math.PI / 2; s += (i ? 'L' : 'M') + (cx + R * Math.cos(a)).toFixed(2) + ' ' + (cy + R * Math.sin(a)).toFixed(2); } return s + 'Z'; };
+  const starP = (n, R, r2, cx = 0, cy = 0) => { let s = ''; for (let i = 0; i < n * 2; i++) { const a = i * Math.PI / n - Math.PI / 2, q = i % 2 ? r2 : R; s += (i ? 'L' : 'M') + (cx + q * Math.cos(a)).toFixed(2) + ' ' + (cy + q * Math.sin(a)).toFixed(2); } return s + 'Z'; };
+  const gearP = (cx, cy, R, r2, n) => { let s = ''; for (let i = 0; i < n; i++) { const a0 = i * 2 * Math.PI / n, d = Math.PI / n; const pts = [[a0 - d * .45, r2], [a0 - d * .3, R], [a0 + d * .3, R], [a0 + d * .45, r2], [a0 + d * 1.55, r2]]; for (const [a, q] of pts) s += (s ? 'L' : 'M') + (cx + q * Math.cos(a)).toFixed(2) + ' ' + (cy + q * Math.sin(a)).toFixed(2); } return s + 'Z'; };
+
+  // ---------- shapes, drawn in a -50..50 box ----------
+  const SHAPES = {
+    circle: { n: 'Circle', d: () => circ(0, 0, 50) },
+    ring: { n: 'Ring', d: L => circ(0, 0, 50) + circ(0, 0, 50 * (1 - (L.th ?? .14))), eo: true },
+    square: { n: 'Square', d: () => rect(-50, -50, 100, 100) },
+    rounded: { n: 'Rounded square', d: L => rr(-50, -50, 100, 100, 50 * (L.rad ?? .36)) },
+    pill: { n: 'Pill', d: () => rr(-50, -24, 100, 48, 24) },
+    oval: { n: 'Oval', d: () => ell(0, 0, 50, 34) },
+    hexagon: { n: 'Hexagon', d: () => poly(6, 50, Math.PI / 6) },
+    octagon: { n: 'Octagon', d: () => poly(8, 50, Math.PI / 8) },
+    diamond: { n: 'Diamond', d: () => poly(4, 50) },
+    triangle: { n: 'Triangle', d: () => 'M0 -46L50 40H-50Z' },
+    shield: { n: 'Shield', d: () => 'M-42 -48H42V-6Q42 32 0 50Q-42 32 -42 -6Z' },
+    arch: { n: 'Arch', d: () => 'M-40 50V-10A40 40 0 0 1 40 -10V50Z' },
+    burst: { n: 'Seal', d: () => starP(18, 50, 44) },
+    star: { n: 'Star', d: () => starP(5, 50, 21) },
+    banner: { n: 'Ribbon', d: () => 'M-50 -14H50L41 0L50 14H-50L-41 0Z' },
+    plate: { n: 'Wide plate', d: () => rr(-50, -18, 100, 36, 4) },
+    line: { n: 'Line', d: () => rect(-50, -2, 100, 4) },
+    corner: { n: 'Quarter', d: () => 'M-50 -50H50A100 100 0 0 1 -50 50Z' },
+  };
+
+  // ---------- icons, drawn in a 0..100 box, filled one colour. Holes use even-odd inside a part ----------
+  const towerWin = () => { let s = rect(26, 12, 48, 78); for (let r = 0; r < 6; r++) for (let c = 0; c < 3; c++) s += rect(32 + c * 13, 18 + r * 10, 7, 6); return s + rect(44, 78, 12, 12); };
+  const ICONS = {
+    cup: { n: 'Coffee cup', p: [{ d: 'M24 36H70V58Q70 82 47 82Q24 82 24 58Z' }, { d: 'M70 42H76Q88 42 88 54Q88 66 76 66H69V60H76Q82 60 82 54Q82 48 76 48H70Z' }, { d: 'M14 86H80Q78 93 70 93H24Q16 93 14 86Z' }, { s: 'M37 28Q32 22 37 15M48 28Q43 22 48 15M59 28Q54 22 59 15', w: 4 }] },
+    bean: { n: 'Coffee bean', rot: 30, p: [{ d: ell(50, 50, 25, 36) + 'M52 15Q41 33 49 50Q57 67 47 85L52 85Q62 67 54 50Q46 33 57 15Z', eo: true }] },
+    croissant: { n: 'Bread loaf', p: [{ d: 'M12 66Q12 34 50 34Q88 34 88 66V74Q88 78 84 78H16Q12 78 12 74Z' + 'M30 40L40 40L30 62L22 60Z' + 'M47 37L57 37L49 62L40 62Z' + 'M64 39L73 42L67 62L58 62Z', eo: true }] },
+    burger: { n: 'Burger', p: [{ d: 'M16 46Q16 20 50 20Q84 20 84 46Z' }, { d: rr(12, 51, 76, 10, 5) }, { d: 'M14 66H86L82 70Q78 74 74 70L70 66Z' }, { d: 'M18 74H82Q82 84 70 84H30Q18 84 18 74Z' }] },
+    pizza: { n: 'Pizza slice', p: [{ d: 'M50 90L19 30Q50 16 81 30Z' + circ(50, 42, 6) + circ(39, 58, 5) + circ(58, 64, 5), eo: true }, { d: 'M14 24Q50 6 86 24L83 31Q50 15 17 31Z' }] },
+    cutlery: { n: 'Fork and knife', p: [{ d: 'M24 12H28V34H32V12H36V34H40V12H44V40Q44 48 37 50V86Q37 90 34 90Q31 90 31 86V50Q24 48 24 40Z' }, { d: 'M60 12Q78 22 78 52H69V86Q69 90 65 90Q61 90 61 86Z' }] },
+    wine: { n: 'Wine glass', p: [{ d: 'M30 12H70Q72 48 53 55V78H65V86H35V78H47V55Q28 48 30 12Z' }] },
+    beer: { n: 'Beer mug', p: [{ d: rr(20, 30, 44, 58, 4) + rect(28, 42, 5, 38) + rect(39, 42, 5, 38) + rect(50, 42, 5, 38), eo: true }, { d: 'M64 40H72Q84 40 84 52V62Q84 74 72 74H64V66H72Q76 66 76 62V52Q76 48 72 48H64Z' }, { d: circ(26, 26, 9) + circ(40, 22, 11) + circ(55, 25, 9) }] },
+    music: { n: 'Music note', p: [{ d: ell(34, 76, 13, 10) }, { d: rect(41, 18, 6, 58) }, { d: 'M47 18Q66 22 74 40Q64 32 47 32Z' }] },
+    dumbbell: { n: 'Dumbbell', p: [{ d: rect(30, 46, 40, 8) }, { d: rr(19, 30, 11, 40, 2) }, { d: rr(70, 30, 11, 40, 2) }, { d: rr(10, 37, 9, 26, 2) }, { d: rr(81, 37, 9, 26, 2) }] },
+    bolt: { n: 'Lightning bolt', p: [{ d: 'M57 8L22 56H46L39 92L78 40H54Z' }] },
+    heart: { n: 'Heart', p: [{ d: 'M50 86C20 66 9 47 17 32C25 17 44 19 50 32C56 19 75 17 83 32C91 47 80 66 50 86Z' }] },
+    scissors: { n: 'Scissors', p: [{ d: circ(30, 74, 13) + circ(30, 74, 6.5), eo: true }, { d: circ(70, 74, 13) + circ(70, 74, 6.5), eo: true }, { d: 'M36 63L67 12L71 16L45 67Z' }, { d: 'M64 63L33 12L29 16L55 67Z' }] },
+    comb: { n: 'Comb', p: [{ d: (() => { let s = 'M12 34H88V46H12Z'; for (let i = 0; i < 12; i++) s += rect(14 + i * 6.3, 46, 3.6, 30); return s; })() }] },
+    flower: { n: 'Flower', p: [{ d: (() => { let s = ''; for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; s += circ(50 + 22 * Math.cos(a), 50 + 22 * Math.sin(a), 15); } return s; })() }, { d: circ(50, 50, 11) }] },
+    leaf: { n: 'Leaf', p: [{ d: 'M18 82Q18 24 84 16Q80 82 18 82Z' + 'M22 78L58 42L60 44L24 80Z', eo: true }] },
+    tooth: { n: 'Tooth', p: [{ d: 'M28 18Q38 12 50 18Q62 12 72 18Q86 26 79 48Q74 60 72 78Q70 90 63 87Q59 85 57 70Q55 60 50 60Q45 60 43 70Q41 85 37 87Q30 90 28 78Q26 60 21 48Q14 26 28 18Z' }] },
+    cross: { n: 'Medical cross', p: [{ d: 'M39 14H61V39H86V61H61V86H39V61H14V39H39Z' }] },
+    pill: { n: 'Capsule', rot: -40, p: [{ d: rr(14, 36, 72, 28, 14) + rect(49, 36, 2, 28), eo: true }] },
+    paw: { n: 'Paw print', p: [{ d: ell(50, 66, 20, 17) }, { d: ell(26, 44, 8, 11) }, { d: ell(41, 28, 8, 11) }, { d: ell(59, 28, 8, 11) }, { d: ell(74, 44, 8, 11) }] },
+    apple: { n: 'Apple', p: [{ d: 'M50 32Q36 20 23 30Q10 44 20 66Q31 90 50 82Q69 90 80 66Q90 44 77 30Q64 20 50 32Z' }, { d: 'M51 27Q53 12 68 9Q66 24 51 27Z' }] },
+    bag: { n: 'Shopping bag', p: [{ d: 'M20 34H80L84 88H16Z' }, { d: 'M35 34V28Q35 12 50 12Q65 12 65 28V34H59V28Q59 18 50 18Q41 18 41 28V34Z' }] },
+    shirt: { n: 'Shirt', p: [{ d: 'M34 14L14 27L23 45L32 41V88H68V41L77 45L86 27L66 14Q59 25 50 25Q41 25 34 14Z' }] },
+    gem: { n: 'Gem', p: [{ d: 'M28 20H72L88 40L50 88L12 40Z' + 'M30 26L22 38H38Z' + 'M70 26L78 38H62Z' + 'M44 26H56L60 38H40Z', eo: true }] },
+    crown: { n: 'Crown', p: [{ d: 'M14 76L10 30L32 50L50 20L68 50L90 30L86 76Z' }, { d: rect(14, 80, 72, 8) }] },
+    book: { n: 'Open book', p: [{ d: 'M48 28Q32 18 12 22V78Q32 74 48 82Z' }, { d: 'M52 28Q68 18 88 22V78Q68 74 52 82Z' }] },
+    house: { n: 'House', p: [{ d: 'M50 14L88 46H77V86H58V63H42V86H23V46H12Z' }] },
+    key: { n: 'Key', p: [{ d: circ(28, 50, 17) + circ(28, 50, 7.5), eo: true }, { d: 'M44 46H88V54H82V66H74V54H68V63H60V54H44Z' }] },
+    tower: { n: 'Office tower', p: [{ d: towerWin(), eo: true }] },
+    briefcase: { n: 'Briefcase', p: [{ d: rr(12, 32, 76, 52, 6) + rect(44, 50, 12, 10), eo: true }, { d: 'M37 32V24Q37 19 42 19H58Q63 19 63 24V32H57V25H43V32Z' }] },
+    scales: { n: 'Scales', p: [{ d: rect(48, 18, 4, 64) + rect(30, 82, 40, 6) + rect(18, 24, 64, 4) }, { d: 'M10 54H38Q36 66 24 66Q12 66 10 54Z' }, { d: 'M62 54H90Q88 66 76 66Q64 66 62 54Z' }, { s: 'M22 28L12 54M22 28L36 54M78 28L64 54M78 28L88 54', w: 2 }] },
+    chart: { n: 'Rising chart', p: [{ d: rect(14, 64, 14, 24) + rect(34, 50, 14, 38) + rect(54, 38, 14, 50) + rect(74, 24, 14, 64) }, { s: 'M12 50L36 30L54 38L84 12', w: 5 }, { d: 'M74 8L90 8L88 24Z' }] },
+    tag: { n: 'Price tag', p: [{ d: 'M14 52L48 18H84V54L50 88Z' + circ(70, 32, 6), eo: true }] },
+    wrench: { n: 'Wrench', rot: -45, p: [{ d: circ(25, 50, 17) + rect(6, 44, 20, 12), eo: true }, { d: rr(38, 44, 52, 12, 6) }] },
+    gear: { n: 'Gear', p: [{ d: gearP(50, 50, 42, 32, 10) + circ(50, 50, 13), eo: true }] },
+    car: { n: 'Car', p: [{ d: 'M8 64V53Q8 46 17 45L30 43L40 30Q43 27 48 27H64Q69 27 72 31L81 43Q92 45 92 53V64Z' + 'M43 33H55V43H35Z' + 'M59 33H67L74 43H59Z', eo: true }, { d: circ(28, 66, 10) }, { d: circ(72, 66, 10) }] },
+    hammer: { n: 'Hammer', rot: -35, p: [{ d: 'M18 20H62L74 30V38H18Z' }, { d: rr(40, 38, 11, 52, 3) }] },
+    bed: { n: 'Bed', p: [{ d: 'M10 30H17V60H90V84H83V76H17V84H10Z' }, { d: rr(20, 46, 22, 12, 5) }, { d: 'M45 44H82Q90 44 90 52V58H45Z' }] },
+    cart: { n: 'Shopping cart', p: [{ d: 'M8 18H22L28 32H90L80 62H34L37 68H82V74H32L24 26H8Z' }, { d: circ(38, 84, 7) }, { d: circ(76, 84, 7) }] },
+    sun: { n: 'Sun', p: [{ d: circ(50, 50, 20) }, { d: (() => { let s = ''; for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6, c = Math.cos(a), si = Math.sin(a); const p = (r, o) => (50 + r * c - o * si).toFixed(1) + ' ' + (50 + r * si + o * c).toFixed(1); s += 'M' + p(28, -3) + 'L' + p(44, -3) + 'L' + p(44, 3) + 'L' + p(28, 3) + 'Z'; } return s; })() }] },
+    wave: { n: 'Waves', p: [{ s: 'M8 40Q20 28 32 40T56 40T80 40T104 40M8 58Q20 46 32 58T56 58T80 58T104 58M8 76Q20 64 32 76T56 76T80 76T104 76', w: 6 }] },
+    mountain: { n: 'Mountains', p: [{ d: 'M6 82L38 30L52 52L64 38L94 82Z' + 'M38 30L46 43L40 40L34 46L31 41Z', eo: true }] },
+    pin: { n: 'Map pin', p: [{ d: 'M50 90Q20 56 20 38Q20 10 50 10Q80 10 80 38Q80 56 50 90Z' + circ(50, 38, 12), eo: true }] },
+    camera: { n: 'Camera', p: [{ d: rr(10, 30, 80, 54, 8) + circ(50, 57, 17) + circ(50, 57, 10), eo: true }, { d: 'M34 30L40 20H60L66 30Z' }] },
+    brush: { n: 'Paint brush', rot: 40, p: [{ d: rr(44, 8, 12, 46, 4) }, { d: rect(41, 54, 18, 8) }, { d: 'M41 62H59V72Q59 90 50 92Q41 90 41 72Z' }] },
+    star: { n: 'Star', p: [{ d: starP(5, 44, 18, 50, 52) }] },
+  };
+
+  // ---------- fonts (Google Fonts, loaded by the page) ----------
+  const FONTS = [
+    { f: 'Inter', w: [400, 600, 800], k: 'sans' }, { f: 'Montserrat', w: [400, 600, 800], k: 'sans' }, { f: 'Space Grotesk', w: [400, 700], k: 'sans' },
+    { f: 'Josefin Sans', w: [400, 700], k: 'sans' }, { f: 'Oswald', w: [400, 600], k: 'cond' }, { f: 'Barlow Condensed', w: [400, 700], k: 'cond' },
+    { f: 'Bebas Neue', w: [400], k: 'cond' }, { f: 'Anton', w: [400], k: 'cond' }, { f: 'Archivo Black', w: [400], k: 'heavy' },
+    { f: 'Bungee', w: [400], k: 'heavy' }, { f: 'Righteous', w: [400], k: 'display' }, { f: 'Playfair Display', w: [400, 700, 900], k: 'serif' },
+    { f: 'DM Serif Display', w: [400], k: 'serif' }, { f: 'Abril Fatface', w: [400], k: 'serif' }, { f: 'Roboto Slab', w: [400, 700], k: 'slab' },
+    { f: 'Cinzel', w: [400, 700], k: 'serif' }, { f: 'Lobster', w: [400], k: 'script' }, { f: 'Pacifico', w: [400], k: 'script' },
+    { f: 'Caveat', w: [400, 700], k: 'hand' }, { f: 'Permanent Marker', w: [400], k: 'hand' },
+  ];
+  const FONT_BY = Object.fromEntries(FONTS.map(f => [f.f, f]));
+  const fallback = k => ({ serif: 'Georgia,serif', slab: 'Georgia,serif', script: 'cursive', hand: 'cursive' }[k] || 'system-ui,sans-serif');
+  const fontCss = (f, w, px) => { const F = FONT_BY[f] || FONTS[0]; const ww = F.w.reduce((a, b) => Math.abs(b - w) < Math.abs(a - w) ? b : a, F.w[0]); return `${ww} ${px}px "${F.f}",${fallback(F.k)}`; };
+
+  // ---------- colours ----------
+  const SLOTS = { p: 'Primary', s: 'Secondary', a: 'Accent', l: 'Light', w: 'White', k: 'Black' };
+  const col = (b, k) => !k || k === 'none' ? null : k[0] === '#' ? k : k === 'w' ? '#ffffff' : k === 'k' ? '#141414' : b.pal[k] || '#888';
+  const lum = h => { const n = parseInt(h.slice(1), 16), f = c => { c /= 255; return c <= .03928 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4; }; return .2126 * f(n >> 16 & 255) + .7152 * f(n >> 8 & 255) + .0722 * f(n & 255); };
+  const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+  const mix = (a, b, t) => { const A = parseInt(a.slice(1), 16), B = parseInt(b.slice(1), 16); const c = s => Math.round((A >> s & 255) * (1 - t) + (B >> s & 255) * t); return '#' + ((1 << 24) + (c(16) << 16) + (c(8) << 8) + c(0)).toString(16).slice(1); };
+  // the slot that reads best on a given background
+  const inkOn = (b, bgKey, prefer) => { const bg = col(b, bgKey); const opts = [prefer, 'l', 'p', 's', 'a', 'w', 'k'].filter(Boolean); let best = opts[0], bc = 0; for (const k of opts) { if (k === bgKey) continue; const c = contrast(bg, col(b, k)); if (k === prefer && c >= 3) return k; if (c > bc) { bc = c; best = k; } } return best; };
+
+  // ---------- text tokens ----------
+  const initials = name => { const w = (name || '').replace(/^the\s+/i, '').split(/[\s&\-]+/).filter(x => x && /[A-Za-z0-9]/.test(x[0])); return (w.length >= 2 ? w[0][0] + w[1][0] : (w[0] || '?').slice(0, 2)).toUpperCase(); };
+  const caseOf = (s, c) => c === 'upper' ? s.toUpperCase() : c === 'lower' ? s.toLowerCase() : s;
+  const fillTokens = (b, s) => (s || '').replace(/\{name\}/g, b.name || '').replace(/\{initials\}/g, initials(b.name)).replace(/\{tagline\}/g, b.tagline || '').replace(/\{type\}/g, (TYPES[b.type] || {}).n || '').replace(/\{year\}/g, b.est || '');
+
+  // ---------- drawing a mark (logo layers) ----------
+  const pathCache = new Map();
+  const P2 = d => { let p = pathCache.get(d); if (!p) { p = new Path2D(d); if (pathCache.size > 800) pathCache.clear(); pathCache.set(d, p); } return p; };
+  const shapeD = L => (SHAPES[L.k] || SHAPES.circle).d(L);
+  function layerTx(ctx, L) { ctx.translate(L.x || 0, L.y || 0); ctx.rotate((L.r || 0) * Math.PI / 180); const s = (L.s ?? 100) / 100; ctx.scale(s * (L.w ?? 1) * (L.fx ? -1 : 1), s * (L.fy ? -1 : 1)); }
+  function textInfo(ctx, b, L) { const t = caseOf(fillTokens(b, L.txt), L.cs); const px = 20; ctx.font = fontCss(L.f || b.font.f, L.fw || 700, px); const ls = (L.ls || 0) * px; const ws = [...t].map(ch => ctx.measureText(ch).width + ls); const tw = ws.reduce((a, c) => a + c, 0) - (t.length ? ls : 0); return { t, ws, tw, px, ls }; }
+  function textK(I, L) { let k = (L.s ?? 20) / I.px / .72; if (!I.tw) return k; if (L.arc && L.fit) k = Math.min(k, L.fit * Math.PI / 180 * Math.abs(L.arc) / I.tw); else if (!L.arc && L.maxw) k = Math.min(k, L.maxw / I.tw / (L.w ?? 1)); return k; }
+  function drawText(ctx, b, L, fillCol, lineCol) {
+    // text layers: s is the cap size in mark units (s=20 means letters about 20 units tall). Optional arc radius bends it round a circle.
+    const I = textInfo(ctx, b, L); if (!I.t) return; const k = textK(I, L); ctx.save(); ctx.translate(L.x || 0, L.y || 0); ctx.rotate((L.r || 0) * Math.PI / 180); ctx.scale(k * (L.w ?? 1), k);
+    ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+    const put = (ch, x, y) => { if (lineCol && L.lw) { ctx.lineWidth = L.lw / k * 2; ctx.lineJoin = 'round'; ctx.strokeStyle = lineCol; ctx.strokeText(ch, x, y); } if (fillCol) { ctx.fillStyle = fillCol; ctx.fillText(ch, x, y); } };
+    const R = (L.arc || 0) / k;
+    if (!R) { let x = -I.tw / 2; [...I.t].forEach((ch, i) => { put(ch, x + (I.ws[i] - I.ls) / 2, 0); x += I.ws[i]; }); }
+    else { const top = R > 0, ar = Math.abs(R), tot = I.tw / ar; let acc = 0; [...I.t].forEach((ch, i) => { const w = I.ws[i] - I.ls, mid = acc + w / 2; const a = top ? -Math.PI / 2 - tot / 2 + mid / ar : Math.PI / 2 + tot / 2 - mid / ar; ctx.save(); ctx.translate(ar * Math.cos(a), ar * Math.sin(a)); ctx.rotate(top ? a + Math.PI / 2 : a - Math.PI / 2); put(ch, 0, 0); ctx.restore(); acc += I.ws[i]; }); }
+    ctx.restore();
+  }
+  function drawLayer(ctx, b, L, over) {
+    if (L.hide) return; const map = c => c == null ? null : typeof over === 'function' ? over(c) : over; const fc = over ? map(col(b, L.fill)) : col(b, L.fill), lc = over ? map(col(b, L.line)) : col(b, L.line); ctx.save(); ctx.globalAlpha *= L.o ?? 1;
+    if (L.t === 'text') { drawText(ctx, b, L, fc, lc); ctx.restore(); return; }
+    layerTx(ctx, L); const s = (L.s ?? 100) / 100;
+    if (L.t === 'shape') { const p = P2(shapeD(L)), eo = SHAPES[L.k] && SHAPES[L.k].eo ? 'evenodd' : 'nonzero'; if (fc) { ctx.fillStyle = fc; ctx.fill(p, eo); } if (lc && L.lw) { ctx.lineWidth = L.lw / s; ctx.lineJoin = 'round'; ctx.strokeStyle = lc; ctx.stroke(p); } }
+    else if (L.t === 'icon') {
+      const I = ICONS[L.k] || ICONS.star; ctx.rotate((I.rot || 0) * Math.PI / 180); ctx.translate(-50, -50);
+      ctx.save(); for (const q of I.p) { if (q.g) { if (fc) { ctx.font = q.f; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = fc; ctx.fillText(q.g, q.x, q.y); } continue; } if (q.s) { ctx.lineWidth = q.w; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; if (fc) { ctx.strokeStyle = fc; ctx.stroke(P2(q.s)); } } else if (fc) { ctx.fillStyle = fc; ctx.fill(P2(q.d), q.eo ? 'evenodd' : 'nonzero'); } if (q.h) { const cp = new Path2D(); cp.rect(-500, -500, 1100, 1100); cp.addPath(P2(q.h)); ctx.clip(cp, 'evenodd'); } } ctx.restore();
+      if (lc && L.lw) { ctx.strokeStyle = lc; ctx.lineWidth = L.lw / s; ctx.lineJoin = 'round'; for (const q of I.p) if (!q.g) ctx.stroke(P2(q.s || q.d)); }
+    }
+    ctx.restore();
+  }
+  // draws the mark so its 100 unit box is `size` pixels, centred on cx, cy. opts.mono paints every layer one colour (window decals, embossing)
+  // one colour printing (foil, etched glass, a window decal). Each layer takes the opposite of whatever layer sits under it, so a badge prints
+  // as a solid shape with its icon knocked out, and a seal with a disc inside prints ring, knockout, icon
+  function foilColours(b, ink, bg) { const out = [], box = L => { const B0 = layerBox(null, b, L); return { x0: (L.x || 0) + B0.x0, x1: (L.x || 0) + B0.x1, y0: (L.y || 0) + B0.y0, y1: (L.y || 0) + B0.y1 }; };
+    const vis = b.mark.map(L => !L.hide && (L.fill || L.line)); b.mark.forEach((L, i) => { if (!vis[i]) { out.push(null); return; } let under = -1; if (L.t !== 'text' || !L.arc) { const px = L.x || 0, py = L.y || 0; for (let j = i - 1; j >= 0; j--) { if (!vis[j] || b.mark[j].t === 'text' || b.mark[j].k === 'ring' || !b.mark[j].fill) continue; const q = box(b.mark[j]); if (px >= q.x0 && px <= q.x1 && py >= q.y0 && py <= q.y1 && (b.mark[j].fill || b.mark[j].line)) { under = j; break; } } } else { for (let j = i - 1; j >= 0; j--) if (vis[j] && b.mark[j].t === 'shape' && b.mark[j].fill && b.mark[j].k !== 'ring') { under = j; break; } }
+      out.push(under < 0 ? ink : out[under] === ink && b.mark[under].fill ? bg : ink); }); return out; }
+  function drawMark(ctx, b, cx, cy, size, opts = {}) { ctx.save(); ctx.translate(cx, cy); ctx.scale(size / 100, size / 100); const fc = opts.foil ? foilColours(b, opts.foil[0], opts.foil[1]) : null; b.mark.forEach((L, i) => drawLayer(ctx, b, L, fc ? fc[i] : opts.mono)); ctx.restore(); }
+  // local bounding box of a layer in its own units, for hit tests and handles
+  function layerBox(ctx, b, L) {
+    if (L.t === 'text' && !ctx) { const R = Math.abs(L.arc || 0) + (L.s ?? 20); return { x0: -R, y0: -R, x1: R, y1: R }; }
+    if (L.t === 'text') { const I = textInfo(ctx, b, L), k = textK(I, L); if (L.arc) { const R = Math.abs(L.arc) + (L.s ?? 20) * .7; return { x0: -R, y0: -R, x1: R, y1: R, tx: 1 }; } const hw = Math.max(2, I.tw * k * (L.w ?? 1) / 2), hh = I.px * k * .55; return { x0: -hw, y0: -hh, x1: hw, y1: hh, tx: 1 }; }
+    const s = (L.s ?? 100) / 100, w = L.w ?? 1; let hy = 50; if (L.t === 'shape' && ['pill', 'banner', 'plate', 'line', 'oval'].includes(L.k)) hy = { pill: 24, banner: 14, plate: 18, line: 2, oval: 34 }[L.k];
+    return { x0: -50 * s * w, y0: -hy * s, x1: 50 * s * w, y1: hy * s };
+  }
+  // point in mark units → is it on layer L
+  function hitLayer(ctx, b, L, px, py) { const a = -(L.r || 0) * Math.PI / 180, dx = px - (L.x || 0), dy = py - (L.y || 0); const lx = dx * Math.cos(a) - dy * Math.sin(a), ly = dx * Math.sin(a) + dy * Math.cos(a); const B = layerBox(ctx, b, L); if (!(lx >= B.x0 && lx <= B.x1 && ly >= B.y0 && ly <= B.y1)) return false;
+    if (L.t === 'text') return true; ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); layerTx(ctx, L); if (L.t === 'shape') { const r = ctx.isPointInPath(P2(shapeD(L)), px, py, SHAPES[L.k] && SHAPES[L.k].eo ? 'evenodd' : 'nonzero'); ctx.restore(); return r || B.x1 - B.x0 < 8; }
+    const I = ICONS[L.k] || ICONS.star; ctx.rotate((I.rot || 0) * Math.PI / 180); ctx.translate(-50, -50); ctx.lineWidth = 8; let r = false; for (const q of I.p) if (q.g) continue; else if (q.s ? ctx.isPointInStroke(P2(q.s), px, py) : ctx.isPointInPath(P2(q.d), px, py)) { r = true; break; } ctx.restore(); return r || (Math.abs(lx) < 18 * (L.s ?? 100) / 100 && Math.abs(ly) < 18 * (L.s ?? 100) / 100); }
+
+  // colours for a mark placed on a surface: anything that would vanish into the surface turns to the best ink, and anything that
+  // would then vanish into that ink takes the surface colour, the usual one colour badge treatment. Returns null when nothing vanishes
+  function remapFor(b, bgHex) {
+    const used = b.mark.filter(L => !L.hide).flatMap(L => [col(b, L.fill), col(b, L.line)]).filter(Boolean); if (!used.some(c => contrast(c, bgHex) < 1.6)) return null;
+    const ink = ['l', 'p', 'w', 'k', 'a', 's'].map(k => col(b, k)).sort((x, y) => contrast(y, bgHex) - contrast(x, bgHex))[0];
+    return c => contrast(c, bgHex) < 1.6 ? ink : contrast(c, ink) < 1.6 ? bgHex : c;
+  }
+  // ---------- wordmark and lockups ----------
+  function wordText(b) { return caseOf(b.word && b.word.txt != null ? fillTokens(b, b.word.txt) : b.name || '', b.font.cs); }
+  function measureWord(ctx, b, h) { ctx.font = fontCss(b.font.f, b.font.w, h); const t = wordText(b), ls = (b.font.ls || 0) * h; return ctx.measureText(t).width + Math.max(0, t.length - 1) * ls; }
+  function drawWord(ctx, b, x, y, h, color, align = 'left', opts = {}) {
+    const t = wordText(b); if (!t) return 0; ctx.save(); ctx.font = fontCss(b.font.f, b.font.w, h); ctx.textBaseline = 'middle'; const ls = (b.font.ls || 0) * h, W = measureWord(ctx, b, h); let x0 = align === 'center' ? x - W / 2 : align === 'right' ? x - W : x;
+    if (opts.glow) { ctx.shadowColor = opts.glow; ctx.shadowBlur = h * .5; }
+    ctx.fillStyle = color; ctx.textAlign = 'left';
+    if (!ls) ctx.fillText(t, x0, y); else for (const ch of t) { ctx.fillText(ch, x0, y); x0 += ctx.measureText(ch).width + ls; }
+    if (opts.glow) { ctx.shadowBlur = h * .15; ctx.fillStyle = '#fff'; ctx.globalAlpha = .55; let xx = align === 'center' ? x - W / 2 : align === 'right' ? x - W : x; if (!ls) ctx.fillText(t, xx, y); else for (const ch of t) { ctx.fillText(ch, xx, y); xx += ctx.measureText(ch).width + ls; } }
+    ctx.restore(); return W;
+  }
+  function drawTagline(ctx, b, x, y, h, color, align = 'center') { if (!b.tagline) return; ctx.save(); ctx.font = fontCss(b.tagFont || 'Inter', 500, h); ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = 'middle'; ctx.fillText(b.tagline, x, y); ctx.restore(); }
+  // fits the brand's lockup (mark beside or above the name, mark only, name only) into a box. Returns nothing, draws in place
+  function drawLockup(ctx, b, cx, cy, w, h, ink, opts = {}) {
+    const lk = opts.lockup || b.lockup || 'side', mo = opts.mono; ink = ink || col(b, b.font.ink || 'p');
+    if (lk === 'mark' || !wordText(b)) { const s = Math.min(w, h); drawMark(ctx, b, cx, cy, s, { mono: mo, foil: opts.foil }); return; }
+    if (lk === 'word') { let fh = h * .62; const W = measureWord(ctx, b, fh); if (W > w) fh *= w / W; drawWord(ctx, b, cx, cy, fh, ink, 'center', opts); return; }
+    if (lk === 'stack') { const ms = Math.min(h * .62, w); let fh = h * .24; const W = measureWord(ctx, b, fh); if (W > w) fh *= w / W; const tot = ms + fh * 1.25, top = cy - tot / 2; drawMark(ctx, b, cx, top + ms / 2, ms, { mono: mo, foil: opts.foil }); drawWord(ctx, b, cx, top + ms + fh * .7, fh, ink, 'center', opts); return; }
+    let ms = h, fh = h * .5; const gap = h * .2; let W = measureWord(ctx, b, fh); const need = ms + gap + W; if (need > w) { const k = w / need; ms *= k; fh *= k; W *= k; }
+    const x0 = cx - (ms + gap + W) / 2; drawMark(ctx, b, x0 + ms / 2, cy, ms, { mono: mo, foil: opts.foil }); drawWord(ctx, b, x0 + ms + gap, cy, fh, ink, 'left', opts);
+  }
+
+  // ---------- signs and awnings, the same calls the city will make ----------
+  const SIGNS = { panel: 'Painted panel', lightbox: 'Lightbox', letters: 'Letters on the wall', neon: 'Neon', blade: 'Hanging blade' };
+  // x, y is the top left of the sign area on the facade, w by h pixels. wall is the facade colour behind it
+  function drawSign(ctx, b, x, y, w, h, opts = {}) {
+    const st = b.sign.style, night = !!opts.night, bgK = b.sign.bg || 'p', bg = col(b, bgK), inkK = b.sign.ink || inkOn(b, bgK, 'l'), ink = col(b, inkK);
+    ctx.save();
+    if (st === 'panel' || st === 'lightbox') {
+      const r = Math.min(h * .12, 6); ctx.fillStyle = bg; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); ctx.fill();
+      if (st === 'lightbox') { ctx.strokeStyle = mix(bg, '#000', .35); ctx.lineWidth = Math.max(1, h * .06); ctx.stroke(); if (night) { ctx.fillStyle = 'rgba(255,255,240,.18)'; ctx.fill(); } }
+      else if (b.sign.trim) { ctx.strokeStyle = col(b, b.sign.trim); ctx.lineWidth = Math.max(1, h * .05); ctx.strokeRect(x + h * .08, y + h * .08, w - h * .16, h - h * .16); }
+      const dim = night && st === 'panel' ? .55 : 1; ctx.globalAlpha = dim; drawLockup(ctx, b, x + w / 2, y + h / 2, w * .86, h * .66, ink); ctx.globalAlpha = 1;
+      if (night && st === 'lightbox') { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = .25; ctx.fillStyle = bg; ctx.fillRect(x - h * .2, y - h * .2, w + h * .4, h * 1.4); }
+      if (night && st === 'panel') { const g = ctx.createRadialGradient(x + w / 2, y - h * .3, 0, x + w / 2, y - h * .3, w * .7); g.addColorStop(0, 'rgba(255,240,200,.35)'); g.addColorStop(1, 'rgba(255,240,200,0)'); ctx.fillStyle = g; ctx.fillRect(x, y, w, h); }
+    } else if (st === 'letters') {
+      const wall = opts.wall || '#999', inkL = contrast(wall, col(b, 'p')) > 2.2 ? col(b, 'p') : contrast(wall, ink) > 2 ? ink : (lum(wall) > .4 ? '#1a1a1a' : '#f4f4f4');
+      ctx.save(); ctx.shadowColor = night ? inkL : 'rgba(0,0,0,.35)'; ctx.shadowBlur = night ? h * .35 : h * .06; ctx.shadowOffsetY = night ? 0 : h * .05; drawLockup(ctx, b, x + w / 2, y + h / 2, w * .94, h * .8, inkL); ctx.restore();
+      if (night) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = .2; drawLockup(ctx, b, x + w / 2, y + h / 2, w * .94, h * .8, inkL); }
+    } else if (st === 'neon') {
+      ctx.fillStyle = night ? 'rgba(10,10,14,.75)' : 'rgba(20,20,24,.85)'; ctx.fillRect(x, y, w, h);
+      const tube = col(b, b.sign.ink || 'a'); if (night) { ctx.globalCompositeOperation = 'lighter'; drawLockup(ctx, b, x + w / 2, y + h / 2, w * .86, h * .66, tube, { glow: tube, mono: tube }); }
+      else drawLockup(ctx, b, x + w / 2, y + h / 2, w * .86, h * .66, mix(tube, '#bbb', .45), { mono: mix(tube, '#bbb', .45) });
+    } else if (st === 'blade') {
+      const bw = Math.min(w * .3, h * 1.6), bx = x + w - bw; ctx.fillStyle = '#333'; ctx.fillRect(bx - h * .1, y, h * .08, h * .5); ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(bx + bw / 2, y + h * .9, bw / 2, 0, Math.PI * 2); ctx.fill(); drawMark(ctx, b, bx + bw / 2, y + h * .9, bw * .82);
+      drawLockup(ctx, b, x + (w - bw) / 2, y + h / 2, (w - bw) * .9, h * .6, contrast(opts.wall || '#999', col(b, 'p')) > 2 ? col(b, 'p') : '#f4f4f4', { lockup: 'word' });
+    }
+    ctx.restore();
+  }
+  function drawAwning(ctx, b, x, y, w, h, opts = {}) {
+    const A = b.awning || {}; if (!A.on) return; const c1 = col(b, A.c1 || 'p'), c2 = col(b, A.c2 || 'l'), n = Math.max(4, Math.round(w / (h * .55)));
+    ctx.save(); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w + h * .15, y + h); ctx.lineTo(x - h * .15, y + h); ctx.closePath(); ctx.clip();
+    if (A.style === 'solid') { ctx.fillStyle = c1; ctx.fillRect(x - h, y, w + 2 * h, h); } else for (let i = 0; i < n; i++) { ctx.fillStyle = i % 2 ? c2 : c1; const x0 = x - h * .15 + i * (w + h * .3) / n; ctx.fillRect(x0, y, (w + h * .3) / n + .5, h); }
+    const g = ctx.createLinearGradient(0, y, 0, y + h); g.addColorStop(0, 'rgba(0,0,0,.25)'); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(x - h, y, w + 2 * h, h); ctx.restore();
+    // scalloped valance with the name on it
+    const vh = h * .32, vy = y + h; ctx.save(); ctx.fillStyle = c1; ctx.beginPath(); ctx.moveTo(x - h * .15, vy); ctx.lineTo(x + w + h * .15, vy); const sc = Math.max(6, Math.round(w / (vh * 1.6))), sw = (w + h * .3) / sc; for (let i = sc; i > 0; i--) { const x1 = x - h * .15 + i * sw; ctx.lineTo(x1, vy + vh * .7); ctx.quadraticCurveTo(x1 - sw / 2, vy + vh * 1.25, x1 - sw, vy + vh * .7); } ctx.closePath(); ctx.fill();
+    if (A.text !== false && wordText(b)) { ctx.globalAlpha = opts.night ? .6 : 1; drawLockup(ctx, b, x + w / 2, vy + vh * .42, w * .7, vh * .62, c2, { lockup: 'word' }); } ctx.restore();
+  }
+
+  // ---------- business types and NPC brand kits ----------
+  // ic icons, sh background shapes, fk font kinds, pal palettes [primary, secondary, accent, light], sign styles, name parts
+  const SUR = ['Pell', 'Harlow', 'Mercer', 'Quinn', 'Calder', 'Brooks', 'Whitlock', 'Foster', 'Hale', 'Avery', 'Barlow', 'Doyle', 'Monroe', 'Sutton', 'Keane', 'Lowry', 'Ashby', 'Delgado', 'Okafor', 'Novak', 'Reyes', 'Castillo', 'Lindqvist', 'Park', 'Nakamura', 'Rossi', 'Bishop', 'Garland', 'Vance', 'Holloway'];
+  const PLACE = ['Main Street', 'Eastside', 'Harbor', 'Riverside', 'Midtown', 'Union', 'Ironwood', 'Maple', 'Granite', 'Northgate', 'Bayview', 'Westfield', 'Cedar', 'Lakeshore', 'Hudson', 'Parkway', 'Fifth Avenue', 'Old Town', 'Southside', 'Liberty'];
+  const T = (n, o) => Object.assign({ n }, o);
+  const TYPES = {
+    cafe: T('Cafe', { ic: ['cup', 'bean', 'croissant', 'leaf', 'sun'], sh: ['circle', 'ring', 'arch', 'rounded'], fk: ['serif', 'script', 'sans', 'hand', 'slab'], sign: ['panel', 'blade', 'letters'], pal: [['#3b2a20', '#c8a27a', '#d9643a', '#f6efe4'], ['#1f3d36', '#8fb8a1', '#e3b04b', '#f7f3ea'], ['#222222', '#d8c3a5', '#b5543c', '#fafafa'], ['#5a3e8a', '#f1c6a8', '#e85d75', '#fff8f0']], noun: ['Coffee', 'Roasters', 'Espresso Bar', 'Coffee House', 'Cafe'], adj: ['Morning', 'Copper', 'Little', 'Slow', 'Corner', 'Golden', 'Second'], thing: ['Kettle', 'Bean', 'Cup', 'Pour', 'Grind', 'Sparrow', 'Lantern'] }),
+    bakery: T('Bakery', { ic: ['croissant', 'heart', 'star', 'sun', 'leaf'], sh: ['circle', 'arch', 'oval', 'burst'], fk: ['script', 'serif', 'hand'], sign: ['panel', 'blade'], pal: [['#8a4b2d', '#f2d6a2', '#d9534f', '#fffaf2'], ['#2f4858', '#f6ae2d', '#f26419', '#fff9ec'], ['#6b2737', '#f3c5b1', '#e0a458', '#fff6f2']], noun: ['Bakery', 'Bakehouse', 'Bread Co', 'Patisserie', 'Ovens'], adj: ['Rising', 'Warm', 'Sunday', 'Flour', 'Honey', 'Daily'], thing: ['Loaf', 'Crumb', 'Hearth', 'Rolling Pin', 'Oven'] }),
+    burger: T('Burger joint', { ic: ['burger', 'star', 'bolt', 'crown'], sh: ['circle', 'burst', 'banner', 'pill', 'shield'], fk: ['heavy', 'cond', 'display', 'script'], sign: ['lightbox', 'neon', 'panel'], pal: [['#c8102e', '#ffc72c', '#1d1d1d', '#fff4e0'], ['#f15a24', '#2b2b2b', '#ffd166', '#fffaf0'], ['#0b3d91', '#ff4f00', '#ffd23f', '#ffffff']], noun: ['Burgers', 'Burger Bar', 'Grill', 'Burger Shack', 'Diner'], adj: ['Big', 'Smash', 'Double', 'Red', 'Atomic', 'Lucky', 'Late Night'], thing: ['Patty', 'Bun', 'Griddle', 'Grill', 'Bite'] }),
+    pizza: T('Pizzeria', { ic: ['pizza', 'leaf', 'star', 'crown'], sh: ['circle', 'ring', 'banner', 'shield'], fk: ['script', 'slab', 'heavy', 'serif'], sign: ['panel', 'neon', 'lightbox'], pal: [['#b22222', '#2e7d32', '#f4e3c1', '#fffdf7'], ['#1b4332', '#d62828', '#fcbf49', '#fefae0'], ['#222', '#e63946', '#f1faee', '#ffffff']], noun: ['Pizza', 'Pizzeria', 'Slice Shop', 'Pizza Co'], adj: ['Brick Oven', 'Hot', 'Sunset', 'Little', 'Old School', 'New York'], thing: ['Slice', 'Pie', 'Crust', 'Oven'] }),
+    restaurant: T('Restaurant', { ic: ['cutlery', 'wine', 'leaf', 'crown', 'star'], sh: ['circle', 'ring', 'arch', 'octagon', 'shield'], fk: ['serif', 'script', 'sans'], sign: ['letters', 'panel', 'blade'], pal: [['#1c1c1c', '#c9a227', '#7a1f2b', '#f8f5ee'], ['#24343b', '#c47f5a', '#9cb38f', '#f5f1ea'], ['#3d1f36', '#d6b25e', '#a33b3b', '#fbf7f0']], noun: ['Kitchen', 'Bistro', 'Dining Room', 'Table', 'Brasserie', 'Restaurant'], adj: ['Olive', 'Copper', 'Ember', 'Juniper', 'Marrow', 'Saffron', 'Linden'], thing: ['Table', 'Hearth', 'Larder', 'Supper Club', 'Room'] }),
+    bar: T('Bar', { ic: ['beer', 'wine', 'star', 'music', 'crown'], sh: ['circle', 'shield', 'octagon', 'banner', 'ring'], fk: ['slab', 'serif', 'cond', 'script'], sign: ['neon', 'letters', 'blade'], pal: [['#1a1a2e', '#e94560', '#f5c518', '#f0e6d2'], ['#203a2b', '#c58b2b', '#e8d5a3', '#f4ecdd'], ['#2b1d0e', '#d4a017', '#9e2a2b', '#f6eedf']], noun: ['Tavern', 'Taproom', 'Saloon', 'Bar', 'Ale House', 'Lounge'], adj: ['Rusty', 'Black', 'Lucky', 'Crooked', 'Silver', 'Last'], thing: ['Anchor', 'Barrel', 'Fox', 'Lantern', 'Stag', 'Penny', 'Horseshoe'] }),
+    nightclub: T('Nightclub', { ic: ['music', 'bolt', 'star', 'gem', 'wave'], sh: ['circle', 'diamond', 'hexagon', 'triangle'], fk: ['display', 'heavy', 'cond', 'sans'], sign: ['neon'], pal: [['#0d0221', '#ff2a6d', '#05d9e8', '#d1f7ff'], ['#120458', '#ff00a0', '#fffb96', '#f3e9ff'], ['#000000', '#7b2ff7', '#00ffd1', '#f2f2f2']], noun: ['Club', 'Lounge', 'Room', 'Hall'], adj: ['Velvet', 'Neon', 'Electric', 'Midnight', 'Pulse', 'Echo', 'Prism'], thing: ['Basement', 'Disco', 'Arcade', 'Warehouse'] }),
+    gym: T('Gym', { ic: ['dumbbell', 'bolt', 'heart', 'mountain', 'star'], sh: ['hexagon', 'shield', 'circle', 'diamond', 'triangle'], fk: ['heavy', 'cond', 'sans'], sign: ['lightbox', 'letters', 'panel'], pal: [['#111111', '#e10600', '#f5f5f5', '#ffffff'], ['#0f172a', '#22c55e', '#e2e8f0', '#ffffff'], ['#1e1e1e', '#ffb400', '#ffffff', '#f2f2f2'], ['#0a2540', '#00a3ff', '#ff5c39', '#ffffff']], noun: ['Fitness', 'Strength', 'Athletic Club', 'Gym', 'Performance', 'Barbell Club'], adj: ['Iron', 'Peak', 'Forge', 'Apex', 'Titan', 'Northside', 'Grit'], thing: ['Forge', 'Foundry', 'Yard', 'Pit', 'Lab'] }),
+    salon: T('Hair salon', { ic: ['scissors', 'comb', 'flower', 'heart', 'star'], sh: ['circle', 'ring', 'oval', 'arch'], fk: ['script', 'serif', 'sans'], sign: ['letters', 'panel'], pal: [['#2d2d2d', '#e8b4b8', '#c79a5b', '#fbf5f3'], ['#4a3f55', '#d8a7b1', '#b6c9bb', '#fbf8f8'], ['#111', '#d4af37', '#f2e8dc', '#ffffff']], noun: ['Salon', 'Hair Studio', 'Hair', 'Studio'], adj: ['Velvet', 'Blush', 'Luxe', 'Bloom', 'Silk', 'Ivy'], thing: ['Mane', 'Lock', 'Chair', 'Mirror'] }),
+    barber: T('Barber', { ic: ['scissors', 'comb', 'crown', 'star'], sh: ['shield', 'circle', 'banner', 'octagon', 'ring'], fk: ['slab', 'serif', 'cond', 'script'], sign: ['blade', 'panel', 'letters'], pal: [['#1b1b1b', '#b22234', '#3c5a99', '#f4efe6'], ['#14213d', '#e5e5e5', '#fca311', '#ffffff'], ['#2b2118', '#c8a96a', '#7a2e2e', '#f6f0e4']], noun: ['Barbers', 'Barber Shop', 'Barber Co', 'Cuts'], adj: ['Sharp', 'Gentleman’s', 'Old Town', 'Razor', 'Union', 'Classic'], thing: ['Blade', 'Chair', 'Pole', 'Razor'] }),
+    dentist: T('Dentist', { ic: ['tooth', 'heart', 'star', 'leaf'], sh: ['circle', 'rounded', 'pill'], fk: ['sans'], sign: ['letters', 'lightbox'], pal: [['#0077b6', '#90e0ef', '#00b4d8', '#ffffff'], ['#2a9d8f', '#e9f5f2', '#264653', '#ffffff'], ['#3a86ff', '#e0ecff', '#ffbe0b', '#ffffff']], noun: ['Dental', 'Dental Care', 'Family Dentistry', 'Smile Studio'], adj: ['Bright', 'Gentle', 'Clear', 'Lakeside', 'Pearl'], thing: ['Smile', 'Dental'] }),
+    clinic: T('Medical clinic', { ic: ['cross', 'heart', 'leaf', 'pill'], sh: ['circle', 'rounded', 'shield'], fk: ['sans'], sign: ['lightbox', 'letters'], pal: [['#007f5f', '#d8f3dc', '#2b9348', '#ffffff'], ['#1d3557', '#a8dadc', '#e63946', '#ffffff'], ['#005f73', '#94d2bd', '#ee9b00', '#ffffff']], noun: ['Medical', 'Health', 'Family Clinic', 'Medical Center', 'Urgent Care'], adj: ['Cornerstone', 'Unity', 'Bridge', 'Harbor', 'Summit'], thing: ['Health', 'Care'] }),
+    pharmacy: T('Pharmacy', { ic: ['cross', 'pill', 'leaf', 'heart'], sh: ['circle', 'rounded', 'hexagon'], fk: ['sans', 'cond'], sign: ['lightbox'], pal: [['#00843d', '#e6f4ea', '#ffffff', '#ffffff'], ['#d0021b', '#ffffff', '#2c3e50', '#ffffff'], ['#0057b8', '#e7f1fb', '#00a651', '#ffffff']], noun: ['Pharmacy', 'Drugstore', 'Chemist', 'Rx'], adj: ['Corner', 'Neighborhood', 'Care', 'Well', 'Family'], thing: ['Pharmacy'] }),
+    grocery: T('Grocery', { ic: ['apple', 'leaf', 'cart', 'sun', 'bag'], sh: ['circle', 'arch', 'rounded', 'banner'], fk: ['sans', 'heavy', 'slab', 'hand'], sign: ['lightbox', 'panel'], pal: [['#2e7d32', '#ffeb3b', '#e53935', '#ffffff'], ['#e4572e', '#29335c', '#f3a712', '#ffffff'], ['#386641', '#a7c957', '#bc4749', '#f2e8cf']], noun: ['Market', 'Grocers', 'Foods', 'Fresh Market', 'Mart'], adj: ['Green', 'Fresh', 'Valley', 'Sunrise', 'Harvest', 'Daily'], thing: ['Basket', 'Pantry', 'Harvest', 'Orchard'] }),
+    fashion: T('Clothing store', { ic: ['shirt', 'bag', 'star', 'crown', 'heart'], sh: ['circle', 'square', 'diamond'], fk: ['serif', 'sans', 'cond'], sign: ['letters', 'panel'], pal: [['#111111', '#f5f5f5', '#c9a227', '#ffffff'], ['#3d405b', '#f2cc8f', '#e07a5f', '#f4f1de'], ['#22223b', '#c9ada7', '#9a8c98', '#f2e9e4']], noun: ['Apparel', 'Clothing', 'Outfitters', 'Boutique', 'Supply Co'], adj: ['Thread', 'Linen', 'Common', 'Native', 'Plain', 'Wilder'], thing: ['Thread', 'Seam', 'Stitch', 'Hanger', 'Loom'] }),
+    jeweler: T('Jeweler', { ic: ['gem', 'crown', 'star', 'heart'], sh: ['diamond', 'circle', 'ring', 'octagon'], fk: ['serif'], sign: ['letters'], pal: [['#0b0b0b', '#d4af37', '#f5f0e6', '#ffffff'], ['#1c2541', '#c0c0c0', '#5bc0be', '#ffffff'], ['#3a0ca3', '#f8edeb', '#e0b1cb', '#ffffff']], noun: ['Jewelers', 'Fine Jewelry', 'Diamonds', 'Goldsmiths'], adj: ['Sterling', 'Aurum', 'Facet', 'Regal', 'Brilliant'], thing: ['Facet', 'Ring', 'Crown'] }),
+    realestate: T('Real estate agency', { ic: ['house', 'key', 'pin', 'tower'], sh: ['square', 'rounded', 'circle', 'shield'], fk: ['sans', 'serif'], sign: ['letters', 'lightbox'], pal: [['#0a2342', '#2ca58d', '#f2a541', '#ffffff'], ['#7d1128', '#f1e3d3', '#c19a6b', '#ffffff'], ['#1b263b', '#e0e1dd', '#e63946', '#ffffff']], noun: ['Realty', 'Properties', 'Real Estate', 'Homes', 'Property Group'], adj: ['Keystone', 'Cornerstone', 'Landmark', 'Gateway', 'Crest'], thing: ['Key', 'Door'] }),
+    bank: T('Bank', { ic: ['tower', 'chart', 'key', 'shield' in ICONS ? 'shield' : 'star', 'crown'].filter(k => ICONS[k]), sh: ['shield', 'hexagon', 'square', 'circle', 'octagon'], fk: ['serif', 'sans'], sign: ['letters', 'lightbox'], pal: [['#002855', '#c5a35a', '#5b7fa3', '#ffffff'], ['#00533e', '#d4af37', '#8fb9a8', '#ffffff'], ['#5c0a1b', '#d9c5a0', '#2b2b2b', '#ffffff']], noun: ['Bank', 'Savings Bank', 'Trust', 'Credit Union', 'Bancorp'], adj: ['First', 'Liberty', 'Granite', 'Atlantic', 'Commonwealth', 'Citizens', 'Founders'], thing: ['Trust', 'Bank'] }),
+    finance: T('Finance firm', { ic: ['chart', 'tower', 'mountain', 'star', 'gem'], sh: ['square', 'hexagon', 'diamond', 'triangle'], fk: ['sans', 'serif'], sign: ['letters'], pal: [['#0b132b', '#3a506b', '#5bc0be', '#ffffff'], ['#111827', '#6b7280', '#10b981', '#ffffff'], ['#1f2041', '#4b3f72', '#ffc857', '#ffffff']], noun: ['Capital', 'Partners', 'Advisors', 'Investments', 'Wealth', 'Holdings'], adj: ['Summit', 'Meridian', 'Northbridge', 'Keel', 'Ridgeline', 'Harbor'], thing: ['Capital', 'Partners'] }),
+    law: T('Law firm', { ic: ['scales', 'tower', 'book', 'crown'], sh: ['square', 'shield', 'circle'], fk: ['serif'], sign: ['letters'], pal: [['#14213d', '#b08d57', '#e5e5e5', '#ffffff'], ['#2b2d42', '#8d99ae', '#a4161a', '#ffffff'], ['#1b3a2f', '#c2a878', '#efe9dc', '#ffffff']], noun: ['LLP', 'Law', 'Legal', 'Attorneys'], adj: [], thing: [], pair: true }),
+    office: T('Consulting office', { ic: ['briefcase', 'chart', 'tower', 'gear', 'pin'], sh: ['square', 'rounded', 'hexagon', 'circle'], fk: ['sans'], sign: ['letters', 'lightbox'], pal: [['#1d3557', '#457b9d', '#e63946', '#ffffff'], ['#264653', '#2a9d8f', '#e9c46a', '#ffffff'], ['#2d3142', '#4f5d75', '#ef8354', '#ffffff']], noun: ['Consulting', 'Group', 'Associates', 'Solutions', 'Partners'], adj: ['Vector', 'Northstar', 'Bluepeak', 'Clearwater', 'Signal', 'Fulcrum'], thing: ['Group'] }),
+    tech: T('Tech company', { ic: ['bolt', 'gear', 'chart', 'wave', 'star', 'gem'], sh: ['hexagon', 'rounded', 'circle', 'diamond', 'triangle'], fk: ['sans', 'display'], sign: ['letters', 'lightbox'], pal: [['#5b21b6', '#a78bfa', '#22d3ee', '#ffffff'], ['#0f172a', '#38bdf8', '#f472b6', '#ffffff'], ['#064e3b', '#34d399', '#fbbf24', '#ffffff']], noun: ['Labs', 'Systems', 'Software', 'Technologies', 'Data', 'AI'], adj: ['Quanta', 'Lumen', 'Nimbus', 'Vertex', 'Kilo', 'Orbit', 'Parallax'], thing: ['Labs'] }),
+    mechanic: T('Auto repair', { ic: ['wrench', 'gear', 'car', 'bolt'], sh: ['shield', 'circle', 'hexagon', 'banner'], fk: ['heavy', 'cond', 'slab'], sign: ['lightbox', 'panel'], pal: [['#1c1c1c', '#f2a900', '#c1121f', '#ffffff'], ['#003049', '#d62828', '#f77f00', '#ffffff'], ['#2f3e46', '#e76f51', '#e9c46a', '#ffffff']], noun: ['Auto', 'Auto Repair', 'Garage', 'Motors', 'Service Center'], adj: ['Precision', 'Ironwood', 'Pit Stop', 'Turbo', 'Midtown', 'Dependable'], thing: ['Garage', 'Wrench', 'Piston'] }),
+    construction: T('Construction', { ic: ['hammer', 'house', 'tower', 'gear', 'mountain'], sh: ['shield', 'hexagon', 'square', 'triangle'], fk: ['heavy', 'cond', 'slab'], sign: ['panel', 'letters'], pal: [['#212529', '#ffb703', '#fb8500', '#ffffff'], ['#023047', '#ffb703', '#8ecae6', '#ffffff'], ['#3a3a3a', '#e85d04', '#f4f4f4', '#ffffff']], noun: ['Construction', 'Builders', 'Contracting', 'Building Co'], adj: ['Bedrock', 'Ironclad', 'Keystone', 'Solid', 'Granite', 'Cornerstone'], thing: ['Build'] }),
+    hotel: T('Hotel', { ic: ['bed', 'crown', 'key', 'star', 'tower'], sh: ['circle', 'shield', 'arch', 'octagon', 'ring'], fk: ['serif', 'script', 'sans'], sign: ['letters', 'lightbox', 'neon'], pal: [['#14213d', '#d4af37', '#a8dadc', '#ffffff'], ['#3c1642', '#e0c097', '#086375', '#ffffff'], ['#1d3124', '#c9a66b', '#ede0d4', '#ffffff']], noun: ['Hotel', 'Inn', 'Suites', 'Hotel & Spa', 'House'], adj: ['Grand', 'Royal', 'Carlton', 'Parkview', 'Ambassador', 'Meridian'], thing: ['Hotel'] }),
+    pet: T('Pet store', { ic: ['paw', 'heart', 'star', 'house'], sh: ['circle', 'rounded', 'burst', 'pill'], fk: ['display', 'hand', 'heavy', 'script'], sign: ['panel', 'lightbox'], pal: [['#f77f00', '#003049', '#fcbf49', '#ffffff'], ['#118ab2', '#ffd166', '#ef476f', '#ffffff'], ['#6a4c93', '#ffca3a', '#8ac926', '#ffffff']], noun: ['Pet Supply', 'Pets', 'Pet Shop', 'Pet Co'], adj: ['Happy', 'Wag', 'Paws', 'Good Boy', 'Furry', 'Two Tails'], thing: ['Paw', 'Bone', 'Biscuit'] }),
+    florist: T('Florist', { ic: ['flower', 'leaf', 'heart', 'sun'], sh: ['circle', 'arch', 'oval', 'ring'], fk: ['script', 'serif', 'hand'], sign: ['panel', 'blade'], pal: [['#4f772d', '#f4acb7', '#ffd166', '#fffcf2'], ['#5e548e', '#e0b1cb', '#9f86c0', '#fffafd'], ['#2d6a4f', '#ffb4a2', '#e5989b', '#fffaf5']], noun: ['Florist', 'Flowers', 'Floral Co', 'Blooms'], adj: ['Petal', 'Wild', 'Garden', 'Bloom', 'Fern', 'Rosewood'], thing: ['Petal', 'Stem', 'Bouquet'] }),
+    books: T('Bookstore', { ic: ['book', 'star', 'leaf', 'pin'], sh: ['circle', 'arch', 'shield', 'square'], fk: ['serif', 'slab', 'script'], sign: ['panel', 'blade', 'letters'], pal: [['#283618', '#dda15e', '#bc6c25', '#fefae0'], ['#22333b', '#c6ac8f', '#5e503f', '#f5ebe0'], ['#432818', '#99582a', '#ffe6a7', '#fffaf0']], noun: ['Books', 'Booksellers', 'Book Shop', 'Reading Room'], adj: ['Dog-Eared', 'Second Chapter', 'Paper', 'Ink', 'Quiet', 'Owl'], thing: ['Page', 'Chapter', 'Spine', 'Shelf'] }),
+    spa: T('Day spa', { ic: ['flower', 'leaf', 'wave', 'sun'], sh: ['circle', 'ring', 'oval', 'arch'], fk: ['serif', 'sans', 'script'], sign: ['letters', 'panel'], pal: [['#52796f', '#cad2c5', '#84a98c', '#f8f9f6'], ['#6d597a', '#eaac8b', '#b56576', '#fffaf6'], ['#264653', '#e9c46a', '#a8dadc', '#ffffff']], noun: ['Spa', 'Day Spa', 'Wellness', 'Bathhouse'], adj: ['Still', 'Serene', 'Willow', 'Lotus', 'Tide', 'Haven'], thing: ['Water', 'Stone', 'Retreat'] }),
+    laundry: T('Laundromat', { ic: ['wave', 'star', 'shirt', 'bolt'], sh: ['circle', 'rounded', 'pill'], fk: ['display', 'heavy', 'sans'], sign: ['lightbox', 'neon'], pal: [['#118ab2', '#ffffff', '#ffd166', '#ffffff'], ['#ef476f', '#073b4c', '#06d6a0', '#ffffff']], noun: ['Laundromat', 'Wash & Fold', 'Laundry', 'Suds'], adj: ['Bubbles', 'Spin Cycle', 'Clean', 'Sudsy', 'Quick'], thing: ['Wash', 'Spin'] }),
+  };
+  const TYPE_LIST = Object.keys(TYPES); for (const k of TYPE_LIST) TYPES[k].id = k;
+
+  // ---------- seeded random ----------
+  const hash32 = s => { let h = 2166136261 >>> 0; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+  const rng = seed => { let a = typeof seed === 'number' ? seed : hash32(String(seed)); return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
+  const pick = (R, a) => a[Math.floor(R() * a.length) % a.length];
+
+  function genName(R, K) {
+    if (K.pair) { const a = pick(R, SUR); let b = pick(R, SUR); while (b === a) b = pick(R, SUR); return R() < .5 ? `${a} & ${b}` : `${a} ${b} ${pick(R, K.noun)}`; }
+    const corp = ['dentist', 'clinic', 'pharmacy', 'bank', 'finance', 'office', 'tech', 'construction', 'realestate', 'hotel', 'mechanic'].includes(K.id) || !!K.corp;
+    const pats = [() => corp ? `${pick(R, SUR)} ${pick(R, K.noun)}` : `${pick(R, SUR)}’s ${pick(R, K.noun)}`, () => `${pick(R, PLACE)} ${pick(R, K.noun)}`, () => `${pick(R, K.adj)} ${pick(R, K.noun)}`, () => `The ${pick(R, K.adj)} ${pick(R, K.thing)}`, () => `${pick(R, K.adj)} ${pick(R, K.thing)}`];
+    const th = K.thing.length >= 3 && !corp; const w = K.adj.length ? [2, 2, 3, th ? 2 : 0, th ? 1 : 0] : [3, 3, 0, 0, 0]; let t = R() * w.reduce((a, b) => a + b, 0); for (let i = 0; i < w.length; i++) { t -= w[i]; if (t < 0) return pats[i](); } return pats[0]();
+  }
+  const fontsOfKind = ks => FONTS.filter(f => ks.includes(f.k));
+  // a mark template from the kit. Every template only uses palette slots, so a recolour carries through
+  function genMark(R, K, b) {
+    const ic = pick(R, K.ic), sh = pick(R, K.sh), wordF = b.font.f, tmpl = pick(R, ['badge', 'badge', 'ring', 'mono', 'icon', 'outline', 'seal']);
+    const ringable = ['circle', 'ring', 'burst', 'octagon'].includes(sh);
+    switch (tmpl) {
+      case 'badge': return [{ t: 'shape', k: sh === 'ring' ? 'circle' : sh, x: 0, y: 0, s: 100, fill: 'p' }, { t: 'icon', k: ic, x: 0, y: sh === 'shield' ? -4 : sh === 'triangle' ? 10 : 0, s: sh === 'triangle' ? 42 : 58, fill: 'l' }];
+      case 'ring': return ringable ? [{ t: 'shape', k: 'circle', x: 0, y: 0, s: 100, fill: 'p' }, { t: 'shape', k: 'ring', x: 0, y: 0, s: 88, th: .05, fill: 'l' }, { t: 'icon', k: ic, x: 0, y: 0, s: 40, fill: 'l' }, { t: 'text', txt: '{name}', f: wordF, fw: b.font.w, cs: 'upper', x: 0, y: 0, s: 9, arc: 31, ls: .12, fit: 200, fill: 'l' }, { t: 'text', txt: b.est ? 'EST ' + b.est : '{type}', f: 'Inter', fw: 600, cs: 'upper', x: 0, y: 0, s: 6.5, arc: -32, ls: .2, fit: 100, fill: 'a' }]
+        : [{ t: 'shape', k: sh, x: 0, y: 0, s: 100, fill: 'p' }, { t: 'shape', k: sh, x: 0, y: 0, s: 86, fill: 'none', line: 'l', lw: 2.5 }, { t: 'icon', k: ic, x: 0, y: 0, s: 50, fill: 'l' }];
+      case 'mono': return [{ t: 'shape', k: ['circle', 'rounded', 'square', 'hexagon', 'shield', 'diamond'].includes(sh) ? sh : 'rounded', x: 0, y: 0, s: 100, fill: 'p' }, { t: 'text', txt: '{initials}', f: wordF, fw: b.font.w, cs: 'upper', x: 0, y: 2, s: sh === 'diamond' ? 24 : 30, maxw: sh === 'diamond' ? 54 : 72, ls: 0, fill: 'l' }];
+      case 'icon': return [{ t: 'icon', k: ic, x: 0, y: 0, s: 100, fill: 'p' }, ...(R() < .5 ? [{ t: 'shape', k: 'circle', x: 30, y: -30, s: 18, fill: 'a' }] : [])];
+      case 'outline': return [{ t: 'shape', k: sh, x: 0, y: 0, s: 96, fill: 'none', line: 'p', lw: 5 }, { t: 'icon', k: ic, x: 0, y: 0, s: 54, fill: 'p' }];
+      case 'seal': return [{ t: 'shape', k: 'burst', x: 0, y: 0, s: 100, fill: 'a' }, { t: 'shape', k: 'circle', x: 0, y: 0, s: 80, fill: 'p' }, { t: 'icon', k: ic, x: 0, y: 0, s: 46, fill: 'l' }];
+    }
+  }
+  // NPC brand for a business: same seed gives the same brand every load (use the lot's permanent ID, or a chain ID for chains)
+  function generate(type, seed, opts = {}) {
+    const K = TYPES[type] || TYPES.cafe, R = rng(type + '|' + seed); const pal = pick(R, K.pal), F = pick(R, fontsOfKind(K.fk).length ? fontsOfKind(K.fk) : FONTS);
+    const name = opts.name || genName(R, K);
+    const b = blank(); Object.assign(b, { name, type, seed: String(seed), npc: true, est: R() < .4 ? String(1948 + Math.floor(R() * 75)) : '' });
+    b.pal = { p: pal[0], s: pal[1], a: pal[2], l: pal[3] };
+    b.font = { f: F.f, w: F.w[F.w.length - 1], cs: ['script', 'hand'].includes(F.k) ? 'none' : pick(R, ['upper', 'upper', 'none']), ls: ['script', 'hand'].includes(F.k) ? 0 : pick(R, [0, .04, .1]), ink: 'p' };
+    b.mark = genMark(R, K, b); b.lockup = pick(R, ['side', 'side', 'stack', 'word']);
+    const st = pick(R, K.sign); b.sign = { style: st, bg: st === 'panel' && R() < .4 ? 'l' : 'p', ink: st === 'neon' ? 'a' : null, trim: st === 'panel' && R() < .4 ? 'a' : null };
+    b.awning = { on: ['cafe', 'bakery', 'restaurant', 'pizza', 'florist', 'grocery', 'books', 'barber', 'bar'].includes(type) && R() < .65, style: R() < .55 ? 'stripe' : 'solid', c1: 'p', c2: 'l' };
+    b.uni = R() < .3 ? { body: pick(R, ['p', 'k', 's']) } : {};
+    b.van = { body: pick(R, ['l', 'w', 'p']), stripe: 'p' };
+    if (opts.chain) b.chain = opts.chain;
+    return b;
+  }
+  // a fresh player brand, nothing preset beyond a placeholder the player replaces
+  function blank() {
+    return { v: 1, id: 'b' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36), name: 'Your Business', tagline: '', type: 'cafe', est: '',
+      pal: { p: '#1f4e5f', s: '#9cc5c9', a: '#e07a5f', l: '#f7f3ea' }, font: { f: 'Montserrat', w: 800, cs: 'upper', ls: .04, ink: 'p' },
+      mark: [{ t: 'shape', k: 'circle', x: 0, y: 0, s: 100, fill: 'p' }, { t: 'text', txt: '{initials}', f: 'Montserrat', fw: 800, cs: 'upper', x: 0, y: 2, s: 36, fill: 'l' }],
+      lockup: 'side', sign: { style: 'panel', bg: 'p', ink: null, trim: null }, awning: { on: false, style: 'stripe', c1: 'p', c2: 'l' }, uni: {}, van: { body: 'w', stripe: 'p' } };
+  }
+  // repair a recipe from storage or import: unknown parts are dropped, missing parts filled
+  function clean(x) {
+    const b = blank(); if (!x || typeof x !== 'object') return b; const hex = v => typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v);
+    for (const k of ['id', 'name', 'tagline', 'type', 'est', 'seed', 'chain']) if (typeof x[k] === 'string') b[k] = x[k].slice(0, 60);
+    if (!TYPES[b.type]) b.type = 'cafe'; b.npc = !!x.npc;
+    if (x.pal) for (const k of ['p', 's', 'a', 'l']) if (hex(x.pal[k])) b.pal[k] = x.pal[k];
+    if (x.font) { if (FONT_BY[x.font.f]) b.font.f = x.font.f; if (+x.font.w) b.font.w = +x.font.w; if (['upper', 'lower', 'none'].includes(x.font.cs)) b.font.cs = x.font.cs; if (isFinite(x.font.ls)) b.font.ls = +x.font.ls; if (x.font.ink) b.font.ink = x.font.ink; }
+    if (Array.isArray(x.mark)) b.mark = x.mark.filter(L => L && (L.t === 'shape' && SHAPES[L.k] || L.t === 'icon' && ICONS[L.k] || L.t === 'text')).slice(0, 40).map(L => { const o = {}; for (const [k, v] of Object.entries(L)) if (['string', 'number', 'boolean'].includes(typeof v) || v === null) o[k] = typeof v === 'string' ? v.slice(0, 80) : v; return o; });
+    if (['side', 'stack', 'mark', 'word'].includes(x.lockup)) b.lockup = x.lockup;
+    for (const k of ['sign', 'awning', 'uni', 'van', 'word']) if (x[k] && typeof x[k] === 'object') b[k] = Object.assign(b[k] || {}, x[k]);
+    if (!SIGNS[b.sign.style]) b.sign.style = 'panel'; return b;
+  }
+  const toText = b => 'CO3BRAND ' + btoa(unescape(encodeURIComponent(JSON.stringify(b))));
+  const fromText = t => { const m = String(t).trim().match(/^CO3BRAND\s+([A-Za-z0-9+/=]+)$/); if (!m) throw new Error('That text is not a brand code.'); return clean(JSON.parse(decodeURIComponent(escape(atob(m[1]))))); };
+
+  return { SHAPES, ICONS, FONTS, FONT_BY, SLOTS, SIGNS, TYPES, TYPE_LIST, col, contrast, lum, mix, inkOn, initials, fillTokens, fontCss, drawLayer, drawMark, drawWord, drawTagline, drawLockup, measureWord, remapFor, drawSign, drawAwning, layerBox, hitLayer, generate, blank, clean, toText, fromText, hash32, rng };
+})();
+if (typeof module !== 'undefined') module.exports = BRAND;
+// ================= BRAND extras: icon library by category, player business types, staff uniforms =================
+(() => {
+  const B = BRAND;
+  const circ = (x, y, r) => `M${x - r} ${y}A${r} ${r} 0 1 0 ${x + r} ${y}A${r} ${r} 0 1 0 ${x - r} ${y}Z`;
+  const ell = (x, y, rx, ry) => `M${x - rx} ${y}A${rx} ${ry} 0 1 0 ${x + rx} ${y}A${rx} ${ry} 0 1 0 ${x - rx} ${y}Z`;
+  const ellR = (x, y, rx, ry, deg) => { const a = deg * Math.PI / 180, dx = rx * Math.cos(a), dy = rx * Math.sin(a); return `M${(x + dx).toFixed(2)} ${(y + dy).toFixed(2)}A${rx} ${ry} ${deg} 1 0 ${(x - dx).toFixed(2)} ${(y - dy).toFixed(2)}A${rx} ${ry} ${deg} 1 0 ${(x + dx).toFixed(2)} ${(y + dy).toFixed(2)}Z`; };
+  const rr = (x, y, w, h, r) => `M${x + r} ${y}H${x + w - r}Q${x + w} ${y} ${x + w} ${y + r}V${y + h - r}Q${x + w} ${y + h} ${x + w - r} ${y + h}H${x + r}Q${x} ${y + h} ${x} ${y + h - r}V${y + r}Q${x} ${y} ${x + r} ${y}Z`;
+  const rect = (x, y, w, h) => `M${x} ${y}H${x + w}V${y + h}H${x}Z`;
+  const rrect = (cx, cy, w, h, deg) => { const a = deg * Math.PI / 180, c = Math.cos(a), s = Math.sin(a); return [[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]].map(([x, y], i) => (i ? 'L' : 'M') + (cx + x * c - y * s).toFixed(2) + ' ' + (cy + x * s + y * c).toFixed(2)).join('') + 'Z'; };
+  const poly = (n, R, rot, cx, cy) => { let s = ''; for (let i = 0; i < n; i++) { const a = rot + i * 2 * Math.PI / n - Math.PI / 2; s += (i ? 'L' : 'M') + (cx + R * Math.cos(a)).toFixed(2) + ' ' + (cy + R * Math.sin(a)).toFixed(2); } return s + 'Z'; };
+  const starP = (n, R, r2, cx, cy, rot = 0) => { let s = ''; for (let i = 0; i < n * 2; i++) { const a = rot + i * Math.PI / n - Math.PI / 2, q = i % 2 ? r2 : R; s += (i ? 'L' : 'M') + (cx + q * Math.cos(a)).toFixed(2) + ' ' + (cy + q * Math.sin(a)).toFixed(2); } return s + 'Z'; };
+  const rep = (n, f) => Array.from({ length: n }, (_, i) => f(i)).join('');
+  const I = (n, c, p, o) => Object.assign({ n, c, p }, o);
+
+  // ---------- categories for the picker ----------
+  B.ICON_CATS = { food: 'Food', drink: 'Drink and nightlife', stay: 'Hotel', fit: 'Fitness', retail: 'Retail', work: 'Business and tech', every: 'Everyday', abstract: 'Abstract' };
+  const oldCat = { cup: 'food', bean: 'food', croissant: 'food', burger: 'food', pizza: 'food', cutlery: 'food', wine: 'drink', beer: 'drink', music: 'drink', dumbbell: 'fit', bolt: 'abstract', heart: 'every', scissors: 'retail', comb: 'retail', flower: 'every', leaf: 'every', tooth: 'every', cross: 'every', pill: 'every', paw: 'every', apple: 'food', bag: 'retail', shirt: 'retail', gem: 'retail', crown: 'every', book: 'every', house: 'every', key: 'stay', tower: 'work', briefcase: 'work', scales: 'work', chart: 'work', tag: 'retail', wrench: 'every', gear: 'work', car: 'every', hammer: 'every', bed: 'stay', cart: 'retail', sun: 'every', wave: 'abstract', mountain: 'every', pin: 'every', camera: 'every', brush: 'every', star: 'abstract' };
+  for (const [k, c] of Object.entries(oldCat)) if (B.ICONS[k]) B.ICONS[k].c = c;
+  B.ICONS.croissant.n = 'Bread loaf';
+
+  Object.assign(B.ICONS, {
+    // ----- cafe and bakery -----
+    mug: I('Mug', 'food', [{ d: rr(16, 28, 54, 54, 8) }, { d: 'M68 38H75Q89 38 89 54Q89 70 75 70H68V62H75Q81 62 81 54Q81 46 75 46H68Z' }, { d: rr(8, 85, 70, 7, 3.5) }, { s: 'M34 20Q30 14 34 8M46 20Q42 14 46 8', w: 4 }]),
+    takeaway: I('Takeaway cup', 'food', [{ d: 'M28 26H72L66 92H34Z' + 'M30 44H70L69.7 47.5H30.3Z' + 'M31.6 64H68.4L68.1 67.5H31.9Z', eo: true }, { d: rr(24, 17, 52, 10, 4) }, { d: rr(32, 9, 36, 9, 3) }]),
+    espresso: I('Espresso cup', 'food', [{ d: 'M24 38H70Q70 74 47 74Q24 74 24 38Z' + 'M47 62C40 57 37 53 39 50C41 47 45 47 47 50C49 47 53 47 55 50C57 53 54 57 47 62Z', eo: true }, { d: 'M68 42H72Q82 42 82 50Q82 58 72 58H66V53H72Q77 53 77 50Q77 47 72 47H68Z' }, { d: ell(48, 82, 38, 6) }, { s: 'M40 30Q36 24 40 18M54 30Q50 24 54 18', w: 4 }]),
+    teapot: I('Teapot', 'food', [{ d: ell(48, 60, 30, 25) }, { d: 'M34 36H62Q60 26 48 26Q36 26 34 36Z' + circ(48, 21, 4.5) }, { d: 'M74 58Q86 50 90 34L96 38Q92 60 77 70Z' }, { d: 'M20 46Q4 50 6 62Q8 76 24 74L24 67Q14 68 13 61Q12 53 22 53Z' }]),
+    percent: I('Percent', 'work', [{ d: circ(28, 28, 16) + circ(28, 28, 8), eo: true }, { d: circ(72, 72, 16) + circ(72, 72, 8), eo: true }, { d: rrect(50, 50, 10, 96, 40) }]),
+    croissant2: I('Croissant', 'food', (() => { const O = [[4, 76], [12.9, 53.4], [23.7, 37.3], [39.9, 27.6], [60.1, 27.6], [76.3, 37.3], [87.1, 53.4], [96, 76]], In = [[96, 76], [84.1, 64.9], [76.6, 60.4], [58.1, 55.4], [41.9, 55.4], [23.4, 60.4], [15.9, 64.9], [4, 76]], c = [50, 76];
+      const bulge = (p, q, k) => { const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2, dx = mx - c[0], dy = my - c[1], L = Math.hypot(dx, dy) || 1; return [mx + dx / L * k, my + dy / L * k]; };
+      let d = `M${O[0][0]} ${O[0][1]}`; for (let i = 1; i < O.length; i++) { const q = bulge(O[i - 1], O[i], i === 1 || i === O.length - 1 ? 3 : 7); d += `Q${q[0].toFixed(1)} ${q[1].toFixed(1)} ${O[i][0]} ${O[i][1]}`; } for (let i = 1; i < In.length; i++) { const q = bulge(In[i - 1], In[i], -3); d += `Q${q[0].toFixed(1)} ${q[1].toFixed(1)} ${In[i][0]} ${In[i][1]}`; } d += 'Z';
+      for (let i = 1; i < 7; i++) { if (i === 4) continue; const o = O[i], n = In[7 - i]; const w = 2.4, ang = Math.atan2(n[1] - o[1], n[0] - o[0]) + Math.PI / 2, ox = Math.cos(ang) * w, oy = Math.sin(ang) * w; d += `M${(o[0] - ox).toFixed(1)} ${(o[1] - oy - 4).toFixed(1)}L${(n[0] - ox * .6).toFixed(1)} ${(n[1] - oy * .6 + 3).toFixed(1)}L${(n[0] + ox * .6).toFixed(1)} ${(n[1] + oy * .6 + 3).toFixed(1)}L${(o[0] + ox).toFixed(1)} ${(o[1] + oy - 4).toFixed(1)}Z`; }
+      return [{ d, eo: true }]; })()),
+    cupcake: I('Cupcake', 'food', [{ d: 'M26 58H74L66 92H34Z' + rect(39, 62, 3, 26) + rect(48.5, 62, 3, 26) + rect(58, 62, 3, 26), eo: true }, { d: 'M22 56Q16 42 30 38Q30 24 44 22Q50 10 60 20Q74 22 72 36Q86 40 80 56Z' }, { d: circ(54, 12, 6) }]),
+    wheat: I('Wheat', 'food', [{ d: rect(48, 30, 4, 64) }, { d: rep(4, i => ellR(40, 24 + i * 14, 11, 5.5, -45) + ellR(60, 24 + i * 14, 11, 5.5, 45)) + ell(50, 14, 5, 10) }]),
+    rollingpin: I('Rolling pin', 'food', [{ d: rrect(50, 50, 58, 22, -35) }, { d: rrect(17.2, 73, 18, 8, -35) }, { d: rrect(82.8, 27, 18, 8, -35) }]),
+    donut: I('Donut', 'food', [{ d: circ(50, 50, 40) + circ(50, 50, 14) + rrect(30, 34, 8, 3, 30) + rrect(66, 30, 8, 3, -40) + rrect(72, 60, 8, 3, 70) + rrect(36, 70, 8, 3, -20) + rrect(52, 78, 8, 3, 10) + rrect(26, 54, 8, 3, 80), eo: true }]),
+    cake: I('Cake slice', 'food', [{ d: 'M12 50L58 26L88 40Z', h: 'M8 52L58 22L94 41L92 44Z' }, { d: 'M12 50L88 40V82L12 90Z' + 'M12 64L88 55V60L12 69Z', eo: true }, { d: circ(60, 20, 7) }]),
+    baguette: I('Baguette', 'food', [{ d: ellR(50, 50, 46, 12, -30) + rrect(30, 61, 3, 14, 30) + rrect(44, 53, 3, 14, 30) + rrect(58, 45, 3, 14, 30) + rrect(72, 37, 3, 14, 30), eo: true }]),
+    // ----- restaurant, burger, pizza -----
+    toque: I('Chef hat', 'food', [{ d: 'M28 60Q8 56 12 38Q16 22 32 26Q36 10 50 10Q64 10 68 26Q84 22 88 38Q92 56 72 60Z' }, { d: rr(28, 64, 44, 18, 3) }]),
+    cloche: I('Serving dome', 'food', [{ d: 'M14 70Q14 30 50 30Q86 30 86 70Z' }, { d: circ(50, 24, 6) }, { d: rr(6, 74, 88, 8, 4) }]),
+    plate: I('Plate and cutlery', 'food', [{ d: circ(50, 50, 28) + circ(50, 50, 19), eo: true }, { d: 'M8 14H10V32H12V14H14V32H16V14H18V36Q18 42 14 43V88H12V43Q8 42 8 36Z' }, { d: 'M84 14Q94 22 94 48H88V88H84Z' }]),
+    bowl: I('Noodle bowl', 'food', [{ d: 'M10 50H90Q90 86 50 86Q10 86 10 50Z' }, { d: rrect(62, 30, 4, 46, 30) }, { d: rrect(72, 32, 4, 46, 40) }, { s: 'M24 44Q30 36 36 44T48 44', w: 3 }]),
+    fish: I('Fish', 'food', [{ d: 'M8 50Q32 20 64 38L90 22L86 50L90 78L64 62Q32 80 8 50Z' + circ(28, 46, 4.5), eo: true }]),
+    bottle: I('Wine bottle', 'drink', [{ d: 'M42 6H58V28Q70 36 70 50V94H30V50Q30 36 42 28Z' + rr(35, 56, 30, 22, 2), eo: true }]),
+    olive: I('Olive branch', 'food', [{ s: 'M14 86Q40 60 86 14', w: 4 }, { d: ellR(30, 60, 12, 5, -80) + ellR(42, 58, 12, 5, -10) + ellR(46, 40, 12, 5, -80) + ellR(60, 42, 12, 5, -10) + ellR(62, 24, 12, 5, -80) + ellR(76, 26, 12, 5, -10) }, { d: ellR(26, 76, 7, 5, 30) }]),
+    fries: I('Fries', 'food', [{ d: 'M22 46H78L70 92H30Z' + 'M38 64Q50 74 62 64L60 61Q50 68 40 61Z', eo: true }, { d: rrect(32, 32, 7, 36, -10) + rrect(43, 28, 7, 40, -4) + rrect(55, 27, 7, 42, 4) + rrect(66, 31, 7, 36, 10) }]),
+    soda: I('Soda cup', 'food', [{ d: 'M28 32H72L66 92H34Z' + 'M31 50H69L68.4 56H31.6Z', eo: true }, { d: rr(24, 24, 52, 10, 4) }, { d: 'M54 24L60 2L65 3L59.5 24Z' }]),
+    hotdog: I('Hot dog', 'food', [{ d: rr(2, 40, 96, 15, 7.5), h: rr(-1, 37, 102, 21, 10.5) }, { d: 'M10 46Q10 80 50 80Q90 80 90 46Q80 60 50 60Q20 60 10 46Z' }, { d: 'M14 46Q16 30 50 30Q84 30 86 46Z' }]),
+    flame: I('Flame', 'abstract', [{ d: 'M50 6Q58 30 72 40Q88 54 82 72Q74 94 50 94Q26 94 18 72Q14 52 32 38Q34 54 42 54Q32 30 50 6Z' + 'M50 54Q60 66 62 74Q62 86 50 86Q38 86 38 74Q40 66 50 54Z', eo: true }]),
+    drumstick: I('Drumstick', 'food', [{ d: ellR(38, 58, 30, 22, -40) }, { d: rrect(66, 30, 9, 26, 50) }, { d: circ(80, 14, 6.5) + circ(86, 22, 6.5) }]),
+    pizzawhole: I('Whole pizza', 'food', [{ d: circ(50, 50, 44) + circ(50, 50, 36) + rrect(50, 50, 72, 3, 0) + rrect(50, 50, 72, 3, 60) + rrect(50, 50, 72, 3, 120) + circ(38, 36, 5) + circ(64, 38, 5) + circ(70, 60, 5) + circ(36, 64, 5) + circ(52, 70, 5), eo: true }]),
+    tomato: I('Tomato', 'food', [{ d: circ(50, 58, 34) }, { d: starP(5, 16, 5, 50, 26) }, { d: rect(48, 6, 4, 14) }]),
+    chili: I('Chili', 'food', [{ d: 'M30 30Q24 60 44 80Q60 94 88 90Q62 82 54 62Q48 44 46 30Z' }, { d: 'M28 30Q34 20 46 26Q48 14 56 10L58 14Q52 18 52 28Q46 32 38 32Z' }]),
+    // ----- bar and nightlife -----
+    martini: I('Cocktail glass', 'drink', [{ d: 'M12 14H88L54 50V82H68V88H32V82H46V50Z' + circ(60, 26, 5.5), eo: true }]),
+    beerbottle: I('Beer bottle', 'drink', [{ d: 'M44 14H56V30Q66 38 66 50V94H34V50Q34 38 44 30Z' + rr(38, 56, 24, 22, 2), eo: true }, { d: rr(42, 6, 16, 8, 2) }]),
+    barrel: I('Barrel', 'drink', [{ d: 'M24 10H76Q90 50 76 90H24Q10 50 24 10Z' + rect(19.6, 28, 60.8, 4) + rect(19.6, 68, 60.8, 4), eo: true }]),
+    hops: I('Hops', 'drink', (() => { const P = [], rows = [[86, [50], 8, 9], [74, [42, 58], 9, 10], [60, [34, 50, 66], 9.5, 11], [46, [36, 50, 64], 9, 10.5], [33, [43, 57], 8, 9.5], [22, [50], 7, 8]]; for (const [y, xs, rx, ry] of rows) for (const xx of xs) P.push({ d: 'M' + (xx - rx) + ' ' + y + 'Q' + (xx - rx) + ' ' + (y + ry) + ' ' + xx + ' ' + (y + ry * 1.25) + 'Q' + (xx + rx) + ' ' + (y + ry) + ' ' + (xx + rx) + ' ' + y + 'A' + rx + ' ' + ry + ' 0 0 0 ' + (xx - rx) + ' ' + y + 'Z', h: 'M' + (xx - rx - 2.5) + ' ' + y + 'Q' + (xx - rx - 2.5) + ' ' + (y + ry + 2.5) + ' ' + xx + ' ' + (y + ry * 1.25 + 3) + 'Q' + (xx + rx + 2.5) + ' ' + (y + ry + 2.5) + ' ' + (xx + rx + 2.5) + ' ' + y + 'A' + (rx + 2.5) + ' ' + (ry + 2.5) + ' 0 0 0 ' + (xx - rx - 2.5) + ' ' + y + 'Z' }); P.push({ d: 'M49 14Q48 8 52 2L55 3Q52 8 53 14Z' }, { d: ellR(66, 10, 11, 5, -20) }); return P; })()),
+    anchor: I('Anchor', 'every', [{ d: circ(50, 14, 9) + circ(50, 14, 4.5), eo: true }, { d: rect(46, 22, 8, 62) }, { d: rr(30, 30, 40, 7, 3) }, { d: 'M12 62Q16 90 50 92Q84 90 88 62L96 64L84 50L74 62L80 62Q76 82 50 84Q24 82 20 62L26 62L16 50L4 64Z' }]),
+    horseshoe: I('Horseshoe', 'every', [{ d: 'M18 14H36V52Q36 68 50 68Q64 68 64 52V14H82V52Q82 88 50 88Q18 88 18 52Z' + circ(27, 26, 2.5) + circ(27, 40, 2.5) + circ(73, 26, 2.5) + circ(73, 40, 2.5) + circ(34, 68, 2.5) + circ(66, 68, 2.5), eo: true }]),
+    tumbler: I('Whiskey glass', 'drink', [{ d: 'M22 28H78L72 88H28Z' + 'M25 52H75L74.6 56H25.4Z' + rrect(42, 66, 14, 14, 15), eo: true }]),
+    target: I('Dartboard', 'every', [{ d: circ(50, 50, 44) + circ(50, 50, 35), eo: true }, { d: circ(50, 50, 27) + circ(50, 50, 18), eo: true }, { d: circ(50, 50, 9) }]),
+    disco: I('Disco ball', 'drink', [{ d: circ(50, 56, 36) + rep(5, i => rect(14, 32 + i * 10, 72, 1.6)) + rep(5, i => rect(28 + i * 10, 20, 1.6, 72)), eo: true }, { d: rect(49, 4, 2, 16) }]),
+    vinyl: I('Record', 'drink', [{ d: circ(50, 50, 44) + circ(50, 50, 32) + circ(50, 50, 30) + circ(50, 50, 15) + circ(50, 50, 3), eo: true }]),
+    headphones: I('Headphones', 'drink', [{ d: 'M14 62V50Q14 12 50 12Q86 12 86 50V62H78V50Q78 20 50 20Q22 20 22 50V62Z' }, { d: rr(8, 54, 22, 34, 7) }, { d: rr(70, 54, 22, 34, 7) }]),
+    speaker: I('Speaker', 'drink', [{ d: rr(20, 6, 60, 88, 7) + circ(50, 62, 19) + circ(50, 27, 10), eo: true }, { d: circ(50, 62, 8) }, { d: circ(50, 27, 3.5) }]),
+    moon: I('Crescent moon', 'abstract', [{ d: 'M62 8A42 42 0 1 0 92 70A34 34 0 1 1 62 8Z' }]),
+    sparkle: I('Sparkle', 'abstract', [{ d: 'M50 4Q54 46 96 50Q54 54 50 96Q46 54 4 50Q46 46 50 4Z' }]),
+    sparkles: I('Three sparkles', 'abstract', [{ d: 'M40 10Q43 40 72 44Q43 48 40 78Q37 48 8 44Q37 40 40 10Z' }, { d: 'M76 54Q78 70 94 72Q78 74 76 90Q74 74 58 72Q74 70 76 54Z' }, { d: 'M76 6Q77 16 88 18Q77 20 76 30Q75 20 64 18Q75 16 76 6Z' }]),
+    // ----- hotel -----
+    bell: I('Service bell', 'stay', [{ d: 'M14 74Q14 40 50 36Q86 40 86 74Z' }, { d: rr(6, 78, 88, 9, 3) }, { d: circ(50, 30, 6) }]),
+    door: I('Door', 'stay', [{ d: rr(26, 8, 48, 86, 3) + rr(33, 15, 34, 30, 2) + rr(33, 52, 34, 34, 2) + circ(62, 48, 3), eo: true }]),
+    palm: I('Palm tree', 'stay', [{ d: 'M46 94Q42 62 52 34L58 35Q50 62 56 94Z' }, { d: 'M54 32Q36 14 10 22Q30 22 50 38Z' }, { d: 'M54 32Q72 12 94 20Q74 22 58 38Z' }, { d: 'M54 32Q30 34 16 52Q38 40 52 38Z' }, { d: 'M56 32Q80 34 90 54Q72 40 58 38Z' }, { d: 'M54 32Q52 12 62 2Q60 18 58 34Z' }]),
+    keytag: I('Room key', 'stay', [{ d: rrect(64, 64, 36, 50, -45) + circ(52, 52, 4.5), eo: true }, { d: circ(24, 24, 15) + circ(24, 24, 7), eo: true }, { d: rrect(38, 38, 7, 22, -45) }, { s: 'M35 35Q44 44 52 52', w: 2 }]),
+    stars3: I('Three stars', 'stay', [{ d: starP(5, 16, 7, 20, 56) + starP(5, 22, 9, 50, 46) + starP(5, 16, 7, 80, 56) }]),
+    // ----- fitness -----
+    kettlebell: I('Kettlebell', 'fit', [{ d: 'M30 44Q28 12 50 12Q72 12 70 44H61Q62 21 50 21Q38 21 39 44Z' }, { d: circ(50, 62, 30) }]),
+    barbell: I('Barbell', 'fit', [{ d: rect(4, 47, 92, 6) }, { d: rr(14, 24, 9, 52, 2) + rr(25, 31, 8, 38, 2) + rr(77, 24, 9, 52, 2) + rr(67, 31, 8, 38, 2) }]),
+    weightplate: I('Weight plate', 'fit', [{ d: circ(50, 50, 44) + circ(50, 50, 32) + circ(50, 50, 29) + circ(50, 50, 9), eo: true }]),
+    pulse: I('Heartbeat', 'fit', [{ s: 'M4 54H28L36 32L50 78L60 20L68 54H96', w: 7 }]),
+    stopwatch: I('Stopwatch', 'fit', [{ d: circ(50, 56, 37) + circ(50, 56, 29), eo: true }, { d: rrect(55, 48, 4.5, 22, 40) }, { d: circ(50, 56, 4) }, { d: rr(42, 6, 16, 8, 2) + rect(47, 13, 6, 8) }]),
+    shoe: I('Sneaker', 'fit', [{ d: 'M6 74V62Q6 56 14 54L32 48L44 32Q48 28 54 32L60 40Q70 48 84 52Q96 56 96 66V74Z' + circ(50, 42, 2.4) + circ(57, 47, 2.4) + circ(64, 51, 2.4) + 'M14 64H40V67H14Z', eo: true, h: 'M3 77V60H99V77Z' }, { d: rr(4, 77, 92, 10, 5) }]),
+    bike: I('Bicycle', 'fit', [{ d: circ(24, 64, 18) + circ(24, 64, 13), eo: true }, { d: circ(76, 64, 18) + circ(76, 64, 13), eo: true }, { s: 'M24 64L40 36H66L76 64M40 36L52 64H24M52 64L66 36M36 28H46M62 26H72', w: 4.5 }]),
+    yoga: I('Lotus', 'fit', [{ d: 'M50 16Q64 34 62 56Q58 72 50 76Q42 72 38 56Q36 34 50 16Z' }, { d: 'M14 40Q38 42 46 66Q46 76 44 78Q22 76 16 60Q12 50 14 40Z' }, { d: 'M86 40Q62 42 54 66Q54 76 56 78Q78 76 84 60Q88 50 86 40Z' }, { d: rr(16, 82, 68, 6, 3) }]),
+    medal: I('Medal', 'fit', [{ d: 'M24 6H42L54 40H36Z' }, { d: 'M76 6H58L46 40H64Z' }, { d: circ(50, 64, 28) + starP(5, 14, 6, 50, 65), eo: true }]),
+    // ----- retail -----
+    hanger: I('Hanger', 'retail', [{ s: 'M42 26Q42 12 52 12Q62 14 60 24Q58 30 50 33V40L8 72H92L50 40', w: 5.5 }]),
+    needle: I('Needle and thread', 'retail', [{ d: rrect(56, 44, 6, 80, 45) + rrect(80.7, 19.3, 2.2, 8, 45), eo: true }, { s: 'M80 18Q96 30 82 44Q60 62 40 52Q20 42 14 66Q10 82 30 88', w: 3 }]),
+    button: I('Sewing button', 'retail', [{ d: circ(50, 50, 42) + circ(50, 50, 34) + circ(50, 50, 31) + circ(41, 41, 5) + circ(59, 41, 5) + circ(41, 59, 5) + circ(59, 59, 5), eo: true }]),
+    dress: I('Dress', 'retail', [{ d: 'M38 8H44L46 20H54L56 8H62L60 30Q68 34 64 44L86 92H14L36 44Q32 34 40 30Z' }]),
+    sunglasses: I('Sunglasses', 'retail', [{ d: 'M8 38H44Q46 62 30 66Q12 66 8 46Z' }, { d: 'M92 38H56Q54 62 70 66Q88 66 92 46Z' }, { d: rect(42, 38, 16, 5) }, { d: rect(4, 36, 92, 5) }]),
+    bowtie: I('Bow tie', 'retail', [{ d: 'M8 28L42 42V58L8 72Z' }, { d: 'M92 28L58 42V58L92 72Z' }, { d: rr(40, 38, 20, 24, 5) }]),
+    ring: I('Ring', 'retail', [{ d: circ(50, 62, 30) + circ(50, 62, 23), eo: true }, { d: 'M36 20H64L72 30L50 44L28 30Z' + 'M38 23L33 29H44Z' + 'M62 23L67 29H56Z', eo: true }]),
+    watch: I('Watch', 'retail', [{ d: rr(36, 4, 28, 26, 4) + rr(36, 70, 28, 26, 4) }, { d: circ(50, 50, 26) + circ(50, 50, 20), eo: true }, { d: rect(48, 36, 4, 15) + rect(48, 48, 12, 4) }, { d: rr(76, 46, 6, 8, 2) }]),
+    perfume: I('Perfume bottle', 'retail', [{ d: rr(18, 38, 64, 54, 10) + rr(30, 50, 40, 26, 4), eo: true }, { d: rect(42, 26, 16, 12) }, { d: rr(36, 12, 28, 14, 4) }]),
+    heel: I('High heel', 'retail', [{ d: 'M10 80Q12 60 30 62Q50 64 62 46L74 24Q78 16 84 18Q92 22 90 34L86 46V92H80V60Q74 72 62 78L50 84Q30 92 10 88Z' }]),
+    // ----- business and tech -----
+    chip: I('Microchip', 'work', [{ d: rr(26, 26, 48, 48, 5) + circ(50, 50, 9), eo: true }, { d: rep(4, i => rect(31 + i * 11, 12, 5, 14) + rect(31 + i * 11, 74, 5, 14) + rect(12, 31 + i * 11, 14, 5) + rect(74, 31 + i * 11, 14, 5)) }]),
+    cloud: I('Cloud', 'work', [{ d: circ(34, 58, 20) }, { d: circ(56, 44, 26) }, { d: circ(76, 60, 16) }, { d: rr(14, 58, 78, 20, 10) }]),
+    code: I('Code brackets', 'work', [{ s: 'M32 26L10 50L32 74M68 26L90 50L68 74M58 16L42 84', w: 9 }]),
+    cursor: I('Cursor', 'work', [{ d: 'M24 8L78 56L53 58L67 87L56 92L42 63L24 80Z' }]),
+    atom: I('Atom', 'work', [{ s: ellR(50, 50, 42, 15, 0) + ellR(50, 50, 42, 15, 60) + ellR(50, 50, 42, 15, -60), w: 4.5 }, { d: circ(50, 50, 8) }]),
+    rocket: I('Rocket', 'work', [{ d: 'M50 4Q74 22 70 62H30Q26 22 50 4Z' + circ(50, 34, 8), eo: true }, { d: 'M30 46L12 72L30 70Z' }, { d: 'M70 46L88 72L70 70Z' }, { d: 'M38 66H62L50 94Z' }]),
+    wifi: I('Signal', 'work', [{ s: 'M14 42Q50 6 86 42M26 56Q50 32 74 56M38 70Q50 58 62 70', w: 8 }, { d: circ(50, 84, 7) }]),
+    nodes: I('Network', 'work', [{ s: 'M50 20L20 76M50 20L80 76M20 76H80M50 20V56M20 76L50 56L80 76', w: 4 }, { d: circ(50, 20, 10) + circ(20, 76, 10) + circ(80, 76, 10) + circ(50, 56, 8) }]),
+    pie: I('Pie chart', 'work', [{ d: 'M52 50V8A42 42 0 1 1 10 50Z' }, { d: 'M44 42H4A40 40 0 0 1 44 2Z' }]),
+    coins: I('Coin stack', 'work', [30, 44, 58, 72].map(y => ({ d: `M20 ${y}A30 9 0 0 1 80 ${y}V${y + 9}A30 9 0 0 1 20 ${y + 9}Z` + ell(50, y, 30, 9) + ell(50, y, 26, 7), eo: true, h: `M17 ${y}A33 12 0 0 1 83 ${y}V${y + 9}A33 12 0 0 1 17 ${y + 9}Z` }))),
+    pillars: I('Columns', 'work', [{ d: 'M6 34L50 8L94 34Z' }, { d: rect(10, 38, 80, 6) + rep(4, i => rect(16 + i * 20, 46, 9, 34)) + rect(6, 82, 88, 8) }]),
+    arrowup: I('Up arrow', 'work', [{ d: 'M50 6L86 44H62V94H38V44H14Z' }]),
+    globe: I('Globe', 'work', [{ s: circ(50, 50, 40) + ell(50, 50, 17, 40) + 'M10 50H90M16 30H84M16 70H84', w: 4.5 }]),
+    dollar: I('Dollar coin', 'work', [{ d: circ(50, 50, 44) + circ(50, 50, 37), eo: true }, { g: '$', f: '800 58px Inter,Arial,sans-serif', x: 50, y: 52 }]),
+    lightbulb: I('Light bulb', 'work', [{ d: 'M50 6Q78 6 80 34Q80 50 66 60V70H34V60Q20 50 20 34Q22 6 50 6Z' + 'M44 66V48L38 40H42L50 46L58 40H62L56 48V66Z', eo: true }, { d: rr(34, 74, 32, 6, 3) + rr(38, 84, 24, 6, 3) }]),
+    // ----- everyday -----
+    clock: I('Clock', 'every', [{ d: circ(50, 50, 42) + circ(50, 50, 34), eo: true }, { d: rect(47, 24, 6, 28) + rrect(60, 58, 6, 24, -55) }]),
+    tree: I('Tree', 'every', [{ d: circ(50, 34, 26) + circ(30, 50, 18) + circ(70, 50, 18) }, { d: rect(45, 56, 10, 38) }]),
+    pine: I('Pine tree', 'every', [{ d: 'M50 4L76 40H62L84 68H58V94H42V68H16L38 40H24Z' }]),
+    bird: I('Bird', 'every', [{ d: 'M8 56Q20 50 30 54Q40 30 62 30Q78 30 84 44L96 46L84 52Q80 74 52 76Q30 76 22 62Q14 64 8 56Z' + circ(72, 42, 3), eo: true }, { d: 'M40 54Q50 34 66 44Q58 60 40 54Z' }]),
+    feather: I('Feather', 'every', [{ d: 'M84 8Q50 16 30 46Q20 62 22 80L16 92L22 92L28 82Q46 82 62 70Q86 50 84 8Z' + 'M26 84L76 18L77.5 19.5L28 86Z', eo: true }]),
+    lightning2: I('Thunder cloud', 'every', [{ d: circ(34, 44, 18) }, { d: circ(56, 34, 24) }, { d: circ(74, 48, 14) }, { d: rr(16, 44, 72, 18, 9) }, { d: 'M50 64L38 84H50L44 98L64 74H52L58 64Z' }]),
+    drop: I('Water drop', 'every', [{ d: 'M50 6Q80 46 80 62Q80 92 50 92Q20 92 20 62Q20 46 50 6Z' + 'M34 62Q34 76 46 80L44 84Q28 80 28 62Z', eo: true }]),
+    eye: I('Eye', 'every', [{ d: 'M4 50Q50 2 96 50Q50 98 4 50Z' + circ(50, 50, 20) + circ(50, 50, 9), eo: true }]),
+    hand: I('Hand', 'every', [{ d: 'M26 52V22Q26 16 31 16Q36 16 36 22V44H38V12Q38 6 43 6Q48 6 48 12V44H50V14Q50 8 55 8Q60 8 60 14V46H62V24Q62 18 67 18Q72 18 72 24V60Q72 94 46 94Q30 94 20 78L8 58Q6 52 11 50Q16 48 20 54Z' }]),
+    // ----- abstract and geometric -----
+    chevrons: I('Chevrons', 'abstract', [{ d: 'M8 20L36 50L8 80H26L54 50L26 20Z' }, { d: 'M44 20L72 50L44 80H62L90 50L62 20Z' }]),
+    arrowr: I('Arrow', 'abstract', [{ d: 'M8 42H56V22L92 50L56 78V58H8Z' }]),
+    infinity: I('Loop', 'abstract', [{ s: 'M50 50C38 28 10 28 10 50C10 72 38 72 50 50C62 28 90 28 90 50C90 72 62 72 50 50', w: 10 }]),
+    rings: I('Concentric rings', 'abstract', [{ d: circ(50, 50, 44) + circ(50, 50, 36) + circ(50, 50, 28) + circ(50, 50, 20) + circ(50, 50, 12), eo: true }]),
+    dots: I('Dot grid', 'abstract', [{ d: rep(9, i => circ(22 + (i % 3) * 28, 22 + Math.floor(i / 3) * 28, 10)) }]),
+    honeycomb: I('Honeycomb', 'abstract', [{ d: poly(6, 15, Math.PI / 6, 50, 50) + rep(6, i => { const a = i * Math.PI / 3 + Math.PI / 6; return poly(6, 15, Math.PI / 6, 50 + 27 * Math.cos(a), 50 + 27 * Math.sin(a)); }) }]),
+    halfcircle: I('Split circle', 'abstract', [{ d: 'M50 6A44 44 0 0 0 50 94Z' }, { d: circ(50, 50, 44) + circ(50, 50, 37), eo: true }]),
+    bars: I('Stepped bars', 'abstract', [{ d: rr(10, 16, 80, 16, 8) + rr(10, 42, 58, 16, 8) + rr(10, 68, 36, 16, 8) }]),
+    rays: I('Rays', 'abstract', [{ d: rep(16, i => rrect(50 + 30 * Math.cos(i * Math.PI / 8), 50 + 30 * Math.sin(i * Math.PI / 8), 20, 5, i * 22.5)) }]),
+    petals: I('Four petals', 'abstract', [{ d: ellR(50, 28, 13, 22, 0) + ellR(50, 72, 13, 22, 0) + ellR(28, 50, 22, 13, 0) + ellR(72, 50, 22, 13, 0) }]),
+    quarters: I('Quarter circles', 'abstract', [{ d: 'M6 6H46V46A40 40 0 0 1 6 6Z' }, { d: 'M94 6V46H54A40 40 0 0 1 94 6Z' }, { d: 'M6 94V54H46A40 40 0 0 1 6 94Z' }, { d: 'M94 94H54V54A40 40 0 0 1 94 94Z' }]),
+    diamonds: I('Diamond trio', 'abstract', [{ d: poly(4, 22, 0, 50, 28) + poly(4, 22, 0, 28, 64) + poly(4, 22, 0, 72, 64) }]),
+    squares: I('Nested squares', 'abstract', [{ d: rect(6, 6, 88, 88) + rect(16, 16, 68, 68) + rect(26, 26, 48, 48) + rect(36, 36, 28, 28), eo: true }]),
+    triangle2: I('Twin peaks', 'abstract', [{ d: 'M4 84L34 24L64 84Z' }, { d: 'M44 84L70 34L96 84Z' + 'M57 84L70 58L83 84Z', eo: true }]),
+    swirl: I('Spiral', 'abstract', [{ s: 'M50 50m0 0a4 4 0 0 1 8 0a12 12 0 0 1 -24 0a20 20 0 0 1 40 0a28 28 0 0 1 -56 0a36 36 0 0 1 72 0', w: 5 }]),
+    plus: I('Plus', 'abstract', [{ d: rr(40, 8, 20, 84, 4) + rr(8, 40, 84, 20, 4) }]),
+    burst2: I('Starburst', 'abstract', [{ d: starP(12, 46, 26, 50, 50) }]),
+    blob: I('Wave lines', 'abstract', [{ s: 'M6 34Q28 14 50 34T94 34M6 66Q28 46 50 66T94 66', w: 9 }]),
+    leafpair: I('Two leaves', 'every', [{ d: 'M50 92Q14 72 18 26Q48 34 50 92Z' }, { d: 'M50 92Q86 72 82 26Q52 34 50 92Z' }]),
+  });
+
+  // ---------- which business types a player can open ----------
+  // from the design doc: cafes and shop fit-outs, restaurants at every tier, bars, nightclubs, hotels, gyms, retail and luxury stores,
+  // plus the founder and fund paths. Everything else stays NPC only
+  B.PLAYER_TYPES = ['cafe', 'bakery', 'restaurant', 'burger', 'pizza', 'bar', 'nightclub', 'hotel', 'gym', 'fashion', 'jeweler', 'tech', 'finance'];
+  B.TYPES.fashion.n = 'Clothing store'; B.TYPES.jeweler.n = 'Luxury store'; B.TYPES.finance.n = 'Investment fund'; B.TYPES.tech.n = 'Tech startup';
+  const more = {
+    cafe: ['mug', 'takeaway', 'espresso', 'teapot', 'croissant2', 'leafpair', 'sparkle'], bakery: ['croissant2', 'cupcake', 'wheat', 'rollingpin', 'donut', 'cake', 'baguette'],
+    restaurant: ['toque', 'cloche', 'plate', 'bowl', 'fish', 'bottle', 'olive', 'flame'], burger: ['fries', 'soda', 'hotdog', 'flame', 'drumstick', 'chili'], pizza: ['pizzawhole', 'tomato', 'chili', 'flame', 'olive'],
+    bar: ['martini', 'beerbottle', 'barrel', 'hops', 'anchor', 'horseshoe', 'tumbler', 'target'], nightclub: ['disco', 'vinyl', 'headphones', 'speaker', 'moon', 'sparkle', 'sparkles', 'martini', 'chevrons', 'rays'],
+    hotel: ['bell', 'door', 'palm', 'keytag', 'stars3', 'moon', 'pillars'], gym: ['kettlebell', 'barbell', 'weightplate', 'pulse', 'stopwatch', 'shoe', 'bike', 'medal', 'chevrons', 'flame'],
+    fashion: ['hanger', 'needle', 'button', 'dress', 'sunglasses', 'bowtie', 'heel', 'squares'], jeweler: ['ring', 'watch', 'perfume', 'sparkle', 'diamonds', 'heel'],
+    tech: ['chip', 'cloud', 'code', 'cursor', 'atom', 'rocket', 'wifi', 'nodes', 'lightbulb', 'honeycomb', 'dots', 'infinity'], finance: ['pie', 'coins', 'dollar', 'percent', 'pillars', 'arrowup', 'globe', 'triangle2', 'squares', 'bars'],
+    office: ['lightbulb', 'globe', 'nodes', 'arrowr'], bank: ['pillars', 'coins', 'globe', 'arrowup'], salon: ['sparkle', 'petals', 'feather', 'perfume'], barber: ['bowtie', 'anchor', 'horseshoe'],
+    spa: ['drop', 'yoga', 'petals', 'leafpair', 'feather'], florist: ['leafpair', 'petals', 'tree'], books: ['feather', 'lightbulb', 'eye', 'bird'], pet: ['bird', 'tree', 'drop'], clinic: ['pulse', 'drop', 'hand'], dentist: ['sparkle', 'drop'],
+    grocery: ['tomato', 'wheat', 'tree', 'chili'], construction: ['pine', 'triangle2', 'chevrons'], mechanic: ['chevrons', 'flame', 'target'], realestate: ['door', 'tree', 'pine', 'triangle2'], laundry: ['drop', 'sparkles', 'blob'], law: ['pillars', 'feather', 'globe'],
+  };
+  for (const [t, ks] of Object.entries(more)) if (B.TYPES[t]) B.TYPES[t].ic = [...new Set([...B.TYPES[t].ic, ...ks.filter(k => B.ICONS[k])])];
+  B.TYPES.bank.ic = B.TYPES.bank.ic.filter(k => B.ICONS[k]);
+  // the categories that suit each player type, for the picker's suggested view
+  B.TYPE_CATS = { cafe: ['food'], bakery: ['food'], restaurant: ['food', 'drink'], burger: ['food'], pizza: ['food'], bar: ['drink'], nightclub: ['drink'], hotel: ['stay'], gym: ['fit'], fashion: ['retail'], jeweler: ['retail'], tech: ['work'], finance: ['work'] };
+
+
+  // ----- phone repair, food truck and bookkeeping -----
+  Object.assign(B.ICONS, {
+    phone: I('Smartphone', 'work', [{ d: rr(28, 4, 44, 92, 9) + rr(33, 14, 34, 66, 2) + rect(44, 8, 12, 2.5) + circ(50, 88, 3.5), eo: true }]),
+    phonecrack: I('Cracked screen', 'work', [{ d: rr(28, 4, 44, 92, 9) + rr(33, 14, 34, 66, 2) + circ(50, 88, 3.5) + 'M38 18L52 38L45 48L60 68L58 70L42 49L49 39L35 20Z' + 'M51 38L64 32L65 34L53 40Z', eo: true }]),
+    screwdriver: I('Screwdriver', 'work', [{ d: rr(42, 4, 16, 38, 6) + rect(47, 12, 2, 22) + rect(51, 12, 2, 22), eo: true }, { d: rect(47, 42, 6, 40) }, { d: 'M47 82H53L51.5 94H48.5Z' }], { rot: 45 }),
+    tools: I('Crossed tools', 'work', [{ d: rrect(50, 50, 9, 80, 45) + rrect(80, 20, 14, 22, 45), h: rrect(50, 50, 15, 86, 45) }, { d: rrect(54, 54, 7, 66, -45) + rrect(25, 25, 13, 26, -45) }]),
+    laptop: I('Laptop', 'work', [{ d: rr(16, 18, 68, 48, 4) + rr(21, 23, 58, 38, 1), eo: true }, { d: 'M4 70H96L90 82H10Z' }]),
+    battery: I('Battery', 'work', [{ d: rr(10, 30, 70, 40, 6) + rr(15, 35, 60, 30, 3) + rect(19, 39, 14, 22) + rect(36, 39, 14, 22), eo: true }, { d: rr(80, 42, 8, 16, 2) }]),
+    plug: I('Plug', 'work', [{ d: rr(28, 28, 44, 36, 8) }, { d: rect(37, 8, 7, 20) + rect(56, 8, 7, 20) }, { d: 'M46 64H54V78Q54 88 64 88H80V96H64Q46 96 46 78Z' }]),
+    foodtruck: I('Food truck', 'food', [{ d: circ(24, 76, 9), h: circ(24, 76, 12.5) }, { d: circ(76, 76, 9), h: circ(76, 76, 12.5) }, { d: 'M8 28H58L62 36H4Z', h: 'M4 24H62L66 40H0Z' }, { d: 'M6 74V38Q6 34 10 34H64V74Z' + rr(13, 44, 42, 14, 2), eo: true }, { d: 'M66 42H82L94 56V74H66Z' + 'M70 46H80L88 56H70Z', eo: true }]),
+    taco: I('Taco', 'food', [{ d: 'M6 44A44 44 0 0 0 94 44Z', h: 'M2 41A48 48 0 0 0 98 41Z' }, { d: 'M10 48Q10 28 24 30Q30 16 44 22Q54 10 66 22Q80 18 84 32Q94 34 90 48Z' }]),
+    noodlebox: I('Takeout box', 'food', [{ d: 'M20 36H80L71 92H29Z' + 'M36 54H64L62.5 66H37.5Z', eo: true, h: 'M16 33H84L74 95H26Z' }, { d: 'M20 36L10 20H38L44 36Z' }, { d: 'M80 36L90 20H62L56 36Z' }, { s: 'M30 22Q50 0 70 22', w: 3 }]),
+    calculator: I('Calculator', 'work', [{ d: rr(20, 4, 60, 92, 7) + rr(27, 11, 46, 20, 2) + [0, 1, 2, 3].map(r => [0, 1, 2].map(c => rr(27 + c * 16, 38 + r * 14, 12, 10, 2)).join('')).join(''), eo: true }]),
+    receipt: I('Receipt', 'work', [{ d: 'M22 4H78V92L71 86L64 92L57 86L50 92L43 86L36 92L29 86L22 92Z' + rect(30, 16, 40, 5) + rect(30, 30, 28, 4) + rect(62, 30, 8, 4) + rect(30, 42, 24, 4) + rect(62, 42, 8, 4) + rect(30, 54, 30, 4) + rect(62, 54, 8, 4) + rect(30, 68, 40, 6), eo: true }]),
+    folder: I('Folder', 'work', [{ d: 'M8 24Q8 18 14 18H38L46 26H86Q92 26 92 32V80Q92 86 86 86H14Q8 86 8 80Z' + 'M8 38H92V41H8Z', eo: true }]),
+    clipboard: I('Checklist', 'work', [{ d: rr(16, 12, 68, 84, 6) + rr(23, 22, 54, 66, 2), eo: true }, { d: rr(34, 6, 32, 14, 4) }, { s: 'M32 54L45 67L68 38', w: 8 }]),
+    calendar: I('Calendar', 'work', [{ d: rr(10, 16, 80, 76, 7) + rr(16, 36, 68, 50, 2), eo: true }, { d: [0, 1, 2].map(r => [0, 1, 2, 3].map(c => rect(21 + c * 16, 41 + r * 15, 10, 9)).join('')).join('') }, { d: rr(26, 6, 8, 18, 3) + rr(66, 6, 8, 18, 3) }]),
+    pen: I('Fountain pen', 'work', [{ d: rrect(38, 38, 18, 62, 45), h: rrect(38, 38, 24, 68, 45) }, { d: 'M58 52L70 64L80 92L52 82L40 70ZM66 76L68 78L64 82L62 80Z', eo: true }], {}),
+  });
+  const TT = (n, o) => Object.assign({ n }, o);
+  Object.assign(B.TYPES, {
+    phonerepair: TT('Phone repair', { ic: ['phone', 'phonecrack', 'screwdriver', 'tools', 'battery', 'plug', 'laptop', 'chip', 'bolt', 'gear', 'wrench'], sh: ['hexagon', 'rounded', 'circle', 'shield', 'square'], fk: ['sans', 'heavy', 'cond', 'display'], sign: ['lightbox', 'panel'], pal: [['#0f4c81', '#e8f1fa', '#ff6b35', '#ffffff'], ['#111827', '#22d3ee', '#facc15', '#ffffff'], ['#14532d', '#bbf7d0', '#f97316', '#ffffff'], ['#7c2d12', '#fed7aa', '#0ea5e9', '#ffffff']], noun: ['Phone Repair', 'Mobile Repair', 'Device Repair', 'Repair Lab', 'Fix'], adj: ['Quick', 'Swift', 'Pocket', 'Mended', 'Bright', 'Same Day'], thing: [] }),
+    foodtruck: TT('Food truck', { ic: ['foodtruck', 'taco', 'noodlebox', 'burger', 'fries', 'hotdog', 'chili', 'flame', 'pizza', 'soda', 'drumstick'], sh: ['circle', 'burst', 'banner', 'pill', 'shield'], fk: ['heavy', 'display', 'script', 'hand', 'cond'], sign: ['panel'], pal: [['#e63946', '#ffb703', '#1d3557', '#fff8e7'], ['#2a9d8f', '#e9c46a', '#e76f51', '#ffffff'], ['#6a0572', '#ffd23f', '#ee4266', '#ffffff'], ['#264653', '#f4a261', '#e76f51', '#fefae0']], noun: ['Tacos', 'Eats', 'Street Kitchen', 'Street Food', 'Grill', 'Food Truck'], adj: ['Rolling', 'Roaming', 'Curbside', 'Late Night', 'Hot', 'Corner'], thing: ['Wheel', 'Wagon', 'Kitchen'] }),
+    bookkeeping: TT('Bookkeeping and tax', { corp: true, ic: ['calculator', 'receipt', 'folder', 'clipboard', 'calendar', 'pen', 'percent', 'pie', 'chart', 'coins', 'dollar', 'pillars'], sh: ['square', 'rounded', 'circle', 'shield', 'hexagon'], fk: ['serif', 'sans'], sign: ['letters', 'panel'], pal: [['#1b3a4b', '#d9e4ec', '#2a9d8f', '#ffffff'], ['#2d2a32', '#e8e3d9', '#c9a227', '#ffffff'], ['#0b3954', '#bfd7ea', '#ff5a5f', '#ffffff']], noun: ['Tax Services', 'Bookkeeping', 'Accounting', 'Tax and Accounting', 'CPAs'], adj: ['Ledger', 'Balance', 'Clearview', 'Keystone', 'Tally', 'Northgate'], thing: [] }),
+  });
+  for (const k of ['phonerepair', 'foodtruck', 'bookkeeping']) { B.TYPES[k].id = k; if (!B.TYPE_LIST.includes(k)) B.TYPE_LIST.push(k); }
+  B.PLAYER_TYPES.splice(B.PLAYER_TYPES.indexOf('burger'), 0, 'foodtruck'); B.PLAYER_TYPES.push('phonerepair', 'bookkeeping');
+  Object.assign(B.TYPE_CATS, { phonerepair: ['work'], foodtruck: ['food'], bookkeeping: ['work'] });
+  // ---------- staff uniforms by business type ----------
+  // each role is a set of garments. top is the base layer, over goes on top, hat sits above. Colours come from the brand's uniform slots
+  const R = (n, top, over, hat, extra) => Object.assign({ n, top, over, hat }, extra);
+  B.UNIFORMS = {
+    cafe: [R('Barista', 'tee', 'bib', 'cap'), R('Floor staff', 'polo', 'waist', null)],
+    bakery: [R('Baker', 'chef', 'bib', 'cap'), R('Counter staff', 'tee', 'bib', 'cap')],
+    restaurant: [R('Chef', 'chef', null, 'toque'), R('Waiter', 'shirt', 'vest', null, { lower: 'waist' }), R('Host', 'shirt', 'blazer', null)],
+    burger: [R('Crew', 'polo', null, 'visor', { badge: true }), R('Grill cook', 'tee', 'bib', 'cap'), R('Delivery', 'tee', 'courier', 'cap')],
+    pizza: [R('Pizza maker', 'tee', 'bib', 'cap'), R('Delivery', 'tee', 'courier', 'cap')],
+    bar: [R('Bartender', 'shirt', 'vest', null), R('Floor staff', 'tee', 'waist', null), R('Door staff', 'tee', 'security', null)],
+    nightclub: [R('Bar staff', 'tee', null, null), R('Security', 'tee', 'security', null), R('Host', 'shirt', 'blazer', null)],
+    hotel: [R('Concierge', 'shirt', 'concierge', null), R('Front desk', 'shirt', 'blazer', null, { badge: true }), R('Housekeeping', 'tunic', null, null)],
+    gym: [R('Front desk', 'polo', null, null, { badge: true }), R('Trainer', 'tank', null, null), R('Instructor', 'tee', null, 'cap')],
+    fashion: [R('Sales staff', 'tee', null, null, { badge: true }), R('Stockroom', 'polo', null, 'cap')],
+    jeweler: [R('Sales consultant', 'shirt', 'blazer', null, { badge: true })],
+    tech: [R('Team', 'hoodie', null, null), R('Events', 'tee', null, 'cap')],
+    finance: [R('Partners', 'shirt', 'blazer', null, { pin: true })],
+    phonerepair: [R('Technician', 'polo', 'bib', null, { badge: true }), R('Counter staff', 'tee', null, null, { badge: true })],
+    foodtruck: [R('Cook', 'tee', 'bib', 'cap'), R('Window staff', 'tee', null, 'visor')],
+    bookkeeping: [R('Accountant', 'shirt', null, null), R('Partner', 'shirt', 'blazer', null, { pin: true })],
+    _other: [R('Staff', 'polo', null, null, { badge: true })],
+  };
+  // uniform colour slots: body is the base shirt, trim the collar and cuffs, over the apron, vest or jacket
+  B.uniDefaults = type => ({ body: ['restaurant', 'hotel', 'jeweler', 'finance', 'bookkeeping'].includes(type) ? 'w' : ['nightclub', 'bar'].includes(type) ? 'k' : 'p', trim: 'a', over: ['restaurant', 'jeweler', 'finance', 'nightclub', 'bookkeeping', 'phonerepair'].includes(type) ? 'k' : ['hotel'].includes(type) ? 'p' : 's' });
+  const SS = 'M60 40L18 60L0 112L36 126L46 102V250H154V102L164 126L200 112L182 60L140 40Q120 62 100 62Q80 62 60 40Z';
+  const LS = 'M60 40L22 60L4 200L30 206L48 112V250H152V112L170 206L196 200L178 60L140 40Q120 62 100 62Q80 62 60 40Z';
+  const TANK = 'M68 40Q74 78 52 96V250H148V96Q126 78 132 40H118Q114 72 100 72Q86 72 82 40Z';
+  const fillP = (x, d, c, line) => { const p = new Path2D(d); x.fillStyle = c; x.fill(p); x.strokeStyle = line || B.mix(c, '#000', .28); x.lineWidth = 1.5; x.stroke(p); };
+  const dark = c => B.mix(c, '#000', .22);
+  // draws one role in a 200 by 290 box: hat from y 0, garments from y 40. Logo positions follow the outermost layer
+  function drawOutfit(x, b, role, ox, oy, k) {
+    const u = Object.assign(B.uniDefaults(b.type), b.uni || {}); const cbody = B.col(b, u.body), ctrim = B.col(b, u.trim), cover = B.col(b, u.over);
+    x.save(); x.translate(ox, oy); x.scale(k, k); const mk = (cx, cy, s, bg) => { const f = B.remapFor(b, bg); B.drawMark(x, b, cx, cy, s, f ? { mono: f } : {}); };
+    const ink = bg => ['l', 'p', 'k', 'w', 'a', 's'].map(q => B.col(b, q)).find(c => B.contrast(c, bg) >= 3.2) || (B.lum(bg) > .4 ? '#141414' : '#ffffff');
+    const top = role.top, base = top === 'chef' ? '#f7f7f5' : top === 'tunic' ? B.col(b, u.tunic || 'l') : top === 'shirt' ? '#f4f4f2' : cbody;
+    // the shirt or base layer
+    const shape = ['shirt', 'chef', 'hoodie'].includes(top) ? LS : top === 'tank' ? TANK : SS;
+    if (top === 'hoodie') fillP(x, 'M58 42Q60 4 100 4Q140 4 142 42Q120 66 100 66Q80 66 58 42Z', dark(cbody));
+    fillP(x, shape, base);
+    if (top === 'tee' || top === 'tunic') { x.strokeStyle = ctrim; x.lineWidth = 6; x.beginPath(); x.moveTo(62, 43); x.quadraticCurveTo(80, 64, 100, 64); x.quadraticCurveTo(120, 64, 138, 43); x.stroke(); x.lineWidth = 5; x.beginPath(); x.moveTo(3, 110); x.lineTo(37, 123); x.moveTo(197, 110); x.lineTo(163, 123); x.stroke(); }
+    if (top === 'polo') { fillP(x, 'M60 40L100 64L82 82Z', dark(cbody)); fillP(x, 'M140 40L100 64L118 82Z', dark(cbody)); x.fillStyle = ctrim; x.fillRect(96, 64, 8, 40); x.fillStyle = '#eee'; for (const yy of [72, 84, 96]) { x.beginPath(); x.arc(100, yy, 2, 0, 7); x.fill(); } x.strokeStyle = ctrim; x.lineWidth = 5; x.beginPath(); x.moveTo(3, 110); x.lineTo(37, 123); x.moveTo(197, 110); x.lineTo(163, 123); x.stroke(); }
+    if (top === 'shirt') { fillP(x, 'M64 40L100 62L84 76Z', '#ffffff'); fillP(x, 'M136 40L100 62L116 76Z', '#ffffff'); x.fillStyle = '#ccc'; for (let yy = 80; yy < 240; yy += 22) { x.beginPath(); x.arc(100, yy, 2, 0, 7); x.fill(); } }
+    if (top === 'chef') { fillP(x, rr(72, 36, 56, 16, 4), '#ffffff', ctrim); x.strokeStyle = ctrim; x.lineWidth = 3; x.beginPath(); x.moveTo(74, 46); x.lineTo(126, 46); x.stroke(); x.fillStyle = ctrim; for (let yy = 80; yy < 200; yy += 26) for (const xx of [84, 116]) { x.beginPath(); x.arc(xx, yy, 3.5, 0, 7); x.fill(); } x.fillRect(4, 196, 26, 8); x.fillRect(170, 196, 26, 8); }
+    if (top === 'tunic') { x.fillStyle = dark(base); for (let yy = 80; yy < 200; yy += 22) { x.beginPath(); x.arc(126, yy, 2.5, 0, 7); x.fill(); } x.fillRect(122, 66, 2, 150); }
+    if (top === 'hoodie') { x.fillStyle = dark(cbody); x.beginPath(); x.moveTo(60, 190); x.lineTo(140, 190); x.lineTo(150, 236); x.lineTo(50, 236); x.closePath(); x.fill(); x.strokeStyle = ctrim; x.lineWidth = 3; x.beginPath(); x.moveTo(92, 64); x.lineTo(90, 100); x.moveTo(108, 64); x.lineTo(110, 100); x.stroke(); x.fillStyle = ctrim; x.fillRect(4, 196, 26, 8); x.fillRect(170, 196, 26, 8); x.fillRect(48, 240, 104, 10); }
+    // the outer layer
+    const ov = role.over; let logo = { x: 128, y: 96, s: 30, bg: base };
+    if (top === 'hoodie') logo = { x: 100, y: 128, s: 54, bg: base }; if (top === 'tee' && !ov && !role.badge && !role.hat) logo = { x: 100, y: 120, s: 64, bg: base }; if (top === 'tank') logo = { x: 100, y: 130, s: 52, bg: base };
+    if (ov === 'bib') { fillP(x, 'M72 70H128V122L152 134V250H48V134L72 122Z', cover); x.strokeStyle = cover; x.lineWidth = 5; x.beginPath(); x.moveTo(74, 72); x.quadraticCurveTo(100, 22, 126, 72); x.stroke(); x.fillStyle = dark(cover); x.fillRect(66, 196, 68, 30); logo = { x: 100, y: 102, s: 40, bg: cover }; }
+    if (ov === 'vest') { fillP(x, 'M66 42L100 146L134 42L152 96V246H48V96Z', cover); x.fillStyle = '#d8d8d8'; for (let yy = 160; yy < 236; yy += 20) { x.beginPath(); x.arc(100, yy, 3, 0, 7); x.fill(); } logo = { x: 128, y: 120, s: 26, bg: cover }; }
+    if (ov === 'blazer' || ov === 'concierge') { fillP(x, 'M60 40L22 60L4 200L30 206L48 112V250H96L100 150L104 250H152V112L170 206L196 200L178 60L140 40L100 150Z', cover); fillP(x, 'M60 40L100 150L74 104L84 92Z', dark(cover)); fillP(x, 'M140 40L100 150L126 104L116 92Z', dark(cover)); if (!role.pin) { x.fillStyle = ink(base) === '#ffffff' ? cbody : B.col(b, 'p'); } x.fillStyle = ctrim; if (top === 'shirt') { x.beginPath(); x.moveTo(96, 64); x.lineTo(104, 64); x.lineTo(108, 120); x.lineTo(100, 134); x.lineTo(92, 120); x.closePath(); x.fill(); }
+      const gold = ov === 'concierge' ? '#d6b04c' : '#888'; x.fillStyle = gold; for (const yy of [170, 200]) { x.beginPath(); x.arc(110, yy, 3.5, 0, 7); x.fill(); } if (ov === 'concierge') { x.fillRect(4, 192, 26, 6); x.fillRect(170, 192, 26, 6); x.fillRect(52, 42, 20, 6); x.fillRect(128, 42, 20, 6); }
+      logo = role.pin ? { x: 132, y: 92, s: 14, bg: cover } : { x: 134, y: 100, s: 22, bg: cover }; }
+    if (ov === 'security' || ov === 'courier') { fillP(x, LS, cover); fillP(x, 'M60 40Q80 58 100 58Q120 58 140 40L134 32Q100 50 66 32Z', dark(cover)); x.strokeStyle = dark(cover); x.lineWidth = 2; x.beginPath(); x.moveTo(100, 58); x.lineTo(100, 250); x.stroke();
+      if (ov === 'courier') { x.fillStyle = '#e6ef4a'; x.fillRect(48, 186, 104, 9); x.fillRect(48, 204, 104, 9); x.fillRect(8, 160, 34, 7); x.fillRect(158, 160, 34, 7); logo = { x: 130, y: 104, s: 30, bg: cover }; }
+      else { x.fillStyle = ink(cover); x.font = '700 15px Inter,system-ui,sans-serif'; x.textAlign = 'center'; x.fillText('SECURITY', 100, 230); logo = { x: 130, y: 100, s: 28, bg: cover }; } }
+    if (ov === 'waist' || role.lower === 'waist') { fillP(x, rect(46, 176, 108, 74), cover); x.fillStyle = dark(cover); x.fillRect(38, 168, 124, 10); x.fillRect(64, 196, 32, 26); if (ov === 'waist') { /* shirt keeps the chest logo */ } }
+    // the logo, a name badge and a lapel pin where the role has them
+    mk(logo.x, logo.y, logo.s, logo.bg);
+    if (role.badge) { const bx = ov === 'bib' ? 80 : 56, by = ov === 'bib' ? 132 : 92; x.fillStyle = '#ffffff'; x.fillRect(bx, by, 40, 16); x.strokeStyle = '#bbb'; x.lineWidth = 1; x.strokeRect(bx, by, 40, 16); x.fillStyle = B.col(b, 'p'); x.fillRect(bx, by, 8, 16); x.fillStyle = '#333'; x.font = '600 8px Inter,system-ui,sans-serif'; x.textAlign = 'left'; x.fillText('ALEX', bx + 11, by + 11); }
+    // hats
+    const hc = cbody === '#f4f4f2' || top === 'chef' ? cover : cbody;
+    x.save(); x.translate(0, -16);
+    if (role.hat === 'cap') { const c = B.contrast(hc, '#e9e6e0') < 1.3 ? dark(hc) : hc; x.fillStyle = c; x.beginPath(); x.moveTo(62, 30); x.quadraticCurveTo(62, -6, 100, -6); x.quadraticCurveTo(138, -6, 138, 30); x.closePath(); x.fill(); x.fillStyle = dark(c); x.beginPath(); x.ellipse(100, 32, 46, 7, 0, 0, 7); x.fill(); mk(100, 14, 22, c); }
+    if (role.hat === 'visor') { x.fillStyle = hc; x.fillRect(62, 12, 76, 14); x.fillStyle = dark(hc); x.beginPath(); x.ellipse(100, 30, 46, 7, 0, 0, 7); x.fill(); mk(100, 19, 11, hc); }
+    if (role.hat === 'toque') { fillP(x, 'M70 26Q52 24 56 8Q60 -6 74 -2Q80 -16 100 -16Q120 -16 126 -2Q140 -6 144 8Q148 24 130 26Z', '#ffffff', '#ccc'); fillP(x, rr(70, 22, 60, 12, 2), '#ffffff', ctrim); }
+    x.restore(); x.restore();
+  }
+  B.drawOutfit = drawOutfit;
+})();
+// ================= previews by business type: staff roles and branded items =================
+function pStaff(x, w, h) {
+  x.fillStyle = '#e9e6e0'; x.fillRect(0, 0, w, h); const roles = BR.UNIFORMS[B.type] || BR.UNIFORMS._other, n = roles.length;
+  const cell = Math.min(w / Math.max(n, 2.4), 300), k = Math.min(cell / 250, (h - 40) / 320), ox = (w - cell * n) / 2;
+  roles.forEach((r, i) => { const cx = ox + cell * i + cell / 2; BR.drawOutfit(x, B, r, cx - 100 * k, 40 * k + 8, k);
+    x.fillStyle = '#2a2d33'; x.font = `600 ${Math.max(11, 15 * k)}px "IBM Plex Sans",system-ui`; x.textAlign = 'center'; x.fillText(r.n, cx, h - 14); });
+}
+// ---------- item drawers, each in its own local box. W is its width, all sit on a baseline at y 260 ----------
+const IT = {};
+const kraft = '#c8a77e';
+function rrp(x, X, Y, W, H, r) { x.beginPath(); if (x.roundRect) x.roundRect(X, Y, W, H, r); else x.rect(X, Y, W, H); }
+function shadow(x, f) { x.save(); x.shadowColor = 'rgba(0,0,0,.18)'; x.shadowBlur = 10; x.shadowOffsetY = 5; f(); x.restore(); }
+const mkOn = (x, cx, cy, s, bg) => BR.drawMark(x, B, cx, cy, s, markOn(bg));
+const lockOn = (x, cx, cy, w, h, bg, lk) => BR.drawLockup(x, B, cx, cy, w, h, inkFor(bg), Object.assign(lk ? { lockup: lk } : {}, markOn(bg)));
+const txt = (x, t, X, Y, px, c, al = 'center', wt = 600) => { x.fillStyle = c; x.font = `${wt} ${px}px Inter,system-ui,sans-serif`; x.textAlign = al; x.textBaseline = 'alphabetic'; x.fillText(t, X, Y); };
+function card(x, bg, f, W = 240, H = 140, y0 = 120) { shadow(x, () => { x.fillStyle = bg; rrp(x, 0, y0, W, H, 8); x.fill(); }); x.save(); x.translate(0, y0); f(W, H); x.restore(); }
+IT.takeaway = { n: 'Takeaway cup', W: 140, f: x => { const p = col('p'); shadow(x, () => { x.fillStyle = '#fff'; x.beginPath(); x.moveTo(10, 40); x.lineTo(130, 40); x.lineTo(115, 260); x.lineTo(25, 260); x.closePath(); x.fill(); }); x.fillStyle = p; x.beginPath(); x.moveTo(15, 110); x.lineTo(125, 110); x.lineTo(119, 200); x.lineTo(21, 200); x.closePath(); x.fill(); mkOn(x, 70, 155, 70, p); x.fillStyle = '#2a2a2a'; rrp(x, 0, 24, 140, 20, 8); x.fill(); x.fillRect(16, 14, 108, 12); } };
+IT.mug = { n: 'Mug', W: 170, f: x => { const c = col('l'); shadow(x, () => { x.fillStyle = c; rrp(x, 6, 110, 120, 150, 14); x.fill(); }); x.strokeStyle = c; x.lineWidth = 16; x.beginPath(); x.arc(130, 180, 26, -Math.PI / 2, Math.PI / 2); x.stroke(); mkOn(x, 66, 185, 80, c); } };
+IT.pastrybag = { n: 'Pastry bag', W: 130, f: x => { shadow(x, () => { x.fillStyle = kraft; x.beginPath(); x.moveTo(0, 70); for (let i = 0; i <= 10; i++) x.lineTo(i * 13, 70 + (i % 2 ? 8 : 0)); x.lineTo(130, 260); x.lineTo(0, 260); x.closePath(); x.fill(); }); lockOn(x, 65, 170, 110, 110, kraft, 'stack'); } };
+IT.loyalty = { n: 'Loyalty card', W: 240, f: x => card(x, col('l'), (W, H) => { mkOn(x, 26, 26, 30, col('l')); txt(x, 'Buy 9, the 10th is on us', 48, 30, 12, inkFor(col('l')), 'left'); for (let i = 0; i < 10; i++) { const cx = 30 + (i % 5) * 45, cy = 70 + Math.floor(i / 5) * 40; x.strokeStyle = col('p'); x.lineWidth = 2; x.beginPath(); x.arc(cx, cy, 15, 0, 7); x.stroke(); if (i < 4) mkOn(x, cx, cy, 26, col('l')); } }) };
+IT.breadbag = { n: 'Bread bag', W: 110, f: x => { shadow(x, () => { x.fillStyle = kraft; x.fillRect(0, 0, 110, 260); }); x.fillStyle = '#e9dcc0'; rrp(x, 25, 120, 60, 110, 30); x.fill(); x.fillStyle = '#b4753f'; rrp(x, 32, 128, 46, 100, 23); x.fill(); lockOn(x, 55, 60, 96, 90, kraft, 'stack'); } };
+IT.cakebox = { n: 'Cake box', W: 210, f: x => { const c = col('l'); shadow(x, () => { x.fillStyle = BR.mix(c, '#000', .08); x.beginPath(); x.moveTo(0, 120); x.lineTo(40, 90); x.lineTo(210, 90); x.lineTo(170, 120); x.closePath(); x.fill(); x.fillStyle = c; x.fillRect(0, 120, 170, 140); x.fillStyle = BR.mix(c, '#000', .15); x.beginPath(); x.moveTo(170, 120); x.lineTo(210, 90); x.lineTo(210, 230); x.lineTo(170, 260); x.closePath(); x.fill(); }); x.fillStyle = col('a'); x.fillRect(140, 120, 14, 140); x.beginPath(); x.moveTo(140, 120); x.lineTo(180, 90); x.lineTo(194, 90); x.lineTo(154, 120); x.fill(); lockOn(x, 70, 190, 120, 90, c, 'stack'); } };
+IT.menu = { n: 'Menu', W: 170, f: x => { const p = col('p'); shadow(x, () => { x.fillStyle = p; rrp(x, 0, 20, 170, 240, 4); x.fill(); }); x.strokeStyle = col('a'); x.lineWidth = 1.5; x.strokeRect(10, 30, 150, 220); lockOn(x, 85, 120, 130, 110, p, 'stack'); txt(x, 'MENU', 85, 220, 13, inkFor(p)); } };
+IT.bag = { n: 'Takeaway bag', W: 170, f: x => { const c = ['bakery', 'cafe', 'restaurant'].includes(B.type) ? kraft : col('l'); shadow(x, () => { x.fillStyle = c; x.fillRect(0, 60, 170, 200); }); x.fillStyle = BR.mix(c, '#000', .1); x.fillRect(0, 60, 170, 16); x.strokeStyle = BR.mix(c, '#000', .35); x.lineWidth = 5; x.beginPath(); x.moveTo(45, 64); x.quadraticCurveTo(85, 0, 125, 64); x.stroke(); lockOn(x, 85, 170, 140, 130, c, 'stack'); } };
+IT.gift = { n: 'Gift card', W: 240, f: x => card(x, col('p'), (W, H) => { lockOn(x, W / 2, 58, W * .8, 60, col('p')); txt(x, 'GIFT CARD', W / 2, 118, 12, inkFor(col('p'))); }) };
+IT.bizcard = { n: 'Business card', W: 240, f: x => card(x, col('l'), (W, H) => { mkOn(x, 34, 34, 40, col('l')); const ink = inkFor(col('l')); x.fillStyle = ink; x.font = BR.fontCss(B.font.f, B.font.w, 16); x.textAlign = 'left'; x.fillText((B.name || '').slice(0, 24), 16, 84); txt(x, 'Owner', 16, 102, 11, ink, 'left', 500); txt(x, '214 Main Street', 16, 118, 11, ink, 'left', 500); x.fillStyle = col('a'); x.fillRect(0, H - 6, W, 6); }) };
+IT.burgerbox = { n: 'Burger box', W: 200, f: x => { const c = col('l'), d = BR.mix(c, '#000', .12); shadow(x, () => { x.fillStyle = d; x.beginPath(); x.moveTo(10, 200); x.lineTo(190, 200); x.lineTo(176, 260); x.lineTo(24, 260); x.closePath(); x.fill(); x.fillStyle = c; x.beginPath(); x.moveTo(6, 200); x.quadraticCurveTo(10, 100, 100, 96); x.quadraticCurveTo(190, 100, 194, 200); x.closePath(); x.fill(); }); x.fillStyle = col('p'); x.fillRect(6, 194, 188, 8); mkOn(x, 100, 150, 72, c); } };
+IT.fries = { n: 'Fries carton', W: 120, f: x => { x.fillStyle = '#f2c14e'; for (let i = 0; i < 7; i++) { x.save(); x.translate(26 + i * 11, 100); x.rotate((i - 3) * .06); x.fillRect(-4, -60, 9, 80); x.restore(); } const p = col('p'); shadow(x, () => { x.fillStyle = p; x.beginPath(); x.moveTo(6, 90); x.quadraticCurveTo(60, 120, 114, 90); x.lineTo(98, 260); x.lineTo(22, 260); x.closePath(); x.fill(); }); mkOn(x, 60, 180, 64, p); } };
+IT.soda = { n: 'Drink cup', W: 120, f: x => { shadow(x, () => { x.fillStyle = '#fff'; x.beginPath(); x.moveTo(10, 80); x.lineTo(110, 80); x.lineTo(96, 260); x.lineTo(24, 260); x.closePath(); x.fill(); }); mkOn(x, 60, 170, 70, '#ffffff'); x.fillStyle = '#e8e8e8'; rrp(x, 4, 66, 112, 18, 6); x.fill(); x.fillStyle = col('a'); x.save(); x.translate(72, 66); x.rotate(.25); x.fillRect(0, -60, 8, 62); x.restore(); } };
+IT.pizzabox = { n: 'Pizza box', W: 240, f: x => { const c = '#f4efe6'; shadow(x, () => { x.fillStyle = c; x.fillRect(0, 30, 230, 230); }); x.strokeStyle = BR.mix(c, '#000', .15); x.lineWidth = 2; x.strokeRect(10, 40, 210, 210); lockOn(x, 115, 145, 190, 150, c, 'stack'); } };
+IT.delivery = { n: 'Delivery bag', W: 200, f: x => { const p = col('p'); shadow(x, () => { x.fillStyle = BR.mix(p, '#000', .2); x.beginPath(); x.moveTo(0, 90); x.lineTo(30, 70); x.lineTo(200, 70); x.lineTo(170, 90); x.closePath(); x.fill(); x.fillStyle = p; rrp(x, 0, 90, 170, 170, 6); x.fill(); x.fillStyle = BR.mix(p, '#000', .3); x.beginPath(); x.moveTo(170, 90); x.lineTo(200, 70); x.lineTo(200, 240); x.lineTo(170, 260); x.closePath(); x.fill(); }); lockOn(x, 85, 175, 140, 110, p, 'stack'); } };
+IT.coaster = { n: 'Coaster', W: 170, f: x => { const c = col('l'); shadow(x, () => { x.fillStyle = c; x.beginPath(); x.arc(85, 175, 82, 0, 7); x.fill(); }); x.strokeStyle = col('p'); x.lineWidth = 3; x.beginPath(); x.arc(85, 175, 74, 0, 7); x.stroke(); mkOn(x, 85, 175, 110, c); } };
+IT.pint = { n: 'Pint glass', W: 120, f: x => { const g = x.createLinearGradient(0, 0, 120, 0); g.addColorStop(0, '#c9822a'); g.addColorStop(.5, '#e7a943'); g.addColorStop(1, '#b8711f'); x.fillStyle = g; x.beginPath(); x.moveTo(6, 60); x.lineTo(114, 60); x.lineTo(100, 260); x.lineTo(20, 260); x.closePath(); x.fill(); x.fillStyle = '#fbf3e0'; x.beginPath(); x.moveTo(4, 40); x.lineTo(116, 40); x.lineTo(113, 72); x.lineTo(7, 72); x.closePath(); x.fill(); x.save(); x.globalAlpha = .9; BR.drawMark(x, B, 60, 165, 70, { foil: ['#ffffff', '#d99a3a'] }); x.restore(); } };
+IT.drinks = { n: 'Drinks list', W: 150, f: x => { const c = '#1c1c1f'; shadow(x, () => { x.fillStyle = c; x.fillRect(0, 20, 150, 240); }); lockOn(x, 75, 70, 120, 60, c, 'stack'); x.fillStyle = '#5b5e66'; for (let i = 0; i < 7; i++) { x.fillRect(18, 126 + i * 18, 70 + (i * 23 % 30), 4); x.fillRect(118, 126 + i * 18, 16, 4); } } };
+IT.wristband = { n: 'Wristband', W: 250, f: x => { const a = col('a'); shadow(x, () => { x.fillStyle = a; rrp(x, 0, 170, 250, 34, 6); x.fill(); }); for (let i = 0; i < 5; i++) mkOn(x, 30 + i * 48, 187, 24, a); } };
+IT.ticket = { n: 'Entry ticket', W: 230, f: x => { const p = col('p'); shadow(x, () => { x.fillStyle = p; x.beginPath(); x.moveTo(0, 130); x.lineTo(230, 130); x.lineTo(230, 165); x.arc(230, 180, 15, -Math.PI / 2, Math.PI / 2, true); x.lineTo(230, 240); x.lineTo(0, 240); x.lineTo(0, 195); x.arc(0, 180, 15, Math.PI / 2, -Math.PI / 2, true); x.closePath(); x.fill(); }); x.setLineDash([4, 4]); x.strokeStyle = inkFor(p); x.beginPath(); x.moveTo(172, 136); x.lineTo(172, 234); x.stroke(); x.setLineDash([]); lockOn(x, 86, 172, 140, 44, p); txt(x, 'ADMIT ONE', 86, 224, 11, inkFor(p)); txt(x, 'FRI', 201, 192, 13, inkFor(p)); } };
+IT.vip = { n: 'VIP card', W: 240, f: x => card(x, '#111114', (W, H) => { x.strokeStyle = '#c9a54a'; x.lineWidth = 2; x.strokeRect(8, 8, W - 16, H - 16); BR.drawLockup(x, B, W / 2, 56, W * .7, 50, '#c9a54a', { foil: ['#c9a54a', '#111114'] }); txt(x, 'V I P', W / 2, 114, 15, '#c9a54a', 'center', 700); }) };
+IT.keycard = { n: 'Room key card', W: 240, f: x => card(x, col('p'), (W, H) => { lockOn(x, W / 2, 56, W * .75, 50, col('p')); x.fillStyle = '#d8c58a'; rrp(x, 18, 96, 30, 22, 4); x.fill(); txt(x, 'Tap to unlock', W - 18, 114, 11, inkFor(col('p')), 'right', 500); }) };
+IT.hanger = { n: 'Door hanger', W: 110, f: x => { const c = col('l'); shadow(x, () => { x.fillStyle = c; x.beginPath(); rrp(x, 0, 20, 110, 240, 10); x.fill(); }); x.fillStyle = '#e9e6e0'; x.beginPath(); x.arc(55, 58, 20, 0, 7); x.fill(); x.fillRect(51, 20, 8, 40); mkOn(x, 55, 128, 54, c); const ink = inkFor(c); txt(x, 'PLEASE', 55, 186, 12, ink); txt(x, 'DO NOT', 55, 202, 12, ink); txt(x, 'DISTURB', 55, 218, 12, ink); } };
+IT.toiletry = { n: 'Shampoo', W: 90, f: x => { const c = col('l'); shadow(x, () => { x.fillStyle = c; rrp(x, 8, 100, 74, 160, 16); x.fill(); }); x.fillStyle = col('p'); rrp(x, 26, 76, 38, 28, 4); x.fill(); mkOn(x, 45, 160, 46, c); txt(x, 'SHAMPOO', 45, 222, 9, inkFor(c)); } };
+IT.bottle = { n: 'Water bottle', W: 90, f: x => { const p = col('p'); shadow(x, () => { x.fillStyle = p; rrp(x, 6, 70, 78, 190, 18); x.fill(); }); x.fillStyle = '#222'; rrp(x, 20, 40, 50, 34, 6); x.fill(); x.fillRect(32, 30, 26, 12); mkOn(x, 45, 160, 54, p); } };
+IT.member = { n: 'Membership card', W: 240, f: x => card(x, col('p'), (W, H) => { lockOn(x, W / 2 - 20, 44, W * .7, 40, col('p')); txt(x, 'MEMBER', 18, 92, 11, inkFor(col('p')), 'left', 700); x.fillStyle = inkFor(col('p')); for (let i = 0; i < 34; i++) if ((i * 7) % 5 > 1) x.fillRect(18 + i * 4.6, 102, 2.6, 24); }) };
+IT.duffel = { n: 'Gym bag', W: 240, f: x => { const p = col('p'), d = BR.mix(p, '#000', .3); x.strokeStyle = d; x.lineWidth = 8; x.beginPath(); x.moveTo(70, 150); x.quadraticCurveTo(120, 80, 170, 150); x.stroke(); shadow(x, () => { x.fillStyle = p; rrp(x, 0, 140, 240, 120, 40); x.fill(); }); x.fillStyle = d; rrp(x, 0, 140, 34, 120, 30); x.fill(); rrp(x, 206, 140, 34, 120, 30); x.fill(); lockOn(x, 120, 200, 150, 64, p); } };
+IT.towel = { n: 'Towel', W: 150, f: x => { const c = col('l'); shadow(x, () => { x.fillStyle = c; rrp(x, 0, 150, 150, 110, 6); x.fill(); }); x.fillStyle = col('a'); x.fillRect(0, 236, 150, 8); x.fillStyle = BR.mix(c, '#000', .1); x.fillRect(0, 196, 150, 3); mkOn(x, 120, 176, 30, c); } };
+IT.shopbag = { n: 'Shopping bag', W: 170, f: x => { const p = col('p'); x.strokeStyle = col('a'); x.lineWidth = 4; x.beginPath(); x.moveTo(50, 70); x.quadraticCurveTo(85, 6, 120, 70); x.stroke(); shadow(x, () => { x.fillStyle = p; x.fillRect(0, 60, 170, 200); }); lockOn(x, 85, 160, 140, 120, p, 'stack'); } };
+IT.swing = { n: 'Swing tag', W: 100, f: x => { const p = col('p'); x.strokeStyle = '#555'; x.lineWidth = 1.5; x.beginPath(); x.moveTo(50, 70); x.quadraticCurveTo(80, 30, 60, 0); x.stroke(); shadow(x, () => { x.fillStyle = p; x.beginPath(); x.moveTo(20, 80); x.lineTo(50, 60); x.lineTo(80, 80); x.lineTo(80, 250); x.lineTo(20, 250); x.closePath(); x.fill(); }); x.fillStyle = '#e9e6e0'; x.beginPath(); x.arc(50, 78, 5, 0, 7); x.fill(); mkOn(x, 50, 140, 46, p); txt(x, '$48', 50, 220, 16, inkFor(p), 'center', 700); } };
+IT.giftbox = { n: 'Gift box', W: 190, f: x => { const c = col('l'), a = col('a'); shadow(x, () => { x.fillStyle = c; x.fillRect(10, 150, 170, 110); x.fillStyle = BR.mix(c, '#000', .08); x.fillRect(0, 124, 190, 32); }); x.fillStyle = a; x.fillRect(86, 124, 18, 136); x.beginPath(); x.ellipse(78, 114, 18, 10, -.4, 0, 7); x.ellipse(112, 114, 18, 10, .4, 0, 7); x.fill(); lockOn(x, 45, 208, 60, 60, c, 'mark'); } };
+IT.ringbox = { n: 'Ring box', W: 150, f: x => { const p = col('p'), d = BR.mix(p, '#000', .3); shadow(x, () => { x.fillStyle = d; rrp(x, 10, 70, 130, 90, 14); x.fill(); x.fillStyle = p; rrp(x, 0, 160, 150, 100, 14); x.fill(); }); x.fillStyle = BR.mix(p, '#fff', .12); rrp(x, 22, 82, 106, 70, 10); x.fill(); x.strokeStyle = '#d4b45a'; x.lineWidth = 6; x.beginPath(); x.ellipse(75, 156, 20, 12, 0, Math.PI, 0); x.stroke(); BR.drawMark(x, B, 75, 210, 50, { foil: ['#d4b45a', p] }); } };
+IT.care = { n: 'Care card', W: 220, f: x => card(x, col('l'), (W, H) => { lockOn(x, W / 2, 46, W * .7, 44, col('l')); txt(x, 'Certificate of authenticity', W / 2, 98, 11, inkFor(col('l')), 'center', 500); x.fillStyle = col('a'); x.fillRect(W / 2 - 30, 110, 60, 2); }, 220, 140) };
+IT.laptop = { n: 'Laptop sticker', W: 240, f: x => { shadow(x, () => { x.fillStyle = '#8c9096'; rrp(x, 0, 110, 240, 150, 10); x.fill(); }); x.fillStyle = '#9a9ea4'; rrp(x, 8, 118, 224, 134, 8); x.fill(); const bg = col('l'); x.fillStyle = bg; x.beginPath(); x.arc(150, 170, 34, 0, 7); x.fill(); mkOn(x, 150, 170, 52, bg); } };
+IT.app = { n: 'App icon', W: 130, f: x => { shadow(x, () => { x.fillStyle = '#1d1f24'; rrp(x, 0, 20, 130, 240, 18); x.fill(); }); x.fillStyle = '#2c2f36'; rrp(x, 8, 34, 114, 212, 10); x.fill(); for (let i = 0; i < 9; i++) { if (i === 4) continue; x.fillStyle = '#41454e'; rrp(x, 18 + (i % 3) * 34, 60 + Math.floor(i / 3) * 40, 26, 26, 6); x.fill(); } const p = col('p'); x.fillStyle = p; rrp(x, 50, 98, 30, 30, 7); x.fill(); mkOn(x, 65, 113, 22, p); txt(x, (B.name || '').split(' ')[0].slice(0, 10), 65, 138, 7, '#d0d3d8', 'center', 500); } };
+IT.lanyard = { n: 'Staff pass', W: 130, f: x => { const p = col('p'); x.fillStyle = p; x.beginPath(); x.moveTo(30, 0); x.lineTo(46, 0); x.lineTo(70, 110); x.lineTo(60, 110); x.closePath(); x.fill(); x.beginPath(); x.moveTo(100, 0); x.lineTo(84, 0); x.lineTo(60, 110); x.lineTo(70, 110); x.closePath(); x.fill(); shadow(x, () => { x.fillStyle = '#fff'; rrp(x, 10, 110, 110, 150, 8); x.fill(); }); x.fillStyle = p; rrp(x, 10, 110, 110, 34, 8); x.fill(); mkOn(x, 65, 127, 26, p); x.fillStyle = '#d6d9de'; x.fillRect(44, 156, 42, 46); txt(x, 'ALEX REED', 65, 222, 10, '#222', 'center', 700); txt(x, 'Engineering', 65, 238, 9, '#666', 'center', 500); } };
+IT.letter = { n: 'Letterhead', W: 180, f: x => { shadow(x, () => { x.fillStyle = '#fff'; x.fillRect(0, 10, 180, 250); }); BR.drawLockup(x, B, 64, 42, 100, 26, inkFor('#ffffff'), Object.assign({ lockup: 'side' }, markOn('#ffffff'))); x.fillStyle = '#dcdfe3'; for (let i = 0; i < 9; i++) x.fillRect(18, 90 + i * 14, 144 - (i % 3) * 22, 4); x.fillStyle = col('a'); x.fillRect(0, 252, 180, 8); } };
+IT.report = { n: 'Report cover', W: 180, f: x => { const p = col('p'); shadow(x, () => { x.fillStyle = p; x.fillRect(0, 10, 180, 250); }); lockOn(x, 90, 80, 140, 70, p, 'stack'); x.fillStyle = col('a'); x.fillRect(18, 170, 40, 3); txt(x, 'Annual Report', 18, 196, 15, inkFor(p), 'left', 700); txt(x, '2027', 18, 216, 12, inkFor(p), 'left', 500); } };
+
+IT.ticket2 = { n: 'Repair ticket', W: 120, f: x => { shadow(x, () => { x.fillStyle = '#fff'; x.beginPath(); x.moveTo(0, 30); x.lineTo(120, 30); x.lineTo(120, 250); for (let i = 0; i <= 8; i++) x.lineTo(120 - i * 15, 250 + (i % 2 ? 8 : 0)); x.lineTo(0, 250); x.closePath(); x.fill(); }); mkOn(x, 60, 66, 46, '#ffffff'); txt(x, 'TICKET 2041', 60, 112, 10, '#222', 'center', 700); x.fillStyle = '#d4d7dc'; for (let i = 0; i < 6; i++) { x.fillRect(14, 128 + i * 16, 56, 4); x.fillRect(86, 128 + i * 16, 20, 4); } x.fillStyle = col('a'); x.fillRect(14, 228, 92, 6); } };
+IT.phonecase = { n: 'Phone case', W: 110, f: x => { const p = col('p'); shadow(x, () => { x.fillStyle = p; rrp(x, 4, 40, 102, 220, 20); x.fill(); }); x.fillStyle = BR.mix(p, '#000', .35); rrp(x, 14, 52, 36, 46, 10); x.fill(); x.fillStyle = '#111'; for (const [cx, cy] of [[25, 64], [39, 64], [25, 86]]) { x.beginPath(); x.arc(cx, cy, 5, 0, 7); x.fill(); } BR.drawMark(x, B, 55, 170, 54, { foil: [inkFor(p), p] }); } };
+IT.protector = { n: 'Screen protector', W: 140, f: x => { const c = col('l'); shadow(x, () => { x.fillStyle = c; rrp(x, 0, 60, 140, 200, 6); x.fill(); }); x.strokeStyle = BR.mix(c, '#000', .3); x.lineWidth = 2; rrp(x, 44, 120, 52, 104, 8); x.stroke(); lockOn(x, 70, 92, 110, 36, c); txt(x, 'TEMPERED GLASS', 70, 246, 9, inkFor(c), 'center', 700); } };
+IT.tray = { n: 'Food tray', W: 190, f: x => { x.fillStyle = '#c7832f'; for (let i = 0; i < 5; i++) { x.beginPath(); x.arc(40 + i * 28, 168, 20, Math.PI, 0); x.fill(); } x.fillStyle = '#5f9e3a'; for (let i = 0; i < 4; i++) { x.beginPath(); x.arc(54 + i * 28, 172, 12, Math.PI, 0); x.fill(); } const c = col('l'); shadow(x, () => { x.fillStyle = c; x.beginPath(); x.moveTo(0, 170); x.lineTo(190, 170); x.lineTo(170, 250); x.lineTo(20, 250); x.closePath(); x.fill(); }); x.fillStyle = col('p'); x.fillRect(6, 176, 178, 6); mkOn(x, 95, 214, 50, c); } };
+IT.napkin = { n: 'Napkin', W: 130, f: x => { const c = col('l'); shadow(x, () => { x.fillStyle = c; x.fillRect(0, 130, 130, 130); }); x.strokeStyle = BR.mix(c, '#000', .12); x.lineWidth = 2; x.beginPath(); x.moveTo(0, 130); x.lineTo(130, 260); x.stroke(); mkOn(x, 100, 160, 36, c); } };
+IT.aboard = { n: 'Menu board', W: 150, f: x => { x.strokeStyle = '#6b4b2e'; x.lineWidth = 8; x.beginPath(); x.moveTo(20, 260); x.lineTo(40, 40); x.lineTo(110, 40); x.lineTo(130, 260); x.stroke(); const c = '#20262b'; shadow(x, () => { x.fillStyle = c; x.fillRect(30, 50, 90, 170); }); lockOn(x, 75, 92, 76, 56, c, 'stack'); x.fillStyle = '#9aa3ab'; for (let i = 0; i < 5; i++) { x.fillRect(40, 140 + i * 15, 44 - (i * 9 % 14), 3); x.fillRect(96, 140 + i * 15, 14, 3); } } };
+IT.cfolder = { n: 'Client folder', W: 200, f: x => { const p = col('p'); shadow(x, () => { x.fillStyle = BR.mix(p, '#000', .2); x.beginPath(); x.moveTo(0, 70); x.lineTo(70, 70); x.lineTo(82, 84); x.lineTo(200, 84); x.lineTo(200, 260); x.lineTo(0, 260); x.closePath(); x.fill(); x.fillStyle = p; x.fillRect(0, 100, 200, 160); }); lockOn(x, 100, 180, 160, 70, p); } };
+IT.envelope = { n: 'Envelope', W: 230, f: x => { shadow(x, () => { x.fillStyle = '#fff'; x.fillRect(0, 130, 230, 120); }); x.strokeStyle = '#e2e4e8'; x.lineWidth = 2; x.beginPath(); x.moveTo(0, 130); x.lineTo(115, 196); x.lineTo(230, 130); x.stroke(); BR.drawLockup(x, B, 52, 150, 90, 22, inkFor('#ffffff'), Object.assign({ lockup: 'side' }, markOn('#ffffff'))); x.fillStyle = '#c8ccd2'; for (let i = 0; i < 3; i++) x.fillRect(120, 206 + i * 11, 80 - i * 14, 4); x.fillStyle = col('a'); x.fillRect(188, 140, 30, 34); } };
+const ITEM_SETS = {
+  cafe: ['takeaway', 'mug', 'pastrybag', 'loyalty'], bakery: ['breadbag', 'cakebox', 'takeaway', 'loyalty'], restaurant: ['menu', 'bag', 'gift'],
+  burger: ['burgerbox', 'fries', 'soda', 'bag'], pizza: ['pizzabox', 'soda', 'delivery'], bar: ['coaster', 'pint', 'drinks', 'gift'], nightclub: ['wristband', 'ticket', 'vip'],
+  hotel: ['keycard', 'hanger', 'toiletry', 'bag'], gym: ['bottle', 'member', 'duffel', 'towel'], fashion: ['shopbag', 'swing', 'giftbox'], jeweler: ['ringbox', 'shopbag', 'care'],
+  tech: ['laptop', 'app', 'lanyard'], finance: ['bizcard', 'letter', 'report'], phonerepair: ['ticket2', 'phonecase', 'protector', 'bag'], foodtruck: ['tray', 'soda', 'napkin', 'aboard'], bookkeeping: ['bizcard', 'letter', 'cfolder', 'envelope'], _other: ['bag', 'bizcard'],
+};
+function pItems(x, w, h) {
+  x.fillStyle = '#efe9df'; x.fillRect(0, 0, w, h); const set = (ITEM_SETS[B.type] || ITEM_SETS._other).map(k => IT[k]), gap = 36;
+  const tot = set.reduce((a, it) => a + it.W, 0) + gap * (set.length - 1), k = Math.min((w - 40) / tot, (h - 40) / 280); let ox = (w - tot * k) / 2;
+  for (const it of set) { x.save(); x.translate(ox, 10); x.scale(k, k); it.f(x); x.restore(); x.fillStyle = '#46505a'; x.font = '500 12px "IBM Plex Sans",system-ui'; x.textAlign = 'center'; x.textBaseline = 'alphabetic'; x.fillText(it.n, ox + it.W * k / 2, h - 10); ox += (it.W + gap) * k; }
+}
+// ================= Brand Studio UI =================
+const $ = id => document.getElementById(id), BR = BRAND;
+const KEY = 'co-brand-studio-v1';
+const store = (() => { try { localStorage.setItem(KEY + '-p', '1'); localStorage.removeItem(KEY + '-p'); return localStorage; } catch (e) { const m = new Map(); return { getItem: k => m.get(k) ?? null, setItem: (k, v) => m.set(k, v), removeItem: k => m.delete(k) }; } })();
+let DB = { brands: [], cur: null };
+try { const j = JSON.parse(store.getItem(KEY)); if (j && Array.isArray(j.brands)) DB = { brands: j.brands.map(BR.clean), cur: j.cur }; } catch (e) { }
+if (!DB.brands.length) DB.brands.push(BR.blank());
+let B = DB.brands.find(b => b.id === DB.cur) || DB.brands[0];
+let sel = B.mark.length - 1, hist = [JSON.stringify(B)], hi = 0;
+const persist = () => { try { store.setItem(KEY, JSON.stringify({ brands: DB.brands, cur: B.id })); } catch (e) { } };
+function commit() { const j = JSON.stringify(B); if (j === hist[hi]) return; hist = hist.slice(0, hi + 1); hist.push(j); if (hist.length > 150) hist.shift(); hi = hist.length - 1; persist(); drawSaved(); drawLayers(); undoBtns(); }
+function restore() { const x = JSON.parse(hist[hi]); for (const k of Object.keys(B)) delete B[k]; Object.assign(B, x); if (sel >= B.mark.length) sel = B.mark.length - 1; persist(); syncAll(); }
+const undo = () => { if (hi > 0) { hi--; restore(); } }, redo = () => { if (hi < hist.length - 1) { hi++; restore(); } };
+const undoBtns = () => { $('bUndo').disabled = hi <= 0; $('bRedo').disabled = hi >= hist.length - 1; };
+function switchTo(b) { B = b; sel = B.mark.length - 1; hist = [JSON.stringify(B)]; hi = 0; persist(); syncAll(); }
+let raf = 0; const redraw = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; drawStage(); drawPreview(); }); };
+const col = k => BR.col(B, k);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+// ---------- small canvas helper ----------
+function hd(c, w, h) { const d = Math.min(2, devicePixelRatio || 1); c.width = Math.round(w * d); c.height = Math.round(h * d); c.style.width = w + 'px'; c.style.height = h + 'px'; const x = c.getContext('2d'); x.setTransform(d, 0, 0, d, 0, 0); return x; }
+
+// ---------- business, colours, lettering ----------
+$('nType').innerHTML = BR.TYPE_LIST.map(k => `<option value="${k}">${esc(BR.TYPES[k].n)}</option>`).join('');
+function typeOptions() { const ks = [...BR.PLAYER_TYPES]; let h = ks.map(k => `<option value="${k}">${esc(BR.TYPES[k].n)}</option>`).join(''); if (!ks.includes(B.type)) h += `<option value="${B.type}">${esc(BR.TYPES[B.type].n)} (NPC only)</option>`; $('bType').innerHTML = h; $('bType').value = B.type; }
+$('fFont').innerHTML = BR.FONTS.map(f => `<option value="${f.f}" style="font-family:'${f.f}'">${f.f}</option>`).join('');
+const bind = (id, get, set, ev = 'input') => { const e = $(id); e.addEventListener(ev, () => { set(e.value); redraw(); if (ev !== 'input') commit(); }); e.addEventListener('change', commit); };
+bind('bName', null, v => { B.name = v; drawSaved(); });
+bind('bTag', null, v => B.tagline = v);
+bind('bType', null, v => { B.type = v; typeOptions(); drawPicker(); drawPrevCtl(); }, 'change');
+bind('bEst', null, v => B.est = v.replace(/\D/g, ''));
+function drawPal() {
+  const P = $('pal'); P.innerHTML = ''; for (const k of ['p', 's', 'a', 'l']) { const L = document.createElement('label'); L.textContent = BR.SLOTS[k]; const i = document.createElement('input'); i.type = 'color'; i.value = B.pal[k]; i.oninput = () => { B.pal[k] = i.value; redraw(); contrastNote(); drawSwatches(); }; i.onchange = commit; L.appendChild(i); P.appendChild(L); }
+  contrastNote();
+}
+function contrastNote() { const c = BR.contrast(B.pal.p, B.pal.l); $('contrastNote').innerHTML = c < 3 ? `<span class="warn">Light on primary reads poorly (contrast ${c.toFixed(1)} to 1). Signs will pick another colour for the lettering.</span>` : `Light on primary contrast ${c.toFixed(1)} to 1.`; }
+let palIx = 0; $('bPalSug').onclick = () => { const K = BR.TYPES[B.type]; const p = K.pal[palIx++ % K.pal.length]; B.pal = { p: p[0], s: p[1], a: p[2], l: p[3] }; drawPal(); drawSwatches(); redraw(); commit(); };
+$('bPalSwap').onclick = () => { [B.pal.p, B.pal.s] = [B.pal.s, B.pal.p]; drawPal(); redraw(); commit(); };
+function fontWeights(sel, f, cur) { const F = BR.FONT_BY[f] || BR.FONTS[0]; sel.innerHTML = F.w.map(w => `<option value="${w}">${{ 400: 'Regular', 500: 'Medium', 600: 'Semibold', 700: 'Bold', 800: 'Extra bold', 900: 'Black' }[w]}</option>`).join(''); const best = F.w.reduce((a, b) => Math.abs(b - cur) < Math.abs(a - cur) ? b : a, F.w[0]); sel.value = best; return best; }
+$('fFont').onchange = () => { B.font.f = $('fFont').value; B.font.w = fontWeights($('fW'), B.font.f, B.font.w); loadFont(B.font.f, B.font.w); redraw(); commit(); };
+$('fW').onchange = () => { B.font.w = +$('fW').value; loadFont(B.font.f, B.font.w); redraw(); commit(); };
+$('fCase').onchange = () => { B.font.cs = $('fCase').value; redraw(); commit(); };
+$('fLs').oninput = () => { B.font.ls = +$('fLs').value; $('fLsO').textContent = B.font.ls.toFixed(2); redraw(); }; $('fLs').onchange = commit;
+$('bLock').onchange = () => { B.lockup = $('bLock').value; redraw(); commit(); };
+
+// swatch row: palette slots plus white, black and optionally none
+const swatchSets = [];
+function swatch(box, get, set, none) {
+  const make = () => { box.innerHTML = ''; for (const k of [...(none ? ['none'] : []), 'p', 's', 'a', 'l', 'w', 'k']) { const b = document.createElement('button'); b.type = 'button'; b.title = k === 'none' ? 'None' : BR.SLOTS[k]; if (k === 'none') b.className = 'none'; else b.style.background = col(k); if ((get() || 'none') === k) b.classList.add('on'); b.onclick = () => { set(k === 'none' ? null : k); make(); redraw(); commit(); }; box.appendChild(b); } };
+  make(); swatchSets.push({ box, make });
+}
+function drawSwatches() { for (let i = swatchSets.length - 1; i >= 0; i--) { if (!swatchSets[i].box.isConnected) { swatchSets.splice(i, 1); continue; } swatchSets[i].make(); } }
+
+// ---------- fonts ----------
+const loaded = new Set();
+function loadFont(f, w) { const k = f + w; if (loaded.has(k) || !document.fonts) return; loaded.add(k); document.fonts.load(BR.fontCss(f, w, 20)).then(() => { redraw(); drawLayers(); drawSaved(); }).catch(() => { }); }
+function loadBrandFonts(b) { loadFont(b.font.f, b.font.w); for (const L of b.mark) if (L.t === 'text') loadFont(L.f || b.font.f, L.fw || 700); loadFont('Inter', 500); }
+if (document.fonts) document.fonts.addEventListener('loadingdone', () => { redraw(); drawLayers(); drawSaved(); });
+
+// ---------- saved brands ----------
+function thumb(c, b, size) { const x = hd(c, size, size); x.fillStyle = '#2a2e34'; x.fillRect(0, 0, size, size); BR.drawMark(x, b, size / 2, size / 2, size * .82); }
+function drawSaved() {
+  const S = $('saved'); S.innerHTML = ''; for (const b of DB.brands) { const r = document.createElement('button'); r.className = 'item' + (b === B ? ' sel' : ''); const c = document.createElement('canvas'); thumb(c, b, 28); r.appendChild(c); const s = document.createElement('span'); s.textContent = b.name || 'Untitled'; r.appendChild(s); const em = document.createElement('em'); em.textContent = b.npc ? 'NPC' : (BR.TYPES[b.type] || {}).n || ''; r.appendChild(em); r.onclick = () => { if (b !== B) switchTo(b); }; S.appendChild(r); }
+  $('bDel').disabled = DB.brands.length < 2;
+}
+$('bNew').onclick = () => { const b = BR.blank(); DB.brands.push(b); switchTo(b); };
+$('bDup').onclick = () => { const b = BR.clean(JSON.parse(JSON.stringify(B))); b.id = BR.blank().id; b.name = (B.name || 'Brand') + ' copy'; b.npc = false; DB.brands.push(b); switchTo(b); };
+$('bDel').onclick = () => { $('delConfirm').hidden = false; };
+$('bDelNo').onclick = () => { $('delConfirm').hidden = true; };
+$('bDelYes').onclick = () => { $('delConfirm').hidden = true; if (DB.brands.length < 2) return; const i = DB.brands.indexOf(B); DB.brands.splice(i, 1); switchTo(DB.brands[Math.max(0, i - 1)]); };
+
+// ---------- NPC generator ----------
+const newLot = () => 'lot-' + Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, '0');
+$('bGen').onclick = () => { const b = BR.generate($('nType').value, $('nSeed').value.trim() || 'lot'); DB.brands.push(b); loadBrandFonts(b); switchTo(b); };
+$('bReroll').onclick = () => { $('nSeed').value = newLot(); $('bGen').onclick(); };
+
+// ---------- brand code ----------
+$('bExp').onclick = () => { const t = BR.toText(B); $('io').value = t; const done = () => $('ioMsg').textContent = 'Copied.'; try { navigator.clipboard.writeText(t).then(done, () => { $('io').select(); $('ioMsg').textContent = 'Select the text and copy it.'; }); } catch (e) { $('io').select(); } };
+$('bImp').onclick = () => { try { const b = BR.fromText($('io').value); b.id = BR.blank().id; DB.brands.push(b); loadBrandFonts(b); switchTo(b); $('ioMsg').textContent = 'Loaded as a new brand.'; } catch (e) { $('ioMsg').textContent = e.message.startsWith('That') ? e.message : 'That code is damaged.'; } };
+
+// ---------- logo stage ----------
+const cv = $('cv'), cx = cv.getContext('2d'); let CW = 400, PXU = 3, grid = true, snapX = false, snapY = false;
+function sizeStage() { const w = cv.parentElement.getBoundingClientRect().width || 400, d = Math.min(2, devicePixelRatio || 1); cv.width = Math.round(w * d); cv.height = Math.round(w * d); CW = w; PXU = w * .7 / 100; drawStage(); }
+const toU = e => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left - CW / 2) / PXU, y: (e.clientY - r.top - CW / 2) / PXU }; };
+function drawStage() {
+  const d = cv.width / CW; cx.setTransform(d, 0, 0, d, 0, 0); const bg = $('stageBg').value;
+  if (bg === 'check') { cx.fillStyle = '#24282e'; cx.fillRect(0, 0, CW, CW); cx.fillStyle = '#2c3138'; const s = 16; for (let y = 0; y < CW; y += s) for (let x = (y / s % 2) * s; x < CW; x += 2 * s) cx.fillRect(x, y, s, s); }
+  else { cx.fillStyle = col(bg); cx.fillRect(0, 0, CW, CW); }
+  const c = CW / 2, half = 50 * PXU, light = bg !== 'check' && BR.lum(col(bg)) > .4, gc = light ? 'rgba(0,0,0,.22)' : 'rgba(255,255,255,.16)';
+  if (grid) { cx.strokeStyle = gc; cx.lineWidth = 1; cx.setLineDash([4, 4]); cx.strokeRect(c - half, c - half, half * 2, half * 2); cx.beginPath(); cx.arc(c, c, half, 0, Math.PI * 2); cx.stroke(); cx.setLineDash([]); cx.beginPath(); cx.moveTo(c, c - half - 10); cx.lineTo(c, c + half + 10); cx.moveTo(c - half - 10, c); cx.lineTo(c + half + 10, c); cx.stroke(); }
+  BR.drawMark(cx, B, c, c, PXU * 100);
+  const L = B.mark[sel]; if (!L) return;
+  cx.save(); cx.translate(c + (L.x || 0) * PXU, c + (L.y || 0) * PXU); cx.rotate((L.r || 0) * Math.PI / 180); const bx = BR.layerBox(cx, B, L), x0 = bx.x0 * PXU, y0 = bx.y0 * PXU, x1 = bx.x1 * PXU, y1 = bx.y1 * PXU;
+  cx.strokeStyle = '#d6a347'; cx.lineWidth = 1.2; cx.setLineDash([5, 3]); cx.strokeRect(x0, y0, x1 - x0, y1 - y0); cx.setLineDash([]);
+  cx.beginPath(); cx.moveTo(0, y0); cx.lineTo(0, y0 - 18); cx.stroke(); cx.fillStyle = '#d6a347'; cx.beginPath(); cx.arc(0, y0 - 22, 6, 0, Math.PI * 2); cx.fill(); cx.fillRect(x1 - 6, y1 - 6, 12, 12); cx.restore();
+  if (drag && drag.mode === 'move') { cx.strokeStyle = '#7fbf7a'; cx.lineWidth = 1; if (snapX) { cx.beginPath(); cx.moveTo(c, 0); cx.lineTo(c, CW); cx.stroke(); } if (snapY) { cx.beginPath(); cx.moveTo(0, c); cx.lineTo(CW, c); cx.stroke(); } }
+}
+function localOf(L, u) { const a = -(L.r || 0) * Math.PI / 180, dx = u.x - (L.x || 0), dy = u.y - (L.y || 0); return { x: dx * Math.cos(a) - dy * Math.sin(a), y: dx * Math.sin(a) + dy * Math.cos(a) }; }
+let drag = null;
+cv.addEventListener('pointerdown', e => {
+  const u = toU(e), L = B.mark[sel];
+  if (L) { const q = localOf(L, u), bx = BR.layerBox(cx, B, L), tol = 9 / PXU; if (Math.hypot(q.x - bx.x1, q.y - bx.y1) < tol) drag = { mode: 'scale', L, s0: L.s ?? 100, d0: Math.max(1, Math.hypot(u.x - (L.x || 0), u.y - (L.y || 0))) }; else if (Math.hypot(q.x, q.y - (bx.y0 - 22 / PXU)) < tol) drag = { mode: 'rot', L }; }
+  if (!drag) { let hit = -1; for (let i = B.mark.length - 1; i >= 0; i--) if (!B.mark[i].hide && BR.hitLayer(cx, B, B.mark[i], u.x, u.y)) { hit = i; break; } if (hit >= 0) { sel = hit; const H = B.mark[hit]; drag = { mode: 'move', L: H, ox: (H.x || 0) - u.x, oy: (H.y || 0) - u.y }; drawLayers(); drawProps(); } else { sel = -1; drawLayers(); drawProps(); } }
+  if (drag) { cv.setPointerCapture(e.pointerId); e.preventDefault(); } drawStage();
+});
+cv.addEventListener('pointermove', e => {
+  const u = toU(e); if (!drag) { const L = B.mark[sel]; let cur = 'default'; if (L) { const q = localOf(L, u), bx = BR.layerBox(cx, B, L), tol = 9 / PXU; if (Math.hypot(q.x - bx.x1, q.y - bx.y1) < tol) cur = 'nwse-resize'; else if (Math.hypot(q.x, q.y - (bx.y0 - 22 / PXU)) < tol) cur = 'grab'; } if (cur === 'default') for (let i = B.mark.length - 1; i >= 0; i--) if (!B.mark[i].hide && BR.hitLayer(cx, B, B.mark[i], u.x, u.y)) { cur = 'move'; break; } cv.style.cursor = cur; return; }
+  const L = drag.L;
+  if (drag.mode === 'move') { let x = u.x + drag.ox, y = u.y + drag.oy; snapX = !e.altKey && Math.abs(x) < 1.8; snapY = !e.altKey && Math.abs(y) < 1.8; if (snapX) x = 0; if (snapY) y = 0; L.x = Math.round(x * 10) / 10; L.y = Math.round(y * 10) / 10; }
+  else if (drag.mode === 'scale') { const k = Math.hypot(u.x - (L.x || 0), u.y - (L.y || 0)) / drag.d0; L.s = Math.max(2, Math.min(400, Math.round(drag.s0 * k * 10) / 10)); }
+  else { let a = Math.atan2(u.y - (L.y || 0), u.x - (L.x || 0)) * 180 / Math.PI + 90; if (a > 180) a -= 360; if (e.shiftKey) a = Math.round(a / 15) * 15; L.r = Math.round(a); }
+  redraw(); drawPropsValues();
+});
+const endDrag = () => { if (!drag) return; drag = null; snapX = snapY = false; commit(); drawProps(); redraw(); };
+cv.addEventListener('pointerup', endDrag); cv.addEventListener('pointercancel', endDrag);
+$('stageBg').onchange = drawStage; $('bGrid').onclick = () => { grid = !grid; $('bGrid').classList.toggle('on', grid); drawStage(); };
+$('bUndo').onclick = undo; $('bRedo').onclick = redo;
+document.addEventListener('keydown', e => {
+  const t = e.target; if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) return;
+  const mod = e.ctrlKey || e.metaKey; if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; } if (mod && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
+  const L = B.mark[sel]; if (!L) return; const st = e.shiftKey ? 5 : .5, mv = { ArrowLeft: [-st, 0], ArrowRight: [st, 0], ArrowUp: [0, -st], ArrowDown: [0, st] }[e.key];
+  if (mv) { e.preventDefault(); L.x = Math.round(((L.x || 0) + mv[0]) * 10) / 10; L.y = Math.round(((L.y || 0) + mv[1]) * 10) / 10; redraw(); drawPropsValues(); clearTimeout(keyT); keyT = setTimeout(commit, 300); }
+  else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); delLayer(); }
+}); let keyT = 0;
+
+// ---------- add layers ----------
+let pickMode = 'shape', iconCat = 'suggest';
+const TEXT_PRESETS = [
+  { n: 'Initials', L: { t: 'text', txt: '{initials}', cs: 'upper', s: 30, y: 2, maxw: 72 } }, { n: 'Business name', L: { t: 'text', txt: '{name}', cs: 'upper', s: 12, maxw: 96 } },
+  { n: 'Name round the top', L: { t: 'text', txt: '{name}', cs: 'upper', s: 9, arc: 34, ls: .12, fit: 200 } }, { n: 'Year round the bottom', L: { t: 'text', txt: 'EST {year}', f: 'Inter', fw: 600, cs: 'upper', s: 6.5, arc: -34, ls: .2 } },
+  { n: 'Type round the bottom', L: { t: 'text', txt: '{type}', f: 'Inter', fw: 600, cs: 'upper', s: 6.5, arc: -34, ls: .2, fit: 100 } }, { n: 'Custom text', L: { t: 'text', txt: 'TEXT', cs: 'none', s: 16 } },
+];
+function drawPicker() {
+  for (const k of ['Shape', 'Icon', 'Text']) $('add' + k).classList.toggle('on', pickMode === k.toLowerCase());
+  const P = $('picker'); P.innerHTML = '';
+  if (pickMode === 'text') { P.style.gridTemplateColumns = 'repeat(auto-fill,minmax(150px,1fr))'; for (const t of TEXT_PRESETS) { const b = document.createElement('button'); b.textContent = t.n; b.style.aspectRatio = 'auto'; b.onclick = () => addLayer(Object.assign({ x: 0, y: 0, f: B.font.f, fw: B.font.w, fill: topFillFor() }, JSON.parse(JSON.stringify(t.L)))); P.appendChild(b); } return; }
+  P.style.gridTemplateColumns = ''; const src = pickMode === 'shape' ? BR.SHAPES : BR.ICONS;
+  const F = $('iconCats'); F.hidden = pickMode !== 'icon';
+  if (pickMode === 'icon') { F.innerHTML = [['suggest', 'Suggested for ' + BR.TYPES[B.type].n.toLowerCase()], ...Object.entries(BR.ICON_CATS), ['all', 'All']].map(([k, n]) => `<button data-c="${k}" class="${k === iconCat ? 'on' : ''}">${esc(n)}</button>`).join(''); }
+  const kit = new Set((BR.TYPES[B.type] || {}).ic || []), cats = BR.TYPE_CATS[B.type] || [];
+  const want = (k, v) => pickMode !== 'icon' || iconCat === 'all' || (iconCat === 'suggest' ? kit.has(k) || cats.includes(v.c) || v.c === 'abstract' : v.c === iconCat);
+  for (const [k, v] of Object.entries(src)) { if (!want(k, v)) continue; const b = document.createElement('button'); b.title = v.n; const c = document.createElement('canvas'); const x = hd(c, 34, 34); BR.drawLayer(x, { pal: {}, mark: [] }, { t: pickMode, k, x: 17, y: 17, s: 30, fill: '#d9dde2' }); b.appendChild(c);
+    b.onclick = () => addLayer(pickMode === 'shape' ? { t: 'shape', k, x: 0, y: 0, s: B.mark.length ? 70 : 100, fill: B.mark.length ? 'a' : 'p' } : { t: 'icon', k, x: 0, y: 0, s: 56, fill: topFillFor() }); P.appendChild(b); }
+}
+// new icons and text sit on whatever is under them, so pick a colour that reads on the top shape
+function topFillFor() { for (let i = B.mark.length - 1; i >= 0; i--) { const L = B.mark[i]; if (L.t === 'shape' && L.fill && !L.hide && (L.s ?? 100) >= 50) return BR.inkOn(B, L.fill, 'l'); } return 'p'; }
+function addLayer(L) { B.mark.push(L); sel = B.mark.length - 1; if (L.t === 'text') loadFont(L.f, L.fw); commit(); drawLayers(); drawProps(); redraw(); }
+$('iconCats').onclick = e => { const c = e.target.dataset && e.target.dataset.c; if (!c) return; iconCat = c; drawPicker(); };
+for (const k of ['Shape', 'Icon', 'Text']) $('add' + k).onclick = () => { pickMode = k.toLowerCase(); drawPicker(); };
+
+// ---------- layer list ----------
+const layerName = L => L.t === 'text' ? '“' + (L.txt || '') + '”' : ((L.t === 'shape' ? BR.SHAPES : BR.ICONS)[L.k] || { n: L.k }).n;
+function drawLayers() {
+  const box = $('layers'); box.innerHTML = '';
+  if (!B.mark.length) box.innerHTML = '<p class="hint">No layers yet. Add a shape, icon or text.</p>';
+  for (let i = B.mark.length - 1; i >= 0; i--) { const L = B.mark[i], r = document.createElement('div'); r.className = 'item' + (i === sel ? ' sel' : ''); r.tabIndex = 0;
+    const c = document.createElement('canvas'), x = hd(c, 28, 28); x.fillStyle = '#2a2e34'; x.fillRect(0, 0, 28, 28); x.save(); x.translate(14, 14); x.scale(.23, .23); BR.drawLayer(x, B, Object.assign({}, L, { x: 0, y: 0, r: 0, s: L.t === 'text' ? Math.min(40, L.arc ? 18 : (L.s ?? 20)) : 100, arc: L.arc ? Math.sign(L.arc) * 38 : 0, hide: false })); x.restore(); r.appendChild(c);
+    const s = document.createElement('span'); s.textContent = layerName(L); r.appendChild(s); const em = document.createElement('em'); em.textContent = L.t; r.appendChild(em);
+    const eye = document.createElement('button'); eye.className = 'eye'; eye.textContent = L.hide ? 'Show' : 'Hide'; eye.onclick = ev => { ev.stopPropagation(); L.hide = !L.hide; commit(); drawLayers(); redraw(); }; r.appendChild(eye);
+    r.onclick = () => { sel = i; drawLayers(); drawProps(); drawStage(); }; r.onkeydown = ev => { if (ev.key === 'Enter') r.onclick(); }; box.appendChild(r); }
+  $('lUp').disabled = sel < 0 || sel >= B.mark.length - 1; $('lDown').disabled = sel <= 0; $('lDup').disabled = $('lDel').disabled = sel < 0;
+}
+const moveLayer = d => { const j = sel + d; if (sel < 0 || j < 0 || j >= B.mark.length) return; [B.mark[sel], B.mark[j]] = [B.mark[j], B.mark[sel]]; sel = j; commit(); drawLayers(); redraw(); };
+function delLayer() { if (sel < 0) return; B.mark.splice(sel, 1); sel = Math.min(sel, B.mark.length - 1); commit(); drawLayers(); drawProps(); redraw(); }
+$('lUp').onclick = () => moveLayer(1); $('lDown').onclick = () => moveLayer(-1); $('lDel').onclick = delLayer;
+$('lDup').onclick = () => { if (sel < 0) return; const L = JSON.parse(JSON.stringify(B.mark[sel])); L.x = (L.x || 0) + 4; L.y = (L.y || 0) + 4; B.mark.splice(sel + 1, 0, L); sel++; commit(); drawLayers(); drawProps(); redraw(); };
+
+// ---------- properties of the selected layer ----------
+let propSync = [];
+function field(box, label, get, set, min, max, step, fmt = v => (+v).toFixed(step < 1 ? (step < .1 ? 2 : 1) : 0)) {
+  const L = document.createElement('label'); L.className = 'f'; L.innerHTML = `<span>${label}</span><input type="range" min="${min}" max="${max}" step="${step}"><output></output>`; const i = L.querySelector('input'), o = L.querySelector('output');
+  const sync = () => { i.value = get(); o.textContent = fmt(get()); }; i.oninput = () => { set(+i.value); o.textContent = fmt(+i.value); redraw(); }; i.onchange = commit; sync(); propSync.push(sync); box.appendChild(L);
+}
+function textRow(box, label, el) { const L = document.createElement('label'); L.className = 't'; L.innerHTML = `<span>${label}</span>`; L.appendChild(el); box.appendChild(L); return el; }
+const drawPropsValues = () => propSync.forEach(f => f());
+function drawProps() {
+  const P = $('props'); P.innerHTML = ''; propSync = []; const L = B.mark[sel];
+  if (!L) { P.innerHTML = '<h2>Layer</h2><p class="hint">Click a layer on the mark or in the list to edit it.</p>'; return; }
+  const h = document.createElement('h2'); h.textContent = (L.t === 'text' ? 'Text' : L.t === 'icon' ? 'Icon' : 'Shape') + ' layer'; P.appendChild(h);
+  if (L.t !== 'text') { const s = document.createElement('select'); const src = L.t === 'shape' ? BR.SHAPES : BR.ICONS; s.innerHTML = Object.entries(src).map(([k, v]) => `<option value="${k}">${esc(v.n)}</option>`).join(''); s.value = L.k; s.onchange = () => { L.k = s.value; commit(); drawLayers(); redraw(); }; textRow(P, L.t === 'shape' ? 'Shape' : 'Icon', s); }
+  else {
+    const t = document.createElement('input'); t.type = 'text'; t.maxLength = 60; t.value = L.txt || ''; t.oninput = () => { L.txt = t.value; redraw(); }; t.onchange = () => { commit(); drawLayers(); }; textRow(P, 'Text', t);
+    const tk = document.createElement('div'); tk.className = 'row'; for (const [n, v] of [['Name', '{name}'], ['Initials', '{initials}'], ['Year', '{year}'], ['Type', '{type}'], ['Tagline', '{tagline}']]) { const b = document.createElement('button'); b.textContent = n; b.title = 'Insert ' + v + ', which follows the business details'; b.onclick = () => { L.txt = (L.txt || '') + v; t.value = L.txt; commit(); drawLayers(); redraw(); }; tk.appendChild(b); } textRow(P, 'Insert', tk);
+    const f = document.createElement('select'); f.innerHTML = BR.FONTS.map(F => `<option value="${F.f}" style="font-family:'${F.f}'">${F.f}</option>`).join(''); f.value = L.f || B.font.f; const w = document.createElement('select');
+    f.onchange = () => { L.f = f.value; L.fw = fontWeights(w, L.f, L.fw || 700); loadFont(L.f, L.fw); commit(); drawLayers(); redraw(); }; textRow(P, 'Font', f); L.fw = fontWeights(w, L.f || B.font.f, L.fw || 700);
+    w.onchange = () => { L.fw = +w.value; loadFont(L.f || B.font.f, L.fw); commit(); redraw(); }; textRow(P, 'Weight', w);
+    const cs = document.createElement('select'); cs.innerHTML = '<option value="upper">UPPER CASE</option><option value="none">As typed</option><option value="lower">lower case</option>'; cs.value = L.cs || 'none'; cs.onchange = () => { L.cs = cs.value; commit(); redraw(); }; textRow(P, 'Case', cs);
+  }
+  const fb = document.createElement('div'); fb.className = 'sw'; swatch(fb, () => L.fill, v => L.fill = v, true); textRow(P, 'Fill', fb);
+  const lb = document.createElement('div'); lb.className = 'sw'; swatch(lb, () => L.line, v => { L.line = v; if (v && !L.lw) { L.lw = L.t === 'text' ? 1 : 3; drawPropsValues(); } }, true); textRow(P, 'Outline', lb);
+  field(P, 'Outline width', () => L.lw || 0, v => L.lw = v, 0, L.t === 'text' ? 4 : 14, .5);
+  field(P, 'Left right', () => L.x || 0, v => L.x = v, -80, 80, .5); field(P, 'Up down', () => L.y || 0, v => L.y = v, -80, 80, .5);
+  field(P, 'Size', () => L.s ?? (L.t === 'text' ? 20 : 100), v => L.s = v, 2, L.t === 'text' ? 80 : 200, .5);
+  field(P, 'Rotate', () => L.r || 0, v => L.r = v, -180, 180, 1, v => Math.round(v) + '°');
+  field(P, 'Stretch', () => L.w ?? 1, v => L.w = v, .3, 3, .01);
+  if (L.t === 'text' && !L.arc) field(P, 'Max width', () => L.maxw || 0, v => L.maxw = v < 5 ? 0 : v, 0, 160, 1, v => v < 5 ? 'off' : Math.round(v));
+  if (L.t === 'text' && L.arc) field(P, 'Max sweep', () => L.fit || 0, v => L.fit = v < 20 ? 0 : v, 0, 340, 5, v => v < 20 ? 'off' : Math.round(v) + '\u00b0');
+  if (L.t === 'text') { field(P, 'Spacing', () => L.ls || 0, v => L.ls = v, -.1, .6, .01); field(P, 'Curve', () => L.arc || 0, v => L.arc = Math.abs(v) < 4 ? 0 : v, -70, 70, 1, v => Math.abs(v) < 4 ? 'flat' : (v > 0 ? 'top ' : 'base ') + Math.abs(Math.round(v))); }
+  if (L.t === 'shape' && L.k === 'ring') field(P, 'Thickness', () => L.th ?? .14, v => L.th = v, .02, .6, .01);
+  if (L.t === 'shape' && L.k === 'rounded') field(P, 'Corners', () => L.rad ?? .36, v => L.rad = v, 0, 1, .01);
+  field(P, 'Opacity', () => L.o ?? 1, v => L.o = v, .1, 1, .05);
+  const r = document.createElement('div'); r.className = 'row';
+  const btn = (n, fn, on) => { const b = document.createElement('button'); b.textContent = n; if (on) b.classList.add('on'); b.onclick = () => { fn(); commit(); drawProps(); redraw(); }; r.appendChild(b); };
+  btn('Centre', () => { L.x = 0; L.y = 0; }); btn('Flip across', () => L.fx = !L.fx, L.fx); btn('Flip up', () => L.fy = !L.fy, L.fy); btn('Reset turn', () => L.r = 0);
+  P.appendChild(r);
+}
+
+// ---------- previews: where the brand shows ----------
+const pv = $('pv'); let tab = 'shop', night = false, wall = 'brick', street = [], streetHit = [];
+const WALLS = { brick: '#8a4a3a', stucco: '#d9cfbf', concrete: '#9a9a96', dark: '#2f3136', white: '#eeeeea' };
+const TABS = { shop: 'Shopfront', street: 'NPC street', staff: 'Staff', van: 'Vehicle', items: 'Packaging', small: 'Small sizes' };
+$('tabs').innerHTML = Object.entries(TABS).map(([k, n]) => `<button data-t="${k}">${n}</button>`).join('');
+$('tabs').onclick = e => { const k = e.target.dataset && e.target.dataset.t; if (!k) return; tab = k; drawPrevCtl(); drawPreview(); };
+function ctlSel(box, label, opts, get, set) { const s = document.createElement('select'); s.innerHTML = opts.map(([v, n]) => `<option value="${v}">${esc(n)}</option>`).join(''); s.value = get(); s.onchange = () => { set(s.value); commit(); drawPreview(); }; s.title = label; box.appendChild(s); return s; }
+function ctlBtn(box, n, on, fn) { const b = document.createElement('button'); b.textContent = n; if (on) b.classList.add('on'); b.onclick = () => { fn(); commit(); drawPrevCtl(); drawPreview(); }; box.appendChild(b); }
+function ctlSw(box, label, get, set) { const w = document.createElement('span'); w.className = 'row'; w.innerHTML = `<span class="hint">${label}</span>`; const s = document.createElement('div'); s.className = 'sw'; swatch(s, get, v => { set(v); drawPreview(); }, false); w.appendChild(s); box.appendChild(w); }
+function drawPrevCtl() {
+  for (const b of $('tabs').children) b.classList.toggle('on', b.dataset.t === tab);
+  const C = $('prevCtl'); C.innerHTML = ''; const note = $('pvNote');
+  if (tab === 'shop' || tab === 'street') ctlBtn(C, night ? 'Night' : 'Day', night, () => night = !night);
+  if (tab === 'shop' && B.type === 'foodtruck') { ctlSw(C, 'Truck', () => B.van.body || 'w', v => B.van.body = v); ctlSw(C, 'Stripe and flap', () => B.van.stripe || 'p', v => B.van.stripe = v); note.textContent = 'A food truck has no shopfront. It parks at the kerb with the serving hatch open, and the brand goes on the flap, the side and the menu panel.'; }
+  else if (tab === 'shop') {
+    ctlSel(C, 'Sign style', Object.entries(BR.SIGNS), () => B.sign.style, v => B.sign.style = v);
+    ctlSel(C, 'Wall', Object.keys(WALLS).map(k => [k, k[0].toUpperCase() + k.slice(1) + ' wall']), () => wall, v => wall = v);
+    ctlSw(C, 'Sign', () => B.sign.bg || 'p', v => B.sign.bg = v);
+    ctlBtn(C, B.awning.on ? 'Awning on' : 'Awning off', B.awning.on, () => B.awning.on = !B.awning.on);
+    if (B.awning.on) { ctlSel(C, 'Awning', [['stripe', 'Striped'], ['solid', 'Solid']], () => B.awning.style || 'stripe', v => B.awning.style = v); ctlSw(C, 'Stripe', () => B.awning.c2 || 'l', v => B.awning.c2 = v); }
+    note.textContent = 'The sign, awning and window decal all come from the one brand. Letters on the wall pick a colour that reads on the facade.';
+  } else if (tab === 'street') { ctlBtn(C, 'New street', false, () => street = []); note.textContent = 'Eight NPC businesses generated from random lot IDs. Each one uses the kit for its type. Click a shop to open a copy in the editor.'; }
+  else if (tab === 'staff') { const D = BR.uniDefaults(B.type); ctlSw(C, 'Shirt', () => B.uni.body || D.body, v => B.uni.body = v); ctlSw(C, 'Trim', () => B.uni.trim || D.trim, v => B.uni.trim = v); ctlSw(C, 'Apron, vest or jacket', () => B.uni.over || D.over, v => B.uni.over = v); note.textContent = 'Each business type has its own staff roles and uniforms. Chef jackets and dress shirts stay white, the brand colours go on the trim, aprons, vests and jackets.'; }
+  else if (tab === 'van') { ctlSw(C, 'Body', () => B.van.body || 'w', v => B.van.body = v); ctlSw(C, 'Stripe', () => B.van.stripe || 'p', v => B.van.stripe = v); note.textContent = 'The right hand view is how a delivery van reads from above on the city map.'; }
+  else if (tab === 'items') note.textContent = 'Items change with the business type. A gym gets bottles and membership cards, a pizzeria gets boxes and delivery bags.';
+  else note.textContent = 'At map zoom a shop sign is only a few pixels across. A bold single shape with one icon or two letters stays readable, fine detail and long names do not.';
+}
+// a mark drawn on a coloured surface: if its base colour would vanish, draw it in one colour that reads
+function markOn(bgHex) { const f = BR.remapFor(B, bgHex); return f ? { mono: f } : {}; }
+const inkFor = bgHex => ['p', 'l', 'k', 'w', 's', 'a'].map(k => BR.col(B, k)).find(c => BR.contrast(c, bgHex) >= 3.2) || (BR.lum(bgHex) > .4 ? '#141414' : '#ffffff');
+
+function drawPreview() {
+  const w = pv.parentElement.getBoundingClientRect().width - 24; if (w <= 0) return; const ratio = { shop: .56, street: .44, staff: .46, van: .42, items: .46, small: .62 }[tab]; const x = hd(pv, w, Math.round(w * ratio)), H = Math.round(w * ratio);
+  x.fillStyle = '#0d0f12'; x.fillRect(0, 0, w, H);
+  ({ shop: pShop, street: pStreet, staff: pStaff, van: pVan, items: pItems, small: pSmall })[tab](x, w, H);
+}
+function sky(x, w, h, nt) { const g = x.createLinearGradient(0, 0, 0, h); if (nt) { g.addColorStop(0, '#0b1026'); g.addColorStop(1, '#1d2440'); } else { g.addColorStop(0, '#8fc1e8'); g.addColorStop(1, '#d6e8f4'); } x.fillStyle = g; x.fillRect(0, 0, w, h); }
+function bricks(x, X, Y, W, H, c) { x.save(); x.beginPath(); x.rect(X, Y, W, H); x.clip(); x.fillStyle = c; x.fillRect(X, Y, W, H); x.strokeStyle = BR.mix(c, '#000', .22); x.lineWidth = 1; const bh = Math.max(3, W / 90), bw = bh * 2.6; for (let r = 0, yy = Y; yy < Y + H; r++, yy += bh) { x.beginPath(); x.moveTo(X, yy); x.lineTo(X + W, yy); x.stroke(); for (let xx = X + (r % 2) * bw / 2; xx < X + W; xx += bw) { x.beginPath(); x.moveTo(xx, yy); x.lineTo(xx, yy + bh); x.stroke(); } } x.restore(); }
+// one shopfront. X, Y top left, W wide, H tall (ground floor and cornice). The same layout the city's close zoom will use
+function shopfront(x, b, X, Y, W, H, o) {
+  const nt = o.night, wc = WALLS[o.wall] || o.wallHex || WALLS.brick; if (o.wall === 'brick') bricks(x, X, Y, W, H, wc); else { x.fillStyle = wc; x.fillRect(X, Y, W, H); }
+  x.fillStyle = BR.mix(wc, '#000', .3); x.fillRect(X - W * .01, Y, W * 1.02, H * .05);
+  const sy = Y + H * .09, sh = H * .2, aw = b.awning && b.awning.on, gy = Y + H * (aw ? .44 : .34), by = Y + H * .93;
+  // glazing, door and decal
+  const fr = BR.mix('#1d1f22', BR.col(b, 'p'), .25); x.fillStyle = fr; x.fillRect(X + W * .05, gy, W * .9, by - gy);
+  const glass = (gx, gy2, gw, gh) => { const g = x.createLinearGradient(gx, gy2, gx + gw, gy2 + gh); if (nt) { g.addColorStop(0, '#f3c27a'); g.addColorStop(1, '#c98b45'); } else { g.addColorStop(0, '#5d7182'); g.addColorStop(.5, '#8ea4b5'); g.addColorStop(1, '#4b5d6b'); } x.fillStyle = g; x.fillRect(gx, gy2, gw, gh); if (!nt) { x.fillStyle = 'rgba(255,255,255,.12)'; x.beginPath(); x.moveTo(gx + gw * .1, gy2); x.lineTo(gx + gw * .35, gy2); x.lineTo(gx + gw * .1, gy2 + gh); x.lineTo(gx - gw * .15, gy2 + gh); x.closePath(); x.fill(); } };
+  const pad = W * .012, dw = W * .17, dx = X + W * .64; glass(X + W * .05 + pad, gy + pad, dx - X - W * .05 - pad * 2, by - gy - pad * 2); glass(dx + dw + pad, gy + pad, X + W * .95 - dx - dw - pad * 2, by - gy - pad * 2);
+  x.fillStyle = BR.mix(fr, '#000', .3); x.fillRect(dx, gy, dw, by - gy); glass(dx + pad, gy + pad * 1.5, dw - pad * 2, by - gy - pad * 2.5); x.fillStyle = '#c9c9c9'; x.fillRect(dx + dw * .12, gy + (by - gy) * .55, dw * .06, (by - gy) * .12);
+  const ds = Math.min(H * .22, (dx - X) * .42); x.save(); x.globalAlpha = nt ? .9 : .85; BR.drawMark(x, b, X + W * .05 + (dx - X - W * .05) / 2, gy + (by - gy) * .55, ds, { foil: [nt ? '#3a2410' : '#ffffff', nt ? '#e0a860' : '#7d93a4'] }); x.restore();
+  x.fillStyle = BR.mix(wc, '#000', .4); x.fillRect(X, by, W, Y + H - by);
+  if (aw) BR.drawAwning(x, b, X + W * .05, Y + H * .315, W * .9, H * .085, { night: nt });
+  BR.drawSign(x, b, X + W * .07, sy, W * .86, sh, { night: nt, wall: wc });
+  if (nt) { const g = x.createLinearGradient(0, gy, 0, Y + H + H * .2); g.addColorStop(0, 'rgba(255,200,120,0)'); g.addColorStop(1, 'rgba(255,200,120,.18)'); x.fillStyle = g; x.fillRect(X, by, W, H * .2); }
+}
+function pTruckStreet(x, w, h) {
+  sky(x, w, h, night); const gY = h * .78; x.fillStyle = night ? '#2c2f35' : '#8a8f96'; for (let i = 0; i < 4; i++) { const bx = i * w * .26 - w * .03; x.fillRect(bx, h * .05 + (i % 2) * h * .08, w * .24, gY); x.fillStyle = night ? '#e8b866' : '#4f6070'; for (let r = 0; r < 4; r++) for (let q = 0; q < 3; q++) if (!night || (r + q + i) % 3) x.fillRect(bx + w * (.025 + q * .075), h * .12 + (i % 2) * h * .08 + r * h * .15, w * .04, h * .08); x.fillStyle = night ? '#2c2f35' : '#8a8f96'; }
+  x.fillStyle = night ? '#3a3d44' : '#b9b8b2'; x.fillRect(0, gY, w, h * .06); x.fillStyle = night ? '#1f2125' : '#55585e'; x.fillRect(0, gY + h * .06, w, h); x.save(); if (night) x.filter = 'brightness(.75)'; vanSide(x, w * .2, gY - w * .6 * .38 + h * .07, w * .6, true); x.restore();
+  if (night) { const g = x.createRadialGradient(w * .4, gY, 0, w * .4, gY, w * .3); g.addColorStop(0, 'rgba(255,200,120,.35)'); g.addColorStop(1, 'rgba(255,200,120,0)'); x.fillStyle = g; x.fillRect(0, 0, w, h); }
+}
+function pShop(x, w, h) {
+  if (B.type === 'foodtruck') return pTruckStreet(x, w, h);
+  sky(x, w, h, night); const gY = h * .86, SW = w * .56, SX = (w - SW) / 2, SH = SW * .62, SY = gY - SH;
+  for (const [nx, nw, c] of [[-w * .02, SX + w * .02 - 6, '#6c6f74'], [SX + SW + 6, w - SX - SW, '#7b6a5c']]) { x.fillStyle = night ? BR.mix(c, '#000', .55) : c; x.fillRect(nx, gY - SH * 1.9, nw, SH * 1.9); x.fillStyle = night ? '#e8b866' : '#4f6070'; for (let r = 0; r < 4; r++) for (let q = 0; q < 3; q++) if (!night || (r * 3 + q) % 3) x.fillRect(nx + nw * (.12 + q * .3), gY - SH * 1.8 + r * SH * .42, nw * .18, SH * .24); }
+  const uw = WALLS[wall]; if (wall === 'brick') bricks(x, SX, 0, SW, SY, uw); else { x.fillStyle = uw; x.fillRect(SX, 0, SW, SY); } if (night) { x.fillStyle = 'rgba(0,0,20,.45)'; x.fillRect(SX, 0, SW, SY); }
+  x.fillStyle = night ? '#d9a75a' : '#3e4c58'; for (let q = 0; q < 3; q++) { x.fillRect(SX + SW * (.12 + q * .29), SY - SH * .62, SW * .18, SH * .42); }
+  x.save(); if (night) { x.filter = 'brightness(.62)'; } shopfront(x, B, SX, SY, SW, SH, { night: false, wall }); x.restore(); if (night) shopfrontNight(x, SX, SY, SW, SH);
+  x.fillStyle = night ? '#3a3d44' : '#b9b8b2'; x.fillRect(0, gY, w, h - gY); x.fillStyle = night ? '#24262b' : '#8f8e89'; x.fillRect(0, gY + (h - gY) * .7, w, 2);
+  if (night) { const lx = SX - w * .07; x.fillStyle = '#2a2c30'; x.fillRect(lx, gY - SH * 1.25, 4, SH * 1.25); x.fillRect(lx, gY - SH * 1.25, 26, 4); const g = x.createRadialGradient(lx + 22, gY - SH * 1.2, 0, lx + 22, gY - SH * 1.2, SH * .9); g.addColorStop(0, 'rgba(255,214,150,.5)'); g.addColorStop(1, 'rgba(255,214,150,0)'); x.fillStyle = g; x.fillRect(lx - SH, gY - SH * 2.2, SH * 2, SH * 2.4); }
+}
+// at night, redraw the lit parts on top of the dimmed facade so glass and signs glow
+function shopfrontNight(x, SX, SY, SW, SH) { x.save(); x.beginPath(); const aw = B.awning.on, gy = SY + SH * (aw ? .44 : .34), by = SY + SH * .93; x.rect(SX + SW * .062, gy + SW * .012, SW * .876, by - gy - SW * .024); x.rect(SX, SY + SH * .05, SW, SH * .27); x.clip(); shopfront(x, B, SX, SY, SW, SH, { night: true, wall }); x.restore(); if (aw) BR.drawAwning(x, B, SX + SW * .05, SY + SH * .315, SW * .9, SH * .085, { night: true }); }
+function pStreet(x, w, h) {
+  if (!street.length) { const types = [...BR.TYPE_LIST].sort(() => Math.random() - .5).slice(0, 8); street = types.map(t => { const b = BR.generate(t, newLot()); loadBrandFonts(b); return b; }); }
+  sky(x, w, h, night); streetHit = []; const cols = 4, gw = w / cols, gh = h / 2, lh = gh * .3;
+  street.forEach((b, i) => { const c = i % cols, r = Math.floor(i / cols), X = c * gw + gw * .06, W = gw * .88, Hh = W * .62, Y = r * gh + gh * .05, Hh2 = Hh; const wl = ['brick', 'stucco', 'concrete', 'dark', 'white'][BR.hash32(b.seed) % 5];
+    x.save(); if (night) x.filter = 'brightness(.6)'; shopfront(x, b, X, Y, W, Hh, { night: false, wall: wl }); x.restore(); if (night) { x.save(); x.beginPath(); x.rect(X, Y + Hh * .05, W, Hh * .27); x.clip(); shopfront(x, b, X, Y, W, Hh, { night: true, wall: wl }); x.restore(); }
+    x.fillStyle = night ? '#e7e9ec' : '#1b1d20'; x.font = `600 ${Math.max(10, gw * .055)}px "IBM Plex Sans",system-ui`; x.textAlign = 'center'; x.fillText(b.name, X + W / 2, Y + Hh + lh * .42); x.font = `400 ${Math.max(9, gw * .045)}px "IBM Plex Sans",system-ui`; x.fillStyle = night ? '#9ba2aa' : '#46505a'; x.fillText(BR.TYPES[b.type].n + ' · ' + b.seed, X + W / 2, Y + Hh + lh * .8);
+    streetHit.push({ X, Y, W, H: Hh, b }); });
+}
+pv.addEventListener('click', e => { if (tab !== 'street') return; const r = pv.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top; const s = streetHit.find(s => px >= s.X && px <= s.X + s.W && py >= s.Y && py <= s.Y + s.H); if (!s) return; const b = BR.clean(JSON.parse(JSON.stringify(s.b))); b.id = BR.blank().id; DB.brands.push(b); switchTo(b); });
+function vanSide(x, X, Y, L, truck) {
+  const body = col(B.van.body || 'w'), stripe = col(B.van.stripe || 'p'), dk = BR.mix(body, '#000', .25);
+ x.beginPath(); x.ellipse(X + L / 2, Y + L * .44, L * .5, L * .02, 0, 0, Math.PI * 2); x.fill();
+  x.fillStyle = body; x.beginPath(); x.moveTo(X, Y + L * .02); x.lineTo(X + L * .7, Y + L * .02); x.lineTo(X + L * .7, Y + L * .07); x.lineTo(X + L * .83, Y + L * .07); x.quadraticCurveTo(X + L * .87, Y + L * .07, X + L * .89, Y + L * .1); x.lineTo(X + L * .95, Y + L * .2); x.quadraticCurveTo(X + L, Y + L * .22, X + L, Y + L * .27); x.lineTo(X + L, Y + L * .36); x.lineTo(X, Y + L * .36); x.closePath(); x.fill(); x.strokeStyle = dk; x.lineWidth = 1.5; x.stroke();
+  x.fillStyle = '#3b4752'; x.beginPath(); x.moveTo(X + L * .74, Y + L * .1); x.lineTo(X + L * .86, Y + L * .1); x.lineTo(X + L * .92, Y + L * .2); x.lineTo(X + L * .74, Y + L * .2); x.closePath(); x.fill();
+  x.strokeStyle = dk; x.beginPath(); x.moveTo(X + L * .7, Y + L * .07); x.lineTo(X + L * .7, Y + L * .34); x.stroke(); x.fillStyle = stripe; x.fillRect(X, Y + L * .29, L, L * .025); x.fillStyle = '#f2d36b'; x.fillRect(X + L * .975, Y + L * .23, L * .02, L * .03); x.fillStyle = '#b8332e'; x.fillRect(X + L * .002, Y + L * .25, L * .012, L * .04);
+  for (const wx of [.17, .83]) { x.fillStyle = dk; x.beginPath(); x.arc(X + L * wx, Y + L * .36, L * .075, Math.PI, 0); x.fill(); x.fillStyle = '#1c1c1c'; x.beginPath(); x.arc(X + L * wx, Y + L * .37, L * .062, 0, Math.PI * 2); x.fill(); x.fillStyle = '#9aa0a6'; x.beginPath(); x.arc(X + L * wx, Y + L * .37, L * .028, 0, Math.PI * 2); x.fill(); }
+  if (!truck) { BR.drawLockup(x, B, X + L * .35, Y + L * .14, L * .6, L * .17, inkFor(body), markOn(body)); BR.drawTagline(x, B, X + L * .35, Y + L * .255, L * .022, inkFor(body)); }
+  else { // serving hatch with its flap propped open, a menu panel and the name under the window
+    const hx = X + L * .07, hy = Y + L * .095, hw = L * .4, hh = L * .1; const g = x.createLinearGradient(0, hy, 0, hy + hh); g.addColorStop(0, '#f6c77d'); g.addColorStop(1, '#c98a42'); x.fillStyle = g; x.fillRect(hx, hy, hw, hh); x.fillStyle = 'rgba(60,30,10,.35)'; x.fillRect(hx + hw * .1, hy + hh * .25, hw * .8, hh * .08);
+    x.fillStyle = '#9aa0a6'; x.fillRect(hx - L * .01, hy + hh, hw + L * .02, L * .012); x.fillStyle = stripe; x.beginPath(); x.moveTo(hx - L * .01, hy); x.lineTo(hx + hw + L * .01, hy); x.lineTo(hx + hw + L * .03, hy - L * .06); x.lineTo(hx - L * .03, hy - L * .06); x.closePath(); x.fill();
+    x.fillStyle = '#20262b'; x.fillRect(X + L * .51, Y + L * .07, L * .15, L * .17); x.fillStyle = '#9aa3ab'; for (let i = 0; i < 5; i++) x.fillRect(X + L * .53, Y + L * .1 + i * L * .025, L * .07, L * .006);
+    BR.drawLockup(x, B, X + L * .27, Y + L * .25, L * .46, L * .06, inkFor(body), markOn(body)); BR.drawMark(x, B, X + L * .79, Y + L * .25, L * .07, markOn(body)); }
+}
+function pVan(x, w, h) {
+  const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#dfe6ea'); g.addColorStop(1, '#c4ccd1'); x.fillStyle = g; x.fillRect(0, 0, w, h);
+  const L = w * .6, X = w * .03, Y = h * .1, body = col(B.van.body || 'w'), dk = BR.mix(body, '#000', .25);
+  vanSide(x, X, Y, L, B.type === 'foodtruck');
+  // top down, the way the city map shows it
+  const tx = w * .7, ty = h * .1, tw = w * .12, tl = h * .78; x.fillStyle = 'rgba(0,0,0,.2)'; x.fillRect(tx + 4, ty + 4, tw, tl); x.fillStyle = body; x.beginPath(); x.roundRect ? x.roundRect(tx, ty, tw, tl, tw * .12) : x.rect(tx, ty, tw, tl); x.fill(); x.strokeStyle = dk; x.stroke(); x.fillStyle = '#3b4752'; x.fillRect(tx + tw * .1, ty + tl * .05, tw * .8, tl * .08); x.fillStyle = dk; x.fillRect(tx, ty + tl * .2, tw, 2);
+  x.save(); x.translate(tx + tw / 2, ty + tl * .6); BR.drawMark(x, B, 0, 0, Math.min(tw * .8, tl * .5), markOn(body)); x.restore();
+  x.fillStyle = '#46505a'; x.font = '500 11px "IBM Plex Sans",system-ui'; x.textAlign = 'center'; x.fillText('Roof, from above', tx + tw / 2, ty + tl + 16);
+}
+function pSmall(x, w, h) {
+  x.fillStyle = '#16181c'; x.fillRect(0, 0, w, h); const lab = (t, X, Y) => { x.fillStyle = '#9ba2aa'; x.font = '500 11px "IBM Plex Sans",system-ui'; x.textAlign = 'left'; x.fillText(t, X, Y); };
+  lab('Mark at 96, 48, 24 and 12 pixels', 14, 20); let X = 14; for (const s of [96, 48, 24, 12]) { x.fillStyle = col('l'); x.fillRect(X, 30, s + 12, s + 12); BR.drawMark(x, B, X + s / 2 + 6, 36 + s / 2, s); x.fillStyle = '#2a2d33'; x.fillRect(X, 30 + s + 18, s + 12, s + 12); BR.drawMark(x, B, X + s / 2 + 6, 36 + s * 1.5 + 18, s); X += s + 26; }
+  const sx = Math.max(X + 20, w * .52); lab('Sign at street, district and map zoom', sx, 20); let Y = 30; for (const sw of [Math.min(w - sx - 14, 260), 120, 48]) { const sh = sw * .22; x.fillStyle = WALLS[wall]; x.fillRect(sx - 4, Y - 4, sw + 8, sh + 8); BR.drawSign(x, B, sx, Y, sw, sh, { wall: WALLS[wall] }); Y += sh + 18; }
+  // a map tile at the city's close zoom of 6 pixels per metre: an 8 metre frontage, the facade showing as a lean
+  const ty = Math.max(Y, h * .58) + 8; lab('City map at close zoom, 6 pixels per metre', 14, ty - 6); const ux = 14, uy = ty + 4, fw = 48, dp = 60, lean = 14;
+  x.fillStyle = '#3c4148'; x.fillRect(ux - 4, uy - 4, fw * 5 + 30, dp + lean + 18); for (let i = 0; i < 5; i++) { const bx = ux + i * (fw + 6), isMe = i === 2, b2 = isMe ? B : null; x.fillStyle = isMe ? '#5b5e63' : ['#64676c', '#57606a', '#6b625a', '#5e6460', '#55585d'][i]; x.fillRect(bx, uy, fw, dp); x.fillStyle = isMe ? BR.mix(WALLS[wall], '#000', .1) : '#46494e'; x.fillRect(bx, uy + dp, fw, lean); if (b2) BR.drawSign(x, b2, bx + 3, uy + dp + 2, fw - 6, lean * .5, { wall: WALLS[wall] }); }
+  x.fillStyle = '#8f8e89'; x.fillRect(ux - 4, uy + dp + lean, fw * 5 + 30, 10);
+}
+
+// ---------- sync everything to the current brand ----------
+function syncAll() {
+  $('bName').value = B.name || ''; $('bTag').value = B.tagline || ''; typeOptions(); $('bEst').value = B.est || ''; $('nType').value = B.type;
+  $('fFont').value = B.font.f; B.font.w = fontWeights($('fW'), B.font.f, B.font.w); $('fCase').value = B.font.cs || 'none'; $('fLs').value = B.font.ls || 0; $('fLsO').textContent = (B.font.ls || 0).toFixed(2); $('bLock').value = B.lockup;
+  const ink = $('fInk'); ink.innerHTML = ''; swatch(ink, () => B.font.ink || 'p', v => B.font.ink = v, false);
+  loadBrandFonts(B); drawPal(); drawSaved(); drawLayers(); drawProps(); drawPrevCtl(); undoBtns(); redraw();
+}
+new ResizeObserver(() => { sizeStage(); drawPreview(); }).observe(document.querySelector('.app'));
+drawPicker(); sizeStage(); syncAll();
+if (document.fonts) Promise.all(BR.FONTS.map(f => document.fonts.load(BR.fontCss(f.f, f.w[f.w.length - 1], 20)).catch(() => { }))).then(() => { redraw(); drawLayers(); drawSaved(); });
+</script>
+
+</body></html>

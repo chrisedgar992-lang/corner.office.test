@@ -1,0 +1,344 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<meta charset="utf-8">
+<title>Corner Office Foundations</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* layout: status column | the week's actions and the event card | saves. One dark look, matching the other test tools. */
+:root{--bg:#121417;--panel:#1a1d21;--panel2:#20242a;--line:#30353c;--text:#e7e9ec;--muted:#9ba2aa;--acc:#d6a347;--btn:#23272d;--good:#7fbf7a;--bad:#e07a62;
+  --ui:"IBM Plex Sans",system-ui,-apple-system,sans-serif;--num:"IBM Plex Mono",ui-monospace,monospace;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:13px/1.45 var(--ui)}
+[hidden]{display:none!important}
+.app{display:grid;grid-template-columns:270px minmax(0,1fr) 300px;gap:10px;padding-block:12px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));max-width:1300px;margin:0 auto}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:9px;min-width:0}
+.col{display:flex;flex-direction:column;gap:10px;min-width:0}
+h1{font-size:15px;margin:0;font-weight:600}h2{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0;font-weight:500}
+.hint{color:var(--muted);font-size:12px;text-wrap:pretty}
+.big{font:500 20px var(--num)}.mono{font-family:var(--num);font-variant-numeric:tabular-nums}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px}.kv span{color:var(--muted)}.kv b{font:500 13px var(--num);text-align:right;font-variant-numeric:tabular-nums}
+.bar{display:grid;grid-template-columns:70px 1fr 34px;gap:8px;align-items:center;font-size:12px;color:var(--muted)}
+.bar i{display:block;height:8px;border-radius:4px;background:var(--panel2);overflow:hidden}.bar i b{display:block;height:100%;background:var(--acc)}
+.bar em{font:12px var(--num);color:var(--text);text-align:right;font-style:normal}
+button,input,textarea{background:var(--btn);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:7px 10px;font:inherit;font-size:12.5px}
+button{cursor:pointer}button:hover,button:focus-visible{border-color:var(--acc);outline:none}button:disabled{opacity:.4;cursor:default}
+.acts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.acts button{text-align:left;display:flex;flex-direction:column;gap:2px;padding:9px 11px}.acts small{color:var(--muted);font-size:11px}
+.ev{border:1px solid var(--acc);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--panel2)}
+.ev h3{margin:0;font-size:14px}.ev .row{display:flex;flex-wrap:wrap;gap:6px}
+.log{max-height:220px;overflow:auto;font-size:12px;display:flex;flex-direction:column;gap:3px}.log div{color:var(--muted)}.log b{color:var(--text);font-weight:500}
+.slot{display:grid;grid-template-columns:52px 1fr auto auto;gap:6px;align-items:center;font-size:12px}.slot span{color:var(--muted)}
+textarea{width:100%;min-height:70px;font:11px var(--num)}
+#fade{position:fixed;inset:0;background:#000;display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .45s}
+#fade.on{opacity:1}#fade b{font:500 34px var(--num);color:#e7e9ec;letter-spacing:.06em}
+@media (prefers-reduced-motion:reduce){#fade{transition:none}}
+@media (max-width:1000px){.app{grid-template-columns:minmax(0,1fr)}}
+</style>
+<div class="app">
+  <div class="col">
+    <div class="card"><h1>Foundations test</h1><div class="hint">The game's core running on its own: the calendar and clock, your stats, events and saves. Here it plays the college semester week by week.</div></div>
+    <div class="card"><h2>Today</h2><div class="big" id="date"></div><div class="kv"><span>Time</span><b id="time"></b><span>Semester</span><b id="week"></b><span>Age</span><b id="age"></b><span>Season</span><b id="season"></b></div></div>
+    <div class="card"><h2>You</h2><div class="kv"><span>Cash</span><b id="cash"></b><span>Bank</span><b id="bank"></b><span>Debts</span><b id="debt"></b></div><div id="bars" style="display:flex;flex-direction:column;gap:6px"></div><div class="kv" id="skills"></div></div>
+  </div>
+  <div class="col">
+    <div class="card"><h2>This week</h2><div class="hint" id="slots"></div><div class="acts" id="acts"></div></div>
+    <div class="ev" id="ev" hidden></div>
+    <div class="card"><h2>What happened</h2><div class="log" id="log"></div></div>
+  </div>
+  <div class="col">
+    <div class="card"><h2>Saves</h2><div class="hint">Autosave runs each time you sleep.</div><div id="saves" style="display:flex;flex-direction:column;gap:6px"></div></div>
+    <div class="card"><h2>Move a save</h2><div class="hint">Copy the text to keep a backup or move it to another device, then paste it here to load it.</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap"><button id="bExp">Copy current game</button><button id="bImp">Load pasted text</button><button id="bNew">New game</button></div>
+      <textarea id="io" aria-label="Save text"></textarea><div class="hint" id="ioMsg"></div></div>
+  </div>
+</div>
+<div id="fade"><b id="fadeT"></b></div>
+<script>
+// ================= Corner Office core: the systems every build shares =================
+// 1. Permanent IDs for buildings and lots, so saves survive map edits
+// 2. Calendar and clock: a standard Gregorian calendar, 24-hour days, leap years, the player's age
+// 3. Player state: money, debts, needs, skills, reputation, relationships
+// 4. Events: written as data, with conditions, choices, effects and follow-ups
+// 5. Saves: slots, autosave, versioned migrations, export and import as text
+'use strict';
+const CORE = (() => {
+  const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+  const VERSION = 1;
+
+  // ---------------- 1. permanent IDs ----------------
+  // An ID comes from what a lot is and where it sits, rounded to 2 m, so it does not depend on generation order.
+  // Two lots that round to the same spot get a deterministic suffix by their exact position.
+  function hash32(s) { let h = 2166136261 >>> 0; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h; }
+  const lotKey = L => `${L.kind}|${Math.round(L.cx / 2)}|${Math.round(L.cy / 2)}`;
+  function assignIds(lots) {
+    const groups = new Map();
+    for (const L of lots) { const k = lotKey(L); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(L); }
+    const ids = new Set();
+    for (const [k, g] of groups) {
+      g.sort((a, b) => a.cx - b.cx || a.cy - b.cy || (a.hw || 0) - (b.hw || 0));
+      g.forEach((L, i) => { let id = 'L' + hash32(k).toString(36) + (i ? '-' + i : ''); while (ids.has(id)) id += 'x'; ids.add(id); L.id = id; });
+    }
+    return lots;
+  }
+  // a saved reference keeps the ID plus where the lot was and what it was, so it can be found again after a map edit
+  const lotRef = L => ({ id: L.id, kind: L.kind, x: Math.round(L.cx * 10) / 10, y: Math.round(L.cy * 10) / 10 });
+  function makeIndex(lots) { const byId = new Map(), grid = new Map(), G = 50; for (const L of lots) { byId.set(L.id, L); const k = Math.floor(L.cx / G) * 10007 + Math.floor(L.cy / G); if (!grid.has(k)) grid.set(k, []); grid.get(k).push(L); } return { byId, grid, G }; }
+  // find a saved lot: same ID first, else the nearest lot of the same kind within 12 m
+  function resolveLot(ref, idx) {
+    const hit = idx.byId.get(ref.id); if (hit && hit.kind === ref.kind) return { lot: hit, moved: false };
+    let best = null, bd = 12 * 12; const gx = Math.floor(ref.x / idx.G), gy = Math.floor(ref.y / idx.G);
+    for (let i = gx - 1; i <= gx + 1; i++) for (let j = gy - 1; j <= gy + 1; j++) for (const L of idx.grid.get(i * 10007 + j) || []) { if (L.kind !== ref.kind) continue; const d = (L.cx - ref.x) ** 2 + (L.cy - ref.y) ** 2; if (d < bd) { bd = d; best = L; } }
+    return best ? { lot: best, moved: true } : null;
+  }
+
+  // ---------------- 2. calendar and clock ----------------
+  // Game time is whole minutes since 1 January 2000, 00:00. The Gregorian rules (leap years) come from the built-in date maths in UTC.
+  const EPOCH = Date.UTC(2000, 0, 1), MIN = 60000;
+  const toDate = t => new Date(EPOCH + t * MIN);
+  const fromParts = (y, mo, d, h = 0, mi = 0) => Math.round((Date.UTC(y, mo - 1, d, h, mi) - EPOCH) / MIN);
+  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  function parts(t) { const D = toDate(t); return { y: D.getUTCFullYear(), mo: D.getUTCMonth() + 1, d: D.getUTCDate(), h: D.getUTCHours(), mi: D.getUTCMinutes(), dow: D.getUTCDay(), month: MONTHS[D.getUTCMonth()], day: DAYS[D.getUTCDay()] }; }
+  const isLeap = y => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+  const daysInMonth = (y, mo) => [31, isLeap(y) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1];
+  // northern hemisphere seasons, by month
+  const season = t => { const m = parts(t).mo; return m === 12 || m <= 2 ? 'winter' : m <= 5 ? 'spring' : m <= 8 ? 'summer' : 'fall'; };
+  function ageOn(t, birth) { const p = parts(t); let a = p.y - birth.y; if (p.mo < birth.mo || (p.mo === birth.mo && p.d < birth.d)) a--; return a; }
+  // a 29 February birthday is marked on 28 February in years without one
+  function isBirthday(t, birth) { const p = parts(t); if (birth.mo === 2 && birth.d === 29 && !isLeap(p.y)) return p.mo === 2 && p.d === 28; return p.mo === birth.mo && p.d === birth.d; }
+  const fmtDate = t => { const p = parts(t); return `${p.day} ${p.d} ${p.month} ${p.y}`; };
+  const fmtTime = t => { const p = parts(t); return `${String(p.h).padStart(2, '0')}:${String(p.mi).padStart(2, '0')}`; };
+
+  // ---------------- 3. player state ----------------
+  // Money is held in whole cents so sums never drift.
+  function newGame(opts = {}) {
+    const start = opts.start ?? fromParts(2026, 1, 12, 8, 0); // the college opening starts the second Monday of January
+    return {
+      version: VERSION, seed: opts.seed ?? 7, created: Date.now(),
+      time: start, mode: opts.mode || 'college', week: 1, // the college opening runs week by week
+      player: {
+        name: opts.name || 'Player', birth: opts.birth || { y: 2004, mo: 6, d: 14 },
+        cash: 0, bank: 250000, debts: [], // cents
+        needs: { energy: 80, mood: 65, hunger: 30, health: 90 }, // 0 to 100
+        skills: {}, // name -> xp
+        study: 0, // college preparation, 0 to 100
+        rep: { general: 0, sectors: {} },
+        home: null, job: null, car: null, location: null,
+      },
+      rels: {}, // npc id -> { score -100..100, met, flags }
+      owned: { lots: {}, cars: [], businesses: [] },
+      world: { lots: {}, businesses: {} }, // changes against the fixed city, keyed by lot ID
+      flags: {}, counters: {}, seen: {}, queue: [], log: [], market: {},
+    };
+  }
+  const money = c => (c < 0 ? '-$' : '$') + (Math.abs(c) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // skills: xp turns into a level with growing steps, level 1 at 100 xp, each further level about 35 percent more
+  const levelOf = xp => { let lv = 0, need = 100, acc = 0; while (xp >= acc + need && lv < 20) { acc += need; lv++; need = Math.round(need * 1.35); } return lv; };
+  const rel = (S, id) => S.rels[id] || (S.rels[id] = { score: 0, met: false, flags: {} });
+
+  // ---------------- 4. events ----------------
+  // Conditions and effects are plain data, read by the small interpreters below. No event text is ever run as code.
+  // condition forms: { all:[...] } { any:[...] } { not:c } { flag:'x' } { counter:['x','>=',3] } { stat:['energy','<',30] }
+  //   { cash:['>=',5000] } { skill:['finance','>=',2] } { rel:['rob','>=',20] } { mode:'college' } { week:[3,6] } { hour:[18,23] }
+  //   { dow:[1,5] } { month:[11,12] } { season:'winter' } { age:['>=',21] } { seen:'event-id' } { chance:0.3 } { study:['>=',60] }
+  const cmp = (a, op, b) => op === '>=' ? a >= b : op === '<=' ? a <= b : op === '>' ? a > b : op === '<' ? a < b : op === '==' ? a === b : op === '!=' ? a !== b : false;
+  function test(c, S, rnd = Math.random) {
+    if (!c) return true; if (Array.isArray(c)) return c.every(x => test(x, S, rnd));
+    const P = S.player, p = parts(S.time);
+    if (c.all) return c.all.every(x => test(x, S, rnd)); if (c.any) return c.any.some(x => test(x, S, rnd)); if (c.not) return !test(c.not, S, rnd);
+    if (c.flag) return !!S.flags[c.flag];
+    if (c.counter) return cmp(S.counters[c.counter[0]] || 0, c.counter[1], c.counter[2]);
+    if (c.stat) return cmp(P.needs[c.stat[0]] ?? 0, c.stat[1], c.stat[2]);
+    if (c.cash) return cmp(P.cash + P.bank, c.cash[0], c.cash[1] * 100);
+    if (c.skill) return cmp(levelOf(P.skills[c.skill[0]] || 0), c.skill[1], c.skill[2]);
+    if (c.rel) return cmp(rel(S, c.rel[0]).score, c.rel[1], c.rel[2]);
+    if (c.study) return cmp(P.study, c.study[0], c.study[1]);
+    if (c.mode) return S.mode === c.mode;
+    if (c.week) return S.week >= c.week[0] && S.week <= c.week[1];
+    if (c.hour) return c.hour[0] <= c.hour[1] ? p.h >= c.hour[0] && p.h <= c.hour[1] : p.h >= c.hour[0] || p.h <= c.hour[1];
+    if (c.dow) return p.dow >= c.dow[0] && p.dow <= c.dow[1];
+    if (c.month) return p.mo >= c.month[0] && p.mo <= c.month[1];
+    if (c.season) return season(S.time) === c.season;
+    if (c.age) return cmp(ageOn(S.time, P.birth), c.age[0], c.age[1]);
+    if (c.seen) return !!S.seen[c.seen];
+    if (c.chance != null) return rnd() < c.chance;
+    throw new Error('Unknown condition: ' + JSON.stringify(c));
+  }
+  // effect forms: { cash:+-dollars } { bank:+-dollars } { debt:{ name, amount, rate } } { need:{ energy:-10 } } { skill:{ finance:40 } }
+  //   { study:+-n } { rel:{ rob:5 } } { rep:{ general:2, finance:3 } } { flag:'x' } { unflag:'x' } { count:'x' } { mode:'main' }
+  //   { after:{ event:'id', days:3 } } { log:'text' } { minutes:+n }
+  function apply(e, S) {
+    if (!e) return; if (Array.isArray(e)) { e.forEach(x => apply(x, S)); return; }
+    const P = S.player;
+    for (const k in e) {
+      const v = e[k];
+      switch (k) {
+        case 'cash': P.cash += Math.round(v * 100); break;
+        case 'bank': P.bank += Math.round(v * 100); break;
+        case 'debt': P.debts.push({ name: v.name, cents: Math.round(v.amount * 100), rate: v.rate || 0, since: S.time }); break;
+        case 'need': for (const n in v) P.needs[n] = clamp((P.needs[n] ?? 0) + v[n], 0, 100); break;
+        case 'skill': for (const n in v) P.skills[n] = Math.max(0, (P.skills[n] || 0) + v[n]); break;
+        case 'study': P.study = clamp(P.study + v, 0, 100); break;
+        case 'rel': for (const n in v) { const r = rel(S, n); r.score = clamp(r.score + v[n], -100, 100); r.met = true; } break;
+        case 'rep': for (const n in v) { if (n === 'general') P.rep.general = clamp(P.rep.general + v[n], -100, 100); else P.rep.sectors[n] = clamp((P.rep.sectors[n] || 0) + v[n], -100, 100); } break;
+        case 'flag': S.flags[v] = true; break;
+        case 'unflag': delete S.flags[v]; break;
+        case 'count': S.counters[v] = (S.counters[v] || 0) + 1; break;
+        case 'mode': S.mode = v; break;
+        case 'after': S.queue.push({ event: v.event, at: S.time + Math.round((v.days || 0) * 1440 + (v.hours || 0) * 60) }); S.queue.sort((a, b) => a.at - b.at); break;
+        case 'log': note(S, v); break;
+        case 'minutes': S.time += v; break;
+        default: throw new Error('Unknown effect: ' + k);
+      }
+    }
+  }
+  const note = (S, text) => { S.log.push({ t: S.time, text }); if (S.log.length > 300) S.log.splice(0, S.log.length - 300); };
+  // an event: { id, when, weight, once, cooldownDays, text, choices:[{ text, when, effects, next }] , effects }
+  function eligible(ev, S, rnd) {
+    if (ev.once && S.seen[ev.id]) return false;
+    if (ev.cooldownDays && S.seen[ev.id] && S.time - S.seen[ev.id] < ev.cooldownDays * 1440) return false;
+    return test(ev.when, S, rnd);
+  }
+  function pick(events, S, rnd = Math.random) {
+    // a queued follow-up that is due comes first; otherwise a weighted draw from the eligible pool
+    const due = S.queue.findIndex(q => q.at <= S.time);
+    if (due >= 0) { const q = S.queue.splice(due, 1)[0]; const ev = events.find(e => e.id === q.event); if (ev) return ev; }
+    const pool = events.filter(e => !e.queuedOnly && eligible(e, S, rnd)); if (!pool.length) return null;
+    let tot = pool.reduce((a, e) => a + (e.weight ?? 1), 0), x = rnd() * tot; for (const e of pool) { x -= e.weight ?? 1; if (x <= 0) return e; } return pool[pool.length - 1];
+  }
+  const choicesFor = (ev, S) => (ev.choices || []).map((c, i) => ({ i, text: c.text, ok: test(c.when, S, () => 0) }));
+  function choose(ev, i, S) {
+    S.seen[ev.id] = S.time; apply(ev.effects, S);
+    const c = ev.choices && ev.choices[i]; if (c) { if (!test(c.when, S, () => 0)) throw new Error('That choice is not open'); apply(c.effects, S); if (c.next) S.queue.unshift({ event: c.next, at: S.time }); }
+    note(S, ev.title ? `${ev.title}${c ? ': ' + c.text : ''}` : (c ? c.text : ev.id));
+  }
+
+  // ---------------- clock running ----------------
+  // needs drift each game hour: energy falls awake, hunger rises, mood eases toward 60
+  function passMinutes(S, mins, opts = {}) {
+    const P = S.player, asleep = !!opts.asleep; let hrsDrift = mins / 60;
+    const before = S.time; S.time += Math.round(mins);
+    if (opts.drift === false) hrsDrift = 0;
+    const hrs = hrsDrift; // needs drift with the hours, unless the caller handles them (the college week does)
+    if (asleep) { P.needs.energy = clamp(P.needs.energy + hrs * 12, 0, 100); P.needs.hunger = clamp(P.needs.hunger + hrs * 2, 0, 100); }
+    else { P.needs.energy = clamp(P.needs.energy - hrs * (opts.work ? 6 : 4), 0, 100); P.needs.hunger = clamp(P.needs.hunger + hrs * 5, 0, 100); }
+    P.needs.mood = clamp(P.needs.mood + (60 - P.needs.mood) * Math.min(1, hrs * .03) - (P.needs.hunger > 75 ? hrs * 2 : 0), 0, 100);
+    // daily things at each midnight crossed: interest on debts, birthdays
+    const d0 = Math.floor(before / 1440), d1 = Math.floor(S.time / 1440);
+    for (let d = d0 + 1; d <= d1; d++) { const t = d * 1440;
+      for (const db of P.debts) db.cents += Math.round(db.cents * (db.rate || 0) / 365);
+      if (isBirthday(t, P.birth)) note(S, `Birthday: you turned ${ageOn(t, P.birth)}.`);
+    }
+  }
+  // sleep until a set hour, or the next morning; in the college opening, sleep ends the week
+  function sleep(S, wakeHour = 7) {
+    if (S.mode === 'college') { // the week ends: wake the next Monday morning, fed and rested, mood easing toward normal
+      const start = S.time, mid = Math.floor(S.time / 1440) * 1440, dow = parts(S.time).dow, ahead = ((8 - dow) % 7) || 7, next = mid + ahead * 1440 + wakeHour * 60;
+      passMinutes(S, next - S.time, { asleep: true, drift: false }); S.week++; const N = S.player.needs; N.energy = Math.max(N.energy, 85); N.hunger = 25; N.mood = clamp(N.mood + (60 - N.mood) * .3, 0, 100); return { weeks: 1, from: start, to: S.time }; }
+    const p = parts(S.time), mid = Math.floor(S.time / 1440) * 1440, wake = mid + wakeHour * 60 + (p.h >= wakeHour ? 1440 : 0); const from = S.time; passMinutes(S, wake - S.time, { asleep: true }); return { from, to: S.time };
+  }
+  function skipTo(S, t, opts) { if (t > S.time) passMinutes(S, t - S.time, opts); }
+
+  // ---------------- 5. saves ----------------
+  // Saves are plain text: a header line, then the state as JSON, then a checksum, so a broken save is caught on load.
+  const SLOTS = ['auto', 'quick', 'slot1', 'slot2', 'slot3'];
+  const MIGRATIONS = { /* 1: S => { ... return S; } turns a version 1 save into version 2 */ };
+  function serialize(S) { const body = JSON.stringify(S); return `CO3SAVE ${S.version} ${hash32(body).toString(36)}\n${body}`; }
+  function deserialize(text) {
+    const nl = text.indexOf('\n'); if (nl < 0 || !text.startsWith('CO3SAVE ')) throw new Error('This is not a Corner Office save.');
+    const [, ver, sum] = text.slice(0, nl).split(' '), body = text.slice(nl + 1);
+    if (hash32(body).toString(36) !== sum) throw new Error('This save is damaged: its checksum does not match.');
+    let S = JSON.parse(body), v = +ver;
+    while (v < VERSION) { const f = MIGRATIONS[v]; if (!f) throw new Error(`No upgrade from save version ${v}.`); S = f(S); v++; S.version = v; }
+    return S;
+  }
+  // export as a short block of text to copy, since a page cannot hand over a file; import by pasting it back
+  const exportText = S => btoa(unescape(encodeURIComponent(serialize(S))));
+  const importText = s => deserialize(decodeURIComponent(escape(atob(s.trim()))));
+  function makeStore(storage, prefix = 'co3-') {
+    const get = k => { try { return storage.getItem(prefix + k); } catch (e) { return null; } };
+    const put = (k, v) => { try { storage.setItem(prefix + k, v); return true; } catch (e) { return false; } };
+    return {
+      save(slot, S) { if (!SLOTS.includes(slot)) throw new Error('No such slot'); S.savedAt = Date.now(); return put(slot, serialize(S)); },
+      load(slot) { const t = get(slot); return t ? deserialize(t) : null; },
+      list() { return SLOTS.map(slot => { const t = get(slot); if (!t) return { slot, empty: true }; try { const S = deserialize(t); return { slot, date: fmtDate(S.time), name: S.player.name, savedAt: S.savedAt, mode: S.mode, week: S.week }; } catch (e) { return { slot, broken: e.message }; } }); },
+      remove(slot) { try { storage.removeItem(prefix + slot); } catch (e) { } },
+    };
+  }
+  // the world's changes, keyed by permanent lot ID: owner, use, business, name, upgrades
+  function setLot(S, L, change) { const w = S.world.lots[L.id] || (S.world.lots[L.id] = { ref: lotRef(L) }); Object.assign(w, change); return w; }
+  // after a map edit: move every saved lot change onto the lot it now matches, and report any that could not be found
+  function rebindLots(S, lots) {
+    const idx = makeIndex(lots), out = {}, lost = [], moved = [];
+    for (const id in S.world.lots) { const w = S.world.lots[id], r = resolveLot(w.ref, idx); if (!r) { lost.push(w); continue; } if (r.moved) moved.push([id, r.lot.id]); w.ref = lotRef(r.lot); out[r.lot.id] = w; }
+    S.world.lots = out; if (S.player.home && moved.some(m => m[0] === S.player.home)) S.player.home = moved.find(m => m[0] === S.player.home)[1];
+    return { moved: moved.length, lost };
+  }
+
+  return { VERSION, clamp, hash32, assignIds, lotRef, makeIndex, resolveLot, rebindLots, setLot,
+    fromParts, parts, isLeap, daysInMonth, season, ageOn, isBirthday, fmtDate, fmtTime, MONTHS, DAYS,
+    newGame, money, levelOf, rel, test, apply, pick, choicesFor, choose, eligible, passMinutes, sleep, skipTo, note,
+    serialize, deserialize, exportText, importText, makeStore, SLOTS, MIGRATIONS };
+})();
+if (typeof module !== 'undefined') module.exports = CORE;
+// ================= foundations test page: the college semester on the core =================
+const $ = id => document.getElementById(id), C = CORE;
+const store = C.makeStore((() => { try { localStorage.setItem('co3-probe', '1'); localStorage.removeItem('co3-probe'); return localStorage; } catch (e) { const m = new Map(); return { getItem: k => m.get(k) ?? null, setItem: (k, v) => m.set(k, v), removeItem: k => m.delete(k) }; } })());
+const SLOTS_PER_WEEK = 4;
+let S = null, ev = null;
+// the week's actions: each takes one slot of the week and its hours
+const ACTS = [
+  { id: 'class', n: 'Go to class', d: 'Study +8, finance skill, a little tired', fx: { study: 8, skill: { finance: 30 }, need: { energy: -8 } }, hrs: 12 },
+  { id: 'study', n: 'Study at the library', d: 'Study +12, mood down a bit', fx: { study: 12, skill: { finance: 45 }, need: { mood: -6, energy: -10 } }, hrs: 15 },
+  { id: 'work', n: 'Shift at the student bar', d: 'Earn $180, tiring', fx: { cash: 180, need: { energy: -18, mood: -3 }, skill: { service: 40 } }, hrs: 16 },
+  { id: 'party', n: 'Go out with friends', d: 'Mood up, costs $40, study slips', fx: { cash: -40, need: { mood: 16, energy: -14 }, study: -3, rel: { rob: 4 } }, hrs: 10 },
+  { id: 'rest', n: 'Rest', d: 'Energy and mood back', fx: { need: { energy: 22, mood: 6 } }, hrs: 14 },
+];
+// a few events written as data, the way the real pool will be
+const EVENTS = [
+  { id: 'rob_intro', title: 'Rob from down the hall', once: true, weight: 6, when: { week: [1, 3] }, text: 'Rob knocks with a deck of cards and a grin. Poker night, five dollar buy-in.', choices: [{ text: 'Sit in for a few hands', effects: [{ cash: -5 }, { rel: { rob: 10 } }, { need: { mood: 6 } }, { flag: 'poker_regular' }] }, { text: 'Not tonight', effects: { rel: { rob: -2 } } }] },
+  { id: 'poker', title: 'Poker night', weight: 3, cooldownDays: 14, when: { flag: 'poker_regular' }, text: 'Rob has the table set up again.', choices: [{ text: 'Play', effects: [{ cash: -20 }, { rel: { rob: 5 } }, { need: { mood: 5, energy: -6 } }] }, { text: 'Play well, you have been reading odds', when: { skill: ['finance', '>=', 2] }, effects: [{ cash: 35 }, { rel: { rob: 3 } }] }, { text: 'Skip it' }] },
+  { id: 'tutor', title: 'Tutor wanted', once: true, weight: 4, when: { study: ['>=', 45] }, text: 'Your lecturer asks if you would tutor first years for $25 an hour.', choices: [{ text: 'Take it', when: { skill: ['finance', '>=', 2] }, effects: { flag: 'tutor' }, next: 'tutor_first' }, { text: 'Too busy' }] },
+  { id: 'tutor_first', title: 'First tutoring session', queuedOnly: true, text: 'Six nervous first years and a whiteboard.', choices: [{ text: 'Walk them through it', effects: [{ cash: 50 }, { skill: { teaching: 60 } }, { rep: { general: 2 } }] }] },
+  { id: 'fair', title: 'Career fair', once: true, weight: 8, when: { week: [6, 8] }, text: 'Recruiters from big firms fill the student union.', choices: [{ text: 'Work the room', when: { stat: ['energy', '>=', 40] }, effects: [{ rep: { general: 3, finance: 4 } }, { flag: 'fair_contacts' }, { need: { energy: -15 } }] }, { text: 'Grab the free pens and leave' }] },
+  { id: 'loan', title: 'Tuition bill', once: true, weight: 10, when: { week: [2, 2] }, text: 'The final semester fees are due.', choices: [{ text: 'Put it on the student loan', effects: { debt: { name: 'Student loan', amount: 6200, rate: .055 } } }, { text: 'Pay from savings', when: { cash: ['>=', 2500] }, effects: { bank: -2500 } }] },
+  { id: 'quiet', title: 'A quiet week', weight: 2, when: { mode: 'college' }, text: 'Nothing much happens, which is its own kind of nice.', choices: [{ text: 'Carry on' }] },
+];
+function fresh() { S = C.newGame({ name: 'Player' }); S.counters.slotsUsed = 0; S.rels.rob = { score: 0, met: false, flags: {} }; C.note(S, 'Final semester begins.'); draw(); }
+function act(a) {
+  if ((S.counters.slotsUsed || 0) >= SLOTS_PER_WEEK || ev) return;
+  C.apply(a.fx, S); C.passMinutes(S, a.hrs * 60, { drift: false }); // in the college week each action carries its own needs changes S.counters.slotsUsed = (S.counters.slotsUsed || 0) + 1; C.note(S, a.n + '.');
+  if (Math.random() < .45 || S.queue.length) { ev = C.pick(EVENTS, S); }
+  draw();
+}
+function choose(i) { C.choose(ev, i, S); ev = S.queue.length && S.queue[0].at <= S.time ? C.pick(EVENTS, S) : null; draw(); }
+function sleep() {
+  if (ev) return; const f = $('fade'); f.classList.add('on'); $('fadeT').textContent = '';
+  setTimeout(() => { C.sleep(S); S.counters.slotsUsed = 0; $('fadeT').textContent = S.week <= 14 ? 'Week ' + S.week : 'Finals'; store.save('auto', S); draw(); }, 480);
+  setTimeout(() => f.classList.remove('on'), 1500);
+}
+function draw() {
+  const P = S.player; $('date').textContent = C.fmtDate(S.time); $('time').textContent = C.fmtTime(S.time); $('week').textContent = 'Week ' + S.week + ' of 14';
+  $('age').textContent = C.ageOn(S.time, P.birth); $('season').textContent = C.season(S.time);
+  $('cash').textContent = C.money(P.cash); $('bank').textContent = C.money(P.bank); $('debt').textContent = C.money(P.debts.reduce((a, d) => a + d.cents, 0));
+  $('bars').innerHTML = [['Energy', P.needs.energy], ['Mood', P.needs.mood], ['Hunger', P.needs.hunger], ['Study', P.study]].map(([n, v]) => `<div class="bar">${n}<i><b style="width:${Math.round(v)}%"></b></i><em>${Math.round(v)}</em></div>`).join('');
+  $('skills').innerHTML = Object.keys(P.skills).length ? Object.entries(P.skills).map(([k, xp]) => `<span>${k[0].toUpperCase() + k.slice(1)}</span><b>level ${C.levelOf(xp)}</b>`).join('') + `<span>Rob</span><b>${C.rel(S, 'rob').score}</b>` : '<span>Skills</span><b>none yet</b>';
+  const used = S.counters.slotsUsed || 0; $('slots').textContent = `${SLOTS_PER_WEEK - used} of ${SLOTS_PER_WEEK} things left this week. Sleep ends the week.`;
+  $('acts').innerHTML = ''; for (const a of ACTS) { const b = document.createElement('button'); b.innerHTML = `${a.n}<small>${a.d}</small>`; b.disabled = used >= SLOTS_PER_WEEK || !!ev; b.onclick = () => act(a); $('acts').appendChild(b); }
+  const sb = document.createElement('button'); sb.innerHTML = 'Sleep<small>End the week, autosave</small>'; sb.disabled = !!ev; sb.onclick = sleep; $('acts').appendChild(sb);
+  const E = $('ev'); E.hidden = !ev; if (ev) { E.innerHTML = `<h3></h3><div class="hint"></div><div class="row"></div>`; E.querySelector('h3').textContent = ev.title; E.querySelector('.hint').textContent = ev.text; for (const c of C.choicesFor(ev, S)) { const b = document.createElement('button'); b.textContent = c.text; b.disabled = !c.ok; if (!c.ok) b.title = 'You do not meet what this needs yet'; b.onclick = () => choose(c.i); E.querySelector('.row').appendChild(b); } }
+  $('log').innerHTML = S.log.slice(-40).reverse().map(l => `<div><b>${C.fmtDate(l.t).replace(/^\w+ /, '')}</b> ${l.text.replace(/</g, '&lt;')}</div>`).join('');
+  const L = store.list(); $('saves').innerHTML = ''; for (const s of L) { const r = document.createElement('div'); r.className = 'slot'; const nm = { auto: 'Auto', quick: 'Quick', slot1: 'Slot 1', slot2: 'Slot 2', slot3: 'Slot 3' }[s.slot];
+    r.innerHTML = `<b>${nm}</b><span>${s.empty ? 'Empty' : s.broken ? 'Damaged' : (s.week && s.mode === 'college' ? 'Week ' + s.week + ', ' : '') + s.date}</span>`;
+    if (s.slot !== 'auto') { const sv = document.createElement('button'); sv.textContent = 'Save'; sv.onclick = () => { store.save(s.slot, S); draw(); }; r.appendChild(sv); } else r.appendChild(document.createElement('span'));
+    const ld = document.createElement('button'); ld.textContent = 'Load'; ld.disabled = s.empty || !!s.broken; ld.onclick = () => { S = store.load(s.slot); ev = null; draw(); }; r.appendChild(ld); $('saves').appendChild(r); }
+}
+$('bExp').onclick = () => { const t = C.exportText(S); $('io').value = t; const done = () => { $('ioMsg').textContent = 'Copied. Paste it back here, or into the game on another device.'; }; try { navigator.clipboard.writeText(t).then(done, () => { $('io').select(); $('ioMsg').textContent = 'Select the text above and copy it.'; }); } catch (e) { $('io').select(); } };
+$('bImp').onclick = () => { try { S = C.importText($('io').value); ev = null; draw(); $('ioMsg').textContent = 'Loaded.'; } catch (e) { $('ioMsg').textContent = e.message.startsWith('This') ? e.message : 'That text is not a Corner Office save.'; } };
+$('bNew').onclick = () => { ev = null; fresh(); };
+const last = store.load('auto'); if (last) { S = last; draw(); } else fresh();
+</script>
+
+</body></html>

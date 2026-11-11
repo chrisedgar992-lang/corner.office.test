@@ -116,6 +116,57 @@ textarea.io{width:100%;background:var(--btn);color:var(--text);border:1px solid 
 
 #look{position:fixed;inset:0;width:100vw;height:100vh;z-index:30;background:#000;touch-action:none}
 #lookhint{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:31;background:rgba(14,16,20,.82);color:#e6e8eb;border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:7px 14px;font:13px system-ui,sans-serif;white-space:nowrap}
+
+/* phone */
+#phoneBtn{position:fixed;right:calc(108px + env(safe-area-inset-right,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:14;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:7px 12px;font:13px var(--ui);cursor:pointer}
+#phoneBtn em{font-style:normal;background:#d66b5f;color:#fff;border-radius:9px;padding:0 6px;margin-left:6px;font-size:11px}
+#phone{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)}
+#phone .ph{width:min(340px,calc(100% - 32px));height:min(640px,calc(100% - 40px));background:#0f1114;border:2px solid #2c3036;border-radius:34px;box-shadow:0 20px 60px rgba(0,0,0,.6);display:flex;flex-direction:column;overflow:hidden;font:14px var(--ui);color:var(--text)}
+#phbar{display:flex;justify-content:space-between;padding:12px 22px 4px;font-size:12px}#phbar span{color:var(--muted)}
+#phhead{display:flex;align-items:center;gap:10px;padding:6px 14px;min-height:30px}#phhead:empty{display:none}
+#phhead button{background:none;border:0;color:var(--acc);font:inherit;cursor:pointer;padding:4px 2px}#phhead b{font-size:15px}
+#phbody{flex:1;overflow-y:auto;padding:6px 14px 14px;display:flex;flex-direction:column;gap:6px}
+.phdate{color:var(--muted);text-align:center;margin:18px 0 22px;font-size:13px}
+.phgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px 8px}
+.phgrid button{background:none;border:0;color:var(--text);display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;font:12px var(--ui);position:relative}
+.phgrid i{width:54px;height:54px;border-radius:15px;display:flex;align-items:center;justify-content:center;position:relative}
+.phgrid svg{width:28px;height:28px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
+.phgrid i em,.dot{position:absolute;top:-5px;right:-5px;background:#d66b5f;color:#fff;font:600 11px var(--ui);font-style:normal;border-radius:10px;padding:1px 6px}.dot{position:static}
+.phgrid kbd{font:10px var(--num);color:var(--muted)}
+.phrow{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;padding:9px 11px;color:var(--text);font:inherit;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.phrow span{color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.phrow.on{border-color:var(--acc)}.phrow:hover,.phbtn:hover{border-color:var(--acc)}
+.rb{display:block;height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;margin-top:4px}.rb em{display:block;height:100%;background:var(--acc)}
+.phnote{color:var(--muted);font-size:12.5px;margin:6px 2px;text-wrap:pretty}
+.phcard{display:grid;grid-template-columns:84px 1fr;gap:12px;align-items:center}.phcard div{display:flex;flex-direction:column;gap:2px}.phcard span{color:var(--muted);font-size:12.5px}
+.phpt{width:84px;height:100px;border-radius:10px;border:1px solid var(--line)}
+.phfacts{margin:4px 0;padding-left:18px;color:var(--muted);font-size:12.5px}
+.phbtn{background:var(--btn);border:1px solid var(--line);border-radius:10px;padding:9px;color:var(--text);font:inherit;cursor:pointer}.phbtn:disabled{opacity:.5;cursor:default}
+.phthread{display:flex;flex-direction:column;gap:5px;margin-top:6px}.phthread p{margin:0;background:#22262c;border-radius:12px;padding:7px 10px;max-width:80%;font-size:13px}.phthread p.me{align-self:flex-end;background:#3a5f8f}
+.phbal{display:grid;grid-template-columns:1fr auto;gap:6px 10px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:12px}.phbal span{color:var(--muted)}.phbal b{font:600 15px var(--num);text-align:right}
+.phtx p{display:flex;justify-content:space-between;gap:10px;margin:0;padding:7px 2px;border-bottom:1px solid var(--line);font-size:12.5px}.phtx small{display:block;color:var(--muted);font-size:11px}.phtx b{font:500 12.5px var(--num);white-space:nowrap}.phtx b.in{color:var(--good)}
+.phday b{display:block;margin:8px 0 3px;font-size:13px}.phday p{margin:0;padding:5px 0;border-bottom:1px solid var(--line);font-size:12.5px;display:grid;grid-template-columns:70px 1fr;gap:8px}.phday p span{color:var(--muted);font-family:var(--num);font-size:11.5px}
+.phnow{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:2px}.phnow span{color:var(--muted);font-size:12px}.phnow b{font-size:15px}
+.phctl{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.phctl button{background:var(--btn);border:1px solid var(--line);border-radius:9px;color:var(--text);padding:8px 0;font:12.5px var(--ui);cursor:pointer}
+.phlog{margin:0;padding:6px 2px;border-bottom:1px solid var(--line);font-size:12.5px}.phlog small{display:block;color:var(--muted);font-size:11px}
+/* fast forward */
+#ff{position:fixed;inset:0;z-index:18;pointer-events:none;display:flex;justify-content:center;align-items:flex-start;padding-top:calc(70px + env(safe-area-inset-top,0px))}
+#ff.dim{background:rgba(4,6,12,.38)}
+.ffbox{background:var(--panel);border:1px solid var(--acc);border-radius:12px;padding:10px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 18px;min-width:260px;font:13px var(--ui)}
+.ffbox b{font:600 18px var(--num);color:var(--acc)}.ffbox i{grid-column:1 / span 2;height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden}.ffbox i em{display:block;height:100%;background:var(--acc)}
+.ffbox small{grid-column:1 / span 2;color:var(--muted);font-size:11.5px}.ffbox kbd{font:600 11px var(--num);border:1px solid var(--line);border-radius:4px;padding:0 5px}
+/* title screen */
+#title{position:fixed;inset:0;z-index:40;overflow-y:auto;background:linear-gradient(90deg,rgba(8,10,13,.94),rgba(8,10,13,.78) 55%,rgba(8,10,13,.35));padding-block:calc(40px + env(safe-area-inset-top,0px)) 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));font:14px var(--ui);color:var(--text)}
+.tbox{max-width:760px;display:flex;flex-direction:column;gap:14px}
+#title h1{font:700 clamp(34px,6vw,58px)/1 Georgia,"Times New Roman",serif;letter-spacing:-.01em;margin:0}
+.tsub{margin:0;color:var(--acc);font:12px var(--num);letter-spacing:.2em;text-transform:uppercase}
+.tmain{display:flex;flex-direction:column;gap:8px;max-width:360px;margin-top:10px}
+.tmain button,.tmain a,.tgrid a{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--text);text-decoration:none;font:inherit;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.tmain button:first-child{border-color:var(--acc)}.tmain button:hover,.tmain a:hover,.tgrid a:hover{border-color:var(--acc);background:rgba(214,163,71,.08)}
+.tmain b{font-size:16px}.tmain span,.tgrid span{color:var(--muted);font-size:12.5px}
+#title h2{font:500 11px var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:22px 0 0}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.tfoot{color:var(--muted);font-size:12px;margin:0}
+body.titling #ghud,body.titling #menuBtn,body.titling #useBtn,body.titling #phoneBtn,body.titling #prompt,body.titling #radio,body.titling #mm{display:none!important}
 </style>
 </head>
 <body>
@@ -168,6 +219,10 @@ textarea.io{width:100%;background:var(--btn);color:var(--text);border:1px solid 
 <div id="toast" hidden></div>
 <button id="menuBtn">Menu <small style="color:var(--muted)">Esc</small></button>
 <button id="useBtn">Use</button>
+<button id="phoneBtn">Phone <small style="color:var(--muted)">P</small></button>
+<div id="phone" hidden><div class="ph"><div id="phbar"></div><div id="phhead"></div><div id="phbody"></div></div></div>
+<div id="ff" hidden></div>
+<div id="title" hidden></div>
 <div id="dlg" hidden></div>
 <div id="modal" class="modal" hidden><div class="panel" id="panel"></div></div>
 <div id="fade"></div>
@@ -972,10 +1027,13 @@ function randomLook(kind) {
 }
 
 const PEDS = []; let PUID = 1;
+const GHOST_RATE = .08;
 function placePed(s, pos) {
   const z = C.districtAt(s.mx, s.my), L = randomLook(TOWNZ.has(z) ? undefined : z === 'uni' ? (R() < .8 ? 'casual' : 'jog') : (R() < .6 ? 'casual' : R() < .3 ? 'jog' : undefined));
   const p = { uid: PUID++, L, s: pos, seg: s, dir: TR() < .5 ? 1 : -1, speed: L.kind === 'jog' ? rnd(3.2, 3.8) : rnd(1.7, 2.3), lat: -.5, latT: -.5, x: 0, y: 0, hx: 0, hy: 1, phase: R() * TAU, moving: true, cross: null, idle: 0 };
   if (typeof dressOne === 'function') dressOne(p);
+  // Halloween: about one walker in twelve is a see-through ghost, and new walkers keep the count up as the street refills
+  if (typeof event !== 'undefined' && event === 'halloween' && R() < GHOST_RATE) p.ghost = true;
   PEDS.push(p); return p;
 }
 // someone in the way on the footpath: the player or another walker close ahead
@@ -2673,11 +2731,17 @@ const TRAITS = {
   busy: { label: 'Always busy', small: -2, work: 1, sport: -1, market: 1, compliment: -1, coffee: -1, patience: 2 },
   grumpy: { label: 'Prickly', small: -2, work: -1, sport: 2, market: -1, compliment: -3, coffee: -3, patience: 2 },
 };
-const CAP_CHAT = 6, CAP_DAY = 9; // most relationship you can earn in one conversation, and with one person in a day
+const CAP_CHAT = 24, CAP_DAY = 30; // most relationship you can earn in one conversation, and with one person in a day
 let talk = null, gameDay = 1;
 const talkEl = document.getElementById('talk'), tP = document.getElementById('tp'), tN = document.getElementById('tn');
+// a few things each person has going on, so follow up questions have something to land on
+const HOBBIES = [['running', 'I run. Badly, but every morning.'], ['cooking', 'I cook. Too much, honestly. My freezer is full.'], ['climbing', 'Rock climbing. The gym out by the docks.'], ['music', 'I play bass in a band. We are terrible and we love it.'], ['gaming', 'Video games, mostly. Do not judge me.'], ['reading', 'I read. Thrillers, the trashier the better.'], ['photography', 'Photography. This city at night is something else.'], ['cycling', 'Cycling. Weekends out past the ranges.'], ['poker', 'Poker. Friday nights, small stakes.'], ['gardening', 'I keep a garden on my fire escape. Tomatoes, mostly.']];
+const TEAMS = ['the Harbor Hawks', 'the City Comets', 'the Ironworks', 'the Bay Mariners', 'the Northside Bulls', 'the Capitals'];
+const FROM = ['right here, born and raised', 'a small town upstate', 'the West Coast', 'down south, near the gulf', 'the Midwest. Lots of corn.', 'overseas, came here for college'];
+const WEEKEND = ['Sleeping in. That is the whole plan.', 'My sister is in town, so brunch, then more brunch.', 'Catching the game with a few friends.', 'Moving apartments. Want to help? Kidding. Mostly.', 'Nothing. Gloriously nothing.', 'Hiking out at the ranges if the weather holds.'];
+function npcFacts(p, r2) { if (p.hobby) return; const r = r2 || Math.random; p.hobby = HOBBIES[Math.floor(r() * HOBBIES.length)]; p.team = TEAMS[Math.floor(r() * TEAMS.length)]; p.from = FROM[Math.floor(r() * FROM.length)]; p.weekend = WEEKEND[Math.floor(r() * WEEKEND.length)]; p.topics = p.topics || {}; }
 function ensureNPC(p) {
-  if (p.name) return;
+  if (p.name) { npcFacts(p); return; }
   const r2 = mulberry((p.uid !== undefined ? p.uid : PEDS.indexOf(p)) * 7919 + 99); const FN = p.L.fem ? FIRST_F : FIRST_M;
   p.name = FN[Math.floor(r2() * FN.length)] + ' ' + LAST[Math.floor(r2() * LAST.length)];
   const ja = JOBS_AGE[p.L.cop ? 'police' : p.L.kind], js = (ja && ja[p.L.age]) || JOBS[p.L.kind] || JOBS.casual; p.job = p.job || js[Math.floor(r2() * js.length)];
@@ -2686,6 +2750,7 @@ function ensureNPC(p) {
   if (FIN.test(p.job) && r2() < .5) p.trait = 'ambitious';
   p.fan = r2() < .4; p.fin = FIN.test(p.job);
   p.gain = { day: 0, sum: 0 };
+  npcFacts(p, r2);
 }
 function relLabel(r) { return r <= -40 ? 'Dislikes you' : r <= -10 ? 'Cool toward you' : r < 15 ? 'Stranger' : r < 40 ? 'Friendly' : r < 70 ? 'Good terms' : 'Close'; }
 function exprFor(r, last) { if (last === 'bad') return 'frown'; if (last === 'good') return 'smile'; return r < -10 ? 'frown' : r > 25 ? 'smile' : 'neutral'; }
@@ -2694,6 +2759,7 @@ const OPEN = {
   reserved: ['Yes?', 'Can I help you?'], ambitious: ['Hi. Make it quick, I have a call at the hour.', 'Yes? Do we know each other?'],
   busy: ["Sorry, I'm running late. What is it?", "Can't stop long."], grumpy: ['What?', "If you're selling something, no."],
 };
+const OPEN_KNOWN = ['Oh, hey! Good to see you again.', 'Hey, you. How are things?', 'Look who it is.'];
 const LINES = {
   small: { good: ["Ha, tell me about it.", "It's always like this around here.", "You're new around here, aren't you?"], meh: ['Mm. I suppose.', 'Yeah.'], bad: ["I'm not really one for chit chat.", 'Right. Well.'] },
   work: { good: ["Busy. Good busy, mostly.", "Don't get me started. But it's going well."], meh: ['It pays the bills.', "Same as always."], bad: ["I'd rather not talk shop with a stranger.", "Work's work."] },
@@ -2706,43 +2772,82 @@ const LINES = {
 };
 function wxLine() { return weather === 'rain' ? "Grim out, isn't it?" : weather === 'snow' ? 'Can you believe this snow?' : weather === 'fog' ? "Can't see the tops of the towers today." : hour > 19 ? 'Long day?' : 'Busy one today, huh?'; }
 function complimentLine(L) { return L.kind === 'coat' ? 'Great coat, by the way.' : L.kind === 'suit' ? 'Sharp suit.' : L.kind === 'hivis' ? "Your crew's making quick work of that tower." : L.glasses ? 'Nice glasses.' : 'I like your jacket.'; }
+const nearbyVenue = () => { const D = (typeof DOORS !== 'undefined' ? DOORS : []).filter(d => d.k === 'venue'); let best = null, bd = 1e9; for (const d of D) { const dd = Math.hypot(d.x - player.x, d.y - player.y); if (dd < bd) { bd = dd; best = d; } } return best; };
+// Topics run as short threads. Asking one opens the next question in that thread, so the options change as you talk, and the
+// deeper questions count for a little more if they are into it. Personal questions open up once they are friendly.
+// Each step: the line you say, the scoring key, whether it is available, and what they say back for a good, so so or bad reaction.
+const TOPICS = {
+  small: [
+    { say: () => wxLine(), k: 'small' },
+    { say: () => 'Do you live around here?', k: 'small', good: p => [`A few blocks that way. Been here ${3 + (p.uid || 1) % 9} years.`, 'Just around the corner. I love it.'], meh: () => ['Not far.', 'Sort of.'], bad: () => ["That's a bit personal.", 'Why do you ask?'] },
+    { say: () => 'Anywhere good around here you would recommend?', k: 'small', good: () => { const v = nearbyVenue(); return v ? [`Try ${v.name}. Thank me later.`, `${v.name} is the spot. Trust me.`] : ['Honestly, the hot dog carts. Best food in the city.']; }, meh: () => ['Not really. I mostly go home.'], bad: () => ['Google it.'] }],
+  work: [
+    { say: () => 'So what do you do?', k: 'job' },
+    { say: p => p.fin ? 'How are the hours treating you?' : "How's work going?", k: 'work' },
+    { say: () => "What's the best part of it?", k: 'work', good: p => [p.fin ? 'The deals. When one closes, there is nothing like it.' : 'The people. Most days.', 'Honestly? I like being good at something.'], meh: () => ['Payday.', 'Going home.'], bad: () => ["Can we talk about something else?"] },
+    { say: () => 'Ever think about doing something else?', k: 'work', good: p => [`Every day. I'd do something with ${p.hobby[0]} if it paid.`, 'Sometimes. Maybe my own thing one day.'], meh: () => ['Who has time to think?'], bad: () => ["That's a strange thing to ask a stranger."] }],
+  sport: [
+    { say: () => 'Catch the game last night?', k: 'sport' },
+    { say: () => 'Who do you follow?', k: 'sport', when: p => p.fan && p.topics.sportGood, good: p => [`${p.team[0].toUpperCase() + p.team.slice(1)}. Through thick and thin. Mostly thin.`], meh: p => [`${p.team[0].toUpperCase() + p.team.slice(1)}, I guess.`], bad: () => ['Does it matter?'] },
+    { say: () => 'Going to a game this season?', k: 'sport', when: p => p.fan && p.topics.sportGood, good: () => ['If I can get tickets. You should come, actually.', 'Season ticket. Section 112, come say hi.'], meh: () => ['Probably watch at the bar.'], bad: () => ['Too expensive these days.'] }],
+  market: [
+    { say: () => 'Did you see the markets today?', k: 'market' },
+    { say: () => 'What are you watching at the moment?', k: 'market', when: p => p.fin || p.trait === 'ambitious', good: () => ['Rates. Everything is rates right now.', 'Energy names. Something is brewing there.'], meh: () => ['The clock, mostly.'], bad: () => ['Not something I discuss.'] },
+    { say: () => 'Any tips for someone starting out?', k: 'market', when: p => p.fin || p.trait === 'ambitious', good: () => ['Buy low, sell high. That is all you get for free.', 'Keep a journal of every trade. Humbling stuff.'], meh: () => ['Index funds. Boring, but it works.'], bad: () => ['Find a financial advisor.'] }],
+  compliment: [{ say: p => complimentLine(p.L), k: 'compliment' }],
+  personal: [
+    { say: () => 'What do you get up to outside work?', k: 'personal', good: p => [p.hobby[1]], meh: p => [`Bit of ${p.hobby[0]}. Nothing exciting.`], bad: () => ['This and that.'] },
+    { say: p => p.hobby ? `How did you get into ${p.hobby[0]}?` : 'How did you get into that?', k: 'personal', good: () => ['A friend dragged me along years ago. Never stopped.', 'Bad breakup, needed a hobby. Best thing that came of it.'], meh: () => ['Just did, I guess.'], bad: () => ['Long story.'] },
+    { say: () => 'Where did you grow up?', k: 'personal', good: p => [`I'm from ${p.from}.`], meh: p => [`${p.from[0].toUpperCase() + p.from.slice(1)}.`], bad: () => ['Here and there.'] },
+    { say: () => 'Any plans this weekend?', k: 'personal', good: p => [p.weekend], meh: () => ['Not really.'], bad: () => ['Why, are you asking me out?'] }],
+};
+const PERSONAL = { chatty: 3, warm: 3, reserved: -1, ambitious: 0, busy: -1, grumpy: -1 };
+const TOPIC_ORDER = ['small', 'work', 'sport', 'market', 'personal', 'compliment'];
+const topicStep = (p, t) => { const L = TOPICS[t], i = p.topics[t] || 0; if (i >= L.length) return null; const st = L[i]; if (st.when && !st.when(p)) return null; if (t === 'personal' && p.rel < 10) return null; return st; };
 function startTalk(p) {
-  ensureNPC(p);
+  ensureNPC(p); npcFacts(p);
   if (p.gain.day !== gameDay) p.gain = { day: gameDay, sum: 0 };
-  talk = { p, line: p.open ? pick(p.open) : p.cop ? pick(['Evening. Everything alright?', 'Afternoon. Can we help you with something?', 'All good here?', 'Keep an eye on your bag around here.']) : pick(OPEN[p.trait]), last: null, used: {}, turns: 0, earned: 0, delta: 0, note: '' };
-  p.idle = 1e9; const dx = player.x - p.x, dy = player.y - p.y, m = Math.hypot(dx, dy) || 1; p.talkFace = [dx / m, dy / m];
-  player.hx = -dx / m; player.hy = -dy / m;
+  const T = TRAITS[p.trait], known = p.metBefore;
+  talk = { p, line: known && p.rel > 10 ? pick(OPEN_KNOWN) : p.open ? pick(p.open) : p.cop ? pick(['Evening. Everything alright?', 'Afternoon. Can we help you with something?', 'All good here?', 'Keep an eye on your bag around here.']) : pick(OPEN[p.trait]), last: null, used: {}, turns: 0, earned: 0, delta: 0, note: '', pat: T.patience + 2 + Math.floor(Math.max(0, p.rel) / 10) };
+  p.metBefore = true;
+  if (!p.venue) { p.idle = 1e9; const dx = player.x - p.x, dy = player.y - p.y, m = Math.hypot(dx, dy) || 1; p.talkFace = [dx / m, dy / m]; player.hx = -dx / m; player.hy = -dy / m; }
   paused = true; talkEl.style.display = 'flex'; mm.style.display = 'none'; renderTalk();
 }
-function endTalk() { if (!talk) return; const p = talk.p; p.idle = p.fixed ? 0 : 1.5; p.talkFace = null; talk = null; talkEl.style.display = 'none'; mm.style.display = ''; paused = false; }
+function endTalk() { if (!talk) return; const p = talk.p; p.idle = p.fixed ? 0 : 1.5; p.talkFace = null; talk = null; talkEl.style.display = 'none'; mm.style.display = ''; paused = false; if (window.onTalkEnd) window.onTalkEnd(p); }
+const hasNumber = p => p.card || (window.isContact && window.isContact(p));
 function say(kind) {
   const p = talk.p, T = TRAITS[p.trait];
-  talk.turns++;
-  const n = talk.used[kind] || 0; talk.used[kind] = n + 1;
-  let v, line, tone2;
-  if (kind === 'job') { v = 1; line = p.jobLine || `I'm ${/^[AEIOU]/i.test(p.job) ? 'an' : 'a'} ${p.job.toLowerCase()}. ${p.fin ? 'Long hours, decent coffee.' : 'Pays the rent, mostly.'}`; talk.p.knownJob = true; }
-  else if (kind === 'coffee') {
-    const need = 22 - T.coffee * 4;
-    if (p.rel >= need) { v = 4; line = "Sure, why not. Here's my card. Message me next week."; p.card = true; }
-    else { v = -4 + Math.min(0, T.coffee); line = p.trait === 'grumpy' ? "I don't give my number to strangers." : "Maybe get to know someone first?"; }
-    talk.coffeeTried = true;
+  talk.turns++; talk.pat--;
+  let v = 0, line, tone2;
+  if (kind === 'coffee' || kind === 'number') {
+    const need = (kind === 'coffee' ? 22 : 14) - T.coffee * 3;
+    if (p.rel >= need) { v = 3; p.card = true; line = kind === 'coffee' ? pick(["Sure, why not. Here's my number. Message me and we'll sort a time.", "I'd like that. Put your number in my phone."]) : pick(["Sure. Here, give me your phone.", "Yeah, go on. Text me sometime."]); if (window.onTalkContact) window.onTalkContact(p); talk.note = `${p.name.split(' ')[0]} is in your contacts now.`; }
+    else { v = -3 + Math.min(0, T.coffee); line = p.trait === 'grumpy' ? "I don't give my number to strangers." : p.rel >= need - 8 ? "Ha, maybe. Ask me again once I know you a bit better." : "Maybe get to know someone first?"; talk.pat -= 1; }
+    talk[kind + 'Tried'] = true;
   } else {
-    let base = T[kind];
-    if (kind === 'sport' && p.fan) base += 2;
-    if (kind === 'market') base += p.fin ? 2 : -1;
-    if (kind === 'work' && !talk.p.knownJob) base -= 1;
-    v = base + (R() < .5 ? 0 : R() < .5 ? 1 : -1);
-    if (n === 1) v = Math.min(v, 0) - 1; else if (n >= 2) v = -3;
-    tone2 = n >= 1 ? 'repeat' : v >= 2 ? 'good' : v >= 0 ? 'meh' : 'bad';
-    line = tone2 === 'repeat' ? pick(LINES.repeat) : pick((p.lines && p.lines[kind] && p.lines[kind][tone2]) || LINES[kind][tone2]);
+    const st = topicStep(p, kind), idx = p.topics[kind] || 0; p.topics[kind] = idx + 1;
+    if (st.k === 'job') { v = 1; line = p.jobLine || `I'm ${/^[AEIOU]/i.test(p.job) ? 'an' : 'a'} ${p.job.toLowerCase()}. ${p.fin ? 'Long hours, decent coffee.' : 'Pays the rent, mostly.'}`; p.knownJob = true; }
+    else {
+      let base = st.k === 'personal' ? PERSONAL[p.trait] : T[st.k];
+      if (st.k === 'sport' && p.fan) base += 2;
+      if (st.k === 'market') base += p.fin ? 2 : -1;
+      if (st.k === 'work' && !p.knownJob) base -= 1;
+      if (idx > 0 && base > 0) base += 1; // going deeper on something they enjoy counts for more
+      v = base + (R() < .5 ? 0 : R() < .5 ? 1 : -1);
+      tone2 = v >= 2 ? 'good' : v >= 0 ? 'meh' : 'bad';
+      if (kind === 'sport' && idx === 0) p.topics.sportGood = tone2 === 'good';
+      const own = st[tone2] && st[tone2](p);
+      line = pick(own || (p.lines && p.lines[st.k] && p.lines[st.k][tone2]) || (LINES[st.k] || LINES.small)[tone2]);
+      if (tone2 === 'good') talk.pat += 1; else if (tone2 === 'bad') talk.pat -= 1;
+    }
   }
-  // patience runs out
-  if (talk.turns > T.patience + (p.rel > 30 ? 2 : 0)) { v = Math.min(v, -2); line = pick(LINES.tired); talk.ended = true; }
+  // patience runs out, sooner if it is going badly, later if they are enjoying it
+  if (talk.pat <= 0) { v = Math.min(v, -1); line = pick(LINES.tired); talk.ended = true; }
   // caps on what one chat and one day can earn
-  talk.note = '';
+  if (!talk.note || v <= 0) talk.note = talk.note && v > 0 ? talk.note : '';
   if (v > 0) {
     const room = Math.max(0, Math.min(CAP_CHAT - talk.earned, CAP_DAY - p.gain.sum));
-    if (room === 0) { v = 0; talk.note = "They're friendly, but you won't get closer today."; if (kind !== 'coffee' && kind !== 'job') line = pick(LINES.capped); }
+    if (room === 0) { v = 0; talk.note = "They're friendly, but you won't get closer today."; }
     else v = Math.min(v, room);
     talk.earned += v; p.gain.sum += v;
   }
@@ -2750,25 +2855,24 @@ function say(kind) {
   if (talk.turns > 1) p.traitKnown = true;
   talk.delta = v; talk.tone = tone2; talk.line = line; talk.last = v > 0 ? 'good' : v < 0 ? 'bad' : null;
   if (p.rel <= -15 && v < 0) { talk.ended = true; }
+  if (window.onTalkTurn) window.onTalkTurn(p);
   renderTalk();
 }
 function renderTalk() {
   const p = talk.p, T = TRAITS[p.trait];
-  tN.innerHTML = `<b>${p.name}</b><span>${talk.p.knownJob ? p.job : 'Unknown'}${p.traitKnown ? ' · ' + T.label : ''}</span>`;
+  tN.innerHTML = `<b>${p.name}</b><span>${p.knownJob ? p.job : 'Unknown'}${p.traitKnown ? ' · ' + T.label : ''}</span>`;
   document.getElementById('tl').textContent = talk.line;
-  if (typeof VOICE !== 'undefined' && talk.voiced !== talk.line) { talk.voiced = talk.line; const p = talk.p; VOICE.stop(); VOICE.say(talk.line, p.voice || (p.voice = VOICE.forPerson(p.uid || p.name, p.L && p.L.fem ? 'f' : 'm', 35))); }
+  if (typeof VOICE !== 'undefined' && talk.voiced !== talk.line) { talk.voiced = talk.line; VOICE.stop(); VOICE.say(talk.line, p.voice || (p.voice = VOICE.forPerson(p.uid || p.name, p.L && p.L.fem ? 'f' : 'm', 35))); }
   const pct = (p.rel + 100) / 2;
   document.getElementById('trel').innerHTML = `<div class="bar"><i style="width:${pct}%"></i></div><span>${relLabel(p.rel)}${talk.turns ? ` <em class="${talk.delta > 0 ? 'up' : talk.delta < 0 ? 'down' : ''}">${talk.delta > 0 ? '+' : ''}${talk.delta}</em>` : ''}</span>${talk.note ? `<span class="note">${talk.note}</span>` : ''}`;
   const opts = [];
   if (!talk.ended) {
-    opts.push(['small', wxLine()]);
-    if (!talk.p.knownJob) opts.push(['job', 'So what do you do?']); else opts.push(['work', p.fin ? 'How are the hours treating you?' : "How's work going?"]);
-    opts.push(['sport', 'Catch the game last night?']);
-    opts.push(['market', 'Did you see the markets today?']);
-    opts.push(['compliment', complimentLine(p.L)]);
-    // the coffee line only claims common ground the player actually has
-    const same = player.career && p.fin && player.career === 'finance';
-    if (!talk.coffeeTried) opts.push(['coffee', same ? "We're in the same line of work. Coffee sometime?" : 'Want to grab a coffee sometime?']);
+    for (const t of TOPIC_ORDER) { const st = topicStep(p, t); if (st) opts.push([t, st.say(p)]); }
+    if (!hasNumber(p)) {
+      const same = player.career && p.fin && player.career === 'finance';
+      if (!talk.numberTried && p.rel >= 8) opts.push(['number', 'Want to swap numbers?']);
+      if (!talk.coffeeTried) opts.push(['coffee', same ? "We're in the same line of work. Coffee sometime?" : 'Want to grab a coffee sometime?']);
+    }
   }
   opts.push(['bye', talk.ended ? 'Leave' : 'Anyway, I should go.']);
   const box = document.getElementById('topts'); box.innerHTML = '';
@@ -3020,7 +3124,7 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyM') toggleMap();
   if (e.code === 'KeyF' && !talk && !INSIDE && (player.driving || Math.hypot(player.x - PCAR.x, player.y - PCAR.y) < 3.6)) { toggleCar(); return; }
   if (e.code === 'KeyF' && !talk) { const d = insidePrompt(); if (d) { if (d.lift) fade(() => enterInteriorSwap(d.to)); else if (d.to) enterInterior(d.to, 'street', d); } }
-  if (talk && /^Digit[1-4]$/.test(e.code)) { const b = document.querySelectorAll('#topts button')[+e.code.slice(5) - 1]; if (b) b.click(); }
+  if (talk && /^Digit[1-9]$/.test(e.code)) { const b = document.querySelectorAll('#topts button')[+e.code.slice(5) - 1]; if (b) b.click(); }
   if (e.code === 'Escape') { if (talk) endTalk(); if (mapOpen) toggleMap(false); }
 });
 
@@ -3158,7 +3262,7 @@ function setSeason(s) { season = s; applySeason(); for (const b of document.quer
 function setEvent(e) {
   event = e; for (const b of document.querySelectorAll('#event button')) b.classList.toggle('on', b.dataset.e === e);
   if (e === 'december' || e === 'nye') { if (season !== 'winter') setSeason('winter'); }
-  if (e === 'halloween') { if (season !== 'autumn') setSeason('autumn'); hour = 20.5; for (const p of PEDS) p.ghost = false; const r = mulberry(13); for (const p of PEDS) if (!p.fixed && r() < .03) p.ghost = true; }
+  if (e === 'halloween') { if (season !== 'autumn') setSeason('autumn'); hour = 20.5; for (const p of PEDS) p.ghost = false; const r = mulberry(13); for (const p of PEDS) if (!p.fixed && !p.cop && r() < GHOST_RATE) p.ghost = true; }
   else for (const p of PEDS) p.ghost = false;
   if (e === 'nye') { hour = 23 + 58 / 60; flow = 1; nyeArmed = true; nyeBanner = 0; for (const b of document.querySelectorAll('#flow button')) b.classList.toggle('on', b.dataset.s === '1'); }
 }
@@ -3232,6 +3336,7 @@ const FURN = {
   sofa: { size: f => [f.w || 2.1, .9], h: .85 },
   armchair: { size: () => [.9, .85], h: .85 },
   tvunit: { size: () => [1.8, .45], h: .5 },
+  stereo: { size: () => [.8, .4], h: .75 },
   fridge: { size: () => [.75, .7], h: 1.85 },
   counter: { size: f => [f.w || 2.4, .62], h: .92 },
   stove: { size: () => [.62, .62], h: .92 },
@@ -3274,6 +3379,7 @@ function drawFurn(f) {
     case 'mtable': { const w = f.w || 3.2, d = f.d || 1.2; fbox(f, 0, 0, w, d, .71, .76, [70, 72, 76]); fbox(f, 0, 0, .3, d * .6, 0, .71, [50, 52, 56]); break; }
     case 'sofa': { const w = f.w || 2.1; const cc = c || [84, 90, 104]; fbox(f, 0, .05, w, .8, .1, .44, cc); fbox(f, 0, .38, w, .2, .1, .85, mulc(cc, .9)); for (const sx of [-1, 1]) fbox(f, sx * (w / 2 - .1), .05, .2, .8, .1, .62, mulc(cc, .95)); for (let i = 0; i < 3; i++) fbox(f, -w / 3 + i * w / 3, .0, w / 3 - .06, .6, .44, .52, mixc(cc, [255, 255, 255], .06)); fbox(f, w / 2 - .45, .22, .32, .14, .52, .78, [190, 150, 90]); break; }
     case 'armchair': { const cc = c || [110, 80, 60]; fbox(f, 0, .05, .85, .8, .1, .44, cc); fbox(f, 0, .36, .85, .18, .1, .85, mulc(cc, .9)); for (const sx of [-1, 1]) fbox(f, sx * .34, .05, .17, .8, .1, .62, mulc(cc, .95)); break; }
+    case 'stereo': { fbox(f, 0, 0, .8, .4, 0, .45, [60, 46, 36]); fbox(f, 0, .02, .46, .3, .45, .58, [26, 26, 28]); fbox(f, 0, .17, .4, .005, .49, .55, f.on ? [120, 220, 150] : [44, 48, 52]); for (const sx of [-1, 1]) { fbox(f, sx * .31, 0, .16, .18, .45, .76, [30, 30, 32]); fbox(f, sx * .31, .095, .1, .005, .55, .68, f.on ? [70, 70, 76] : [52, 52, 56]); } break; }
     case 'tvunit': { fbox(f, 0, 0, 1.8, .45, 0, .5, [54, 50, 48]); fbox(f, 0, .12, 1.4, .06, .5, 1.3, [18, 18, 20]); fbox(f, 0, .155, 1.34, .005, .54, 1.26, n > .1 ? [70, 110, 160] : [36, 40, 46]); break; }
     case 'fridge': { fbox(f, 0, 0, .75, .7, 0, 1.85, [214, 216, 218], [224, 226, 228]); fbox(f, 0, -.351, .74, .01, 1.2, 1.22, [140, 142, 146]); fbox(f, .28, -.36, .03, .03, .55, 1.1, [120, 122, 126]); fbox(f, .28, -.36, .03, .03, 1.3, 1.65, [120, 122, 126]); if (f.magnets) for (let i = 0; i < 4; i++) fbox(f, -.2 + i * .1, -.355, .05, .01, 1.4 + (i % 2) * .15, 1.45 + (i % 2) * .15, [[200, 60, 60], [60, 120, 200], [220, 190, 60], [80, 160, 90]][i]); break; }
     case 'counter': { const w = f.w || 2.4; fbox(f, 0, 0, w, .62, 0, .88, [204, 200, 192]); fbox(f, 0, 0, w + .02, .64, .88, .92, [80, 80, 82], [96, 96, 98]); if (f.kettle) drawCyl(f.x + (f.rot ? 0 : .5), f.y + (f.rot ? .5 : 0), .1, .92, 1.15, [60, 62, 66]); if (f.cabinets !== false) fbox(f, 0, .2, w, .35, 1.5, 2.3, [210, 206, 198]); break; }
@@ -3322,7 +3428,7 @@ function buildShareHouse(ox, oy) {
   I.furn.find(f => f.t === 'fridge').magnets = true;
   F(I, 'table', 10.6, 6.2, { w: 1.7, d: .9, bowl: true }); for (const [cx2, cy2, r] of [[10.1, 5.4, 0], [11.1, 5.4, 0], [10.1, 7.0, 2], [11.1, 7.0, 2]]) F(I, 'chair', cx2, cy2, { rot: r });
   // lounge: sofa faces the TV on the south wall, well clear of the front door
-  F(I, 'rug', 12.0, 10.3, { w: 3.0, d: 2.0, col: [128, 76, 60] }); F(I, 'sofa', 12.0, 9.2, { w: 2.3, rot: 2 }); F(I, 'armchair', 9.5, 10.3, { rot: 3 }); F(I, 'tvunit', 12.0, 11.65); F(I, 'plant', 14.5, 11.5); F(I, 'lamp', 8.0, 11.5); F(I, 'shelf', 7.55, 9.7, { rot: 1, w: 1.0 });
+  F(I, 'rug', 12.0, 10.3, { w: 3.0, d: 2.0, col: [128, 76, 60] }); F(I, 'sofa', 12.0, 9.2, { w: 2.3, rot: 2 }); F(I, 'armchair', 9.5, 10.3, { rot: 3 }); F(I, 'tvunit', 12.0, 11.65); F(I, 'stereo', 13.62, 11.7); F(I, 'plant', 14.5, 11.5); F(I, 'lamp', 8.0, 11.5); F(I, 'shelf', 7.55, 9.7, { rot: 1, w: 1.0 });
   F(I, 'plant', 6.9, 11.5); I.xtree = [14.2, 9.3, .16]; I.pumpkins = [[10.6, 6.2], [6.6, 11.3]];
   // housemates
   I.npcs.push(roomNPC(I, 'Jess', 'casual', { fem: true, hair: 'pony', hairC: [96, 58, 36], skin: SKIN[1], top: [120, 60, 70], young: true, seed: 2204 }, [[13.75, 5.0], [13.8, 7.25], [12.4, 7.6], [13.8, 8.0]], 'Housemate. Studying nursing.'));
@@ -3515,7 +3621,7 @@ function renderInterior() {
   if ((event === 'december' || event === 'nye') && I.xtree) { const T = { x: I.ox + I.xtree[0], y: I.oy + I.xtree[1], sc: I.xtree[2] }; bigs.push({ r: { x0: T.x - 1, y0: T.y - 1, x1: T.x + 1, y1: T.y + 1 }, d: Math.hypot(T.x - cx, T.y - cy), draw: () => drawXmasTree(T), box: bigBox({ x0: T.x - 2, y0: T.y - 2, x1: T.x + 2, y1: T.y + 2 }, 14 * T.sc) }); }
   if (event === 'halloween' && I.pumpkins) for (const [px, py] of I.pumpkins) { const pk = { x: I.ox + px, y: I.oy + py, s: 1, seed: px * 10 | 0 }; smalls.push({ x: pk.x, y: pk.y, hgt: .4, rad: .3, draw: () => drawPumpkin(pk) }); }
   for (const p of I.npcs) smalls.push({ x: p.x, y: p.y + (p.sleep ? 2.2 : p.sit ? .5 : 0), hgt: 1.9, rad: .5, draw: () => drawPed(p) }); // seated people sort after their seat
-  smalls.push({ x: player.x, y: player.y, hgt: 1.9, rad: .5, draw: () => drawPed(player, true), isPlayer: true });
+  smalls.push({ x: player.x, y: player.y + (player.sleep ? 2.2 : player.sit ? .5 : 0), hgt: 1.9, rad: .5, draw: () => drawPed(player, true), isPlayer: true });
   bigs.sort((a, b) => b.d - a.d);
   const slots = bigs.map(() => []); slots.push([]);
   for (const s of smalls) {
@@ -3972,6 +4078,46 @@ function updateIndoors() {
 }
 
 // ---------- tick ----------
+
+// ---------- car stereos: some cars go by with music up, heard as muffled bass through the bodywork ----------
+// One car at a time plays, the nearest with its stereo on. Its beat is scheduled a little ahead on the audio clock: a kick,
+// a muffled snare thud, a bass line on a four bar progression, and in some styles a dull chord stab. All of it runs through a
+// low pass that opens a little as the car gets close, so you mostly hear the thump.
+const BOOMSTY = [
+  { n: 'hiphop', bpm: [86, 96], kick: [0, 7, 10], snare: [4, 12], bass: [0, 3, 7, 10, 14], len: .22, stab: null },
+  { n: 'house', bpm: [120, 126], kick: [0, 4, 8, 12], snare: [4, 12], bass: [2, 6, 10, 14], len: .12, stab: [6, 14] },
+  { n: 'trap', bpm: [136, 144], kick: [0, 11], snare: [8], bass: [0, 11], len: .7, stab: null, half: true },
+  { n: 'pop', bpm: [104, 112], kick: [0, 8, 10], snare: [4, 12], bass: [0, 2, 8, 10, 12], len: .18, stab: [0, 8] }];
+const BOOMKEYS = [[0, -4, -7, -2], [0, -2, -5, -7], [0, 3, -2, -4], [0, -5, -3, -7]];
+function boomFor(c) {
+  if (c.boom !== undefined) return c.boom;
+  const night = hour < 5 || hour > 19, r = Math.random();
+  if (c.type === 'bus' || c.type === 'police' || c.type === 'van' || r > (night ? .2 : .1)) return c.boom = false;
+  const st = BOOMSTY[Math.random() * BOOMSTY.length | 0];
+  return c.boom = { st, bpm: st.bpm[0] + Math.random() * (st.bpm[1] - st.bpm[0]), root: 38 + Math.random() * 12, keys: BOOMKEYS[Math.random() * BOOMKEYS.length | 0] };
+}
+function updateBoom() {
+  if (!au.boomG) { au.boomLP = filt('lowpass', 300, 1.2); au.boomG = gainN(0); au.boomPan = AC.createStereoPanner(); chain(au.boomLP, au.boomG, au.boomPan, au.traffic); au.boom = { car: null, t: 0, step: 0 }; }
+  const B = au.boom; let best = null, bd = 60;
+  if (!INSIDE) for (const c of CARS) { if (!boomFor(c)) continue; const d = Math.hypot(c.x - player.x, c.y - player.y); if (d < bd) { bd = d; best = c; } }
+  if (best !== B.car) { B.car = best; B.step = 0; B.t = AC.currentTime + .05; }
+  if (!best) { ramp(au.boomG.gain, 0, .3); return 0; }
+  const c = best, d = bd, inCar = player.driving ? .6 : 1, near = Math.max(0, 1 - d / 60);
+  ramp(au.boomG.gain, 1.1 * Math.pow(10 / (10 + d), 1.5) * inCar, .12);
+  ramp(au.boomLP.frequency, 150 + 650 * near * near, .2);
+  ramp(au.boomPan.pan, Math.max(-1, Math.min(1, ((c.x - player.x) * CT - (c.y - player.y) * ST) / 25)), .1);
+  const M = c.boom, st = M.st, sp = 60 / M.bpm / 4, out = au.boomLP;
+  if (B.t < AC.currentTime) B.t = AC.currentTime + .02; // after a stall, pick the beat back up rather than catching up
+  while (B.t < AC.currentTime + .3) {
+    const s = B.step % 16, bar = Math.floor(B.step / 16) % 4, root = M.root * Math.pow(2, M.keys[bar] / 12), w = B.t;
+    if (st.kick.includes(s)) { const o = AC.createOscillator(), g = gainN(0); o.frequency.setValueAtTime(110, w); o.frequency.exponentialRampToValueAtTime(42, w + .12); g.gain.setValueAtTime(.9, w); g.gain.exponentialRampToValueAtTime(.001, w + .35); chain(o, g, out); o.start(w); o.stop(w + .4); }
+    if (st.snare.includes(s)) { const n = AC.createBufferSource(); n.buffer = au.short; const f = filt('bandpass', 220, .8), g = gainN(0); g.gain.setValueAtTime(.5, w); g.gain.exponentialRampToValueAtTime(.001, w + .16); chain(n, f, g, out); n.start(w, Math.random() * .3); n.stop(w + .2); }
+    if (st.bass.includes(s)) { const o = AC.createOscillator(), g = gainN(0), L = st.len * (st.half ? 1 : 1); o.type = 'sawtooth'; o.frequency.setValueAtTime(root, w); if (st.half) o.frequency.exponentialRampToValueAtTime(root * .94, w + L); g.gain.setValueAtTime(0, w); g.gain.linearRampToValueAtTime(.42, w + .01); g.gain.setTargetAtTime(0, w + L * .7, .06); chain(o, g, out); o.start(w); o.stop(w + L + .3); }
+    if (st.stab && st.stab.includes(s)) for (const iv of [12, 15, 19]) { const o = AC.createOscillator(), g = gainN(0); o.type = 'square'; o.frequency.value = root * Math.pow(2, iv / 12) * 2; g.gain.setValueAtTime(0, w); g.gain.linearRampToValueAtTime(.06, w + .01); g.gain.setTargetAtTime(0, w + .1, .05); chain(o, g, out); o.start(w); o.stop(w + .4); }
+    B.t += sp; B.step++;
+  }
+  return 1;
+}
 function auTick() {
   if (!AU.on || !AC) return;
   const now = performance.now(), dt = Math.min(.2, (now - au.last) / 1000); au.last = now;
@@ -3996,7 +4142,7 @@ function auTick() {
   if (nx.cricket <= 0) { nx.cricket = .5 + Math.random() * .8; if (night && season !== 'winter' && !rain && !INSIDE && (sub + park) > .3) crickets(Math.random() * 1.6 - .8, .012 * (sub + park)); }
   if (nx.thunder <= 0) { nx.thunder = 18 + Math.random() * 40; if (rain && Math.random() < .6) thunder(); }
   if (nx.drip <= 0) { nx.drip = .05 + Math.random() * .15; if (rain && !INSIDE) burst(au.amb, { type: 'bandpass', f: 1800 + Math.random() * 3000, q: 4, a: .001, dcy: .03, g: .04, pan: Math.random() * 1.8 - .9 }); }
-  const cars = updateTraffic(dt); const sir = updateSiren(); updatePlayerSound(); updateSteps(); updateChatter(dt); updateCrossing(dt); updateVents();
+  const cars = updateTraffic(dt); updateBoom(); const sir = updateSiren(); updatePlayerSound(); updateSteps(); updateChatter(dt); updateCrossing(dt); updateVents();
   const mus = updateMusic(); updateIndoors();
   AU.info = { M, cars, mus, sir };
 }
@@ -4560,15 +4706,63 @@ function drawGum(t) {
   for (let i = 0; i < 9; i++) { const a = rr() * TAU, dd = rr() * t.r * .7, z = t.h * (.55 + rr() * .45), p = fp(t.lt + Math.cos(a) * dd, t.fw + Math.sin(a) * dd * .5, z); if (!p) continue; const r = t.r * (.5 + rr() * .4) * f / p[2]; ctx.fillStyle = rgb(shade(snow && i % 3 === 0 ? [214, 220, 226] : [62 + i * 3, 88 + i * 3, 64], 6, .75 + i * .04)); ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, TAU); ctx.fill(); }
 }
 function drawPlayer() {
-  // you, seen from behind, standing at the rail in your own clothes
+  // you, seen from behind, standing at the rail in your own clothes. Drawn with curves and soft side shading so the
+  // figure matches the rounded people of the street view rather than a stack of boxes.
   const g = fp(0, 3.9, .3), s = f / (g ? g[2] : 10); if (!g) return;
-  const x = g[0], y = g[1], m = s, L = PL.L;
-  ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x, y, .3 * m, .06 * m, 0, 0, TAU); ctx.fill();
-  ctx.fillStyle = rgb(shade(L.bot || [46, 50, 58], 3)); ctx.fillRect(x - .17 * m, y - .9 * m, .14 * m, .9 * m); ctx.fillRect(x + .03 * m, y - .9 * m, .14 * m, .9 * m);
-  ctx.fillStyle = rgb(shade(L.top || [60, 66, 74], 3)); ctx.beginPath(); ctx.roundRect(x - .24 * m, y - 1.5 * m, .48 * m, .66 * m, .08 * m); ctx.fill();
-  ctx.fillRect(x - .32 * m, y - 1.44 * m, .1 * m, .5 * m); ctx.fillRect(x + .22 * m, y - 1.44 * m, .1 * m, .5 * m);
-  ctx.fillStyle = rgb(shade(L.skin || [206, 170, 140], 3)); ctx.fillRect(x - .05 * m, y - 1.58 * m, .1 * m, .1 * m);
-  ctx.fillStyle = rgb(shade(L.hairC || [46, 34, 26], 3)); ctx.beginPath(); ctx.ellipse(x, y - 1.68 * m, .12 * m, .14 * m, 0, 0, TAU); ctx.fill();
+  const x = g[0], y = g[1], m = s, L = PL.L, fem = !!L.fem;
+  const top = L.top || [60, 66, 74], bot = L.bot || [46, 50, 58], skin = L.skin || [206, 170, 140], hairC = L.hairC || [46, 34, 26], shoe = L.shoes || [34, 32, 30];
+  const coat = L.kind === 'coat', suit = L.kind === 'suit';
+  const col = (c, k = 1) => rgb(shade(c.map(v => v * k), 3));
+  const side = (c, x0, x1) => { const gr = ctx.createLinearGradient(x0, 0, x1, 0); gr.addColorStop(0, col(c, 1.08)); gr.addColorStop(.55, col(c, .96)); gr.addColorStop(1, col(c, .74)); return gr; };
+  const P = (a, b) => [x + a * m, y - b * m];
+  const path = pts => { ctx.beginPath(); pts.forEach((q, i) => { const [px, py] = P(q[0], q[1]); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }); ctx.closePath(); };
+  ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(x, y, .34 * m, .07 * m, 0, 0, TAU); ctx.fill();
+  // legs, tapering to the ankle, with a gap between them, and shoes
+  const hip = fem ? .17 : .16;
+  for (const sx of [-1, 1]) {
+    ctx.fillStyle = side(bot, x - .2 * m, x + .2 * m);
+    path([[sx * .015, .92], [sx * hip, .92], [sx * .125, .45], [sx * .105, .06], [sx * .035, .06], [sx * .03, .45]]); ctx.fill();
+    ctx.fillStyle = col(shoe); ctx.beginPath(); const [sxp, syp] = P(sx * .07, .035); ctx.ellipse(sxp, syp, .065 * m, .045 * m, 0, 0, TAU); ctx.fill();
+  }
+  // torso: shoulders, a little waist, down past the belt; a coat runs longer
+  const hem = coat ? .55 : suit ? .84 : .88, sh = fem ? .2 : .23, wa = fem ? .15 : .18;
+  ctx.fillStyle = side(top, x - sh * m, x + sh * m);
+  ctx.beginPath(); { const [ax, ay] = P(-sh, 1.42); ctx.moveTo(ax, ay); }
+  { const [c1x, c1y] = P(-.07, 1.5), [ex, ey] = P(0, 1.5); ctx.quadraticCurveTo(c1x, c1y, ex, ey); }
+  { const [c1x, c1y] = P(.07, 1.5), [ex, ey] = P(sh, 1.42); ctx.quadraticCurveTo(c1x, c1y, ex, ey); }
+  { const [c1x, c1y] = P(sh + .02, 1.3), [ex, ey] = P(wa, 1.08); ctx.quadraticCurveTo(c1x, c1y, ex, ey); }
+  { const [ex, ey] = P(wa + (coat ? .05 : .01), hem); ctx.lineTo(ex, ey); }
+  { const [ex, ey] = P(-wa - (coat ? .05 : .01), hem); ctx.lineTo(ex, ey); }
+  { const [ex, ey] = P(-wa, 1.08); ctx.lineTo(ex, ey); }
+  { const [c1x, c1y] = P(-sh - .02, 1.3), [ex, ey] = P(-sh, 1.42); ctx.quadraticCurveTo(c1x, c1y, ex, ey); }
+  ctx.fill();
+  // back seam and shoulder blades, a jacket vent for suits and coats
+  ctx.strokeStyle = col(top, .7); ctx.lineWidth = Math.max(1, .008 * m); ctx.beginPath(); { const [a1, b1] = P(0, 1.46), [a2, b2] = P(0, suit || coat ? hem + .16 : 1.0); ctx.moveTo(a1, b1); ctx.lineTo(a2, b2); } ctx.stroke();
+  ctx.strokeStyle = col(top, .82); ctx.beginPath(); for (const sx of [-1, 1]) { const [a1, b1] = P(sx * .05, 1.28), [cx1, cy1] = P(sx * .12, 1.24), [a2, b2] = P(sx * .17, 1.31); ctx.moveTo(a1, b1); ctx.quadraticCurveTo(cx1, cy1, a2, b2); } ctx.stroke();
+  // arms hang a little forward of the body, sleeves then hands
+  for (const sx of [-1, 1]) {
+    ctx.fillStyle = side(top, x + sx * (sh - .04) * m - .05 * m, x + sx * (sh + .04) * m + .05 * m);
+    path([[sx * (sh - .06), 1.42], [sx * (sh + .02), 1.38], [sx * (sh + .045), 1.05], [sx * (sh + .02), .8], [sx * (sh - .06), .8], [sx * (sh - .07), 1.1]]); ctx.fill();
+    ctx.fillStyle = col(skin, .9); ctx.beginPath(); const [hx, hy] = P(sx * (sh - .02), .74); ctx.ellipse(hx, hy, .045 * m, .065 * m, 0, 0, TAU); ctx.fill();
+  }
+  // collar, neck and ears
+  ctx.fillStyle = col(skin, .92); path([[-.055, 1.6], [.055, 1.6], [.06, 1.47], [-.06, 1.47]]); ctx.fill();
+  ctx.fillStyle = suit ? col([236, 236, 232]) : col(top, .86); ctx.beginPath(); { const [a1, b1] = P(-.08, 1.47), [cx1, cy1] = P(0, 1.53), [a2, b2] = P(.08, 1.47), [a3, b3] = P(0, 1.45); ctx.moveTo(a1, b1); ctx.quadraticCurveTo(cx1, cy1, a2, b2); ctx.quadraticCurveTo(a3, b3 + .02 * m, a1, b1); } ctx.fill();
+  const [hx0, hy0] = P(0, 1.71);
+  ctx.fillStyle = col(skin, .88); for (const sx of [-1, 1]) { ctx.beginPath(); ctx.ellipse(hx0 + sx * .1 * m, hy0 + .01 * m, .025 * m, .04 * m, 0, 0, TAU); ctx.fill(); }
+  // the head from behind is mostly hair, shaped by the style
+  ctx.fillStyle = col(skin); ctx.beginPath(); ctx.ellipse(hx0, hy0, .1 * m, .125 * m, 0, 0, TAU); ctx.fill();
+  const hc = col(hairC), hs = L.hair || (fem ? 'long' : 'short');
+  // one shape for the hair so there is no seam, stopping just above the nape; bald and buzz show more scalp
+  ctx.fillStyle = hc; ctx.beginPath(); if (hs === 'bald') ctx.ellipse(hx0, hy0 + .03 * m, .1 * m, .06 * m, 0, 0, Math.PI); else ctx.ellipse(hx0, hy0 - .008 * m, .109 * m, .124 * m, 0, 0, TAU); ctx.fill();
+  if (/long|pony|bob|wavy|curl|afro/.test(hs) || (fem && hs !== 'short' && hs !== 'bun' && hs !== 'pixie')) {
+    const len = hs === 'bob' ? .1 : hs === 'pony' ? 0 : .24;
+    if (len) { path([[-.11, 1.72], [.11, 1.72], [.1 + .02, 1.62 - len], [-.1 - .02, 1.62 - len]]); ctx.fill(); }
+    if (hs === 'pony') { ctx.beginPath(); const [px1, py1] = P(0, 1.66); ctx.ellipse(px1, py1 - .02 * m, .04 * m, .13 * m, 0, 0, TAU); ctx.fill(); }
+  }
+  if (hs === 'bun') { ctx.beginPath(); ctx.arc(hx0, hy0 - .1 * m, .055 * m, 0, TAU); ctx.fill(); }
+  // a soft rim of light on the hair and shoulders from the sky
+  ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = Math.max(1, .012 * m); ctx.beginPath(); ctx.ellipse(hx0, hy0 - .02 * m, .1 * m, .11 * m, 0, Math.PI * 1.1, Math.PI * 1.6); ctx.stroke();
 }
 // ---------- weather in front of everything ----------
 const FX = []; for (let i = 0; i < 420; i++) FX.push({ x: Math.random(), y: Math.random(), d: Math.random() });
@@ -4943,23 +5137,29 @@ window.GAME = (() => {
     S.player.skills = { finance: 120 }; S.player.home = HOME && HOME.id; S.player.car = 'Dobbin';
     S.player.job = { employer: EMPLOYER, level: 0, perf: 60, shifts: 0, shiftsAt: 0, lastShiftDay: -1 };
     S.items = { meals: 3 }; S.rels.rob = { score: 30, met: true, flags: {} };
+    S.contacts = {}; S.msgs = []; S.plans = []; S.tx = []; S.stereo = { on: false, by: null, day: -1 };
     CR.note(S, 'Moved into the share house with Rob. First day at ' + EMPLOYER + ' is tomorrow at 9:00.');
     S.player.location = null; return S;
   }
   let S = null;
+  // older saves predate the phone
+  const upgrade = s => { s.contacts = s.contacts || {}; s.msgs = s.msgs || []; s.plans = s.plans || []; s.tx = s.tx || []; s.stereo = s.stereo || { on: false, by: null, day: -1 }; return s; };
+  const txn = (text, cents) => { S.tx.unshift({ t: S.time, text, c: cents }); if (S.tx.length > 60) S.tx.length = 60; };
 
   // ---------------- clock, needs, money, season and weather ----------------
   let carry = 0;
   function runClock(dt) { carry += dt; const m = Math.floor(carry); if (m < 1) return; carry -= m; const before = S.time; CR.passMinutes(S, m); dailyThings(before, S.time); }
   // things that happen when a day turns over: rent on Sunday night, the day's weather
   function dailyThings(t0, t1) { const d0 = Math.floor(t0 / 1440), d1 = Math.floor(t1 / 1440);
-    for (let d = d0 + 1; d <= d1; d++) { const p = CR.parts(d * 1440); if (p.dow === 1) { const rent = 26000; S.player.bank -= rent; CR.note(S, 'Rent paid: ' + money(rent) + ' for the week.'); toast('Weekly rent of ' + money(rent) + ' paid from your bank account.'); } }
+    for (let d = d0 + 1; d <= d1; d++) { const p = CR.parts(d * 1440); if (p.dow === 1) { const rent = 26000; S.player.bank -= rent; txn('Rent, share house', -rent); CR.note(S, 'Rent paid: ' + money(rent) + ' for the week.'); toast('Weekly rent of ' + money(rent) + ' paid from your bank account.'); } }
     if (d1 > d0) skyForDay(); }
   const SEASON = mo => mo === 12 || mo <= 2 ? 'winter' : mo <= 5 ? 'spring' : mo <= 8 ? 'summer' : 'autumn';
-  function skyForDay() { const p = CR.parts(S.time), s = SEASON(p.mo); if (season !== s) setSeason(s);
+  // the calendar's events: Halloween night, December lights, New Year's Eve
+  const eventFor = p => p.mo === 10 && p.d === 31 ? 'halloween' : p.mo === 12 && p.d === 31 ? 'nye' : p.mo === 12 ? 'december' : 'none';
+  function skyForDay() { const p = CR.parts(S.time), s = SEASON(p.mo); if (season !== s) setSeason(s); { const ev = eventFor(p); if (event !== ev) setEvent(ev); }
     const r = (hash('wx' + Math.floor(S.time / 1440)) % 100) / 100, wx = s === 'winter' ? (r < .55 ? 'clear' : r < .8 ? 'snow' : r < .92 ? 'rain' : 'fog') : s === 'summer' ? (r < .82 ? 'clear' : r < .95 ? 'rain' : 'fog') : (r < .66 ? 'clear' : r < .88 ? 'rain' : 'fog');
     if (weather !== wx) { weather = wx; seedWeather(); for (const q of PEDS) q.umbC = undefined; } }
-  const spend = c => { if (S.player.cash >= c) { S.player.cash -= c; return true; } if (S.player.cash + S.player.bank >= c) { S.player.bank -= c - S.player.cash; S.player.cash = 0; return true; } return false; };
+  const spend = (c, what) => { if (what) txn(what, -c); if (S.player.cash >= c) { S.player.cash -= c; return true; } if (S.player.cash + S.player.bank >= c) { S.player.bank -= c - S.player.cash; S.player.cash = 0; return true; } if (what) S.tx.shift(); return false; };
   const need = (kq, v) => { const N = S.player.needs; N[kq] = clampv(N[kq] + v, 0, 100); };
   const gHour = () => { const p = CR.parts(S.time); return p.h + p.mi / 60; };
   const isWeekday = () => { const d = CR.parts(S.time).dow; return d >= 1 && d <= 5; };
@@ -5015,28 +5215,32 @@ window.GAME = (() => {
   // Shifts run 9:00 to 17:30 on weekdays. You can turn up from 7:00 until 15:00. Arriving after 9:15 is late: you are paid
   // only for the hours you work, and lateness costs performance on a sliding scale, with a word from your manager.
   const SHIFT_END = 17.5, LATE_AFTER = 9.25, LAST_START = 15;
-  function atWork() {
+  // a free seat at a desk, the one you walked up to if nobody is in it
+  function deskSeat(f0) { const I = INSIDE, seatOf = f => f.rot === 2 ? [f.x, f.y - .7, 0, 1] : [f.x, f.y + .7, 0, -1];
+    const taken = q => I.npcs.some(n => n.sit && !n.hidden && Math.hypot(n.sit.x - I.ox - q[0], n.sit.y - I.oy - q[1]) < .45);
+    if (f0 && !taken(seatOf(f0))) return seatOf(f0); let best = null, bd = 1e9; for (const f of I.furn) if (f.t === 'workdesk') { const q = seatOf(f); if (taken(q)) continue; const d = Math.hypot(I.ox + q[0] - player.x, I.oy + q[1] - player.y); if (d < bd) { bd = d; best = q; } } return best; }
+  function atWork(desk) {
     const J = S.player.job, L = LADDER[J.level], h = gHour(), today = Math.floor(S.time / 1440), opts = [], day = Math.round(L.pay * 100 / 260);
     if (isWeekday() && h >= 7 && h < LAST_START && J.lastShiftDay !== today) {
       const late = h > LATE_AFTER, hrs = Math.min(8.5, SHIFT_END - Math.max(h, 9)), pay = Math.round(day * hrs / 8.5), lm = Math.round((h - 9) * 60);
-      opts.push({ t: late ? `Start your shift, ${lm} minutes late` : 'Start your shift', s: late ? `${hrs.toFixed(1)} hours to 5:30, ${money(pay)}, and it counts against you` : `Until 5:30, ${money(day)} for the day`, fn: shift });
+      opts.push({ t: late ? `Start your shift, ${lm} minutes late` : 'Start your shift', s: late ? `${hrs.toFixed(1)} hours to 5:30, ${money(pay)}, and it counts against you` : `Until 5:30, ${money(day)} for the day`, fn: () => shift(desk) });
     } else if (J.lastShiftDay === today) opts.push({ t: 'You have already worked today', s: 'Come back tomorrow at 9:00', off: true });
     else opts.push({ t: !isWeekday() ? 'The office is closed on weekends' : h < 7 ? 'The office opens at 7:00' : 'Too late to start a shift today', s: 'Shifts run 9:00 to 5:30 on weekdays. You can start up to 3:00 pm, late', off: true });
     opts.push({ t: 'Ask about a promotion', s: 'See how you are tracking', fn: () => promoTalk() });
     menu(EMPLOYER, `${L.t}. Salary ${money(L.pay * 100)} a year. Performance ${Math.round(J.perf)} of 100.`, opts);
   }
-  async function shift() { closeMenu(); const J = S.player.job, L = LADDER[J.level], N = S.player.needs, h = gHour(), lateMin = Math.max(0, (h - 9) * 60), late = h > LATE_AFTER;
+  async function shift(desk) { closeMenu(); const seat = deskSeat(desk); const J = S.player.job, L = LADDER[J.level], N = S.player.needs, h = gHour(), lateMin = Math.max(0, (h - 9) * 60), late = h > LATE_AFTER;
     const hrs = Math.min(8.5, SHIFT_END - Math.max(h, 9)), mins = Math.round((SHIFT_END - h) * 60);
     // a few minutes costs little, a lost morning costs a lot
     const latePen = late ? Math.min(45, 6 + lateMin / 8) : 0;
     const fin = CR.levelOf(S.player.skills.finance || 0), score = clampv(35 + N.energy * .3 + N.mood * .15 + fin * 6 - latePen - (N.hunger > 70 ? 10 : 0) + (Math.random() - .5) * 16, 0, 100);
     const payC = Math.round(L.pay * 100 / 260 * hrs / 8.5);
-    await fadeTo('Workday', `${Math.round(score) >= 70 ? 'A strong day' : score >= 45 ? 'An ordinary day' : 'A rough day'} at ${EMPLOYER}`, () => {
-      const start = S.time; CR.passMinutes(S, mins, { work: true }); dailyThings(start, S.time);
-      S.player.bank += payC; J.perf = J.perf * .8 + score * .2; J.shifts++; J.shiftsAt += hrs >= 6 ? 1 : .5; J.lastShiftDay = Math.floor(start / 1440);
+    const start = S.time;
+    await ffwd(mins, { label: 'Working at ' + EMPLOYER, flags: { work: true }, pose: seat && poseAt(seat[0], seat[1], .52, seat[2], seat[3], true) });
+    { S.player.bank += payC; txn(EMPLOYER + ', pay for the day', payC); J.perf = J.perf * .8 + score * .2; J.shifts++; J.shiftsAt += hrs >= 6 ? 1 : .5; J.lastShiftDay = Math.floor(start / 1440);
       S.player.skills.finance = (S.player.skills.finance || 0) + Math.round((28 + score / 6) * hrs / 8.5); need('mood', score > 65 ? 3 : score < 40 ? -6 : -2);
-      CR.note(S, `Worked a shift${late ? `, ${Math.round(lateMin)} minutes late` : ''}, ${money(payC)} paid in, performance ${Math.round(J.perf)}.`); }, 1300);
-    toast(`Shift done. ${money(payC)} paid to your bank. Performance now ${Math.round(J.perf)}.`);
+      CR.note(S, `Worked a shift${late ? `, ${Math.round(lateMin)} minutes late` : ''}, ${money(payC)} paid in, performance ${Math.round(J.perf)}.`); }
+    toast(`${score >= 70 ? 'A strong day.' : score >= 45 ? 'An ordinary day.' : 'A rough day.'} Shift done. ${money(payC)} paid to your bank. Performance now ${Math.round(J.perf)}.`);
     if (J.level < LADDER.length - 1 && J.shiftsAt >= NEED_SHIFTS[J.level] && J.perf >= 68 && CR.levelOf(S.player.skills.finance) >= J.level + 2) await promote();
     else if (lateMin > 30) await say('Ms Calder, your manager', VOICES.boss, lateMin > 150 ? 'Half the day gone. If this happens again we will be having a very different conversation.' : 'You were late. I need you here at nine, ready to go.', [{ text: 'It will not happen again', effects: { need: { mood: -3 } } }], BOSSL);
     else if (score < 35) await say('Ms Calder, your manager', VOICES.boss, 'Today was not your best work. Tighten it up.', [{ text: 'Understood', effects: { need: { mood: -3 } } }], BOSSL);
@@ -5052,10 +5256,18 @@ window.GAME = (() => {
 
   // ---------------- venues ----------------
   const STRANGER = ['Busy one tonight, huh?', 'You work around here? You have that office look.', 'I keep telling myself I will quit my job and open a food truck.', 'Have you tried the place two doors down? Overrated, if you ask me.', 'Big game this weekend. You following it?', 'This city never sleeps. I wish I could.'];
-  async function stranger(sp) { const id = 'npc' + Math.floor(Math.random() * 1e6), Lk = randomLook(sp.vk === 'lounge' ? 'suit' : 'casual'), V = VOICE.forPerson(id, Lk.fem ? 'f' : 'm', 22 + Math.random() * 40);
-    await say('Someone at the ' + (sp.vk === 'cafe' ? 'counter' : 'bar'), V, STRANGER[Math.floor(Math.random() * STRANGER.length)], [{ text: 'Chat for a while', effects: [{ need: { mood: 5 } }, { rep: { general: 1 } }], then: () => CR.passMinutes(S, 25) }, { text: 'Keep to yourself', effects: {} }], Lk); }
-  function buy(cost, mins, fx, msg) { return () => { if (!spend(cost)) { toast('You cannot afford that.'); return; } const t0 = S.time; CR.passMinutes(S, mins); dailyThings(t0, S.time); CR.apply(fx, S); toast(msg); drawMenuAgain(); }; }
-  function venue(sp) { const h = gHour(), vk = sp.vk; let open = true; if (vk === 'club') open = h >= 21 || h < 3; else if (vk === 'cafe') open = h >= 6 && h < 17; else if (vk === 'bar' || vk === 'lounge') open = h >= 11 || h < 1; else open = h >= 11 && h < 23;
+  // somebody at the counter or the bar: the same conversation as on the street, so you can get to know them and swap numbers
+  function stranger(sp) { const kinds = sp.vk === 'lounge' ? ['suit', 'coat', 'casual'] : sp.vk === 'club' ? ['casual', 'casual', 'suit'] : ['casual', 'suit', 'coat', 'casual'];
+    const L = randomLook(kinds[Math.floor(Math.random() * kinds.length)]), p = { uid: 900000 + Math.floor(Math.random() * 99999), L, x: player.x + .9, y: player.y, hx: -1, hy: 0, venue: true, venueSp: sp, fixed: true };
+    p.open = [STRANGER[Math.floor(Math.random() * STRANGER.length)]]; closeMenu(); music.venue(sp.vk); startTalk(p); }
+  // talk hooks from the street engine: each exchange takes a couple of minutes, numbers go into the phone
+  const snapshot = p => ({ cid: p.cid, uid: p.uid, name: p.name, job: p.job, rel: p.rel, trait: p.trait, fan: p.fan, fin: p.fin, knownJob: p.knownJob, traitKnown: p.traitKnown, hobby: p.hobby, team: p.team, from: p.from, weekend: p.weekend, topics: p.topics, gain: p.gain, L: JSON.parse(JSON.stringify(p.L)), met: (S.contacts[p.cid] && S.contacts[p.cid].met) || S.time, last: (S.contacts[p.cid] && S.contacts[p.cid].last) || -1 });
+  window.isContact = p => !!(S && p.cid && S.contacts[p.cid]);
+  window.onTalkTurn = () => { if (S) CR.passMinutes(S, 2); };
+  window.onTalkContact = p => { if (!S) return; p.cid = p.cid || 'c' + (p.uid || 0) + '-' + Date.now().toString(36); S.contacts[p.cid] = snapshot(p); S.msgs.unshift({ cid: p.cid, me: false, t: S.time, text: `Hey, it's ${p.name.split(' ')[0]}. Good to meet you.` }); phoneBadge(); };
+  window.onTalkEnd = p => { if (!S) return; if (p.cid && S.contacts[p.cid]) S.contacts[p.cid] = snapshot(p); if (p.venueSp) { const sp = p.venueSp; setTimeout(() => { if (!talk && !modalOpen) venue(sp); }, 50); } };
+  function buy(cost, mins, fx, msg) { return () => { if (!spend(cost, msg.replace(/\.$/, ''))) { toast('You cannot afford that.'); return; } const t0 = S.time; CR.passMinutes(S, mins); dailyThings(t0, S.time); CR.apply(fx, S); toast(msg); drawMenuAgain(); }; }
+  function venue(sp) { const due = planHere(sp); if (due) return meetup(due, sp); const h = gHour(), vk = sp.vk; let open = true; if (vk === 'club') open = h >= 21 || h < 3; else if (vk === 'cafe') open = h >= 6 && h < 17; else if (vk === 'bar' || vk === 'lounge') open = h >= 11 || h < 1; else open = h >= 11 && h < 23;
     if (!open) return menu(sp.name, sp.sub + '. Closed right now.', [{ t: 'Opening hours', s: { club: '9pm to 3am', cafe: '6am to 5pm', bar: '11am to 1am', lounge: '11am to 1am' }[vk] || '11am to 11pm', off: true }]);
     const O = { cafe: [{ t: 'Coffee', s: '$5, energy up', fn: buy(500, 15, { need: { energy: 14 } }, 'Coffee. That is better.') }, { t: 'Breakfast and coffee', s: '$16, fills you up', fn: buy(1600, 35, [{ need: { hunger: -40 } }, { need: { energy: 8 } }], 'Eggs, toast and a flat white.') }, { t: 'Talk to someone', s: 'Meet a local', fn: () => stranger(sp) }],
       bar: [{ t: 'A beer', s: '$8, mood up', fn: buy(800, 30, [{ need: { mood: 6 } }, { need: { energy: -3 } }], 'A cold one.') }, { t: 'Shout the bar a round', s: '$70, people remember it', fn: buy(7000, 30, [{ need: { mood: 10 } }, { rep: { general: 2 } }], 'The bar cheers your name.') }, { t: 'Talk to someone', s: 'Meet a local', fn: () => stranger(sp) }],
@@ -5074,7 +5286,7 @@ window.GAME = (() => {
   const cartNear = (x, y) => { let best = null, bd = 2.6; for (const p of props) if (p.t === 'cart' && !p.gone) { const d = Math.hypot(p.x - x, p.y - y); if (d < bd) { bd = d; best = p; } } return best; };
   const CARTNAME = { 'HOT DOGS': 'Hot dog cart', PRETZELS: 'Pretzel cart', TACOS: 'Taco cart', COFFEE: 'Coffee cart' };
   function cartMenu(c) { const L = CARTMENU[c.name] || CARTMENU['HOT DOGS'];
-    menu(CARTNAME[c.name] || 'Food cart', 'Cash only, quick and cheap.', L.map(([t, cost, fill, msg, en]) => ({ t, s: money(cost), fn: () => { if (S.player.cash < cost) return toast('The cart only takes cash, and you are short.'); S.player.cash -= cost; CR.passMinutes(S, 5); if (fill) need('hunger', -fill); if (en) need('energy', en); else need('mood', 1); toast(msg); drawMenuAgain(); } }))); }
+    menu(CARTNAME[c.name] || 'Food cart', 'Cash only, quick and cheap.', L.map(([t, cost, fill, msg, en]) => ({ t, s: money(cost), fn: () => { if (S.player.cash < cost) return toast('The cart only takes cash, and you are short.'); S.player.cash -= cost; txn(t + ', street cart', -cost); CR.passMinutes(S, 5); if (fill) need('hunger', -fill); if (en) need('energy', en); else need('mood', 1); toast(msg); drawMenuAgain(); } }))); }
 
   // ---------------- menus ----------------
   let modalOpen = false, lastMenu = null;
@@ -5087,7 +5299,7 @@ window.GAME = (() => {
     modalOpen = true; G.hold = true; const P2 = $('panel');
     P2.innerHTML = `<h2>Paused</h2><div class="kv"><span>Date</span><b>${CR.fmtDate(S.time)} ${CR.fmtTime(S.time)}</b><span>Age</span><b>${CR.ageOn(S.time, P0.birth)}</b><span>Job</span><b>${LADDER[J.level].t}</b><span>Shifts worked</span><b>${J.shifts}</b><span>Performance</span><b>${Math.round(J.perf)}</b><span>Cash</span><b>${money(P0.cash)}</b><span>Bank</span><b>${money(P0.bank)}</b><span>Meals in the fridge</span><b>${S.items.meals || 0}</b>${sk}</div>
       <h2 style="font-size:14px">Sound</h2><div id="sndrow"><span>City sound</span><button id="bSnd">${AU.on ? 'On' : 'Off'}</button>${['master', 'amb', 'traffic', 'people', 'music'].map(kq => `<span>${{ master: 'Master', amb: 'Ambience', traffic: 'Traffic', people: 'People', music: 'Venue music' }[kq]}</span><input type="range" min="0" max="100" value="${Math.round(AU.vol[kq] * 100)}" data-v="${kq}" style="accent-color:var(--acc)">`).join('')}</div><h2 style="font-size:14px">Saves</h2><div id="slots" class="opts"></div><textarea class="io" id="io" rows="2" placeholder="Save code"></textarea><div class="row"><button id="bExp">Copy save code</button><button id="bImp">Load save code</button><button id="bNew">New game</button></div><div class="sub2" id="ioMsg"></div>
-      <div class="sub2">WASD or arrows to move, Shift to run, E to use, enter, talk or get in the car. R for the radio, M for the map, Q and Z to turn the view, N to face north, mouse wheel or plus and minus to zoom, Esc for this menu.</div><button id="bRes">Resume</button>`;
+      <div class="sub2">WASD or arrows to move, Shift to run, E to use, enter, talk or get in the car. P for your phone. R for the radio, M for the map, Q and Z to turn the view, N to face north, mouse wheel or plus and minus to zoom, Esc for this menu.</div><button id="bRes">Resume</button>`;
     const SL = $('slots'); for (const s of store.list()) { const r = document.createElement('div'); r.className = 'slot'; const nm = { auto: 'Auto', quick: 'Quick', slot1: 'Slot 1', slot2: 'Slot 2', slot3: 'Slot 3' }[s.slot]; r.innerHTML = `<b>${nm}</b><span>${s.empty ? 'Empty' : s.broken ? 'Damaged' : s.date}</span>`;
       const sv = document.createElement('button'); sv.textContent = 'Save'; sv.onclick = () => { save(s.slot); pauseMenu(); }; if (s.slot === 'auto') sv.disabled = true; const ld = document.createElement('button'); ld.textContent = 'Load'; ld.disabled = s.empty || !!s.broken; ld.onclick = () => { load(store.load(s.slot)); closeMenu(); toast('Loaded.'); }; r.append(sv, ld); SL.appendChild(r); }
     $('bExp').onclick = () => { capture(); const t = CR.exportText(S); $('io').value = t; try { navigator.clipboard.writeText(t).then(() => $('ioMsg').textContent = 'Copied.', () => { $('io').select(); $('ioMsg').textContent = 'Select the text and copy it.'; }); } catch (e) { $('io').select(); } };
@@ -5101,7 +5313,7 @@ window.GAME = (() => {
   const ROOM_NAME = { house: 'Home', lobby: 'Northgate tower', office: EMPLOYER + ', level 32' };
   const roomKey = () => INSIDE ? Object.keys(INTERIORS).find(kq => INTERIORS[kq] === INSIDE) : null;
   const DOOR_OF = { house: () => homeDoor, lobby: () => workDoor, office: () => workDoor };
-  function goIn(key, door, lx, ly) { music.stop(); enterInterior(key, 'street', door); if (lx != null) { player.x = INSIDE.ox + lx; player.y = INSIDE.oy + ly; cx = player.x; cy = player.y; } placeRob(); }
+  function goIn(key, door, lx, ly) { music.stop(); setTimeout(() => music.refresh(), 0); enterInterior(key, 'street', door); if (lx != null) { player.x = INSIDE.ox + lx; player.y = INSIDE.oy + ly; cx = player.x; cy = player.y; } placeRob(); }
   // Rob keeps a routine: in bed overnight, out at work on weekdays, on the sofa in the evening, around the kitchen otherwise
   // Rob is between jobs: he sleeps in, lives on the couch, and goes out on Friday and Saturday nights
   const robWhere = () => { const p = CR.parts(S.time), h = p.h + p.mi / 60, fri = p.dow === 5, sat = p.dow === 6, sun = p.dow === 0, mon = p.dow === 1;
@@ -5119,32 +5331,36 @@ window.GAME = (() => {
   let near = null, wasRoom = null;
   function roomTick(dt) {
     const room = roomKey();
+    if (wasRoom !== room) music.refresh();
     if (wasRoom && !room) toast(wasRoom === 'house' ? 'Out the front of the share house.' : 'Back on the street outside Northgate tower.', 2.5); // walked out through the street door
     wasRoom = room; if (!room) return;
-    if ((roomTick.r = (roomTick.r || 0) - dt) < 0) { roomTick.r = 2; placeRob(); }
+    if ((roomTick.r = (roomTick.r || 0) - dt) < 0) { roomTick.r = 2; placeRob(); if (room === 'house') robStereo(); }
     near = null; const n = nearNPC(1.8);
-    if (room === 'house') { const f = nearFurn(f => MYBED(f) || MYDESK(f) || ['fridge', 'stove', 'sofa', 'shower', 'tvunit'].includes(f.t), 1.1);
-      if (n) near = { id: 'npc', n, act: 'Talk to ' + n.name }; else if (f) { const id = MYBED(f) ? 'bed' : MYDESK(f) ? 'desk' : f.t === 'tvunit' ? 'sofa' : f.t; near = { id, act: { bed: 'Your bed', desk: 'Your laptop', fridge: 'Fridge', stove: 'Cook', sofa: 'Watch TV', shower: 'Shower' }[id] }; } }
+    if (room === 'house') { const f = nearFurn(f => MYBED(f) || MYDESK(f) || ['fridge', 'stove', 'sofa', 'shower', 'tvunit', 'stereo'].includes(f.t), 1.1);
+      if (n) near = { id: 'npc', n, act: 'Talk to ' + n.name }; else if (f) { const id = MYBED(f) ? 'bed' : MYDESK(f) ? 'desk' : f.t === 'tvunit' ? 'sofa' : f.t; near = { id, act: { bed: 'Your bed', desk: 'Your laptop', fridge: 'Fridge', stove: 'Cook', sofa: 'Watch TV', shower: 'Shower', stereo: 'Stereo' }[id] }; } }
     else { const lift = nearLift(); if (lift) near = { id: 'lift', to: lift.to, act: lift.label }; else if (n) near = { id: 'npc', n, act: 'Talk to ' + n.name };
-      else if (room === 'office') { const f = nearFurn(f => f.t === 'workdesk' || f.t === 'fridge' || f.t === 'counter', 1.0); if (f) near = f.t === 'workdesk' ? { id: 'work', act: 'Sit down at a desk and work' } : { id: 'coffee', act: 'Office kitchen' }; } }
+      else if (room === 'office') { const f = nearFurn(f => f.t === 'workdesk' || f.t === 'fridge' || f.t === 'counter', 1.0); if (f) near = f.t === 'workdesk' ? { id: 'work', f, act: 'Sit down at a desk and work' } : { id: 'coffee', act: 'Office kitchen' }; } }
   }
   async function useRoom(f) {
     const N = S.player.needs, h = gHour();
     if (f.id === 'lift') { fadeTo('', '', () => { enterInteriorSwap(f.to); }, 250); return; }
     if (f.id === 'npc') { const nm = f.n.name; if (nm === 'Rob') return talkRob(); return say(nm, VOICE.forPerson(nm, f.n.L && f.n.L.fem ? 'f' : 'm', 30), { Jess: 'Hey! I am cramming for a pharmacology exam. Do not let me near the couch.', Grace: 'Good morning. Meridian is on thirty two, the lifts are just behind me.', Tom: 'Lanyard on you? Go on through.' }[nm] || 'Hi there.', [{ text: 'See you later', effects: { need: { mood: 1 } } }], f.n.L); }
-    if (f.id === 'work') return atWork(); if (f.id === 'coffee') return menu('Office kitchen', 'Free coffee, one of the good things about the job.', [{ t: 'Make a coffee', s: 'Free, energy up', fn: () => { CR.passMinutes(S, 10); need('energy', 10); toast('Strong and bitter.'); closeMenu(); } }]);
+    if (f.id === 'work') return atWork(f.f); if (f.id === 'coffee') return menu('Office kitchen', 'Free coffee, one of the good things about the job.', [{ t: 'Make a coffee', s: 'Free, energy up', fn: () => { CR.passMinutes(S, 10); need('energy', 10); toast('Strong and bitter.'); closeMenu(); } }]);
     if (f.id === 'bed') return sleepPanel();
     if (f.id === 'fridge') { if (!S.items.meals) return toast('The fridge is empty. Takeout places sell meals to take home.');
       return menu('Fridge', `${S.items.meals} meal${S.items.meals === 1 ? '' : 's'} left.`, [{ t: 'Heat up a meal', s: '20 minutes, fills you up', fn: () => { S.items.meals--; CR.passMinutes(S, 20); need('hunger', -45); toast('Leftovers, reheated.'); closeMenu(); } }]); }
     if (f.id === 'stove') { if (!S.items.meals) return toast('Nothing to cook with. Buy meals to take home first.'); return menu('Kitchen', 'Cooking takes longer than reheating but you feel better for it.', [{ t: 'Cook dinner', s: '45 minutes, fills you up, mood up', fn: () => { S.items.meals--; CR.passMinutes(S, 45); need('hunger', -55); need('mood', 6); toast('Not bad at all.'); closeMenu(); } }]); }
-    if (f.id === 'sofa') return menu('Lounge', 'Put your feet up.', [{ t: 'Watch TV for an hour', s: 'Mood up', fn: () => { closeMenu(); fadeTo('An hour later', '', () => { CR.passMinutes(S, 60); need('mood', 7); need('energy', 2); placeRob(); }); } }]);
+    if (f.id === 'sofa') { const tv = hrs => () => { closeMenu(); ffwd(hrs * 60, { label: 'Watching TV', pose: poseAt(12.75, 9.15, .44, 0, 1), each: m => { need('mood', 7 * m / 60); need('energy', 2 * m / 60); } }); };
+      return menu('Lounge', 'Put your feet up.', [{ t: 'Watch TV for an hour', s: 'Mood up', fn: tv(1) }, { t: 'Watch a movie', s: 'Two and a half hours, mood up more', fn: tv(2.5) }]); }
+    if (f.id === 'stereo') return stereoMenu();
     if (f.id === 'shower') return menu('Shower', 'A hot shower.', [{ t: 'Take a shower', s: '15 minutes, mood up a little', fn: () => { closeMenu(); CR.passMinutes(S, 15); need('mood', 4); need('energy', 3); toast('Much better.'); } }]);
     if (f.id === 'desk') { const J = S.player.job; return menu('Laptop', 'Bank, work and study.', [{ t: 'Bank account', s: `Cash ${money(S.player.cash)}, bank ${money(S.player.bank)}`, off: true }, { t: 'Move $200 from the bank to cash', s: 'For cafes and bars', fn: () => { if (S.player.bank < 20000) return toast('Not enough in the bank.'); S.player.bank -= 20000; S.player.cash += 20000; drawMenuAgain(); } },
-      { t: 'Study finance for an hour', s: 'Finance skill up, a little tiring', fn: () => { closeMenu(); fadeTo('An hour later', '', () => { CR.passMinutes(S, 60); S.player.skills.finance += 45; need('energy', -4); }); } }, { t: 'Work email', s: `${LADDER[J.level].t}, ${J.shifts} shifts so far`, off: true }]); }
+      { t: 'Study finance for an hour', s: 'Finance skill up, a little tiring', fn: study(1) }, { t: 'Study finance for three hours', s: 'A proper session', fn: study(3) }, { t: 'Work email', s: `${LADDER[J.level].t}, ${J.shifts} shifts so far`, off: true }]); }
   }
 
   // Sleep for as long as you choose, half an hour to twelve hours. Every hour asleep restores 12 energy and adds 2 hunger,
   // so seven to eight hours from tired gets you to full, and you can cut a night short to be up early.
+  const study = hrs => () => { closeMenu(); ffwd(hrs * 60, { label: 'Studying finance', pose: poseAt(10.6, 1.0, .48, 0, -1, true), each: m => { S.player.skills.finance += 45 * m / 60; need('energy', -4 * m / 60); } }); };
   function sleepPanel() {
     modalOpen = true; G.hold = true; const N = S.player.needs, P2 = $('panel'); let hrs = clampv(Math.round((100 - N.energy) / 12 * 2) / 2, 1, 9);
     { const h = gHour(); if (h >= 18 || h < 4) { const to7 = ((7 - h) + 24) % 24; hrs = clampv(Math.round(to7 * 2) / 2, .5, 12); } }
@@ -5153,14 +5369,14 @@ window.GAME = (() => {
       $('slpInfo').innerHTML = `<span>Sleep for</span><b>${v % 1 ? Math.floor(v) + ' h 30 min' : v + ' h'}</b><span>Wake at</span><b>${CR.fmtTime(t)} ${CR.fmtDate(t)}</b><span>Energy</span><b>${Math.round(N.energy)} to ${Math.round(e)}</b><span>Hunger</span><b>${Math.round(N.hunger)} to ${Math.round(Math.min(100, N.hunger + v * 2))}</b>`; };
     $('slp').oninput = show; show();
     $('slpNo').onclick = closeMenu;
-    $('slpGo').onclick = async () => { const v = +$('slp').value; closeMenu(); await fadeTo('', '', () => { const t0 = S.time; CR.passMinutes(S, Math.round(v * 60), { asleep: true }); dailyThings(t0, S.time); placeRob(); }, 300); await fadeTo(CR.fmtTime(S.time) + ', ' + CR.fmtDate(S.time), v >= 6 ? 'Good morning' : 'You get up', null, 1300); save('auto'); toast('Saved.', 2); };
+    $('slpGo').onclick = async () => { const v = +$('slp').value; closeMenu(); await ffwd(Math.round(v * 60), { label: 'Asleep', flags: { asleep: true }, pose: poseSleep, dim: true }); save('auto'); toast(`${v >= 6 ? 'Good morning.' : 'You get up.'} ${CR.fmtTime(S.time)}, ${CR.fmtDate(S.time)}. Saved.`, 4); };
     $('modal').hidden = false; menu.keys = null; setTimeout(() => $('slp').focus(), 50);
   }
 
   // ---------------- saving ----------------
   function capture() { const I = INSIDE, room = roomKey(); S.player.location = { x: room ? (DOOR_OF[room]() || player).x : player.x, y: room ? (DOOR_OF[room]() || player).y : player.y, driving: player.driving, car: { x: PCAR.x, y: PCAR.y, ang: PCAR.ang }, inside: room, rx: I ? player.x - I.ox : 0, ry: I ? player.y - I.oy : 0 }; }
   function save(slot) { capture(); try { store.save(slot, S); if (slot !== 'auto') toast('Saved.'); } catch (e) { toast('Could not save: ' + e.message); } }
-  function load(s) { S = s; if (!S.items) S.items = { meals: 0 }; if (INSIDE) { INSIDE = null; LEAN = 84; savedOut = null; }
+  function load(s) { S = upgrade(s); if (!S.items) S.items = { meals: 0 }; if (INSIDE) { INSIDE = null; LEAN = 84; savedOut = null; }
     player.driving = false; const L = S.player.location;
     if (L) { player.x = L.x; player.y = L.y; PCAR.x = L.car.x; PCAR.y = L.car.y; PCAR.ang = L.car.ang; PCAR.speed = 0; player.driving = !!L.driving && !L.inside; cx = player.x; cy = player.y;
       if (L.inside) { const key = L.inside === 'home' ? 'house' : L.inside, d = DOOR_OF[key] && DOOR_OF[key](); if (d) { player.x = d.x; player.y = d.y; goIn(key === 'office' ? 'lobby' : key, d); if (key === 'office') enterInteriorSwap('office'); player.x = INSIDE.ox + L.rx; player.y = INSIDE.oy + L.ry; cx = player.x; cy = player.y; } } }
@@ -5173,24 +5389,178 @@ window.GAME = (() => {
     ['Kaz Endz', 'Allow It', 'allow-it', ['club']], ['Hank Delaney', 'Last One Standing', 'last-one-standing', ['bar']], ['The Rust Belt Saints', 'Double Shift', 'double-shift', ['bar']], ['DJ Lemaire', 'Deeper', 'deeper', ['club', 'lounge']],
     ['Nightcap', 'Undertow', 'undertow', ['club']], ['Remy Ash', 'Ellie (Still Here)', 'ellie-still-here', ['club']], ['Kova & Lin', 'Heat Index', 'heat-index', ['club']], ['Dubplate Kid', 'Midnight Signal', 'midnight-signal', ['club']],
     ['Lowlight', 'Take It Back', 'take-it-back', ['lounge', 'club']], ['Evelyn Rose', 'Penthouse Blue', 'penthouse-blue', ['lounge']]].map(([a, t, f, v]) => ({ a, t, src: 'music/' + f + '.mp3', v }));
-  const music = (() => { const el = new Audio(); el.preload = 'auto'; let mode = null, on = true, order = [], idx = 0, venueK = null, cur = null;
-    const shuffle = () => { order = TRACKS.map((_, i) => i).sort(() => Math.random() - .5); idx = 0; };
-    const show = () => { const R2 = $('radio'); if (mode === 'radio' && on) { const T = TRACKS[order[idx]]; R2.hidden = false; R2.innerHTML = `<span>City 98.1 · R to switch off</span><b>${T.t}</b><span>${T.a}</span>`; } else if (mode === 'radio') { R2.hidden = false; R2.innerHTML = '<span>Radio off · R to switch on</span>'; } else if (mode === 'venue') { R2.hidden = !cur; if (cur) R2.innerHTML = `<span>Playing here</span><b>${cur.t}</b><span>${cur.a}</span>`; } else R2.hidden = true; };
-    const play = T => { cur = T; el.src = T.src; el.currentTime = 0; const p = el.play(); if (p) p.catch(() => { }); show(); };
-    // songs live in a music folder, but if they were uploaded loose beside the page, play them from there instead
-    el.addEventListener('error', () => { const s = el.getAttribute('src') || ''; if (s.startsWith('music/')) { const alt = s.slice(6); for (const T of TRACKS) T.src = T.src.replace(/^music\//, ''); el.src = alt; const p = el.play(); if (p) p.catch(() => { }); } });
-    el.addEventListener('ended', () => { if (mode === 'radio') { idx = (idx + 1) % order.length; if (!idx) shuffle(); play(TRACKS[order[idx]]); } else if (mode === 'venue') pickVenue(); });
+  // One speaker for everything you hear as songs. What plays depends on where you are: your earbuds win when you are on foot,
+  // the car radio when you drive, a venue's music while you are inside one, and the share house stereo when you are home.
+  // Each source keeps its own place in its own playlist.
+  const music = (() => { const el = new Audio(); el.preload = 'auto';
+    const order = () => TRACKS.map((_, i) => i).sort(() => Math.random() - .5);
+    const Q = { radio: { on: true, order: order(), idx: 0 }, phone: { on: false, order: TRACKS.map((_, i) => i), idx: 0 }, stereo: { order: order(), idx: 0 } };
+    let src = null, cur = null, venueK = null, driving = false, gain = 1;
+    const stereoOn = () => S && S.stereo.on && roomKey() === 'house';
+    const want = () => Q.phone.on && !driving ? 'phone' : driving ? (Q.radio.on ? 'radio' : 'radio-off') : venueK ? 'venue' : stereoOn() ? 'stereo' : null;
+    const base = { phone: .7, radio: .8, venue: .45, stereo: .6 };
+    function show() { const R2 = $('radio'), T = cur;
+      if (src === 'radio' && T) R2.innerHTML = `<span>City 98.1 · R off, Shift R skip</span><b>${T.t}</b><span>${T.a}</span>`;
+      else if (src === 'radio-off') R2.innerHTML = '<span>Radio off · R to switch on</span>';
+      else if (src === 'phone' && T) R2.innerHTML = `<span>Earbuds · P for your phone</span><b>${T.t}</b><span>${T.a}</span>`;
+      else if (src === 'venue' && T) R2.innerHTML = `<span>Playing here</span><b>${T.t}</b><span>${T.a}</span>`;
+      else if (src === 'stereo' && T) R2.innerHTML = `<span>Stereo${S.stereo.by === 'rob' ? ', Rob\'s pick' : ''}</span><b>${T.t}</b><span>${T.a}</span>`;
+      R2.hidden = !(src && (T || src === 'radio-off')); }
+    function play(T, part) { cur = T; el.src = T.src; el.currentTime = 0;
+      if (part) el.addEventListener('loadedmetadata', function f() { el.removeEventListener('loadedmetadata', f); if (src === 'radio' && el.duration) el.currentTime = Math.random() * el.duration * .6; }); // tune in part way through, like a real station
+      const pr = el.play(); if (pr) pr.catch(() => { }); show(); }
+    const fromQ = (k, part) => { const q = Q[k]; play(TRACKS[q.order[q.idx % q.order.length]], part); };
     const pickVenue = () => { const L = TRACKS.filter(T => T.v.includes(venueK)); if (L.length) play(L[Math.floor(Math.random() * L.length)]); else { el.pause(); cur = null; show(); } };
-    shuffle();
+    function sync(force) { const w = want(); if (w === src && !force) { show(); return; } src = w;
+      if (!w || w === 'radio-off') { el.pause(); cur = null; } else if (w === 'venue') pickVenue(); else fromQ(w, w === 'radio'); level(); }
+    function level() { let v = base[src] || 0; if (src === 'stereo' && INSIDE) { const I = INSIDE, d = Math.hypot(player.x - I.ox - 13.62, player.y - I.oy - 11.7); v *= Math.max(.12, Math.min(1, 3.5 / (1.5 + d))); } el.volume = Math.max(0, Math.min(1, v * gain * AU.vol.music / .75)); }
+    // songs live in a music folder, but if they were uploaded loose beside the page, play them from there instead
+    el.addEventListener('error', () => { const s2 = el.getAttribute('src') || ''; if (s2.startsWith('music/')) { for (const T of TRACKS) T.src = T.src.replace(/^music\//, ''); el.src = s2.slice(6); const pr = el.play(); if (pr) pr.catch(() => { }); } });
+    el.addEventListener('ended', () => { if (src === 'venue') return pickVenue(); if (Q[src]) { Q[src].idx = (Q[src].idx + 1) % TRACKS.length; fromQ(src); } });
+    const step = (k, d) => { const q = Q[k]; q.idx = (q.idx + d + TRACKS.length) % TRACKS.length; if (src === k) fromQ(k); else sync(); };
     return {
-      drive(d) { if (d && mode !== 'radio') { mode = 'radio'; el.volume = .8; if (on) { const T = TRACKS[order[idx]]; cur = T; el.src = T.src; // tune in part way through a song, like a real station
-            el.addEventListener('loadedmetadata', function f() { el.removeEventListener('loadedmetadata', f); if (mode === 'radio' && el.duration) el.currentTime = Math.random() * el.duration * .6; }); const p = el.play(); if (p) p.catch(() => { }); } show(); }
-        else if (!d && mode === 'radio') { mode = null; el.pause(); show(); } },
-      venue(kq) { if (kq) { if (mode === 'radio') return; mode = 'venue'; venueK = kq; el.volume = .45; pickVenue(); } else if (mode === 'venue') { mode = null; el.pause(); cur = null; show(); } },
-      toggle() { on = !on; if (mode === 'radio') { if (on) { const p = el.play(); if (p) p.catch(() => { }); } else el.pause(); } show(); },
-      skip() { if (mode === 'radio') { idx = (idx + 1) % order.length; play(TRACKS[order[idx]]); } },
-      stop() { mode = null; el.pause(); show(); }, tracks: TRACKS };
+      drive(d) { driving = d; sync(); }, venue(k) { if (k === venueK && src === 'venue') return; venueK = k; sync(); }, stop() { venueK = null; sync(); }, refresh: () => sync(), level,
+      toggle() { Q.radio.on = !Q.radio.on; sync(); }, skip() { if (src === 'radio') step('radio', 1); },
+      // the phone's music app
+      get phoneOn() { return Q.phone.on; }, get playing() { return src && cur ? { src, t: cur.t, a: cur.a, i: TRACKS.indexOf(cur) } : null },
+      phonePlay(i) { Q.phone.on = true; if (i != null) Q.phone.idx = Q.phone.order.indexOf(i); if (src === 'phone') fromQ('phone'); else sync(); },
+      phoneStop() { Q.phone.on = false; sync(); }, phoneStep(d) { Q.phone.on = true; step('phone', d); },
+      phoneShuffle() { Q.phone.order = order(); Q.phone.idx = 0; Q.phone.on = true; if (src === 'phone') fromQ('phone'); else sync(); },
+      // the stereo at home
+      stereoPick(i) { Q.stereo.idx = Q.stereo.order.indexOf(i); if (src === 'stereo') fromQ('stereo'); else sync(); }, stereoStep(d) { step('stereo', d); },
+      tracks: TRACKS };
   })();
+
+  // ---------------- the stereo in the share house ----------------
+  // Rob puts music on some afternoons when he is on the couch, and turns it off when he goes to bed. Play it loud late at night
+  // while he is asleep and he will let you know about it.
+  function stereoMenu() { const st = S.stereo, P1 = music.playing;
+    const opts = [{ t: st.on ? 'Turn it off' : 'Turn it on', s: st.on ? (P1 && P1.src === 'stereo' ? `Playing ${P1.t}` : 'Your earbuds are in, so you cannot hear it') : 'Plays through the house', fn: () => { st.on = !st.on; st.by = st.on ? 'you' : null; st.day = Math.floor(S.time / 1440); music.refresh(); stereoMenu(); } }];
+    if (st.on) { opts.push({ t: 'Next song', s: 'Skip this one', fn: () => { music.stereoStep(1); st.by = 'you'; setTimeout(stereoMenu, 60); } }, { t: 'Previous song', s: '', fn: () => { music.stereoStep(-1); st.by = 'you'; setTimeout(stereoMenu, 60); } }, { t: 'Choose a song', s: `${TRACKS.length} songs`, fn: pickSong }); }
+    menu('Stereo', 'Speakers in the lounge.', opts); }
+  function pickSong() { menu('Choose a song', 'Plays on the stereo.', TRACKS.map((T, i) => ({ t: T.t, s: T.a, fn: () => { S.stereo.on = true; S.stereo.by = 'you'; music.stereoPick(i); stereoMenu(); } }))); }
+  function robStereo() { const st = S.stereo, w = robWhere(), h = gHour(), today = Math.floor(S.time / 1440);
+    if (w === 'couch' && !st.on && st.day !== today && h >= 13 && h < 22 && hash('st' + today) % 3 === 0) { st.on = true; st.by = 'rob'; st.day = today; music.refresh(); if (!modalOpen && !dlgOpen) toast('Rob has put some music on.', 2.5); }
+    if (st.on && st.by === 'rob' && w !== 'couch' && w !== 'kitchen') { st.on = false; st.by = null; music.refresh(); }
+    if (st.on && st.by === 'you' && w === 'robroom' && (h >= 23 || h < 8) && st.warned !== today && Math.random() < .25) { st.warned = today; S.rels.rob.score -= 2;
+      setTimeout(() => say('Rob', VOICES.rob, 'Mate! Some of us are trying to sleep in here!', [{ text: 'Sorry, turning it down', effects: { rel: { rob: 1 } }, then: () => { st.on = false; st.by = null; music.refresh(); } }, { text: 'It is not even that loud', effects: { rel: { rob: -2 } } }], robLook(), 'neutral'), 0); } }
+
+  // ---------------- time passing: the clock runs fast instead of cutting to black ----------------
+  // Work, study, TV and sleep speed the clock up until the time is done. You stay in the room, sat at the desk or asleep in bed,
+  // and the light through the windows moves with the hour. Space skips to the end.
+  let FF = null;
+  function ffwd(mins, o = {}) { return new Promise(res => { const secs = clampv(mins / 55, 2.5, 10); FF = { left: Math.round(mins), total: Math.round(mins), rate: mins / secs, acc: 0, o, res }; G.hold = false; for (const k in keys) keys[k] = false; /* the room keeps moving around you, and your own keys are ignored */ if (o.pose && INSIDE) o.pose(true); $('ff').hidden = false; $('ff').classList.toggle('dim', !!o.dim); drawFF(); }); }
+  function drawFF() { $('ff').innerHTML = `<div class="ffbox"><span>${FF.o.label}</span><b>${CR.fmtTime(S.time)}</b><i><em style="width:${(100 * (1 - FF.left / FF.total)).toFixed(1)}%"></em></i><small><kbd>Space</kbd> skip ahead</small></div>`; }
+  function ffTick(dt) { FF.acc += FF.rate * dt; const m = FF.skip ? FF.left : Math.min(FF.left, Math.floor(FF.acc));
+    if (m > 0) { FF.acc -= m; FF.left -= m; const t0 = S.time; CR.passMinutes(S, m, FF.o.flags || {}); dailyThings(t0, S.time); if (FF.o.each) FF.o.each(m); placeRob(); }
+    drawFF(); if (FF.left <= 0) { const f = FF; FF = null; $('ff').hidden = true; if (f.o.pose && INSIDE) f.o.pose(false); G.hold = !!(modalOpen || dlgOpen || fading || phoneOpen); f.res(); } }
+  const poseAt = (x, y, z, hx, hy, typing) => on => { if (on) { player.saved = { x: player.x, y: player.y, hx: player.hx, hy: player.hy }; player.x = INSIDE.ox + x; player.y = INSIDE.oy + y; player.sit = { x: player.x, y: player.y, z, hx, hy, typing }; player.hx = hx; player.hy = hy; player.moving = false; }
+    else { player.sit = null; Object.assign(player, player.saved || {}); } };
+  const poseSleep = on => { if (on) { player.saved = { x: player.x, y: player.y, hx: player.hx, hy: player.hy }; player.x = INSIDE.ox + 13.54; player.y = INSIDE.oy + .86; player.sleep = { x: player.x, y: player.y, fx: 0, fy: 1, z: .5, col: [70, 84, 110] }; }
+    else { player.sleep = null; Object.assign(player, player.saved || {}); } };
+
+  // ---------------- people you know: plans to meet up ----------------
+  const cafes = () => DOORS.filter(d => d.k === 'venue' && d.vk === 'cafe');
+  const doorKey = d => Math.round(d.x) + ',' + Math.round(d.y);
+  function planHere(sp) { const k = doorKey(sp); return S.plans.find(pl => !pl.done && pl.door === k && S.time >= pl.t - 30 && S.time <= pl.t + 60); }
+  function personOf(c) { return Object.assign({ x: player.x + .9, y: player.y, hx: -1, hy: 0, venue: true, fixed: true, card: true, metBefore: true }, JSON.parse(JSON.stringify(c)), { gain: c.gain || { day: 0, sum: 0 } }); }
+  function meetup(pl, sp) { const c = S.contacts[pl.cid]; pl.done = true; if (!c) return venue(sp);
+    const p = personOf(c); p.venueSp = sp; p.rel = clampv(p.rel + 6, -100, 100); p.open = [pick2([`There you are! I got us a table.`, `Hey! Perfect timing, I just ordered.`, `You made it. What are you having?`])];
+    if (spend(1000, 'Coffee with ' + c.name.split(' ')[0])) toast(`Coffee with ${c.name.split(' ')[0]}. You got the round, $10.`, 3); need('mood', 6); CR.passMinutes(S, 20); closeMenu(); music.venue(sp.vk); startTalk(p); }
+  const pick2 = a => a[Math.floor(Math.random() * a.length)];
+  function checkPlans() { for (const pl of S.plans) if (!pl.done && S.time > pl.t + 60) { pl.done = true; pl.missed = true; const c = S.contacts[pl.cid]; if (!c) continue; c.rel = clampv(c.rel - 6, -100, 100);
+      S.msgs.unshift({ cid: pl.cid, me: false, t: S.time, text: pick2(['Guess something came up. No worries.', 'I waited a while. Everything okay?', 'Stood up! Rude. Rain check?']) }); toast(`You missed coffee with ${c.name.split(' ')[0]}.`, 4); phoneBadge(); }
+    S.plans = S.plans.filter(pl => !pl.done || S.time - pl.t < 1440 * 3); }
+
+  // ---------------- the phone ----------------
+  // Owned from the start. The clock stops while it is open. P opens it, Esc goes back.
+  let phoneOpen = false, phoneView = ['home'], phoneData = {};
+  const APPS = [['contacts', 'Contacts', '#5f8fd6', 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm-7 8c0-3.3 3.1-6 7-6s7 2.7 7 6z'], ['messages', 'Messages', '#5fb37a', 'M4 5h16v11H8l-4 4z'], ['bank', 'Bank', '#d6a347', 'M3 9l9-5 9 5v2H3zm2 3h2v6H5zm4 0h2v6H9zm4 0h2v6h-2zm4 0h2v6h-2zM3 19h18v2H3z'], ['maps', 'Maps', '#d66b5f', 'M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z'],
+    ['calendar', 'Calendar', '#c46fb0', 'M5 5h14v15H5zm0 4h14M8 3v4m8-4v4'], ['music', 'Music', '#e0874a', 'M9 18a3 3 0 1 1-2-2.8V5l12-2v11a3 3 0 1 1-2-2.8V6.3L9 7.6z'], ['notes', 'Journal', '#8a96a3', 'M6 3h12v18H6zm3 4h6m-6 4h6m-6 4h4']];
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const relWord = r => r <= -40 ? 'Dislikes you' : r <= -10 ? 'Cool toward you' : r < 15 ? 'Acquaintance' : r < 40 ? 'Friendly' : r < 70 ? 'Good terms' : 'Close';
+  const contactList = () => [{ cid: 'rob', name: 'Rob', job: 'Housemate', rel: S.rels.rob.score, rob: true }, ...Object.values(S.contacts)].map(c => c.rob ? c : Object.assign({}, c));
+  const unread = () => S.msgs.filter(m => !m.me && !m.read).length;
+  function phoneBadge() { const n = S ? unread() : 0; $('phoneBtn').innerHTML = `Phone <small style="color:var(--muted)">P</small>${n ? `<em>${n}</em>` : ''}`; }
+  function openPhone(view) { if (FF || fading) return; phoneOpen = true; G.hold = true; phoneView = [view || 'home']; $('phone').hidden = false; drawPhone(); }
+  function closePhone() { phoneOpen = false; $('phone').hidden = true; G.hold = !!(modalOpen || dlgOpen || fading || FF); phoneBadge(); }
+  const go = v => { phoneView.push(v); drawPhone(); }, back = () => { if (phoneView.length > 1) { phoneView.pop(); drawPhone(); } else closePhone(); };
+  function drawPhone() { const v = phoneView[phoneView.length - 1], [app, arg] = v.split(':'), p = CR.parts(S.time), body = $('phbody'); let title = '', html = '';
+    $('phbar').innerHTML = `<b>${String(p.h).padStart(2, '0')}:${String(p.mi).padStart(2, '0')}</b><span>Paused</span>`;
+    const A = APPS.find(a => a[0] === app);
+    if (app === 'home') { html = `<div class="phdate">${CR.fmtDate(S.time)}</div><div class="phgrid">${APPS.map(([k, n, c, d], i) => `<button data-go="${k}"><i style="background:${c}"><svg viewBox="0 0 24 24"><path d="${d}"/></svg>${k === 'messages' && unread() ? `<em>${unread()}</em>` : ''}</i><span>${n}</span><kbd>${i + 1}</kbd></button>`).join('')}</div>`; }
+    else if (app === 'contacts' && !arg) { title = 'Contacts'; const L = contactList().sort((a, b) => b.rel - a.rel);
+      html = L.map(c => `<button class="phrow" data-go="contacts:${c.cid}"><b>${esc(c.name)}</b><span>${esc(c.knownJob === false ? 'Job unknown' : c.job)} · ${relWord(c.rel)}</span><i class="rb"><em style="width:${(c.rel + 100) / 2}%"></em></i></button>`).join('') + (L.length < 2 ? '<p class="phnote">Get to know people around the city. Once they like you enough, ask to swap numbers or get a coffee and they will turn up here.</p>' : ''); }
+    else if (app === 'contacts') { const c = contactList().find(q => q.cid === arg); if (!c) return back(); title = c.name.split(' ')[0];
+      const lastT = c.rob ? S.robMsg : c.last, today = Math.floor(S.time / 1440), texted = lastT != null && Math.floor(lastT / 1440) === today, plan = S.plans.find(pl => pl.cid === c.cid && !pl.done);
+      const facts = c.rob ? ['Your housemate. Between jobs.'] : [c.knownJob ? c.job : 'You have not asked what they do', c.traitKnown && c.trait ? TRAITS[c.trait].label : null, c.topics && c.topics.personal ? `Into ${c.hobby[0]}` : null, c.topics && c.topics.sport > 1 ? `Follows ${c.team}` : null].filter(Boolean);
+      html = `<div class="phcard"><canvas class="phpt"></canvas><div><b>${esc(c.name)}</b><span>${relWord(c.rel)}</span><i class="rb"><em style="width:${(c.rel + 100) / 2}%"></em></i></div></div><ul class="phfacts">${facts.map(f => `<li>${esc(f)}</li>`).join('')}</ul>
+        <button class="phbtn" data-act="hi:${c.cid}" ${texted ? 'disabled' : ''}>${texted ? 'You have messaged today' : 'Send a message'}</button>
+        ${c.rob ? '' : `<button class="phbtn" data-act="coffee:${c.cid}" ${plan || texted ? 'disabled' : ''}>${plan ? `Coffee ${CR.fmtTime(plan.t)} ${dayWord(plan.t)}` : 'Ask them to get a coffee'}</button>`}
+        ${plan ? `<button class="phbtn" data-act="route:${plan.door}">Show ${esc(plan.place)} on the map</button>` : ''}
+        <div class="phthread">${S.msgs.filter(m => m.cid === c.cid).slice(0, 6).reverse().map(m => `<p class="${m.me ? 'me' : ''}">${esc(m.text)}</p>`).join('')}</div>`;
+      for (const m of S.msgs) if (m.cid === c.cid) m.read = true;
+      setTimeout(() => { const cv = body.querySelector('.phpt'); if (cv) drawPortrait(cv, c.rob ? robLook() : c.L, c.rel > 25 ? 'smile' : 'neutral', true); }, 0); }
+    else if (app === 'messages') { title = 'Messages'; const seen = new Set(), rows = [];
+      for (const m of S.msgs) { if (seen.has(m.cid)) continue; seen.add(m.cid); const c = contactList().find(q => q.cid === m.cid); if (!c) continue; const n = S.msgs.filter(q => q.cid === m.cid && !q.me && !q.read).length;
+        rows.push(`<button class="phrow" data-go="contacts:${m.cid}"><b>${esc(c.name)}${n ? ` <em class="dot">${n}</em>` : ''}</b><span>${m.me ? 'You: ' : ''}${esc(m.text)}</span></button>`); }
+      html = rows.join('') || '<p class="phnote">No messages yet.</p>'; }
+    else if (app === 'bank') { title = 'Bank'; const P0 = S.player;
+      html = `<div class="phbal"><span>Checking</span><b>${money(P0.bank)}</b><span>Cash in your wallet</span><b>${money(P0.cash)}</b></div><p class="phnote">Cash comes out at your laptop for now. ATMs come in a later build.</p><div class="phtx">${S.tx.slice(0, 18).map(x => `<p><span>${esc(x.text)}<small>${CR.fmtDate(x.t)}</small></span><b class="${x.c > 0 ? 'in' : ''}">${x.c > 0 ? '+' : ''}${money(x.c)}</b></p>`).join('') || '<p><span>No transactions yet</span></p>'}</div>`; }
+    else if (app === 'calendar') { title = 'Calendar'; const out = [], J = S.player.job, d0 = Math.floor(S.time / 1440);
+      for (let d = d0; d < d0 + 7; d++) { const pp = CR.parts(d * 1440 + 720), items = [];
+        if (pp.dow >= 1 && pp.dow <= 5) items.push(['9:00 am', `Work at ${EMPLOYER}${J.lastShiftDay === d ? ', done' : ''}`]);
+        if (pp.dow === 4 && S.flags && S.flags.poker_night) items.push(['8:00 pm', 'Poker night at home']);
+        if (pp.dow === 0) items.push(['Midnight', `Rent, ${money(26000)}`]);
+        for (const pl of S.plans) if (!pl.done && Math.floor(pl.t / 1440) === d) { const c = S.contacts[pl.cid]; items.push([CR.fmtTime(pl.t), `Coffee with ${c ? c.name.split(' ')[0] : 'someone'} at ${pl.place}`]); }
+        const ev = eventFor(pp); if (ev === 'halloween') items.push(['All day', 'Halloween']); if (ev === 'nye') items.push(['All day', "New Year's Eve"]);
+        out.push(`<div class="phday"><b>${d === d0 ? 'Today' : d === d0 + 1 ? 'Tomorrow' : CR.fmtDate(d * 1440)}</b>${items.map(([t, x]) => `<p><span>${t}</span>${esc(x)}</p>`).join('') || '<p><span></span>Nothing on</p>'}</div>`); }
+      html = out.join(''); }
+    else if (app === 'music') { title = 'Music'; const P1 = music.playing, on = music.phoneOn;
+      html = `<div class="phnow">${on && P1 && P1.src === 'phone' ? `<span>Now playing</span><b>${esc(P1.t)}</b><span>${esc(P1.a)}</span>` : on && player.driving ? '<span>Paused while you drive. The car radio takes over.</span>' : '<span>Earbuds out</span>'}</div>
+        <div class="phctl"><button data-act="mprev">Back</button><button data-act="${on ? 'mstop' : 'mplay'}">${on ? 'Pause' : 'Play'}</button><button data-act="mnext">Next</button><button data-act="mshuf">Shuffle</button></div>
+        ${TRACKS.map((T, i) => `<button class="phrow ${P1 && P1.src === 'phone' && P1.i === i ? 'on' : ''}" data-act="mpick:${i}"><b>${esc(T.t)}</b><span>${esc(T.a)}</span></button>`).join('')}`; }
+    else if (app === 'notes') { title = 'Journal'; html = S.log.slice(-30).reverse().map(n => `<p class="phlog"><small>${CR.fmtDate(n.t)}</small>${esc(n.text)}</p>`).join(''); }
+    else if (app === 'maps') { closePhone(); toggleMap(true); return; }
+    $('phhead').innerHTML = app === 'home' ? '' : `<button data-act="back">‹ Back</button><b>${esc(title)}</b>`;
+    body.innerHTML = html; body.scrollTop = 0;
+    for (const b of $('phone').querySelectorAll('[data-go]')) b.onclick = () => go(b.dataset.go);
+    for (const b of $('phone').querySelectorAll('[data-act]')) b.onclick = () => phoneAct(b.dataset.act); }
+  const dayWord = t => { const d = Math.floor(t / 1440) - Math.floor(S.time / 1440); return d === 0 ? 'today' : d === 1 ? 'tomorrow' : CR.fmtDate(t); };
+  function phoneAct(a) { const [k, arg] = a.split(':');
+    if (k === 'back') return back();
+    if (k === 'mplay') music.phonePlay(); if (k === 'mstop') music.phoneStop(); if (k === 'mnext') music.phoneStep(1); if (k === 'mprev') music.phoneStep(-1); if (k === 'mshuf') music.phoneShuffle(); if (k === 'mpick') music.phonePlay(+arg);
+    if (k[0] === 'm') return setTimeout(drawPhone, 80);
+    if (k === 'route') { const d = DOORS.find(q => doorKey(q) === arg); closePhone(); if (d) { setRoute(d.x, d.y); toggleMap(true); } return; }
+    if (k === 'hi') { textHi(arg); return drawPhone(); }
+    if (k === 'coffee') { askCoffee(arg); return drawPhone(); } }
+  function textHi(cid) { const mine = pick2(['Hey, how is your week going?', 'Hey! Hope the week is treating you well.', 'Hey, what are you up to?']);
+    if (cid === 'rob') { S.robMsg = S.time; const w = robWhere(); S.msgs.unshift({ cid, me: false, t: S.time, read: true, text: w === 'couch' ? 'Couch. Game is on. Living the dream.' : w === 'kitchen' ? 'Making toast. Want some? Too late, ate it.' : w === 'robroom' ? 'zzz' : 'Out! Come find us, the Rusty Anchor probably.' }); S.msgs.splice(1, 0, { cid, me: true, t: S.time, text: 'What are you up to?' }); S.rels.rob.score += 1; return; }
+    const c = S.contacts[cid]; if (!c) return; c.last = S.time; const r = c.rel, warm = r > 10;
+    S.msgs.unshift({ cid, me: true, t: S.time, text: mine }); if (warm) c.rel = clampv(c.rel + 2, -100, 100);
+    S.msgs.unshift({ cid, me: false, t: S.time, read: true, text: warm ? pick2([`Good! Busy, but good. ${c.hobby ? 'Got some ' + c.hobby[0] + ' in at least.' : ''}`, 'Not bad at all. Nice to hear from you!', 'Ha, surviving. You?']) : pick2(['Fine thanks.', 'Busy. You?', 'Hi.']) }); }
+  function askCoffee(cid) { const c = S.contacts[cid]; if (!c) return; c.last = S.time; const T = TRAITS[c.trait] || TRAITS.warm, needR = 22 - T.coffee * 3;
+    S.msgs.unshift({ cid, me: true, t: S.time, text: 'Want to grab a coffee this week?' });
+    if (c.rel < needR) { c.rel = clampv(c.rel - 1, -100, 100); S.msgs.unshift({ cid, me: false, t: S.time, read: true, text: pick2(['Slammed this week, sorry. Maybe another time.', 'Ah, I can not this week.']) }); return; }
+    const near = cafes().sort((a, b) => Math.hypot(a.x - player.x, a.y - player.y) - Math.hypot(b.x - player.x, b.y - player.y)).slice(0, 4), d = pick2(near); if (!d) return;
+    const day0 = Math.floor(S.time / 1440) + 1, dow = CR.parts(day0 * 1440).dow, hr = dow === 0 || dow === 6 ? 11 : pick2([8, 12.5, 17.75]), t = day0 * 1440 + Math.round(hr * 60);
+    S.plans.push({ cid, door: doorKey(d), place: d.name, t, done: false });
+    S.msgs.unshift({ cid, me: false, t: S.time, read: true, text: `Yes! ${d.name}, tomorrow at ${CR.fmtTime(t)}?` }); toast(`Coffee with ${c.name.split(' ')[0]} at ${d.name}, tomorrow ${CR.fmtTime(t)}. It is in your calendar.`, 5); }
+
+  // ---------------- the title screen ----------------
+  // The demo starts from here rather than dropping you into the city. Every component test we built opens from it too.
+  const TESTS = [['prototype', 'Corner Office prototype', 'The first playable build', 'TKYJjEtcqDUWaY5ENquB2v'], ['art', 'Art Test', 'The street art style and the plaza', 'NjbP97ovpuhTTZ1678RtZH'], ['terrain', 'Terrain Test', 'Hills, rivers and the ranges', 'SqEAVn8DWLWEoNNehThM1W'], ['scale', 'Scale Test', 'People, cars and buildings to scale', 'EQgrioA939j2mgt6fnruYG'], ['lookout', 'Lookout View', 'The view from The Ranges', 'Y9gWMzYWFecr3v3dfRwj6W'], ['city-plan', 'City Plan', 'The street plan and districts', '6c4RCcX7LpDodBxkNngtJC'], ['city', 'City', 'The full generated city', 'Eg799z1vgdUCqzvYH1xC1Z'],
+    ['sound', 'Sound Test', 'The city soundscape', '3zW4k3ti4s4ayYh77oFwQP'], ['voices', 'Voices', 'Muted horn conversation voices', '155BUCR27qfEHafa2WjbbS'], ['portraits', 'Portrait Creator', 'Faces, hair and clothes', 'RuXMxrcc9dcgMDu8EnXva1'], ['car-designer', 'Car Designer', 'Car models and handling', '7tsBmn67ooPgBmrmYtES5Q'], ['brand-studio', 'Brand Studio', 'Logos and signage styles', 'Brbd3YmeA7t9vdXujV6cZX'], ['track-designer', 'Grand Prix Track Designer', 'Race circuit layouts', 'Vd9gfWgnhLE2HKEsenKXo2'], ['foundations', 'Foundations', 'Core rules, clock and saves', '6NB2QeArQHjhgLfwad623n']];
+  let titleOpen = false, testBase = null;
+  function showTitle() { titleOpen = true; document.body.classList.add('titling'); const last = store.load('auto'), T = $('title');
+    const href = (slug, id) => testBase ? testBase + slug + '.html' : 'https://claude.ai/artifact/' + id;
+    T.innerHTML = `<div class="tbox"><h1>Corner Office</h1><p class="tsub">Test build</p><div class="tmain">${last ? `<button id="tCont"><b>Continue</b><span>${esc(CR.fmtDate(last.time))}, ${esc(CR.fmtTime(last.time))}</span></button>` : ''}<button id="tNew"><b>New game</b><span>Move into the share house with Rob</span></button><a class="tlink" href="${testBase ? 'engine.html' : 'https://claude.ai/artifact/RoSytWWvWgXxmRKxzTHSTR'}" target="_blank" rel="noopener"><b>Engine sandbox</b><span>The city with every debug control</span></a></div>
+      <h2>Component tests</h2><div class="tgrid">${TESTS.map(([slug, n, d, id]) => `<a href="${href(slug, id)}" target="_blank" rel="noopener"><b>${n}</b><span>${d}</span></a>`).join('')}</div><p class="tfoot">Tests open in a new tab. Sound starts after your first key press or click.</p></div>`;
+    T.hidden = false; if ($('tCont')) $('tCont').onclick = () => startGame(store.load('auto')); $('tNew').onclick = () => { if (last && !$('tNew').dataset.sure) { $('tNew').dataset.sure = 1; $('tNew').querySelector('span').textContent = 'This replaces your autosave. Click again to start over'; return; } startGame(null); }; }
+  // tests sit beside the page on GitHub; on claude.ai they open as their own artifacts
+  try { fetch('tests/manifest.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(j => { if (j) { testBase = 'tests/'; if (titleOpen) showTitle(); } }, () => { }); } catch (e) { }
+  function startGame(saved) { titleOpen = false; document.body.classList.remove('titling'); $('title').hidden = true; startSound();
+    if (saved) { load(saved); toast('Welcome back.'); } else { S = upgrade(fresh()); startAtHome(); skyForDay(); drawHud(); intro(); } phoneBadge(); }
 
   // ---------------- using things ----------------
   let doorNow = null, pedNow = null, cartNow = null;
@@ -5209,7 +5579,10 @@ window.GAME = (() => {
   }
   function key(e) {
     const tg = e.target && e.target.tagName; if (tg === 'TEXTAREA' || (tg === 'INPUT' && e.target.type !== 'range')) return true;
+    if (titleOpen) return e.code !== 'F12';
     if (!S) return false;
+    if (FF) { if (e.code === 'Space' || e.code === 'Enter') FF.skip = true; return true; }
+    if (phoneOpen) { if (e.code === 'Escape' || e.code === 'Backspace') back(); else if (e.code === 'KeyP') closePhone(); else if (phoneView.length === 1) { const n = +e.key; if (n >= 1 && APPS[n - 1]) go(APPS[n - 1][0]); } return true; }
     if (dlgOpen) { const n = +e.key; if (n >= 1 && say.keys && say.keys[n - 1]) say.keys[n - 1](); else if ((e.code === 'Enter' || e.code === 'Space') && say.keys && say.keys.length === 1) say.keys[0](); return true; }
     if (modalOpen) { if (e.code === 'Escape') closeMenu(); else if (e.code === 'Enter' && $('slpGo')) $('slpGo').click(); else if (e.target && e.target.id === 'slp') return false; else { const n = +e.key; if (n >= 1 && menu.keys && menu.keys[n - 1]) menu.keys[n - 1](); } return true; }
     if (talk) { if (e.code === 'Escape') endTalk(); else if (/^Digit[1-9]$/.test(e.code)) { const b = document.querySelectorAll('#topts button')[+e.code.slice(5) - 1]; if (b) b.click(); } return true; }
@@ -5219,18 +5592,24 @@ window.GAME = (() => {
     if (e.code === 'KeyE' || e.code === 'KeyF') { interact(); return true; }
     if (e.code === 'KeyT' && !INSIDE && pedNow) { startTalk(pedNow); return true; }
     if (e.code === 'KeyM') { toggleMap(); return true; }
+    if (e.code === 'KeyP') { openPhone(); return true; }
     if (e.code === 'KeyR' && player.driving) { e.shiftKey ? music.skip() : music.toggle(); return true; }
     return false;
   }
   const startSound = () => { if (!AU.on && !G.soundOff) { try { auStart(); } catch (e) { } } }; addEventListener('keydown', startSound, { once: true }); addEventListener('pointerdown', startSound, { once: true });
-  $('menuBtn').onclick = () => { if (S) { capture(); pauseMenu(); } };
+  $('menuBtn').onclick = () => { if (S && !FF) { capture(); pauseMenu(); } };
+  $('phoneBtn').onclick = e => { e.stopPropagation(); if (!S) return; phoneOpen ? closePhone() : openPhone(); };
   $('useBtn').onclick = e => { e.stopPropagation(); interact(); };
 
   // ---------------- the loop: called by the engine every frame ----------------
   let hudT = 0, promptT = 0;
   function tick(dt) {
-    if (!S) return; const paused = modalOpen || dlgOpen || fading || mapOpen || !!talk;
+    if (titleOpen || !S) { if (titleOpen && typeof ROT !== 'undefined') ROT += dt * .03; return; }
+    gameDay = Math.floor(S.time / 1440);
+    if (FF) ffTick(dt);
+    const paused = modalOpen || dlgOpen || fading || mapOpen || !!talk || phoneOpen || !!FF;
     if (!paused) runClock(dt);
+    if ((tick.pl = (tick.pl || 0) - dt) < 0) { tick.pl = .5; checkPlans(); music.level(); const st = INSIDE && INSIDE.furn.find(f => f.t === 'stereo'); if (st) st.on = !!S.stereo.on; }
     hour = gHour(); flow = 0; // the game's clock drives the street's light
     roomTick(dt);
     if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').hidden = true; }
@@ -5251,8 +5630,8 @@ window.GAME = (() => {
   function introSay() { setTimeout(() => say('Rob', VOICES.rob, 'Welcome home, roomie! Your room is the big one at the back, past the kitchen. Big first day at Meridian tomorrow, huh?', [{ text: 'Nine o clock sharp. Wish me luck.', effects: { rel: { rob: 3 } }, reply: 'You will smash it. Get an early night tonight, I will keep the music down. Probably.' }], robLook(), 'happy'), 0); }
 
   // ---------------- start ----------------
-  const G = { hold: false, key, tick, get S() { return S; }, music, HOME, WORK, homeDoor, workDoor, save, load, interact, roomKey };
-  setTimeout(() => { const last = store.load('auto'); if (last) { load(last); toast('Welcome back. Loaded your last autosave.'); } else { S = fresh(); startAtHome(); skyForDay(); drawHud(); intro(); } }, 0);
+  const G = { hold: false, key, tick, get S() { return S; }, music, HOME, WORK, homeDoor, workDoor, save, load, interact, roomKey, openPhone, closePhone, startGame, ffwd, get FF() { return FF; }, get phoneOpen() { return phoneOpen; } };
+  setTimeout(showTitle, 0);
   return G;
 })();
 </script></body></html>

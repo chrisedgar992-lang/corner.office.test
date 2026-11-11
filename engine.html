@@ -921,10 +921,13 @@ function randomLook(kind) {
 }
 
 const PEDS = []; let PUID = 1;
+const GHOST_RATE = .08;
 function placePed(s, pos) {
   const z = C.districtAt(s.mx, s.my), L = randomLook(TOWNZ.has(z) ? undefined : z === 'uni' ? (R() < .8 ? 'casual' : 'jog') : (R() < .6 ? 'casual' : R() < .3 ? 'jog' : undefined));
   const p = { uid: PUID++, L, s: pos, seg: s, dir: TR() < .5 ? 1 : -1, speed: L.kind === 'jog' ? rnd(3.2, 3.8) : rnd(1.7, 2.3), lat: -.5, latT: -.5, x: 0, y: 0, hx: 0, hy: 1, phase: R() * TAU, moving: true, cross: null, idle: 0 };
   if (typeof dressOne === 'function') dressOne(p);
+  // Halloween: about one walker in twelve is a see-through ghost, and new walkers keep the count up as the street refills
+  if (typeof event !== 'undefined' && event === 'halloween' && R() < GHOST_RATE) p.ghost = true;
   PEDS.push(p); return p;
 }
 // someone in the way on the footpath: the player or another walker close ahead
@@ -2622,11 +2625,17 @@ const TRAITS = {
   busy: { label: 'Always busy', small: -2, work: 1, sport: -1, market: 1, compliment: -1, coffee: -1, patience: 2 },
   grumpy: { label: 'Prickly', small: -2, work: -1, sport: 2, market: -1, compliment: -3, coffee: -3, patience: 2 },
 };
-const CAP_CHAT = 6, CAP_DAY = 9; // most relationship you can earn in one conversation, and with one person in a day
+const CAP_CHAT = 24, CAP_DAY = 30; // most relationship you can earn in one conversation, and with one person in a day
 let talk = null, gameDay = 1;
 const talkEl = document.getElementById('talk'), tP = document.getElementById('tp'), tN = document.getElementById('tn');
+// a few things each person has going on, so follow up questions have something to land on
+const HOBBIES = [['running', 'I run. Badly, but every morning.'], ['cooking', 'I cook. Too much, honestly. My freezer is full.'], ['climbing', 'Rock climbing. The gym out by the docks.'], ['music', 'I play bass in a band. We are terrible and we love it.'], ['gaming', 'Video games, mostly. Do not judge me.'], ['reading', 'I read. Thrillers, the trashier the better.'], ['photography', 'Photography. This city at night is something else.'], ['cycling', 'Cycling. Weekends out past the ranges.'], ['poker', 'Poker. Friday nights, small stakes.'], ['gardening', 'I keep a garden on my fire escape. Tomatoes, mostly.']];
+const TEAMS = ['the Harbor Hawks', 'the City Comets', 'the Ironworks', 'the Bay Mariners', 'the Northside Bulls', 'the Capitals'];
+const FROM = ['right here, born and raised', 'a small town upstate', 'the West Coast', 'down south, near the gulf', 'the Midwest. Lots of corn.', 'overseas, came here for college'];
+const WEEKEND = ['Sleeping in. That is the whole plan.', 'My sister is in town, so brunch, then more brunch.', 'Catching the game with a few friends.', 'Moving apartments. Want to help? Kidding. Mostly.', 'Nothing. Gloriously nothing.', 'Hiking out at the ranges if the weather holds.'];
+function npcFacts(p, r2) { if (p.hobby) return; const r = r2 || Math.random; p.hobby = HOBBIES[Math.floor(r() * HOBBIES.length)]; p.team = TEAMS[Math.floor(r() * TEAMS.length)]; p.from = FROM[Math.floor(r() * FROM.length)]; p.weekend = WEEKEND[Math.floor(r() * WEEKEND.length)]; p.topics = p.topics || {}; }
 function ensureNPC(p) {
-  if (p.name) return;
+  if (p.name) { npcFacts(p); return; }
   const r2 = mulberry((p.uid !== undefined ? p.uid : PEDS.indexOf(p)) * 7919 + 99); const FN = p.L.fem ? FIRST_F : FIRST_M;
   p.name = FN[Math.floor(r2() * FN.length)] + ' ' + LAST[Math.floor(r2() * LAST.length)];
   const ja = JOBS_AGE[p.L.cop ? 'police' : p.L.kind], js = (ja && ja[p.L.age]) || JOBS[p.L.kind] || JOBS.casual; p.job = p.job || js[Math.floor(r2() * js.length)];
@@ -2635,6 +2644,7 @@ function ensureNPC(p) {
   if (FIN.test(p.job) && r2() < .5) p.trait = 'ambitious';
   p.fan = r2() < .4; p.fin = FIN.test(p.job);
   p.gain = { day: 0, sum: 0 };
+  npcFacts(p, r2);
 }
 function relLabel(r) { return r <= -40 ? 'Dislikes you' : r <= -10 ? 'Cool toward you' : r < 15 ? 'Stranger' : r < 40 ? 'Friendly' : r < 70 ? 'Good terms' : 'Close'; }
 function exprFor(r, last) { if (last === 'bad') return 'frown'; if (last === 'good') return 'smile'; return r < -10 ? 'frown' : r > 25 ? 'smile' : 'neutral'; }
@@ -2643,6 +2653,7 @@ const OPEN = {
   reserved: ['Yes?', 'Can I help you?'], ambitious: ['Hi. Make it quick, I have a call at the hour.', 'Yes? Do we know each other?'],
   busy: ["Sorry, I'm running late. What is it?", "Can't stop long."], grumpy: ['What?', "If you're selling something, no."],
 };
+const OPEN_KNOWN = ['Oh, hey! Good to see you again.', 'Hey, you. How are things?', 'Look who it is.'];
 const LINES = {
   small: { good: ["Ha, tell me about it.", "It's always like this around here.", "You're new around here, aren't you?"], meh: ['Mm. I suppose.', 'Yeah.'], bad: ["I'm not really one for chit chat.", 'Right. Well.'] },
   work: { good: ["Busy. Good busy, mostly.", "Don't get me started. But it's going well."], meh: ['It pays the bills.', "Same as always."], bad: ["I'd rather not talk shop with a stranger.", "Work's work."] },
@@ -2655,43 +2666,82 @@ const LINES = {
 };
 function wxLine() { return weather === 'rain' ? "Grim out, isn't it?" : weather === 'snow' ? 'Can you believe this snow?' : weather === 'fog' ? "Can't see the tops of the towers today." : hour > 19 ? 'Long day?' : 'Busy one today, huh?'; }
 function complimentLine(L) { return L.kind === 'coat' ? 'Great coat, by the way.' : L.kind === 'suit' ? 'Sharp suit.' : L.kind === 'hivis' ? "Your crew's making quick work of that tower." : L.glasses ? 'Nice glasses.' : 'I like your jacket.'; }
+const nearbyVenue = () => { const D = (typeof DOORS !== 'undefined' ? DOORS : []).filter(d => d.k === 'venue'); let best = null, bd = 1e9; for (const d of D) { const dd = Math.hypot(d.x - player.x, d.y - player.y); if (dd < bd) { bd = dd; best = d; } } return best; };
+// Topics run as short threads. Asking one opens the next question in that thread, so the options change as you talk, and the
+// deeper questions count for a little more if they are into it. Personal questions open up once they are friendly.
+// Each step: the line you say, the scoring key, whether it is available, and what they say back for a good, so so or bad reaction.
+const TOPICS = {
+  small: [
+    { say: () => wxLine(), k: 'small' },
+    { say: () => 'Do you live around here?', k: 'small', good: p => [`A few blocks that way. Been here ${3 + (p.uid || 1) % 9} years.`, 'Just around the corner. I love it.'], meh: () => ['Not far.', 'Sort of.'], bad: () => ["That's a bit personal.", 'Why do you ask?'] },
+    { say: () => 'Anywhere good around here you would recommend?', k: 'small', good: () => { const v = nearbyVenue(); return v ? [`Try ${v.name}. Thank me later.`, `${v.name} is the spot. Trust me.`] : ['Honestly, the hot dog carts. Best food in the city.']; }, meh: () => ['Not really. I mostly go home.'], bad: () => ['Google it.'] }],
+  work: [
+    { say: () => 'So what do you do?', k: 'job' },
+    { say: p => p.fin ? 'How are the hours treating you?' : "How's work going?", k: 'work' },
+    { say: () => "What's the best part of it?", k: 'work', good: p => [p.fin ? 'The deals. When one closes, there is nothing like it.' : 'The people. Most days.', 'Honestly? I like being good at something.'], meh: () => ['Payday.', 'Going home.'], bad: () => ["Can we talk about something else?"] },
+    { say: () => 'Ever think about doing something else?', k: 'work', good: p => [`Every day. I'd do something with ${p.hobby[0]} if it paid.`, 'Sometimes. Maybe my own thing one day.'], meh: () => ['Who has time to think?'], bad: () => ["That's a strange thing to ask a stranger."] }],
+  sport: [
+    { say: () => 'Catch the game last night?', k: 'sport' },
+    { say: () => 'Who do you follow?', k: 'sport', when: p => p.fan && p.topics.sportGood, good: p => [`${p.team[0].toUpperCase() + p.team.slice(1)}. Through thick and thin. Mostly thin.`], meh: p => [`${p.team[0].toUpperCase() + p.team.slice(1)}, I guess.`], bad: () => ['Does it matter?'] },
+    { say: () => 'Going to a game this season?', k: 'sport', when: p => p.fan && p.topics.sportGood, good: () => ['If I can get tickets. You should come, actually.', 'Season ticket. Section 112, come say hi.'], meh: () => ['Probably watch at the bar.'], bad: () => ['Too expensive these days.'] }],
+  market: [
+    { say: () => 'Did you see the markets today?', k: 'market' },
+    { say: () => 'What are you watching at the moment?', k: 'market', when: p => p.fin || p.trait === 'ambitious', good: () => ['Rates. Everything is rates right now.', 'Energy names. Something is brewing there.'], meh: () => ['The clock, mostly.'], bad: () => ['Not something I discuss.'] },
+    { say: () => 'Any tips for someone starting out?', k: 'market', when: p => p.fin || p.trait === 'ambitious', good: () => ['Buy low, sell high. That is all you get for free.', 'Keep a journal of every trade. Humbling stuff.'], meh: () => ['Index funds. Boring, but it works.'], bad: () => ['Find a financial advisor.'] }],
+  compliment: [{ say: p => complimentLine(p.L), k: 'compliment' }],
+  personal: [
+    { say: () => 'What do you get up to outside work?', k: 'personal', good: p => [p.hobby[1]], meh: p => [`Bit of ${p.hobby[0]}. Nothing exciting.`], bad: () => ['This and that.'] },
+    { say: p => p.hobby ? `How did you get into ${p.hobby[0]}?` : 'How did you get into that?', k: 'personal', good: () => ['A friend dragged me along years ago. Never stopped.', 'Bad breakup, needed a hobby. Best thing that came of it.'], meh: () => ['Just did, I guess.'], bad: () => ['Long story.'] },
+    { say: () => 'Where did you grow up?', k: 'personal', good: p => [`I'm from ${p.from}.`], meh: p => [`${p.from[0].toUpperCase() + p.from.slice(1)}.`], bad: () => ['Here and there.'] },
+    { say: () => 'Any plans this weekend?', k: 'personal', good: p => [p.weekend], meh: () => ['Not really.'], bad: () => ['Why, are you asking me out?'] }],
+};
+const PERSONAL = { chatty: 3, warm: 3, reserved: -1, ambitious: 0, busy: -1, grumpy: -1 };
+const TOPIC_ORDER = ['small', 'work', 'sport', 'market', 'personal', 'compliment'];
+const topicStep = (p, t) => { const L = TOPICS[t], i = p.topics[t] || 0; if (i >= L.length) return null; const st = L[i]; if (st.when && !st.when(p)) return null; if (t === 'personal' && p.rel < 10) return null; return st; };
 function startTalk(p) {
-  ensureNPC(p);
+  ensureNPC(p); npcFacts(p);
   if (p.gain.day !== gameDay) p.gain = { day: gameDay, sum: 0 };
-  talk = { p, line: p.open ? pick(p.open) : p.cop ? pick(['Evening. Everything alright?', 'Afternoon. Can we help you with something?', 'All good here?', 'Keep an eye on your bag around here.']) : pick(OPEN[p.trait]), last: null, used: {}, turns: 0, earned: 0, delta: 0, note: '' };
-  p.idle = 1e9; const dx = player.x - p.x, dy = player.y - p.y, m = Math.hypot(dx, dy) || 1; p.talkFace = [dx / m, dy / m];
-  player.hx = -dx / m; player.hy = -dy / m;
+  const T = TRAITS[p.trait], known = p.metBefore;
+  talk = { p, line: known && p.rel > 10 ? pick(OPEN_KNOWN) : p.open ? pick(p.open) : p.cop ? pick(['Evening. Everything alright?', 'Afternoon. Can we help you with something?', 'All good here?', 'Keep an eye on your bag around here.']) : pick(OPEN[p.trait]), last: null, used: {}, turns: 0, earned: 0, delta: 0, note: '', pat: T.patience + 2 + Math.floor(Math.max(0, p.rel) / 10) };
+  p.metBefore = true;
+  if (!p.venue) { p.idle = 1e9; const dx = player.x - p.x, dy = player.y - p.y, m = Math.hypot(dx, dy) || 1; p.talkFace = [dx / m, dy / m]; player.hx = -dx / m; player.hy = -dy / m; }
   paused = true; talkEl.style.display = 'flex'; mm.style.display = 'none'; renderTalk();
 }
-function endTalk() { if (!talk) return; const p = talk.p; p.idle = p.fixed ? 0 : 1.5; p.talkFace = null; talk = null; talkEl.style.display = 'none'; mm.style.display = ''; paused = false; }
+function endTalk() { if (!talk) return; const p = talk.p; p.idle = p.fixed ? 0 : 1.5; p.talkFace = null; talk = null; talkEl.style.display = 'none'; mm.style.display = ''; paused = false; if (window.onTalkEnd) window.onTalkEnd(p); }
+const hasNumber = p => p.card || (window.isContact && window.isContact(p));
 function say(kind) {
   const p = talk.p, T = TRAITS[p.trait];
-  talk.turns++;
-  const n = talk.used[kind] || 0; talk.used[kind] = n + 1;
-  let v, line, tone2;
-  if (kind === 'job') { v = 1; line = p.jobLine || `I'm ${/^[AEIOU]/i.test(p.job) ? 'an' : 'a'} ${p.job.toLowerCase()}. ${p.fin ? 'Long hours, decent coffee.' : 'Pays the rent, mostly.'}`; talk.p.knownJob = true; }
-  else if (kind === 'coffee') {
-    const need = 22 - T.coffee * 4;
-    if (p.rel >= need) { v = 4; line = "Sure, why not. Here's my card. Message me next week."; p.card = true; }
-    else { v = -4 + Math.min(0, T.coffee); line = p.trait === 'grumpy' ? "I don't give my number to strangers." : "Maybe get to know someone first?"; }
-    talk.coffeeTried = true;
+  talk.turns++; talk.pat--;
+  let v = 0, line, tone2;
+  if (kind === 'coffee' || kind === 'number') {
+    const need = (kind === 'coffee' ? 22 : 14) - T.coffee * 3;
+    if (p.rel >= need) { v = 3; p.card = true; line = kind === 'coffee' ? pick(["Sure, why not. Here's my number. Message me and we'll sort a time.", "I'd like that. Put your number in my phone."]) : pick(["Sure. Here, give me your phone.", "Yeah, go on. Text me sometime."]); if (window.onTalkContact) window.onTalkContact(p); talk.note = `${p.name.split(' ')[0]} is in your contacts now.`; }
+    else { v = -3 + Math.min(0, T.coffee); line = p.trait === 'grumpy' ? "I don't give my number to strangers." : p.rel >= need - 8 ? "Ha, maybe. Ask me again once I know you a bit better." : "Maybe get to know someone first?"; talk.pat -= 1; }
+    talk[kind + 'Tried'] = true;
   } else {
-    let base = T[kind];
-    if (kind === 'sport' && p.fan) base += 2;
-    if (kind === 'market') base += p.fin ? 2 : -1;
-    if (kind === 'work' && !talk.p.knownJob) base -= 1;
-    v = base + (R() < .5 ? 0 : R() < .5 ? 1 : -1);
-    if (n === 1) v = Math.min(v, 0) - 1; else if (n >= 2) v = -3;
-    tone2 = n >= 1 ? 'repeat' : v >= 2 ? 'good' : v >= 0 ? 'meh' : 'bad';
-    line = tone2 === 'repeat' ? pick(LINES.repeat) : pick((p.lines && p.lines[kind] && p.lines[kind][tone2]) || LINES[kind][tone2]);
+    const st = topicStep(p, kind), idx = p.topics[kind] || 0; p.topics[kind] = idx + 1;
+    if (st.k === 'job') { v = 1; line = p.jobLine || `I'm ${/^[AEIOU]/i.test(p.job) ? 'an' : 'a'} ${p.job.toLowerCase()}. ${p.fin ? 'Long hours, decent coffee.' : 'Pays the rent, mostly.'}`; p.knownJob = true; }
+    else {
+      let base = st.k === 'personal' ? PERSONAL[p.trait] : T[st.k];
+      if (st.k === 'sport' && p.fan) base += 2;
+      if (st.k === 'market') base += p.fin ? 2 : -1;
+      if (st.k === 'work' && !p.knownJob) base -= 1;
+      if (idx > 0 && base > 0) base += 1; // going deeper on something they enjoy counts for more
+      v = base + (R() < .5 ? 0 : R() < .5 ? 1 : -1);
+      tone2 = v >= 2 ? 'good' : v >= 0 ? 'meh' : 'bad';
+      if (kind === 'sport' && idx === 0) p.topics.sportGood = tone2 === 'good';
+      const own = st[tone2] && st[tone2](p);
+      line = pick(own || (p.lines && p.lines[st.k] && p.lines[st.k][tone2]) || (LINES[st.k] || LINES.small)[tone2]);
+      if (tone2 === 'good') talk.pat += 1; else if (tone2 === 'bad') talk.pat -= 1;
+    }
   }
-  // patience runs out
-  if (talk.turns > T.patience + (p.rel > 30 ? 2 : 0)) { v = Math.min(v, -2); line = pick(LINES.tired); talk.ended = true; }
+  // patience runs out, sooner if it is going badly, later if they are enjoying it
+  if (talk.pat <= 0) { v = Math.min(v, -1); line = pick(LINES.tired); talk.ended = true; }
   // caps on what one chat and one day can earn
-  talk.note = '';
+  if (!talk.note || v <= 0) talk.note = talk.note && v > 0 ? talk.note : '';
   if (v > 0) {
     const room = Math.max(0, Math.min(CAP_CHAT - talk.earned, CAP_DAY - p.gain.sum));
-    if (room === 0) { v = 0; talk.note = "They're friendly, but you won't get closer today."; if (kind !== 'coffee' && kind !== 'job') line = pick(LINES.capped); }
+    if (room === 0) { v = 0; talk.note = "They're friendly, but you won't get closer today."; }
     else v = Math.min(v, room);
     talk.earned += v; p.gain.sum += v;
   }
@@ -2699,25 +2749,24 @@ function say(kind) {
   if (talk.turns > 1) p.traitKnown = true;
   talk.delta = v; talk.tone = tone2; talk.line = line; talk.last = v > 0 ? 'good' : v < 0 ? 'bad' : null;
   if (p.rel <= -15 && v < 0) { talk.ended = true; }
+  if (window.onTalkTurn) window.onTalkTurn(p);
   renderTalk();
 }
 function renderTalk() {
   const p = talk.p, T = TRAITS[p.trait];
-  tN.innerHTML = `<b>${p.name}</b><span>${talk.p.knownJob ? p.job : 'Unknown'}${p.traitKnown ? ' · ' + T.label : ''}</span>`;
+  tN.innerHTML = `<b>${p.name}</b><span>${p.knownJob ? p.job : 'Unknown'}${p.traitKnown ? ' · ' + T.label : ''}</span>`;
   document.getElementById('tl').textContent = talk.line;
-  if (typeof VOICE !== 'undefined' && talk.voiced !== talk.line) { talk.voiced = talk.line; const p = talk.p; VOICE.stop(); VOICE.say(talk.line, p.voice || (p.voice = VOICE.forPerson(p.uid || p.name, p.L && p.L.fem ? 'f' : 'm', 35))); }
+  if (typeof VOICE !== 'undefined' && talk.voiced !== talk.line) { talk.voiced = talk.line; VOICE.stop(); VOICE.say(talk.line, p.voice || (p.voice = VOICE.forPerson(p.uid || p.name, p.L && p.L.fem ? 'f' : 'm', 35))); }
   const pct = (p.rel + 100) / 2;
   document.getElementById('trel').innerHTML = `<div class="bar"><i style="width:${pct}%"></i></div><span>${relLabel(p.rel)}${talk.turns ? ` <em class="${talk.delta > 0 ? 'up' : talk.delta < 0 ? 'down' : ''}">${talk.delta > 0 ? '+' : ''}${talk.delta}</em>` : ''}</span>${talk.note ? `<span class="note">${talk.note}</span>` : ''}`;
   const opts = [];
   if (!talk.ended) {
-    opts.push(['small', wxLine()]);
-    if (!talk.p.knownJob) opts.push(['job', 'So what do you do?']); else opts.push(['work', p.fin ? 'How are the hours treating you?' : "How's work going?"]);
-    opts.push(['sport', 'Catch the game last night?']);
-    opts.push(['market', 'Did you see the markets today?']);
-    opts.push(['compliment', complimentLine(p.L)]);
-    // the coffee line only claims common ground the player actually has
-    const same = player.career && p.fin && player.career === 'finance';
-    if (!talk.coffeeTried) opts.push(['coffee', same ? "We're in the same line of work. Coffee sometime?" : 'Want to grab a coffee sometime?']);
+    for (const t of TOPIC_ORDER) { const st = topicStep(p, t); if (st) opts.push([t, st.say(p)]); }
+    if (!hasNumber(p)) {
+      const same = player.career && p.fin && player.career === 'finance';
+      if (!talk.numberTried && p.rel >= 8) opts.push(['number', 'Want to swap numbers?']);
+      if (!talk.coffeeTried) opts.push(['coffee', same ? "We're in the same line of work. Coffee sometime?" : 'Want to grab a coffee sometime?']);
+    }
   }
   opts.push(['bye', talk.ended ? 'Leave' : 'Anyway, I should go.']);
   const box = document.getElementById('topts'); box.innerHTML = '';
@@ -2969,7 +3018,7 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyM') toggleMap();
   if (e.code === 'KeyF' && !talk && !INSIDE && (player.driving || Math.hypot(player.x - PCAR.x, player.y - PCAR.y) < 3.6)) { toggleCar(); return; }
   if (e.code === 'KeyF' && !talk) { const d = insidePrompt(); if (d) { if (d.lift) fade(() => enterInteriorSwap(d.to)); else if (d.to) enterInterior(d.to, 'street', d); } }
-  if (talk && /^Digit[1-4]$/.test(e.code)) { const b = document.querySelectorAll('#topts button')[+e.code.slice(5) - 1]; if (b) b.click(); }
+  if (talk && /^Digit[1-9]$/.test(e.code)) { const b = document.querySelectorAll('#topts button')[+e.code.slice(5) - 1]; if (b) b.click(); }
   if (e.code === 'Escape') { if (talk) endTalk(); if (mapOpen) toggleMap(false); }
 });
 
@@ -3107,7 +3156,7 @@ function setSeason(s) { season = s; applySeason(); for (const b of document.quer
 function setEvent(e) {
   event = e; for (const b of document.querySelectorAll('#event button')) b.classList.toggle('on', b.dataset.e === e);
   if (e === 'december' || e === 'nye') { if (season !== 'winter') setSeason('winter'); }
-  if (e === 'halloween') { if (season !== 'autumn') setSeason('autumn'); hour = 20.5; for (const p of PEDS) p.ghost = false; const r = mulberry(13); for (const p of PEDS) if (!p.fixed && r() < .03) p.ghost = true; }
+  if (e === 'halloween') { if (season !== 'autumn') setSeason('autumn'); hour = 20.5; for (const p of PEDS) p.ghost = false; const r = mulberry(13); for (const p of PEDS) if (!p.fixed && !p.cop && r() < GHOST_RATE) p.ghost = true; }
   else for (const p of PEDS) p.ghost = false;
   if (e === 'nye') { hour = 23 + 58 / 60; flow = 1; nyeArmed = true; nyeBanner = 0; for (const b of document.querySelectorAll('#flow button')) b.classList.toggle('on', b.dataset.s === '1'); }
 }
@@ -3181,6 +3230,7 @@ const FURN = {
   sofa: { size: f => [f.w || 2.1, .9], h: .85 },
   armchair: { size: () => [.9, .85], h: .85 },
   tvunit: { size: () => [1.8, .45], h: .5 },
+  stereo: { size: () => [.8, .4], h: .75 },
   fridge: { size: () => [.75, .7], h: 1.85 },
   counter: { size: f => [f.w || 2.4, .62], h: .92 },
   stove: { size: () => [.62, .62], h: .92 },
@@ -3223,6 +3273,7 @@ function drawFurn(f) {
     case 'mtable': { const w = f.w || 3.2, d = f.d || 1.2; fbox(f, 0, 0, w, d, .71, .76, [70, 72, 76]); fbox(f, 0, 0, .3, d * .6, 0, .71, [50, 52, 56]); break; }
     case 'sofa': { const w = f.w || 2.1; const cc = c || [84, 90, 104]; fbox(f, 0, .05, w, .8, .1, .44, cc); fbox(f, 0, .38, w, .2, .1, .85, mulc(cc, .9)); for (const sx of [-1, 1]) fbox(f, sx * (w / 2 - .1), .05, .2, .8, .1, .62, mulc(cc, .95)); for (let i = 0; i < 3; i++) fbox(f, -w / 3 + i * w / 3, .0, w / 3 - .06, .6, .44, .52, mixc(cc, [255, 255, 255], .06)); fbox(f, w / 2 - .45, .22, .32, .14, .52, .78, [190, 150, 90]); break; }
     case 'armchair': { const cc = c || [110, 80, 60]; fbox(f, 0, .05, .85, .8, .1, .44, cc); fbox(f, 0, .36, .85, .18, .1, .85, mulc(cc, .9)); for (const sx of [-1, 1]) fbox(f, sx * .34, .05, .17, .8, .1, .62, mulc(cc, .95)); break; }
+    case 'stereo': { fbox(f, 0, 0, .8, .4, 0, .45, [60, 46, 36]); fbox(f, 0, .02, .46, .3, .45, .58, [26, 26, 28]); fbox(f, 0, .17, .4, .005, .49, .55, f.on ? [120, 220, 150] : [44, 48, 52]); for (const sx of [-1, 1]) { fbox(f, sx * .31, 0, .16, .18, .45, .76, [30, 30, 32]); fbox(f, sx * .31, .095, .1, .005, .55, .68, f.on ? [70, 70, 76] : [52, 52, 56]); } break; }
     case 'tvunit': { fbox(f, 0, 0, 1.8, .45, 0, .5, [54, 50, 48]); fbox(f, 0, .12, 1.4, .06, .5, 1.3, [18, 18, 20]); fbox(f, 0, .155, 1.34, .005, .54, 1.26, n > .1 ? [70, 110, 160] : [36, 40, 46]); break; }
     case 'fridge': { fbox(f, 0, 0, .75, .7, 0, 1.85, [214, 216, 218], [224, 226, 228]); fbox(f, 0, -.351, .74, .01, 1.2, 1.22, [140, 142, 146]); fbox(f, .28, -.36, .03, .03, .55, 1.1, [120, 122, 126]); fbox(f, .28, -.36, .03, .03, 1.3, 1.65, [120, 122, 126]); if (f.magnets) for (let i = 0; i < 4; i++) fbox(f, -.2 + i * .1, -.355, .05, .01, 1.4 + (i % 2) * .15, 1.45 + (i % 2) * .15, [[200, 60, 60], [60, 120, 200], [220, 190, 60], [80, 160, 90]][i]); break; }
     case 'counter': { const w = f.w || 2.4; fbox(f, 0, 0, w, .62, 0, .88, [204, 200, 192]); fbox(f, 0, 0, w + .02, .64, .88, .92, [80, 80, 82], [96, 96, 98]); if (f.kettle) drawCyl(f.x + (f.rot ? 0 : .5), f.y + (f.rot ? .5 : 0), .1, .92, 1.15, [60, 62, 66]); if (f.cabinets !== false) fbox(f, 0, .2, w, .35, 1.5, 2.3, [210, 206, 198]); break; }
@@ -3271,7 +3322,7 @@ function buildShareHouse(ox, oy) {
   I.furn.find(f => f.t === 'fridge').magnets = true;
   F(I, 'table', 10.6, 6.2, { w: 1.7, d: .9, bowl: true }); for (const [cx2, cy2, r] of [[10.1, 5.4, 0], [11.1, 5.4, 0], [10.1, 7.0, 2], [11.1, 7.0, 2]]) F(I, 'chair', cx2, cy2, { rot: r });
   // lounge: sofa faces the TV on the south wall, well clear of the front door
-  F(I, 'rug', 12.0, 10.3, { w: 3.0, d: 2.0, col: [128, 76, 60] }); F(I, 'sofa', 12.0, 9.2, { w: 2.3, rot: 2 }); F(I, 'armchair', 9.5, 10.3, { rot: 3 }); F(I, 'tvunit', 12.0, 11.65); F(I, 'plant', 14.5, 11.5); F(I, 'lamp', 8.0, 11.5); F(I, 'shelf', 7.55, 9.7, { rot: 1, w: 1.0 });
+  F(I, 'rug', 12.0, 10.3, { w: 3.0, d: 2.0, col: [128, 76, 60] }); F(I, 'sofa', 12.0, 9.2, { w: 2.3, rot: 2 }); F(I, 'armchair', 9.5, 10.3, { rot: 3 }); F(I, 'tvunit', 12.0, 11.65); F(I, 'stereo', 13.62, 11.7); F(I, 'plant', 14.5, 11.5); F(I, 'lamp', 8.0, 11.5); F(I, 'shelf', 7.55, 9.7, { rot: 1, w: 1.0 });
   F(I, 'plant', 6.9, 11.5); I.xtree = [14.2, 9.3, .16]; I.pumpkins = [[10.6, 6.2], [6.6, 11.3]];
   // housemates
   I.npcs.push(roomNPC(I, 'Jess', 'casual', { fem: true, hair: 'pony', hairC: [96, 58, 36], skin: SKIN[1], top: [120, 60, 70], young: true, seed: 2204 }, [[13.75, 5.0], [13.8, 7.25], [12.4, 7.6], [13.8, 8.0]], 'Housemate. Studying nursing.'));
@@ -3464,7 +3515,7 @@ function renderInterior() {
   if ((event === 'december' || event === 'nye') && I.xtree) { const T = { x: I.ox + I.xtree[0], y: I.oy + I.xtree[1], sc: I.xtree[2] }; bigs.push({ r: { x0: T.x - 1, y0: T.y - 1, x1: T.x + 1, y1: T.y + 1 }, d: Math.hypot(T.x - cx, T.y - cy), draw: () => drawXmasTree(T), box: bigBox({ x0: T.x - 2, y0: T.y - 2, x1: T.x + 2, y1: T.y + 2 }, 14 * T.sc) }); }
   if (event === 'halloween' && I.pumpkins) for (const [px, py] of I.pumpkins) { const pk = { x: I.ox + px, y: I.oy + py, s: 1, seed: px * 10 | 0 }; smalls.push({ x: pk.x, y: pk.y, hgt: .4, rad: .3, draw: () => drawPumpkin(pk) }); }
   for (const p of I.npcs) smalls.push({ x: p.x, y: p.y + (p.sleep ? 2.2 : p.sit ? .5 : 0), hgt: 1.9, rad: .5, draw: () => drawPed(p) }); // seated people sort after their seat
-  smalls.push({ x: player.x, y: player.y, hgt: 1.9, rad: .5, draw: () => drawPed(player, true), isPlayer: true });
+  smalls.push({ x: player.x, y: player.y + (player.sleep ? 2.2 : player.sit ? .5 : 0), hgt: 1.9, rad: .5, draw: () => drawPed(player, true), isPlayer: true });
   bigs.sort((a, b) => b.d - a.d);
   const slots = bigs.map(() => []); slots.push([]);
   for (const s of smalls) {
@@ -3921,6 +3972,46 @@ function updateIndoors() {
 }
 
 // ---------- tick ----------
+
+// ---------- car stereos: some cars go by with music up, heard as muffled bass through the bodywork ----------
+// One car at a time plays, the nearest with its stereo on. Its beat is scheduled a little ahead on the audio clock: a kick,
+// a muffled snare thud, a bass line on a four bar progression, and in some styles a dull chord stab. All of it runs through a
+// low pass that opens a little as the car gets close, so you mostly hear the thump.
+const BOOMSTY = [
+  { n: 'hiphop', bpm: [86, 96], kick: [0, 7, 10], snare: [4, 12], bass: [0, 3, 7, 10, 14], len: .22, stab: null },
+  { n: 'house', bpm: [120, 126], kick: [0, 4, 8, 12], snare: [4, 12], bass: [2, 6, 10, 14], len: .12, stab: [6, 14] },
+  { n: 'trap', bpm: [136, 144], kick: [0, 11], snare: [8], bass: [0, 11], len: .7, stab: null, half: true },
+  { n: 'pop', bpm: [104, 112], kick: [0, 8, 10], snare: [4, 12], bass: [0, 2, 8, 10, 12], len: .18, stab: [0, 8] }];
+const BOOMKEYS = [[0, -4, -7, -2], [0, -2, -5, -7], [0, 3, -2, -4], [0, -5, -3, -7]];
+function boomFor(c) {
+  if (c.boom !== undefined) return c.boom;
+  const night = hour < 5 || hour > 19, r = Math.random();
+  if (c.type === 'bus' || c.type === 'police' || c.type === 'van' || r > (night ? .2 : .1)) return c.boom = false;
+  const st = BOOMSTY[Math.random() * BOOMSTY.length | 0];
+  return c.boom = { st, bpm: st.bpm[0] + Math.random() * (st.bpm[1] - st.bpm[0]), root: 38 + Math.random() * 12, keys: BOOMKEYS[Math.random() * BOOMKEYS.length | 0] };
+}
+function updateBoom() {
+  if (!au.boomG) { au.boomLP = filt('lowpass', 300, 1.2); au.boomG = gainN(0); au.boomPan = AC.createStereoPanner(); chain(au.boomLP, au.boomG, au.boomPan, au.traffic); au.boom = { car: null, t: 0, step: 0 }; }
+  const B = au.boom; let best = null, bd = 60;
+  if (!INSIDE) for (const c of CARS) { if (!boomFor(c)) continue; const d = Math.hypot(c.x - player.x, c.y - player.y); if (d < bd) { bd = d; best = c; } }
+  if (best !== B.car) { B.car = best; B.step = 0; B.t = AC.currentTime + .05; }
+  if (!best) { ramp(au.boomG.gain, 0, .3); return 0; }
+  const c = best, d = bd, inCar = player.driving ? .6 : 1, near = Math.max(0, 1 - d / 60);
+  ramp(au.boomG.gain, 1.1 * Math.pow(10 / (10 + d), 1.5) * inCar, .12);
+  ramp(au.boomLP.frequency, 150 + 650 * near * near, .2);
+  ramp(au.boomPan.pan, Math.max(-1, Math.min(1, ((c.x - player.x) * CT - (c.y - player.y) * ST) / 25)), .1);
+  const M = c.boom, st = M.st, sp = 60 / M.bpm / 4, out = au.boomLP;
+  if (B.t < AC.currentTime) B.t = AC.currentTime + .02; // after a stall, pick the beat back up rather than catching up
+  while (B.t < AC.currentTime + .3) {
+    const s = B.step % 16, bar = Math.floor(B.step / 16) % 4, root = M.root * Math.pow(2, M.keys[bar] / 12), w = B.t;
+    if (st.kick.includes(s)) { const o = AC.createOscillator(), g = gainN(0); o.frequency.setValueAtTime(110, w); o.frequency.exponentialRampToValueAtTime(42, w + .12); g.gain.setValueAtTime(.9, w); g.gain.exponentialRampToValueAtTime(.001, w + .35); chain(o, g, out); o.start(w); o.stop(w + .4); }
+    if (st.snare.includes(s)) { const n = AC.createBufferSource(); n.buffer = au.short; const f = filt('bandpass', 220, .8), g = gainN(0); g.gain.setValueAtTime(.5, w); g.gain.exponentialRampToValueAtTime(.001, w + .16); chain(n, f, g, out); n.start(w, Math.random() * .3); n.stop(w + .2); }
+    if (st.bass.includes(s)) { const o = AC.createOscillator(), g = gainN(0), L = st.len * (st.half ? 1 : 1); o.type = 'sawtooth'; o.frequency.setValueAtTime(root, w); if (st.half) o.frequency.exponentialRampToValueAtTime(root * .94, w + L); g.gain.setValueAtTime(0, w); g.gain.linearRampToValueAtTime(.42, w + .01); g.gain.setTargetAtTime(0, w + L * .7, .06); chain(o, g, out); o.start(w); o.stop(w + L + .3); }
+    if (st.stab && st.stab.includes(s)) for (const iv of [12, 15, 19]) { const o = AC.createOscillator(), g = gainN(0); o.type = 'square'; o.frequency.value = root * Math.pow(2, iv / 12) * 2; g.gain.setValueAtTime(0, w); g.gain.linearRampToValueAtTime(.06, w + .01); g.gain.setTargetAtTime(0, w + .1, .05); chain(o, g, out); o.start(w); o.stop(w + .4); }
+    B.t += sp; B.step++;
+  }
+  return 1;
+}
 function auTick() {
   if (!AU.on || !AC) return;
   const now = performance.now(), dt = Math.min(.2, (now - au.last) / 1000); au.last = now;
@@ -3945,7 +4036,7 @@ function auTick() {
   if (nx.cricket <= 0) { nx.cricket = .5 + Math.random() * .8; if (night && season !== 'winter' && !rain && !INSIDE && (sub + park) > .3) crickets(Math.random() * 1.6 - .8, .012 * (sub + park)); }
   if (nx.thunder <= 0) { nx.thunder = 18 + Math.random() * 40; if (rain && Math.random() < .6) thunder(); }
   if (nx.drip <= 0) { nx.drip = .05 + Math.random() * .15; if (rain && !INSIDE) burst(au.amb, { type: 'bandpass', f: 1800 + Math.random() * 3000, q: 4, a: .001, dcy: .03, g: .04, pan: Math.random() * 1.8 - .9 }); }
-  const cars = updateTraffic(dt); const sir = updateSiren(); updatePlayerSound(); updateSteps(); updateChatter(dt); updateCrossing(dt); updateVents();
+  const cars = updateTraffic(dt); updateBoom(); const sir = updateSiren(); updatePlayerSound(); updateSteps(); updateChatter(dt); updateCrossing(dt); updateVents();
   const mus = updateMusic(); updateIndoors();
   AU.info = { M, cars, mus, sir };
 }
@@ -4509,15 +4600,63 @@ function drawGum(t) {
   for (let i = 0; i < 9; i++) { const a = rr() * TAU, dd = rr() * t.r * .7, z = t.h * (.55 + rr() * .45), p = fp(t.lt + Math.cos(a) * dd, t.fw + Math.sin(a) * dd * .5, z); if (!p) continue; const r = t.r * (.5 + rr() * .4) * f / p[2]; ctx.fillStyle = rgb(shade(snow && i % 3 === 0 ? [214, 220, 226] : [62 + i * 3, 88 + i * 3, 64], 6, .75 + i * .04)); ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, TAU); ctx.fill(); }
 }
 function drawPlayer() {
-  // you, seen from behind, standing at the rail in your own clothes
+  // you, seen from behind, standing at the rail in your own clothes. Drawn with curves and soft side shading so the
+  // figure matches the rounded people of the street view rather than a stack of boxes.
   const g = fp(0, 3.9, .3), s = f / (g ? g[2] : 10); if (!g) return;
-  const x = g[0], y = g[1], m = s, L = PL.L;
-  ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x, y, .3 * m, .06 * m, 0, 0, TAU); ctx.fill();
-  ctx.fillStyle = rgb(shade(L.bot || [46, 50, 58], 3)); ctx.fillRect(x - .17 * m, y - .9 * m, .14 * m, .9 * m); ctx.fillRect(x + .03 * m, y - .9 * m, .14 * m, .9 * m);
-  ctx.fillStyle = rgb(shade(L.top || [60, 66, 74], 3)); ctx.beginPath(); ctx.roundRect(x - .24 * m, y - 1.5 * m, .48 * m, .66 * m, .08 * m); ctx.fill();
-  ctx.fillRect(x - .32 * m, y - 1.44 * m, .1 * m, .5 * m); ctx.fillRect(x + .22 * m, y - 1.44 * m, .1 * m, .5 * m);
-  ctx.fillStyle = rgb(shade(L.skin || [206, 170, 140], 3)); ctx.fillRect(x - .05 * m, y - 1.58 * m, .1 * m, .1 * m);
-  ctx.fillStyle = rgb(shade(L.hairC || [46, 34, 26], 3)); ctx.beginPath(); ctx.ellipse(x, y - 1.68 * m, .12 * m, .14 * m, 0, 0, TAU); ctx.fill();
+  const x = g[0], y = g[1], m = s, L = PL.L, fem = !!L.fem;
+  const top = L.top || [60, 66, 74], bot = L.bot || [46, 50, 58], skin = L.skin || [206, 170, 140], hairC = L.hairC || [46, 34, 26], shoe = L.shoes || [34, 32, 30];
+  const coat = L.kind === 'coat', suit = L.kind === 'suit';
+  const col = (c, k = 1) => rgb(shade(c.map(v => v * k), 3));
+  const side = (c, x0, x1) => { const gr = ctx.createLinearGradient(x0, 0, x1, 0); gr.addColorStop(0, col(c, 1.08)); gr.addColorStop(.55, col(c, .96)); gr.addColorStop(1, col(c, .74)); return gr; };
+  const P = (a, b) => [x + a * m, y - b * m];
+  const path = pts => { ctx.beginPath(); pts.forEach((q, i) => { const [px, py] = P(q[0], q[1]); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }); ctx.closePath(); };
+  ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(x, y, .34 * m, .07 * m, 0, 0, TAU); ctx.fill();
+  // legs, tapering to the ankle, with a gap between them, and shoes
+  const hip = fem ? .17 : .16;
+  for (const sx of [-1, 1]) {
+    ctx.fillStyle = side(bot, x - .2 * m, x + .2 * m);
+    path([[sx * .015, .92], [sx * hip, .92], [sx * .125, .45], [sx * .105, .06], [sx * .035, .06], [sx * .03, .45]]); ctx.fill();
+    ctx.fillStyle = col(shoe); ctx.beginPath(); const [sxp, syp] = P(sx * .07, .035); ctx.ellipse(sxp, syp, .065 * m, .045 * m, 0, 0, TAU); ctx.fill();
+  }
+  // torso: shoulders, a little waist, down past the belt; a coat runs longer
+  const hem = coat ? .55 : suit ? .84 : .88, sh = fem ? .2 : .23, wa = fem ? .15 : .18;
+  ctx.fillStyle = side(top, x - sh * m, x + sh * m);
+  ctx.beginPath(); { const [ax, ay] = P(-sh, 1.42); ctx.moveTo(ax, ay); }
+  { const [c1x, c1y] = P(-.07, 1.5), [ex, ey] = P(0, 1.5); ctx.quadraticCurveTo(c1x, c1y, ex, ey); }
+  { const [c1x, c1y] = P(.07, 1.5), [ex, ey] = P(sh, 1.42); ctx.quadraticCurveTo(c1x, c1y, ex, ey); }
+  { const [c1x, c1y] = P(sh + .02, 1.3), [ex, ey] = P(wa, 1.08); ctx.quadraticCurveTo(c1x, c1y, ex, ey); }
+  { const [ex, ey] = P(wa + (coat ? .05 : .01), hem); ctx.lineTo(ex, ey); }
+  { const [ex, ey] = P(-wa - (coat ? .05 : .01), hem); ctx.lineTo(ex, ey); }
+  { const [ex, ey] = P(-wa, 1.08); ctx.lineTo(ex, ey); }
+  { const [c1x, c1y] = P(-sh - .02, 1.3), [ex, ey] = P(-sh, 1.42); ctx.quadraticCurveTo(c1x, c1y, ex, ey); }
+  ctx.fill();
+  // back seam and shoulder blades, a jacket vent for suits and coats
+  ctx.strokeStyle = col(top, .7); ctx.lineWidth = Math.max(1, .008 * m); ctx.beginPath(); { const [a1, b1] = P(0, 1.46), [a2, b2] = P(0, suit || coat ? hem + .16 : 1.0); ctx.moveTo(a1, b1); ctx.lineTo(a2, b2); } ctx.stroke();
+  ctx.strokeStyle = col(top, .82); ctx.beginPath(); for (const sx of [-1, 1]) { const [a1, b1] = P(sx * .05, 1.28), [cx1, cy1] = P(sx * .12, 1.24), [a2, b2] = P(sx * .17, 1.31); ctx.moveTo(a1, b1); ctx.quadraticCurveTo(cx1, cy1, a2, b2); } ctx.stroke();
+  // arms hang a little forward of the body, sleeves then hands
+  for (const sx of [-1, 1]) {
+    ctx.fillStyle = side(top, x + sx * (sh - .04) * m - .05 * m, x + sx * (sh + .04) * m + .05 * m);
+    path([[sx * (sh - .06), 1.42], [sx * (sh + .02), 1.38], [sx * (sh + .045), 1.05], [sx * (sh + .02), .8], [sx * (sh - .06), .8], [sx * (sh - .07), 1.1]]); ctx.fill();
+    ctx.fillStyle = col(skin, .9); ctx.beginPath(); const [hx, hy] = P(sx * (sh - .02), .74); ctx.ellipse(hx, hy, .045 * m, .065 * m, 0, 0, TAU); ctx.fill();
+  }
+  // collar, neck and ears
+  ctx.fillStyle = col(skin, .92); path([[-.055, 1.6], [.055, 1.6], [.06, 1.47], [-.06, 1.47]]); ctx.fill();
+  ctx.fillStyle = suit ? col([236, 236, 232]) : col(top, .86); ctx.beginPath(); { const [a1, b1] = P(-.08, 1.47), [cx1, cy1] = P(0, 1.53), [a2, b2] = P(.08, 1.47), [a3, b3] = P(0, 1.45); ctx.moveTo(a1, b1); ctx.quadraticCurveTo(cx1, cy1, a2, b2); ctx.quadraticCurveTo(a3, b3 + .02 * m, a1, b1); } ctx.fill();
+  const [hx0, hy0] = P(0, 1.71);
+  ctx.fillStyle = col(skin, .88); for (const sx of [-1, 1]) { ctx.beginPath(); ctx.ellipse(hx0 + sx * .1 * m, hy0 + .01 * m, .025 * m, .04 * m, 0, 0, TAU); ctx.fill(); }
+  // the head from behind is mostly hair, shaped by the style
+  ctx.fillStyle = col(skin); ctx.beginPath(); ctx.ellipse(hx0, hy0, .1 * m, .125 * m, 0, 0, TAU); ctx.fill();
+  const hc = col(hairC), hs = L.hair || (fem ? 'long' : 'short');
+  // one shape for the hair so there is no seam, stopping just above the nape; bald and buzz show more scalp
+  ctx.fillStyle = hc; ctx.beginPath(); if (hs === 'bald') ctx.ellipse(hx0, hy0 + .03 * m, .1 * m, .06 * m, 0, 0, Math.PI); else ctx.ellipse(hx0, hy0 - .008 * m, .109 * m, .124 * m, 0, 0, TAU); ctx.fill();
+  if (/long|pony|bob|wavy|curl|afro/.test(hs) || (fem && hs !== 'short' && hs !== 'bun' && hs !== 'pixie')) {
+    const len = hs === 'bob' ? .1 : hs === 'pony' ? 0 : .24;
+    if (len) { path([[-.11, 1.72], [.11, 1.72], [.1 + .02, 1.62 - len], [-.1 - .02, 1.62 - len]]); ctx.fill(); }
+    if (hs === 'pony') { ctx.beginPath(); const [px1, py1] = P(0, 1.66); ctx.ellipse(px1, py1 - .02 * m, .04 * m, .13 * m, 0, 0, TAU); ctx.fill(); }
+  }
+  if (hs === 'bun') { ctx.beginPath(); ctx.arc(hx0, hy0 - .1 * m, .055 * m, 0, TAU); ctx.fill(); }
+  // a soft rim of light on the hair and shoulders from the sky
+  ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = Math.max(1, .012 * m); ctx.beginPath(); ctx.ellipse(hx0, hy0 - .02 * m, .1 * m, .11 * m, 0, Math.PI * 1.1, Math.PI * 1.6); ctx.stroke();
 }
 // ---------- weather in front of everything ----------
 const FX = []; for (let i = 0; i < 420; i++) FX.push({ x: Math.random(), y: Math.random(), d: Math.random() });

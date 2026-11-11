@@ -1,0 +1,1169 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<meta charset="utf-8">
+<title>Corner Office Car Designer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* layout: model list | editors (top and side views stacked) | preview and settings. One dark workshop look, matching the track designer. */
+:root{--bg:#121417;--panel:#1a1d21;--panel2:#20242a;--line:#30353c;--text:#e7e9ec;--muted:#9ba2aa;--acc:#d6a347;--btn:#23272d;--good:#7fbf7a;--bad:#e07a62;
+  --ui:"IBM Plex Sans",system-ui,-apple-system,sans-serif;--num:"IBM Plex Mono",ui-monospace,monospace;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:13px/1.4 var(--ui)}
+.app{display:grid;grid-template-columns:230px minmax(0,1fr) 380px;gap:10px;height:100%;padding-block:10px;padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px))}
+.col{display:flex;flex-direction:column;gap:10px;min-width:0;min-height:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.grow{flex:1;min-height:0}
+h1{font-size:15px;margin:0;font-weight:600}
+h2{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0;font-weight:500}
+.hint{color:var(--muted);font-size:11.5px;text-wrap:pretty}
+button,select,input[type=text],input[type=number]{background:var(--btn);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:5px 8px;font:inherit;font-size:12px}
+button{cursor:pointer}
+button:hover,button:focus-visible,select:focus-visible,input:focus-visible{border-color:var(--acc);outline:none}
+button.on{border-color:var(--acc);color:var(--acc)}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.list{overflow:auto;display:flex;flex-direction:column;gap:2px;min-height:0}
+.grp{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:8px 2px 2px}
+.item{display:flex;justify-content:space-between;gap:6px;padding:5px 8px;border-radius:6px;cursor:pointer;border:1px solid transparent;background:none;text-align:left;width:100%}
+.item:hover{background:var(--panel2)}
+.item.sel{border-color:var(--acc);background:var(--panel2)}
+.item b{font-weight:500}
+.item span{font:11.5px var(--num);color:var(--muted);font-variant-numeric:tabular-nums}
+canvas{display:block;width:100%;border-radius:8px;background:#0e1013;touch-action:none}
+.ed{position:relative}
+.ed .cap{position:absolute;left:10px;top:8px;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);pointer-events:none}
+.tabs{display:flex;gap:4px}
+.tabs button{flex:1}
+.f{display:grid;grid-template-columns:110px minmax(0,1fr) 62px;gap:8px;align-items:center;font-size:12px;color:var(--muted)}
+.f b{font:500 12px var(--num);color:var(--text);text-align:right;font-variant-numeric:tabular-nums}
+.f input[type=range]{width:100%;accent-color:var(--acc)}
+.f2{display:grid;grid-template-columns:110px minmax(0,1fr);gap:8px;align-items:center;font-size:12px;color:var(--muted)}
+.chk{display:flex;flex-wrap:wrap;gap:4px 12px}
+.chk label{display:flex;gap:5px;align-items:center;font-size:12px}
+.sw{display:flex;flex-wrap:wrap;gap:5px}
+.sw button{width:24px;height:24px;padding:0;border-radius:50%}
+.sw button.on{outline:2px solid var(--acc);outline-offset:1px}
+table{border-collapse:collapse;width:100%;font-size:12px}
+td{padding:3px 4px;border-bottom:1px solid rgba(48,53,60,.6)}
+td:last-child{text-align:right;font:12px var(--num);font-variant-numeric:tabular-nums}
+.g{color:var(--good)}.b{color:var(--bad)}
+textarea{width:100%;min-height:90px;background:var(--btn);color:var(--text);border:1px solid var(--line);border-radius:6px;font:11px var(--num);padding:6px}
+[hidden]{display:none!important}
+@media (max-width:1100px){.app{grid-template-columns:200px minmax(0,1fr);height:auto}.app>.col:last-child{grid-column:1/-1}}
+@media (max-width:700px){.app{grid-template-columns:minmax(0,1fr)}.list{max-height:200px}}
+</style>
+<div class="app">
+  <div class="col">
+    <div class="card"><h1>Car designer</h1><div class="hint">Shape each model on the top and side views. The preview builds it in the game's 2.5D style. Every model and trim feeds the city's traffic.</div></div>
+    <div class="card grow"><h2>Models</h2><div class="list" id="list"></div>
+      <div class="row"><select id="newCls" aria-label="Class for a new model"></select><button id="bNew">New</button></div>
+      <div class="row"><button id="bDup">Duplicate</button><button id="bDel">Delete</button></div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="card ed">
+      <div class="row" style="justify-content:space-between"><h2>Top view</h2><div class="row"><div class="tabs"><button id="mOut" class="on">Outline</button><button id="mDet">Details</button></div><select id="detType" aria-label="Detail to place"></select></div></div>
+      <canvas id="cTop" height="230"></canvas>
+      <div class="hint" id="topHint"></div>
+      <div class="row" id="detCtl" hidden>
+        <label class="hint">Length <input id="dL" type="range" min=".04" max="3" step=".01"></label><label class="hint">Width <input id="dW" type="range" min=".02" max="2.4" step=".01"></label>
+        <label class="hint">Angle <input id="dA" type="range" min="-90" max="90" step="1"></label><label class="hint">Tilt <input id="dT" type="range" min="-60" max="60" step="1"></label><label class="hint">Depth <input id="dD" type="range" min=".01" max=".25" step=".005"></label><label class="hint">Height above body <input id="dZ" type="range" min="-.3" max=".8" step=".01"></label><label class="hint"><input id="dPop" type="checkbox"> Base under it</label>
+        <label class="hint"><input id="dMir" type="checkbox"> Both sides</label><label class="hint"><input id="dOnly" type="checkbox"> This trim only</label><button id="dDel">Remove detail</button>
+      </div>
+      <div class="row"><label class="hint" for="refTop">Reference image</label><input id="refTop" type="file" accept="image/*"><label class="hint">Opacity <input id="refTopO" type="range" min="0" max="1" step=".05" value=".5"></label><button id="refTopF">Flip</button><button id="refTopT">Trace outline</button></div>
+      <div class="row"><label class="hint"><input id="skinOn" type="checkbox"> Use this image as the car's surface</label><button id="skinPick">Pick the paint colour</button><span id="skinKey" style="display:inline-block;width:18px;height:18px;border-radius:50%;border:1px solid var(--line)"></span><label class="hint">Match <input id="skinTol" type="range" min="0" max="1" step=".05" value=".4"></label><label class="hint"><input id="skinShow" type="checkbox"> Show paint area</label></div>
+    </div>
+    <div class="card ed">
+      <div class="row" style="justify-content:space-between"><h2>Side view</h2><span class="hint">Drag points and the dashed belt line. Double-click to add a point. Drag a placed part up or down to set its height.</span></div>
+      <canvas id="cSide" height="230"></canvas>
+      <div class="row"><div class="tabs"><button id="sProf" class="on">Profile</button><button id="sWin">Windows and doors</button></div><button id="bPillar">Add pillar</button><button id="bDoor">Add door line</button><button id="bSideCut">Add side cut</button><button id="bSideDel">Remove selected</button></div>
+      <div class="row"><label class="hint">Window frame <input id="wFrame" type="range" min=".02" max=".16" step=".005"></label><label class="hint">Pillar width <input id="wPw" type="range" min=".03" max=".25" step=".005"></label><label class="hint">Wheel size <input id="wR" type="range" min=".26" max=".6" step=".005"></label><label class="hint">Rim size <input id="wRim" type="range" min=".4" max=".85" step=".01"></label><select id="wStyle" aria-label="Rim style"><option value="multi">Multi-spoke rims</option><option value="spokes">Five-spoke rims</option><option value="steel">Steel wheels</option><option value="dish">Flat dish rims</option></select></div>
+      <div class="row"><label class="hint" for="refSide">Reference image</label><input id="refSide" type="file" accept="image/*"><label class="hint">Opacity <input id="refSideO" type="range" min="0" max="1" step=".05" value=".5"></label><button id="refSideF">Flip</button><button id="refSideT">Trace outline</button></div>
+      <div class="hint">Crop a reference to the car's bumpers with the nose facing right, or press Flip. Use your own drawings or generic ones, since tracing a real model copies its design.</div>
+    </div>
+    <div class="fr" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="card ed"><div class="row" style="justify-content:space-between"><h2>Front view</h2><span class="hint">Shape the body's cross-section</span></div><canvas id="cFront" height="200"></canvas></div>
+      <div class="card ed"><div class="row" style="justify-content:space-between"><h2>Rear view</h2><span class="hint">Lights and parts at the back</span></div><canvas id="cRear" height="200"></canvas></div>
+    </div>
+    <div class="card"><div class="row" style="justify-content:space-between"><h2>Preview</h2><div class="tabs" style="min-width:260px"><button id="vTurn" class="on">Turntable</button><button id="vLot">Car park</button><button id="vDrive">Test drive</button><button id="vShow">Showroom</button></div></div>
+      <canvas id="cPrev" height="330"></canvas><canvas id="c3d" height="420" hidden></canvas>
+      <div class="row" id="prevCtl"><label class="hint" for="pZoom">Zoom</label><select id="pZoom"><option value="close">Close up</option><option value="7">On foot, game size</option><option value="3">Driving, game size</option></select><label class="hint" for="pLiv">Livery</label><select id="pLiv"></select><label class="hint" for="lean">Camera lean</label><input id="lean" type="range" min="1" max="8" step=".5" value="4" style="accent-color:var(--acc)"><button id="bSpin" class="on">Spin</button><span class="hint" id="prevHint"></span></div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="card"><div class="f2"><span>Name</span><input id="fName" type="text"></div><div class="f2"><span>Class</span><select id="fCls"></select></div>
+      <div class="f2"><span>Trim</span><div class="row"><select id="fTrim" style="flex:1"></select><button id="bTrimAdd">Add trim</button><button id="bTrimDel">Remove</button></div></div>
+      <div class="f2"><span>Trim name</span><input id="fTrimName" type="text"></div>
+      <div class="f2"><span>Price</span><input id="fPrice" type="number" min="0" step="500"></div>
+    </div>
+    <div class="card grow" style="overflow:auto">
+      <div class="tabs"><button data-tab="shape" class="on">Shape</button><button data-tab="look">Paint and extras</button><button data-tab="drive">Handling</button><button data-tab="data">Data</button></div>
+      <div class="pane" id="p-shape">
+        <div class="f"><span>Length</span><input id="sL" type="range" min="2.8" max="9" step=".05"><b id="oL"></b></div>
+        <div class="f"><span>Width</span><input id="sW" type="range" min="1.4" max="2.6" step=".01"><b id="oW"></b></div>
+        <div class="f"><span>Height</span><input id="sH" type="range" min="1" max="3.6" step=".01"><b id="oH"></b></div>
+        <div class="f"><span>Wheelbase</span><input id="sWB" type="range" min="1.8" max="5.5" step=".01"><b id="oWB"></b></div>
+        <div class="f"><span>Belt line</span><input id="sBelt" type="range" min=".4" max="2" step=".01"><b id="oBelt"></b></div>
+        <div class="f"><span>Cabin taper</span><input id="sTum" type="range" min=".6" max="1" step=".01"><b id="oTum"></b></div>
+        <div class="f"><span>Box from</span><input id="sSplit" type="range" min="-1" max="1" step=".01"><b id="oSplit"></b></div>
+        <div class="hint">The front view sets how the sides curve and how much the cabin narrows. Box from sets where a truck's cargo body starts, as a share of the length from the centre. Slide it to the left end to turn it off.</div>
+        <div class="f2"><span>Glass</span><select id="fGlass"><option value="std">Standard roof</option><option value="pano">Panoramic glass roof</option><option value="targa">Black roof panel</option><option value="open">Convertible, roof down</option></select></div>
+        <div class="row"><button id="bShapeReset">Reset shape to class</button></div>
+      </div>
+      <div class="pane" id="p-look" hidden>
+        <h2>Paint colours for this model</h2><div class="sw" id="paints"></div>
+        <div class="row"><input id="pAdd" type="color" value="#7a8590" aria-label="New paint colour"><button id="bPaintAdd">Add colour</button><button id="bPaintDel">Remove selected</button></div>
+        <div class="chk"><label><input id="roofOn" type="checkbox"> Two-tone roof</label><input id="roofCol" type="color" value="#151619" aria-label="Roof colour"><label><input id="boxOn" type="checkbox"> Cargo body colour</label><input id="boxCol" type="color" value="#eceae4" aria-label="Cargo body colour"></div>
+        <div class="f2"><span>Lights</span><select id="fLights"><option value="none">Placed lights only</option><option value="slim">Built-in slim</option><option value="square">Built-in square</option><option value="round">Built-in round</option></select></div>
+        <div class="f"><span>Wear</span><input id="sWear" type="range" min="0" max="1" step=".05"><b id="oWear"></b></div>
+        <h2>Liveries this trim can wear</h2><div class="chk" id="livs"></div>
+        <h2>Livery colours</h2><div class="sw" id="accents"></div><div class="row"><input id="aAdd" type="color" value="#f0eee8" aria-label="New livery colour"><button id="bAccAdd">Add colour</button><button id="bAccDel">Remove selected</button></div>
+        <div class="hint">Traffic picks a livery and colour at random for each car, so the same model varies on the street.</div>
+        <h2>Extras on this trim</h2>
+        <div class="chk" id="extras"></div>
+      </div>
+      <div class="pane" id="p-drive" hidden>
+        <div class="f"><span>0 to 100 km/h</span><input id="hT" type="range" min="2.5" max="25" step=".1"><b id="oT"></b></div>
+        <div class="f"><span>Top speed</span><input id="hTop" type="range" min="60" max="360" step="5"><b id="oTop"></b></div>
+        <div class="f"><span>Brakes</span><input id="hBr" type="range" min="5" max="13" step=".1"><b id="oBr"></b></div>
+        <div class="f"><span>Grip</span><input id="hGr" type="range" min=".5" max="1.4" step=".01"><b id="oGr"></b></div>
+        <div class="f"><span>Steering lock</span><input id="hLk" type="range" min="25" max="42" step=".5"><b id="oLk"></b></div>
+        <div class="chk"><label><input id="hEV" type="checkbox"> Electric drive (pulls hardest from a standstill)</label></div>
+        <div class="f2"><span>Driven wheels</span><select id="hDrive"><option value="rwd">Rear wheel drive, slides on the throttle</option><option value="fwd">Front wheel drive, runs wide when pushed</option><option value="awd">All wheel drive, grips hardest</option></select></div>
+        <div class="hint">These are the base model's figures. A trim can be quicker; set its own values below, or leave them blank to use the base.</div>
+        <div class="f2"><span>Trim 0 to 100</span><input id="tT" type="number" min="2" max="30" step=".1" placeholder="base"></div>
+        <div class="f2"><span>Trim top speed</span><input id="tTop" type="number" min="60" max="400" step="5" placeholder="base"></div>
+        <div class="f2"><span>Trim grip</span><input id="tGr" type="number" min=".4" max="1.5" step=".01" placeholder="base"></div>
+        <h2>Measured on the test track</h2><table id="meas"></table>
+      </div>
+      <div class="pane" id="p-data" hidden>
+        <div class="hint">Your models save in this browser. Copy the data to keep a backup or to send it over for the city build.</div>
+        <div class="row"><button id="bCopy">Copy all models</button><button id="bReset">Restore starter models</button></div>
+        <textarea id="ioText" aria-label="Model data" placeholder="Paste model data here to load it"></textarea>
+        <div class="row"><button id="bLoad">Load pasted data</button><span class="hint" id="ioMsg"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ================= vehicles: shapes, 2.5D slices, handling (shared by the car designer and the city world) =================
+'use strict';
+const VC = {};
+(function () {
+  const clamp = (v, a, b) => v < a ? a : v > b ? b : v, lerp = (a, b, t) => a + (b - a) * t;
+  // ---- class templates: side profile [u, z] and half plan outline [u, v], as fractions (u +1 is the nose) ----
+  const SIDE = {
+    boxyhatch: [[1, .42], [.97, .58], [.7, .62], [.48, .65], [.36, .99], [-.9, 1], [-.98, .7], [-1, .48]],
+    utesingle: [[1, .5], [.95, .6], [.62, .62], [.45, .6], [.3, .98], [-.02, .99], [-.05, .58], [-1, .58]],
+    vanhigh: [[1, .32], [.95, .36], [.8, .38], [.62, .46], [.45, .97], [-.99, .98], [-1, .34]],
+    lighttruck: [[1, .38], [.97, .48], [.9, .8], [.72, .83], [.64, .85], [.62, 1], [-.99, 1], [-1, .32]],
+    luxsuv: [[1, .48], [.95, .6], [.66, .63], [.44, .66], [.22, .97], [-.8, .99], [-.95, .8], [-1, .6]],
+    hyper: [[1, .26], [.88, .38], [.5, .46], [.25, .7], [.05, 1], [-.25, .97], [-.6, .74], [-.92, .7], [-1, .64]],
+    oldhatch: [[1, .4], [.96, .55], [.68, .6], [.42, .64], [.25, .98], [-.82, 1], [-.96, .75], [-1, .5]],
+    hatch: [[1, .38], [.95, .52], [.75, .6], [.42, .64], [.12, .97], [-.62, 1], [-.92, .82], [-1, .55]],
+    sedan: [[1, .38], [.95, .52], [.72, .6], [.4, .64], [.12, .98], [-.38, 1], [-.62, .68], [-.95, .64], [-1, .45]],
+    wagon: [[1, .38], [.95, .52], [.72, .6], [.4, .64], [.12, .97], [-.85, .96], [-.97, .75], [-1, .5]],
+    fastback: [[1, .38], [.95, .5], [.7, .56], [.42, .6], [.1, .97], [-.25, 1], [-.85, .68], [-1, .6]],
+    coupe: [[1, .32], [.95, .45], [.6, .55], [.25, .6], [-.05, .97], [-.32, 1], [-.75, .66], [-1, .55]],
+    gt: [[1, .34], [.93, .48], [.4, .58], [.05, .98], [-.4, 1], [-.75, .66], [-1, .56]],
+    super: [[1, .3], [.9, .42], [.45, .5], [.2, .75], [0, 1], [-.3, .98], [-.7, .7], [-1, .62]],
+    smallsuv: [[1, .48], [.94, .6], [.72, .64], [.42, .66], [.14, .97], [-.8, .96], [-.95, .78], [-1, .58]],
+    suv: [[1, .5], [.95, .62], [.62, .64], [.42, .66], [.25, .98], [-.95, .99], [-1, .6]],
+    ute: [[1, .5], [.95, .6], [.62, .62], [.45, .6], [.28, .98], [-.25, .99], [-.28, .58], [-1, .58]],
+    mover: [[1, .42], [.95, .55], [.78, .6], [.6, .66], [.3, .97], [-.92, .97], [-1, .6]],
+    van: [[1, .38], [.95, .42], [.78, .45], [.58, .55], [.38, .97], [-.99, .98], [-1, .4]],
+    truck: [[1, .35], [.97, .45], [.9, .75], [.7, .78], [.62, .8], [.6, 1], [-.99, 1], [-1, .3]],
+  };
+  const TOP = {
+    car: [[1, .55], [.96, .85], [.85, .97], [.6, 1], [-.6, 1], [-.9, .96], [-1, .75]],
+    box: [[1, .75], [.97, .95], [.9, 1], [-.97, 1], [-1, .9]],
+    sport: [[1, .45], [.94, .8], [.7, .95], [.45, 1], [-.2, .95], [-.6, 1], [-.9, .96], [-1, .8]],
+    super: [[1, .5], [.9, .85], [.6, .93], [.2, .9], [-.3, 1], [-.85, 1], [-1, .85]],
+  };
+  VC.CLASSES = {
+    oldhatch: 'Used hatchback', hatch: 'Hatchback', sedan: 'Sedan', wagon: 'Station wagon', fastback: 'Electric sedan', coupe: 'Sports coupe', gt: 'Grand tourer', super: 'Supercar',
+    smallsuv: 'Compact SUV', suv: 'Full-size SUV', ute: 'Pickup truck', mover: 'Minivan', van: 'Van', truck: 'Box truck',
+  };
+  const P = (hexes) => hexes.split(' ').map(h => '#' + h);
+  const PAINT = {
+    budget: P('c9c6bf 8e9499 2f3236 7b2b26 2b3d57 6d7255 b7a98a e6e3dc'),
+    family: P('e8e6e1 b9bdc1 6f757b 2a2d31 1f3550 6b1f22 3d4a3a 8a7a62'),
+    lux: P('151619 e9e7e2 3b3f45 22293a 4a1c22 6f6a60 a7aab0'),
+    sport: P('b32720 e2b318 1d4fa0 f2f0ea 141518 2f6b46 d8661f'),
+    work: P('f1f0ec cfd2d4 2c2f33 c9a227 3f5c8a b7381f'),
+  };
+  // one seed model per class and budget; every name is invented
+  const SEED = [
+    ['Pell', 'oldhatch', 'car', 3.8, 1.65, 1.42, 2.4, 5500, PAINT.budget, { t100: 13.5, top: 165, brake: 8, grip: .76, lock: 36 }, { wear: .55, lights: 'round' }],
+    ['Wren', 'hatch', 'car', 4.1, 1.76, 1.47, 2.58, 23990, PAINT.family, { t100: 10.4, top: 190, brake: 9.4, grip: .86, lock: 35 }, { lights: 'slim' }, [['Wren GT', 31990, { spoiler: 1, stripes: 1 }, { t100: 7.6, top: 220, grip: .95 }]]],
+    ['Tamsin', 'sedan', 'car', 4.8, 1.83, 1.45, 2.8, 34990, PAINT.family, { t100: 9, top: 210, brake: 9.6, grip: .88, lock: 34 }, { lights: 'square' },
+      [['Tamsin Metro Cab', 38990, { taxi: 1 }, {}, ['#e0b52a']], ['Tamsin Pursuit', 0, { police: 1, stripes: 1 }, { t100: 6.4, top: 240 }, ['#f1f0ec']]]],
+    ['Tamsin Wagon', 'wagon', 'car', 4.85, 1.83, 1.5, 2.8, 37990, PAINT.family, { t100: 9.4, top: 205, brake: 9.5, grip: .86, lock: 34 }, { lights: 'square', rack: 1 }],
+    ['Brindle', 'smallsuv', 'car', 4.35, 1.82, 1.62, 2.65, 35990, PAINT.family, { t100: 9.6, top: 190, brake: 9.2, grip: .82, lock: 35 }, { lights: 'slim' }],
+    ['Ridgeway', 'suv', 'box', 4.95, 1.96, 1.85, 2.85, 67990, PAINT.lux, { t100: 8.4, top: 200, brake: 9, grip: .8, lock: 33 }, { lights: 'square', rack: 1 }],
+    ['Corral', 'ute', 'box', 5.9, 2.03, 1.95, 3.68, 57990, PAINT.work, { t100: 10.6, top: 175, brake: 8.4, grip: .76, lock: 32 }, { lights: 'square', tray: 1 }, [['Corral Trail', 66990, { tray: 1, bullbar: 1, rack: 1 }, { grip: .74 }]]],
+    ['Halden', 'mover', 'box', 4.95, 1.88, 1.75, 2.95, 46990, PAINT.family, { t100: 10.2, top: 185, brake: 9, grip: .8, lock: 34 }, { lights: 'slim' }],
+    ['Carrow', 'van', 'box', 5.3, 1.98, 2.3, 3.3, 52990, PAINT.work, { t100: 13, top: 160, brake: 7.8, grip: .72, lock: 33 }, { lights: 'square' }, [['Carrow Contractor', 55990, { rack: 1 }, {}]]],
+    ['Boxley', 'truck', 'box', 7.2, 2.3, 3.2, 4.4, 88990, PAINT.work, { t100: 21, top: 120, brake: 6.6, grip: .6, lock: 32 }, { lights: 'square', box: '#eceae4' }],
+    ['Ion Vale', 'fastback', 'car', 4.75, 1.88, 1.42, 2.88, 71990, PAINT.lux, { t100: 5.1, top: 200, brake: 10, grip: .92, lock: 34, ev: true }, { lights: 'slim', sunroof: 1 }],
+    ['Vireo', 'coupe', 'sport', 4.4, 1.85, 1.3, 2.6, 109990, PAINT.sport, { t100: 5.2, top: 250, brake: 10.6, grip: 1, lock: 33 }, { lights: 'slim', spoiler: 1 }],
+    ['Aldane', 'sedan', 'car', 5.2, 1.95, 1.48, 3.1, 189990, PAINT.lux, { t100: 5.4, top: 250, brake: 10.2, grip: .94, lock: 32 }, { lights: 'slim', sunroof: 1 }],
+    ['Mirren GT', 'gt', 'sport', 4.8, 1.96, 1.3, 2.85, 264990, PAINT.lux, { t100: 4, top: 305, brake: 10.8, grip: 1.03, lock: 32 }, { lights: 'slim' }],
+    ['Kaelix', 'super', 'super', 4.5, 1.99, 1.15, 2.65, 479990, PAINT.sport, { t100: 2.9, top: 330, brake: 11.8, grip: 1.2, lock: 30 }, { lights: 'slim', spoiler: 1 }],
+    // more models: three or more per body type, across budgets
+    ['Dobbin', 'oldhatch', 'box', 3.7, 1.62, 1.45, 2.36, 3200, PAINT.budget, { t100: 15.5, top: 150, brake: 7.4, grip: .72, lock: 36, drive: 'fwd' }, { wear: .75, lights: 'square', side: 'boxyhatch' }],
+    ['Sprocket', 'oldhatch', 'car', 3.9, 1.68, 1.46, 2.48, 8900, PAINT.budget, { t100: 12.2, top: 175, brake: 8.4, grip: .8, lock: 35, drive: 'fwd' }, { wear: .3, lights: 'slim' }],
+    ['Fennel', 'hatch', 'car', 3.95, 1.72, 1.47, 2.5, 17490, PAINT.family, { t100: 11.8, top: 175, brake: 9, grip: .82, lock: 36, drive: 'fwd' }, { lights: 'round' }],
+    ['Orla', 'hatch', 'sport', 4.25, 1.8, 1.44, 2.66, 41990, PAINT.lux, { t100: 6.9, top: 235, brake: 10.2, grip: .96, lock: 35, drive: 'awd' }, { lights: 'slim', sunroof: 1 }],
+    ['Bastion', 'sedan', 'car', 4.65, 1.8, 1.46, 2.7, 26990, PAINT.family, { t100: 10.2, top: 195, brake: 9.2, grip: .84, lock: 35, drive: 'fwd' }, { lights: 'square' }],
+    ['Lysander', 'sedan', 'car', 4.95, 1.88, 1.46, 2.92, 64990, PAINT.lux, { t100: 6.6, top: 250, brake: 10, grip: .92, lock: 33, drive: 'rwd' }, { lights: 'slim' }],
+    ['Meadow Wagon', 'wagon', 'car', 4.7, 1.79, 1.5, 2.7, 29990, PAINT.family, { t100: 10.8, top: 190, brake: 9, grip: .82, lock: 35, drive: 'fwd' }, { lights: 'round', rack: 1 }],
+    ['Aldane Wagon', 'wagon', 'car', 5.25, 1.95, 1.5, 3.1, 199990, PAINT.lux, { t100: 5.6, top: 250, brake: 10.2, grip: .93, lock: 32, drive: 'awd' }, { lights: 'slim', sunroof: 1 }],
+    ['Ion Pulse', 'fastback', 'car', 4.2, 1.8, 1.5, 2.7, 39990, PAINT.family, { t100: 7.4, top: 160, brake: 9.4, grip: .86, lock: 36, ev: true, drive: 'fwd' }, { lights: 'slim', side: 'hatch' }],
+    ['Ion Apex', 'fastback', 'sport', 4.85, 1.96, 1.38, 2.95, 139990, PAINT.sport, { t100: 3.1, top: 250, brake: 10.8, grip: 1.02, lock: 33, ev: true, drive: 'awd' }, { lights: 'slim' }],
+    ['Kite', 'coupe', 'sport', 4.25, 1.78, 1.3, 2.55, 44990, PAINT.sport, { t100: 6.8, top: 225, brake: 10, grip: .95, lock: 34, drive: 'rwd' }, { lights: 'round' }],
+    ['Falchion', 'coupe', 'sport', 4.55, 1.9, 1.28, 2.68, 159990, PAINT.sport, { t100: 4.3, top: 290, brake: 11, grip: 1.06, lock: 33, drive: 'rwd' }, { lights: 'slim', spoiler: 1 }],
+    ['Halcyon GT', 'gt', 'sport', 4.75, 1.92, 1.32, 2.82, 139990, PAINT.lux, { t100: 4.8, top: 280, brake: 10.4, grip: .99, lock: 32, drive: 'rwd' }, { lights: 'slim' }],
+    ['Mirren Aurelian', 'gt', 'sport', 5.0, 1.98, 1.3, 2.95, 389990, PAINT.lux, { t100: 3.4, top: 325, brake: 11.2, grip: 1.07, lock: 31, drive: 'awd' }, { lights: 'slim' }],
+    ['Vantor', 'super', 'super', 4.45, 1.96, 1.18, 2.62, 289990, PAINT.sport, { t100: 3.4, top: 315, brake: 11.4, grip: 1.14, lock: 31, drive: 'rwd' }, { lights: 'slim' }],
+    ['Zenthra', 'super', 'super', 4.6, 2.04, 1.12, 2.7, 1450000, PAINT.sport, { t100: 2.4, top: 365, brake: 12.6, grip: 1.3, lock: 30, drive: 'awd' }, { lights: 'slim', spoiler: 1, side: 'hyper' }],
+    ['Sorrel', 'smallsuv', 'car', 4.2, 1.78, 1.6, 2.58, 26990, PAINT.family, { t100: 11.2, top: 180, brake: 8.8, grip: .8, lock: 36, drive: 'fwd' }, { lights: 'round' }],
+    ['Arbour', 'smallsuv', 'car', 4.5, 1.86, 1.62, 2.75, 56990, PAINT.lux, { t100: 6.9, top: 215, brake: 9.8, grip: .88, lock: 34, drive: 'awd' }, { lights: 'slim' }],
+    ['Bison', 'suv', 'box', 4.85, 1.9, 1.82, 2.8, 45990, PAINT.work, { t100: 10.4, top: 180, brake: 8.6, grip: .76, lock: 34, drive: 'awd' }, { lights: 'square', rack: 1 }],
+    ['Sovra', 'suv', 'car', 5.1, 2.0, 1.76, 3.0, 189990, PAINT.lux, { t100: 5.4, top: 250, brake: 10, grip: .88, lock: 32, drive: 'awd' }, { lights: 'slim', side: 'luxsuv', sunroof: 1 }],
+    ['Haymaker', 'ute', 'box', 5.4, 2.0, 1.9, 3.3, 34990, PAINT.work, { t100: 12.6, top: 165, brake: 8, grip: .74, lock: 33, drive: 'rwd' }, { lights: 'square', tray: 1, side: 'utesingle', wear: .2 }],
+    ['Granger HD', 'ute', 'box', 6.4, 2.1, 2.02, 4.0, 92990, PAINT.lux, { t100: 6.8, top: 200, brake: 9, grip: .8, lock: 32, drive: 'awd' }, { lights: 'slim', tray: 1, bullbar: 1 }],
+    ['Hearth', 'mover', 'box', 4.7, 1.8, 1.7, 2.85, 36990, PAINT.family, { t100: 11.6, top: 175, brake: 8.8, grip: .78, lock: 35, drive: 'fwd' }, { lights: 'round' }],
+    ['Regent', 'mover', 'box', 5.2, 1.98, 1.85, 3.2, 92990, PAINT.lux, { t100: 8.2, top: 200, brake: 9.4, grip: .82, lock: 33, drive: 'rwd' }, { lights: 'slim', sunroof: 1 }],
+    ['Nib', 'van', 'box', 4.4, 1.82, 1.85, 2.75, 31990, PAINT.work, { t100: 12.4, top: 165, brake: 8.4, grip: .76, lock: 35, drive: 'fwd' }, { lights: 'round', side: 'mover' }],
+    ['Haulier', 'van', 'box', 6.0, 2.02, 2.7, 3.9, 64990, PAINT.work, { t100: 15.5, top: 150, brake: 7.2, grip: .68, lock: 33, drive: 'rwd' }, { lights: 'square', side: 'vanhigh' }],
+    ['Tote', 'truck', 'box', 6.2, 2.05, 2.75, 3.6, 64990, PAINT.work, { t100: 18, top: 130, brake: 7, grip: .64, lock: 33, drive: 'rwd' }, { lights: 'square', box: '#eceae4', side: 'lighttruck' }],
+    ['Brunel', 'truck', 'box', 8.6, 2.48, 3.5, 5.2, 149990, PAINT.work, { t100: 26, top: 110, brake: 6.2, grip: .56, lock: 32, drive: 'rwd' }, { lights: 'square', box: '#d9dcdf' }],
+  ];
+  VC.seeds = () => SEED.map(([name, cls, top, L, W, H, wb, price, paints, spec, ex, trims], i) => {
+    const sideT = SIDE[ex.side || cls], belt = (sideT.find(p => p[0] < .5 && p[0] > .3) || [0, .62])[1] * H;
+    const m = { id: 'm' + i, name, cls, L, W, H, wb, belt: Math.min(belt, H * .66), tumble: cls === 'van' || cls === 'truck' ? .93 : cls === 'super' || cls === 'coupe' || cls === 'gt' ? .74 : .8,
+      side: sideT.map(([u, z]) => [u * L / 2, z * H]), top: TOP[top].map(([u, v]) => [u * L / 2, v * W / 2]), paints: paints.slice(), roof: null, box: ex.box || null, split: cls === 'truck' ? (ex.side === 'lighttruck' ? .62 : .6) * L / 2 : null,
+      lights: ex.lights || 'slim', wear: ex.wear || 0, spec: Object.assign({ ev: false }, spec),
+      trims: [{ name: 'Base', price, extras: Object.assign({}, ex), spec: {} }] };
+    delete m.trims[0].extras.lights; delete m.trims[0].extras.wear; delete m.trims[0].extras.box;
+    for (const [tn, tp, tex, tsp, tpaint] of trims || []) m.trims.push({ name: tn, price: tp, extras: Object.assign({}, m.trims[0].extras, tex), spec: tsp || {}, paints: tpaint });
+    // starting details and liveries, so each model reads differently from above
+    const ia = sideT.findIndex(p => p[1] > .9), mu = ia > 0 ? (sideT[ia - 1][0] + sideT[ia][0]) / 2 * L / 2 : L * .15;
+    m.details = cls === 'truck' ? [{ t: 'mirror', u: L / 2 - .9, v: W / 2 + .1, l: .2, w: .25, mir: 1 }] : [{ t: 'mirror', u: +mu.toFixed(2), v: +(VC.halfAt(m, mu) + .07).toFixed(2), l: .16, w: .2, mir: 1 }];
+    const D = (t, u, v, l, w, o = {}) => m.details.push(Object.assign({ t, u: +(u * L / 2).toFixed(2), v, l, w, a: 0, zo: 0 }, o));
+    { const lw = { slim: [.1, .32], round: [.2, .2], square: [.16, .3] }[m.lights] || [.1, .32]; m.details.push({ t: 'head', u: +(L / 2 - .05 - lw[0] / 2).toFixed(2), v: +(W / 2 * .64).toFixed(2), l: lw[0], w: lw[1], a: 0, zo: 0, mir: 1 }, { t: 'tail', u: +(-L / 2 + .06).toFixed(2), v: +(W / 2 * .7).toFixed(2), l: .1, w: .38, a: 0, zo: 0, mir: 1 }); m.lights = 'none'; }
+    const LV = { oldhatch: ['plain', 'panel'], hatch: ['plain', 'twin', 'bonnet'], sedan: ['plain', 'lower'], wagon: ['plain', 'lower'], smallsuv: ['plain', 'lower'], suv: ['plain', 'lower', 'band'], ute: ['plain', 'band', 'lower'], mover: ['plain', 'band'], van: ['plain', 'band', 'lower'], truck: ['plain', 'band'], fastback: ['plain'], coupe: ['plain', 'twin', 'racing', 'number'], gt: ['plain', 'racing'], super: ['plain', 'single', 'number'] };
+    m.trims.forEach(t => { t.liveries = (LV[cls] || ['plain']).slice(); });
+    if (!spec.drive) m.spec.drive = { oldhatch: 'fwd', hatch: 'fwd', sedan: name === 'Aldane' ? 'rwd' : 'rwd', wagon: 'rwd', fastback: 'awd', coupe: 'rwd', gt: 'rwd', super: 'awd', smallsuv: 'fwd', suv: 'awd', ute: 'rwd', mover: 'fwd', van: 'rwd', truck: 'rwd' }[cls] || 'rwd';
+    if (cls === 'coupe' || cls === 'gt') { D('vent', .62, .42, .3, .08, { mir: 1, a: 8 }); D('line', .55, 0, 1.0, .03); }
+    if (cls === 'super') { D('vent', .55, .45, .38, .12, { mir: 1, a: 12 }); D('vent', -.55, .55, .5, .14, { mir: 1 }); D('lightbar', -.97, 0, .06, 1.5); D('wing', -.92, 0, .32, 1.7, { zo: .22 }); }
+    if (cls === 'fastback') { D('lightbar', .96, 0, .05, 1.45); D('lightbar', -.97, 0, .05, 1.5); D('window', -.05, 0, 1.6, .95, { zo: .005 }); }
+    if (cls === 'suv') { D('line', .6, .38, .8, .03, { mir: 1 }); }
+    if (cls === 'ute') { m.trims[1] && (m.trims[1].liveries = ['plain', 'band']); D('spare', -.75, 0, .7, .7, { only: 1 }); D('bar', .98, 0, .15, 1.5, { only: 1 }); D('tarp', -.65, 0, 1.5, 1.55, { only: 0 }); }
+    if (cls === 'van') { D('ladder', -.1, .45, 2.8, .45, { only: 1, zo: .08 }); D('window', .2, 0, .6, 1.0, { only: 0, zo: .005 }); }
+    if (cls === 'truck') { D('lightbar', .92, 0, .08, 1.6, { zo: .02 }); D('line', -.2, 0, 4.5, .04); }
+    if (cls === 'hatch') { m.trims[1] && (m.trims[1].liveries = ['twin', 'racing', 'number']); D('scoop', .7, 0, .5, .5, { only: 1 }); }
+    if (name === 'Tamsin') { m.trims[1].liveries = ['plain']; m.trims[2].liveries = ['band']; m.accents = ['#1d3a8a', '#f0eee8']; }
+    if (cls === 'oldhatch') m.accents = ['#8e9499', '#7b2b26', '#2b3d57'];
+    return m;
+  });
+  VC.fromClass = (cls, name) => { const base = VC.seeds().find(m => m.cls === cls) || VC.seeds()[1]; return Object.assign(JSON.parse(JSON.stringify(base)), { id: 'm' + Date.now().toString(36), name: name || 'New ' + VC.CLASSES[cls].toLowerCase() }); };
+
+  // ---- profile lookups ----
+  const interp = (pts, u, key = 1) => { // pts ordered nose to tail (u descending)
+    if (u >= pts[0][0]) return pts[0][key]; if (u <= pts[pts.length - 1][0]) return pts[pts.length - 1][key];
+    for (let i = 1; i < pts.length; i++) if (u >= pts[i][0]) { const a = pts[i - 1], b = pts[i], t = (u - b[0]) / ((a[0] - b[0]) || 1); return b[key] + (a[key] - b[key]) * t; }
+    return 0;
+  };
+  VC.heightAt = (m, u) => interp(m.side, u);
+  // ---- body cross-section, windows, doors, wheels: filled in for older models ----
+  VC.defaultSec = (m, H, tumble) => { const b = m.belt; return [[.22, .9], [.38, .97], [b * .7, 1], [b, .985], [b + (H - b) * .55, (1 + tumble) / 2 - .02], [H, tumble * .96]].map(([z, f]) => [+z.toFixed(3), +f.toFixed(3)]); };
+  VC.upgrade = m => {
+    const H = Math.max(...m.side.map(p => p[1]));
+    if (!m.sec) m.sec = VC.defaultSec(m, H, m.tumble || .8);
+    if (!m.win) { let cf = -1e9, cr = 1e9; for (let i = 0; i <= 40; i++) { const u = m.L / 2 - i * m.L / 40; if (interp(m.side, u) > m.belt + .08 && (m.split == null || u >= m.split)) { cf = Math.max(cf, u); cr = Math.min(cr, u); } }
+      const two = { coupe: 1, gt: 1, super: 1, oldhatch: 1, hatch: 1 }[m.cls], len = cf - cr; m.win = { frame: .06, pw: .07, pillars: m.split != null ? [] : two ? [] : [+(cr + len * (m.cls === 'van' || m.cls === 'mover' ? .62 : .52)).toFixed(2)] };
+      if (m.cls === 'mover' || m.cls === 'suv' || m.cls === 'wagon' || m.cls === 'smallsuv') m.win.pillars.push(+(cr + len * .2).toFixed(2)); }
+    if (!m.doors) { let cf = -1e9, cr = 1e9; for (let i = 0; i <= 40; i++) { const u = m.L / 2 - i * m.L / 40; if (interp(m.side, u) > m.belt + .08 && (m.split == null || u >= m.split)) { cf = Math.max(cf, u); cr = Math.min(cr, u); } }
+      const p = m.win.pillars || []; m.doors = m.split != null ? [+(cf - .1).toFixed(2), +(m.split + .2).toFixed(2)] : [+(cf - .08).toFixed(2), ...(p.length ? [p[p.length - 1] + .02] : []), +(cr + (p.length ? .1 : .3)).toFixed(2)].map(v => +v.toFixed(2)); }
+    if (!m.wheel) m.wheel = { r: m.cls === 'truck' ? .5 : m.cls === 'ute' ? .4 : m.cls === 'suv' ? .38 : m.cls === 'van' ? .36 : m.cls === 'super' || m.cls === 'gt' ? .35 : .33, rim: m.cls === 'oldhatch' ? .55 : m.cls === 'super' || m.cls === 'gt' || m.cls === 'coupe' ? .74 : .64, style: m.cls === 'truck' || m.cls === 'van' ? 'steel' : m.cls === 'oldhatch' ? 'steel' : m.cls === 'super' || m.cls === 'coupe' ? 'spokes' : 'multi', gap: .05 };
+    return m;
+  };
+  VC.secAt = (m, z) => { const S = m.sec; if (z <= S[0][0]) return S[0][1]; for (let i = 1; i < S.length; i++) if (z <= S[i][0]) { const a = S[i - 1], b = S[i], t = (z - a[0]) / ((b[0] - a[0]) || 1); return a[1] + (b[1] - a[1]) * t; } return S[S.length - 1][1]; };
+  VC.widthAt = (m, u, z) => { const v0 = interp(m.top, u); let v = m.split != null && u < m.split ? v0 : v0 * VC.secAt(m, z);
+    if (m.details) for (const d of m.details) if (d.t === 'scut') { const du = Math.abs(u - d.u) / (d.l / 2), dz = Math.abs(z - d.z) / (d.w / 2); if (du < 1 && dz < 1) v -= (d.dp || .06) * Math.min(1, (1 - du) * 6) * Math.min(1, (1 - dz) * 6); } // a side cut carves into the flank
+    return v; };
+  VC.inSideCut = (m, u, z) => (m.details || []).some(d => d.t === 'scut' && Math.abs(u - d.u) < d.l / 2 * .92 && Math.abs(z - d.z) < d.w / 2 * .92);
+  VC.inRecess = (m, u, v) => { for (const d of m.details || []) if (d.t === 'cut') for (const sv of d.mir ? [1, -1] : [1]) if (Math.abs(u - d.u) < d.l / 2 && Math.abs(v - d.v * sv) < d.w / 2) return d; return null; };
+  // the body surface under a part's footprint: the highest point of the skin it covers, or the belt for a mirror
+  VC.surfaceUnder = (m, pts, t) => { if (t === 'mirror') return m.belt + .05; const us = pts.map(p => p[0]); let h = 0; for (let k = 0; k <= 6; k++) h = Math.max(h, interp(m.side, Math.min(...us) + (Math.max(...us) - Math.min(...us)) * k / 6)); return h + .01; };
+  VC.detailPts = (d, sv) => { const a = (d.a || 0) * Math.PI / 180 * sv, ca = Math.cos(a), sa = Math.sin(a), v = d.v * sv; return [[1, 1], [1, -1], [-1, -1], [-1, 1]].map(([p, q]) => [d.u + ca * p * d.l / 2 - sa * q * d.w / 2, v + sa * p * d.l / 2 + ca * q * d.w / 2]); };
+  VC.rack = (m, d) => { // where a roof rack sits: the flat of the roof, or the placed part's own size within it
+    const H = Math.max(...m.side.map(p => p[1])), roof = m.side.filter(p => p[1] > H - .07).map(p => p[0]); let u1 = Math.max(...roof) - .12, u0 = Math.min(...roof) + .12;
+    let hw = VC.widthAt(m, (u0 + u1) / 2, H - .02) * .82; if (d) { u1 = Math.min(u1, d.u + d.l / 2); u0 = Math.max(u0, d.u - d.l / 2); hw = Math.min(hw, d.w / 2); }
+    if (u1 - u0 < .3) { const c2 = (u0 + u1) / 2; u0 = c2 - .15; u1 = c2 + .15; }
+    const n = Math.max(2, Math.round((u1 - u0) / .55) + 1), bars = []; for (let i = 0; i < n; i++) bars.push(u0 + .1 + (u1 - u0 - .2) * i / (n - 1));
+    return { u0, u1, hw, base: H, z: H + .07, bars };
+  };
+  VC.SOLID_H = { scoop: .07, mirror: .09, roofbox: .32, ladder: .06, wing: .05, bar: .08 };
+  VC.halfAt = (m, u) => interp(m.top, u);
+
+  // ---- slices: the body as horizontal layers, each split into body, glass and roof bands ----
+  VC.build = (m, trimIx = 0) => {
+    const T = m.trims[trimIx] || m.trims[0], ex = T.extras || {}, L = m.L, H = Math.max(...m.side.map(p => p[1])), out = [];
+    const N = 60, us = []; for (let i = 0; i <= N; i++) us.push(L / 2 - i * L / N);
+    VC.upgrade(m);
+    const width = (u, z) => VC.widthAt(m, u, z);
+    // tyres first
+    const ax = [m.wb / 2 + (L / 2 - m.wb / 2) * .0 - 0, -m.wb / 2], fo = (L - m.wb) * .5; const axF = L / 2 - fo * 1.0 + 0, axR = axF - m.wb;
+    for (const au of [axF, axR]) for (const sgn of [1, -1]) for (const z of [.05, .18]) { const v0 = (m.W / 2 - .28) * sgn, v1 = (m.W / 2 + .01) * sgn; out.push({ z, kind: 'tyre', pts: [[au + .34, v0], [au + .34, v1], [au - .34, v1], [au - .34, v0]] }); }
+    let cabTop = 0; for (const u of us) if (m.split == null || u >= m.split + .15) cabTop = Math.max(cabTop, VC.heightAt(m, u));
+    let cabF = -1e9, cabR = 1e9; for (const u of us) if (VC.heightAt(m, u) > m.belt + .05 && (m.split == null || u >= m.split)) { cabF = Math.max(cabF, u); cabR = Math.min(cabR, u); }
+    const glass = m.glass || 'std';
+    const zs = []; for (let z = .3; z < H - .04; z += .05) zs.push(+z.toFixed(2)); zs.push(+(H - .02).toFixed(3));
+    for (const z of zs) {
+      // which stations are solid at this height
+      let run = null;
+      const flush = () => { if (!run || run.length < 2) { run = null; return; }
+        // band by kind along the run
+        let band = [run[0]], kind = run[0].k;
+        const emit = b => { if (b.length < 2 || b[0].k === 'none') return; const top = b.map(s => [s.u, width(s.u, z)]), bot = b.slice().reverse().map(s => [s.u, -width(s.u, z)]); const hm = VC.heightAt(m, b[Math.floor(b.length / 2)].u); out.push({ z, kind: b[0].k, pts: [...top, ...bot], shade: clamp(z / Math.max(.3, hm), 0, 1), u0: b[b.length - 1].u, u1: b[0].u }); };
+        for (let i = 1; i < run.length; i++) { if (run[i].k !== kind) { band.push(run[i]); emit(band); band = [run[i]]; kind = run[i].k; } else band.push(run[i]); }
+        emit(band); run = null; };
+      for (let i = 0; i <= N; i++) {
+        const u = us[i], h = VC.heightAt(m, u);
+        if (h >= z) {
+          let k = m.split != null && u < m.split ? 'box' : z > m.belt + .02 && (m.win.pillars || []).some(p => Math.abs(u - p) < (m.win.pw || .07)) && z < cabTop - .1 ? 'roof' : z <= m.belt + .02 ? (u > cabF + .02 ? 'bodyF' : u < cabR - .02 ? 'bodyR' : 'body') : z >= cabTop - .1 ? 'roof' : 'glass'; // glass up to the roof skin, so screens and side windows read
+          if (glass === 'open' && (k === 'glass' || k === 'roof') && u < cabF - Math.max(.35, (cabF - cabR) * .22)) k = 'none'; // roof down: only the windscreen frame stays
+          if (!run) { run = []; if (i > 0) { const h0 = VC.heightAt(m, us[i - 1]), t = (z - h0) / ((h - h0) || 1); run.push({ u: lerp(us[i - 1], u, t), k }); } }
+          run.push({ u, k });
+        } else if (run) { const h0 = VC.heightAt(m, us[i - 1]), t = (h0 - z) / ((h0 - h) || 1); run.push({ u: lerp(us[i - 1], u, t), k: run[run.length - 1].k }); flush(); }
+      }
+      flush();
+    }
+    // extras as raised layers
+    const deck = VC.heightAt(m, -L / 2 + .25), hood = VC.heightAt(m, L / 2 - .3);
+    const slab = (z0, z1, u0, u1, v, kind) => { for (let z = z0; z <= z1 + 1e-6; z += .06) out.push({ z, kind, pts: [[u0, -v], [u0, v], [u1, v], [u1, -v]] }); };
+    if (ex.spoiler) slab(deck + .14, deck + .2, -L / 2 + .38, -L / 2 + .04, m.W / 2 * .9, 'trim');
+    if (ex.bullbar) slab(.32, .82, L / 2 + .14, L / 2 - .02, m.W / 2 * .78, 'trim');
+    if (ex.taxi) slab(H + .02, H + .16, .15, -.15, .3, 'taxi');
+    if (ex.police) { slab(H + .02, H + .12, .14, -.08, m.W / 2 * .78, 'bar'); }
+    // roof rack: rails along the roof on short feet, with crossbars, kept inside the roof's flat top
+    const rackD = (m.details || []).find(d => d.t === 'rack' && (d.only == null || d.only === trimIx));
+    if (ex.rack || rackD) { const R2 = VC.rack(m, rackD); for (const v of [-1, 1]) { out.push({ z: R2.z, kind: 'trim', pts: [[R2.u1, v * (R2.hw - .03)], [R2.u1, v * (R2.hw + .03)], [R2.u0, v * (R2.hw + .03)], [R2.u0, v * (R2.hw - .03)]] }); for (const fu of [R2.u1 - .05, R2.u0 + .05]) for (let z = R2.base; z < R2.z; z += .03) out.push({ z, kind: 'trim', pts: [[fu + .05, v * (R2.hw - .04)], [fu + .05, v * (R2.hw + .04)], [fu - .05, v * (R2.hw + .04)], [fu - .05, v * (R2.hw - .04)]] }); }
+      for (const u of R2.bars) out.push({ z: R2.z + .02, kind: 'trim', pts: [[u + .03, -R2.hw], [u + .03, R2.hw], [u - .03, R2.hw], [u - .03, -R2.hw]] }); }
+    // placed details: decals on the skin, or small solids standing on it
+    const dec = [], skin = u => VC.heightAt(m, u) + .01;
+    const rectP = (d, sv) => { const a = (d.a || 0) * Math.PI / 180 * sv, ca = Math.cos(a), sa = Math.sin(a), v = d.v * sv, L2 = d.l * Math.cos((d.tilt || 0) * Math.PI / 180); return [[1, 1], [1, -1], [-1, -1], [-1, 1]].map(([p, q]) => [d.u + ca * p * L2 / 2 - sa * q * d.w / 2, v + sa * p * L2 / 2 + ca * q * d.w / 2]); };
+    const circP = (d, sv) => { const o = []; for (let i = 0; i < 14; i++) { const t = i / 14 * 6.283; o.push([d.u + Math.cos(t) * d.l / 2, d.v * sv + Math.sin(t) * d.w / 2]); } return o; };
+    const SOLID = { scoop: ['body2', .07], mirror: ['body2', .09], roofbox: ['trim', .32], ladder: ['trim', .05], wing: ['trim', .05], bar: ['trim', .08] };
+    for (const d of m.details || []) {
+      if (d.only != null && d.only !== trimIx) continue;
+      if (d.t === 'scut') continue; // carved into the width instead
+      for (const sv of d.mir ? [1, -1] : [1]) {
+        const pts = d.t === 'spare' || d.t === 'number' ? circP(d, sv) : rectP(d, sv), us2 = pts.map(p => p[0]);
+        const surf = VC.surfaceUnder(m, pts, d.t); let base = surf + (d.zo || 0);
+        if (d.pop && (d.zo || 0) > .03) for (let z = surf; z < base - .01; z += .05) out.push({ z, kind: 'body2', pts, shade: .9 }); // a body-coloured pod under a raised part
+        if ((d.zo || 0) > .04 && !d.pop) dec.push({ kind: 'shadow', z: surf + .004, pts: pts.map(([u, v]) => [u - .06 - d.zo * .2, v + .06 + d.zo * .2]) });
+        if (d.t === 'rack') continue;
+        if (SOLID[d.t]) { const [kind, th] = SOLID[d.t]; if (d.t === 'ladder') { const L2 = rectP(Object.assign({}, d, { w: .05, v: d.v + d.w / 2 }), sv), R2 = rectP(Object.assign({}, d, { w: .05, v: d.v - d.w / 2 }), sv); out.push({ z: base + .05, kind, pts: L2 }, { z: base + .05, kind, pts: R2 }); for (let u = d.u - d.l / 2 + .1; u < d.u + d.l / 2; u += .35) out.push({ z: base + .06, kind, pts: rectP({ u, v: d.v, l: .04, w: d.w, a: d.a }, sv) }); continue; }
+          for (let z = base; z <= base + th + 1e-6; z += .05) out.push({ z, kind, pts, shade: .95 }); continue; }
+        dec.push({ kind: { vent: 'vent', line: 'line', head: 'head', tail: 'tail', lightbar: d.u > 0 ? 'head' : 'tail', window: 'glass', spare: 'spare', number: 'num', tarp: 'tarp', panel: 'accent', cut: 'vent' }[d.t] || 'vent', z: d.t === 'cut' ? surf - .005 : base, pts });
+      }
+    }
+    out.sort((a, b) => a.z - b.z);
+    // decals on the top skin: lights, stripes, sunroof, tray floor
+    const lw = { slim: [.1, .32], round: [.2, .2], square: [.16, .3] }[m.lights] || [.1, .32];
+    const placedLights = m.lights === 'none' || (m.details || []).some(d => d.t === 'head' || d.t === 'tail' || d.t === 'lightbar');
+    if (!placedLights) for (const s of [-1, 1]) { const uh = L / 2 - .08, v = s * m.W / 2 * .64; dec.push({ kind: 'head', z: skin(uh - .05), pts: [[uh, v - s * lw[1] / 2], [uh, v + s * lw[1] / 2], [uh - lw[0], v + s * lw[1] / 2], [uh - lw[0], v - s * lw[1] / 2]] });
+      const ut = -L / 2 + .06, vt = s * m.W / 2 * .7; dec.push({ kind: 'tail', z: skin(ut + .05), pts: [[ut + .1, vt - s * .18], [ut + .1, vt + s * .2], [ut, vt + s * .2], [ut, vt - s * .18]] }); }
+    const stripe = (vs, wd) => { const o = []; for (const v of vs) for (let i = 0; i < N; i++) { const u0 = us[i], u1 = us[i + 1], z = Math.max(VC.heightAt(m, u0), VC.heightAt(m, u1)); if (!(z < m.belt + .05 || (cabTop - z) < .12)) continue; if (glass === 'open' && z > m.belt + .05) continue; o.push({ kind: 'stripe', z: z + .012, pts: [[u0, v], [u0, v + wd], [u1, v + wd], [u1, v]] }); } return o; };
+    const liv = { twin: stripe([-.24, .1], .14), single: stripe([.18], .3), racing: stripe([-.06], .12) };
+    if (false) for (const v of [-.22, .08]) for (let i = 0; i < N; i++) { const u0 = us[i], u1 = us[i + 1], h0 = VC.heightAt(m, u0), z = Math.max(h0, VC.heightAt(m, u1)); const roofy = z < m.belt + .05 || (H - z) < .12; if (!roofy) continue; dec.push({ kind: 'stripe', z: z + .01, pts: [[u0, v], [u0, v + .14], [u1, v + .14], [u1, v]] }); }
+    if (glass === 'open') { const z0 = m.belt + .03, f = cabF - Math.max(.35, (cabF - cabR) * .22), w = VC.halfAt(m, (f + cabR) / 2) * m.tumble * .95; dec.push({ kind: 'cabin', z: z0, pts: [[f, -w], [f, w], [cabR + .1, w], [cabR + .1, -w]] }); const rows = cabF - cabR > 1.8 ? [f - .45, f - 1.25] : [f - .45]; for (const ru of rows) for (const s of [-1, 1]) dec.push({ kind: 'seat', z: z0 + .02, pts: [[ru, s * .12], [ru, s * (w - .12)], [ru - .5, s * (w - .12)], [ru - .5, s * .12]] }); }
+    if (ex.sunroof) { const rf = Math.max(...m.side.filter(p => p[1] > H - .06).map(p => p[0])), rr = Math.min(...m.side.filter(p => p[1] > H - .06).map(p => p[0])), c = (rf + rr) / 2; dec.push({ kind: 'glass', z: H + .005, pts: [[c + .35, -.38], [c + .35, .38], [c - .25, .38], [c - .25, -.38]] }); }
+    if (ex.tray) { const tz = interp(m.side, -L / 2 + .3), te = m.side.find(p => p[1] < m.H * .7 && p[0] < 0); const u0 = te ? te[0] - .08 : -.4; dec.push({ kind: 'tray', z: tz + .005, pts: [[u0, -m.W / 2 * .86], [u0, m.W / 2 * .86], [-L / 2 + .1, m.W / 2 * .86], [-L / 2 + .1, -m.W / 2 * .86]] }); }
+    if (m.wear > .45) { let a = m.L * 9.7; const r = () => (a = (a * 9301 + 49297) % 233280) / 233280; for (let k = 0; k < Math.round(m.wear * 6); k++) { const u = (r() - .5) * L * .8, v = (r() - .5) * m.W * .75, s = .04 + r() * .06; dec.push({ kind: 'rust', z: skin(u), pts: [[u + s, v - s], [u + s, v + s], [u - s, v + s], [u - s, v - s]] }); } }
+    // a number roundel on the bonnet and roof
+    const circ = (u, v, r, z, kind) => { const o = []; for (let i = 0; i < 16; i++) { const t = i / 16 * 6.283; o.push([u + Math.cos(t) * r, v + Math.sin(t) * r]); } return { kind, z, pts: o }; };
+    liv.number = [circ((cabF + L / 2) / 2, 0, .26, skin((cabF + L / 2) / 2) + .012, 'stripe'), circ((cabF + cabR) / 2, 0, .3, cabTop + .012, 'stripe')];
+    // one draw order for layers, decals and livery marks, so each sits at its own height
+    const items = out.map(s => ({ z: s.z, s })).concat(dec.map(d => ({ z: d.z + .001, d })));
+    for (const k in liv) for (const d of liv[k]) items.push({ z: d.z + .001, d, lv: k });
+    items.sort((a, b) => a.z - b.z);
+    return { items, slices: out, decals: dec, liv, H, L, W: m.W, axF, axR, hood, deck, cabF, cabR, glass, forced: ex.stripes ? 'twin' : null };
+  };
+  // a few layers only, for cars far from the camera
+  VC.lod = (B) => { const keep = new Set(); const zs = [...new Set(B.slices.filter(s => s.kind !== 'tyre').map(s => s.z))]; const pick = [zs[0], zs[Math.floor(zs.length * .45)], zs[Math.floor(zs.length * .75)], zs[zs.length - 1]]; for (const z of pick) keep.add(z); return { slices: B.slices.filter(s => keep.has(s.z) || s.kind === 'trim' || s.kind === 'taxi' || s.kind === 'bar'), decals: [], H: B.H, L: B.L, W: B.W }; };
+
+  // ---- colours ----
+  const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+  const rgb = (c, k = 1) => `rgb(${clamp(c[0] * k, 0, 255) | 0},${clamp(c[1] * k, 0, 255) | 0},${clamp(c[2] * k, 0, 255) | 0})`;
+  VC.hex = h => hex(h);
+  VC.colours = (m, paint, trimIx = 0, wear) => {
+    let c = hex(paint || m.paints[0]); const w = wear == null ? m.wear : wear;
+    if (w) { const g = (c[0] + c[1] + c[2]) / 3; c = c.map(v => lerp(v, g * .9 + 20, w * .45) * (1 - w * .12)); }
+    return { body: c, roof: m.roof ? hex(m.roof) : c, box: m.box ? hex(m.box) : c, wear: w, livery: 'plain', accent: [240, 238, 232] };
+  };
+  // ---- draw: proj(x, y, z) -> [sx, sy]; car at (x, y) facing yaw ----
+  VC.draw = (g, B, x, y, yaw, col, proj, cam) => {
+    const ca = Math.cos(yaw), sa = Math.sin(yaw), P = (u, v, z) => proj(x + ca * u - sa * v, y + sa * u + ca * v, z);
+    const fill = (pts, z, f) => { g.fillStyle = f; g.beginPath(); for (let i = 0; i < pts.length; i++) { const q = P(pts[i][0], pts[i][1], z); i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]); } g.closePath(); g.fill(); };
+    // soft shadow on the ground
+    g.fillStyle = 'rgba(0,0,0,.3)'; const hl = B.L / 2 + .1, hw = B.W / 2 + .05; g.beginPath(); [[hl, -hw], [hl, hw], [-hl, hw], [-hl, -hw]].forEach(([u, v], i) => { const q = P(u + .25, v + .3, 0); i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]); }); g.closePath(); g.fill();
+    const L2 = B.forced && col.livery === 'plain' ? B.forced : col.livery;
+    const DC = { head: '#e9e6d6', tail: '#a8231d', glass: '#1a2027', tray: '#2b2d30', rust: 'rgba(110,62,32,.35)', vent: '#1d1f22', line: 'rgba(0,0,0,.35)', spare: '#141518', num: '#f1efe8', tarp: '#3d4a3a', cabin: '#3a3430', seat: '#1f1c1a', accent: rgb(col.accent), shadow: 'rgba(0,0,0,.38)' };
+    const sk = col.skin, SKINNED = { body: 1, bodyF: 1, bodyR: 1, roof: 1, box: 1, glass: 1, body2: 1 };
+    const path = (pts, z) => { g.beginPath(); for (let i = 0; i < pts.length; i++) { const q = P(pts[i][0], pts[i][1], z); i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]); } g.closePath(); };
+    const skinned = (s) => { // the top-down image, mapped onto this layer, then darkened the lower the layer sits
+      const hh = B.L * sk.height / sk.width / 2, o = P(-B.L / 2, -hh, s.z), ex = P(B.L / 2, -hh, s.z), ey = P(-B.L / 2, hh, s.z); // same mapping as the editor: image width is the car's length
+      g.save(); path(s.pts, s.z); g.clip(); g.transform((ex[0] - o[0]) / sk.width, (ex[1] - o[1]) / sk.width, (ey[0] - o[0]) / sk.height, (ey[1] - o[1]) / sk.height, o[0], o[1]); g.drawImage(sk, 0, 0); g.restore();
+      const dk = (1 - Math.pow(s.shade || 0, 1.4)) * .42; if (dk > .02) { g.fillStyle = `rgba(0,0,0,${dk.toFixed(3)})`; path(s.pts, s.z); g.fill(); } };
+    for (const it of B.items || B.slices.map(s => ({ s }))) {
+      if (it.d) { if (it.lv) { if (it.lv === L2) fill(it.d.pts, it.d.z, rgb(col.accent)); } else fill(it.d.pts, it.d.z, DC[it.d.kind] || '#888'); continue; }
+      const s = it.s;
+      if (sk && SKINNED[s.kind]) { skinned(s); continue; }
+      let f;
+      switch (s.kind) {
+        case 'tyre': f = '#141518'; break;
+        case 'glass': f = rgb([28, 36, 44], .9 + .35 * (s.shade || 0)); break;
+        case 'roof': f = B.glass === 'pano' ? '#2d3c4a' : B.glass === 'targa' ? '#1d1f22' : rgb(L2 === 'bonnet' ? col.accent : col.roof, 1.04); break;
+        case 'body2': f = rgb(col.body, .92); break;
+        case 'box': f = rgb(col.box, .72 + .3 * (s.shade || 0)); break;
+        case 'trim': f = '#25272b'; break;
+        case 'taxi': f = '#f2d14a'; break;
+        case 'bar': f = s.z % .12 < .06 ? '#d23a32' : '#2f5fd0'; break;
+        default: { let c = col.body;
+          if (L2 === 'lower' && s.z < B.H * .32) c = col.accent;
+          else if (L2 === 'band' && s.z > B.H * .42 && s.z < B.H * .55) c = col.accent;
+          else if ((L2 === 'bonnet' || L2 === 'panel') && s.kind === 'bodyF') c = col.accent;
+          else if (L2 === 'boot' && s.kind === 'bodyR') c = col.accent;
+          f = rgb(c, .58 + .44 * Math.pow(s.shade || 0, 1.4)); }
+      }
+      fill(s.pts, s.z, f);
+    }
+  };
+
+  // ---- image skins: find the paint in a top-down picture and recolour it, keeping its light and shade ----
+  // img: a loaded image, nose to the right; key: [r,g,b] of the paint in the picture; tol 0..1
+  VC.skinPrep = (img, key, tol, flip) => {
+    const W = 320, H = Math.max(8, Math.round(W * img.height / img.width)), cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+    if (flip) { g.translate(W, 0); g.scale(-1, 1); } g.drawImage(img, 0, 0, W, H); const im = g.getImageData(0, 0, W, H), D = im.data;
+    const px = o => [D[o], D[o + 1], D[o + 2], D[o + 3]], cs = [px(0), px((W - 1) * 4), px((H - 1) * W * 4), px(((H - 1) * W + W - 1) * 4)], tr = cs.every(q => q[3] < 30), bg = [0, 1, 2].map(i => cs.reduce((a, q) => a + q[i], 0) / 4);
+    const hsv = (r, g2, b) => { const mx = Math.max(r, g2, b), mn = Math.min(r, g2, b), d = mx - mn; let h = 0; if (d) { h = mx === r ? ((g2 - b) / d) % 6 : mx === g2 ? (b - r) / d + 2 : (r - g2) / d + 4; h *= 60; if (h < 0) h += 360; } return [h, mx ? d / mx : 0, mx / 255]; };
+    const K = hsv(...key), mask = new Uint8Array(W * H), lum = new Float32Array(W * H);
+    for (let i = 0; i < W * H; i++) { const o = i * 4, r = D[o], g2 = D[o + 1], b = D[o + 2];
+      if (tr ? D[o + 3] < 100 : Math.hypot(r - bg[0], g2 - bg[1], b - bg[2]) < 40) { D[o + 3] = 0; continue; } // background goes clear
+      const [h, s, v] = hsv(r, g2, b); let paint;
+      if (K[1] < .14) paint = s < .14 + tol * .2 && Math.abs(v - K[2]) < .25 + tol * .45;
+      else { let dh = Math.abs(h - K[0]); if (dh > 180) dh = 360 - dh; paint = dh < 10 + tol * 45 && s > K[1] * (.55 - tol * .3) && v > .12; }
+      if (paint) { mask[i] = 1; lum[i] = v / Math.max(.05, K[2]); }
+    }
+    g.setTransform(1, 0, 0, 1, 0, 0); g.putImageData(im, 0, 0);
+    return { W, H, base: cv, D: new Uint8ClampedArray(D), mask, lum, cache: new Map() };
+  };
+  VC.skinFor = (S, paint) => { // a recoloured copy for one paint, cached
+    let c = S.cache.get(paint); if (c) return c;
+    const t = hex(paint), cv = document.createElement('canvas'); cv.width = S.W; cv.height = S.H; const g = cv.getContext('2d'), im = g.createImageData(S.W, S.H), D = im.data; D.set(S.D);
+    for (let i = 0; i < S.W * S.H; i++) if (S.mask[i]) { const o = i * 4, k = S.lum[i]; D[o] = clamp(t[0] * k, 0, 255); D[o + 1] = clamp(t[1] * k, 0, 255); D[o + 2] = clamp(t[2] * k, 0, 255); }
+    g.putImageData(im, 0, 0); S.cache.set(paint, cv); if (S.cache.size > 40) S.cache.delete(S.cache.keys().next().value); return cv;
+  };
+
+  // ---- handling ----
+  // acceleration a0 * (1 - (v/top)^p) gives the stated 0 to 100 km/h time; p is flatter for electric drive
+  VC.tune = spec => {
+    const top = spec.top / 3.6, p = spec.ev ? 3.2 : 1.6;
+    const t100 = a0 => { let v = 0, t = 0; const tgt = Math.min(100 / 3.6, top * .98); while (v < tgt && t < 80) { v += a0 * (1 - Math.pow(v / top, p)) * .01; t += .01; } return t * (100 / 3.6) / tgt; };
+    let lo = .3, hi = 20; for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2; if (t100(mid) > spec.t100) lo = mid; else hi = mid; }
+    return { a0: (lo + hi) / 2, p, top, brake: spec.brake, grip: spec.grip, lock: spec.lock * Math.PI / 180, ev: !!spec.ev, drive: spec.drive || 'rwd' };
+  };
+  // one step: st is {speed, steer, ang, x, y}; inp is {thr -1..1, steer -1..1}; wb is the wheelbase in metres
+  // one step of a slip model: the car's heading and its direction of travel can differ.
+  // The tyres share one grip budget between cornering and power or braking. Over budget, a rear-drive car on the
+  // throttle oversteers and slides, front and all-wheel drive wash wide, and the handbrake kicks the rear out.
+  // st: {x, y, ang, speed, steer, vl (sideways speed), r (yaw rate)}; inp: {thr -1..1, steer -1..1, hb 0|1}
+  VC.step = (st, K, wb, inp, dt, cap = 1e9) => {
+    const G = K.grip * 9.81, drive = K.drive || 'rwd', top = K.top;
+    if (st.vl == null) { st.vl = 0; st.r = 0; }
+    let vF = st.speed; const av = Math.abs(vF), thr = inp.thr, hb = inp.hb ? 1 : 0;
+    // along the car: engine, brakes, drag
+    let nv = vF;
+    if (thr > 0) { if (vF < -.3) nv += K.brake * dt; else nv = Math.min(Math.max(Math.min(cap, top), vF), vF + K.a0 * (1 - Math.pow(Math.max(0, vF) / top, K.p)) * thr * dt); }
+    else if (thr < 0) { if (vF > .3) nv -= K.brake * -thr * dt; else nv = Math.max(-6, vF - 3 * -thr * dt); }
+    else nv -= Math.sign(vF) * Math.min(av, (1.1 + av * .028 + (K.ev ? .6 : 0)) * dt);
+    if (hb) nv -= Math.sign(nv) * Math.min(Math.abs(nv), 4.5 * dt);
+    if (nv > cap + .3 && thr >= 0) nv = Math.max(cap, nv - 5 * dt);
+    nv = clamp(nv, -6, top); const aLong = (nv - vF) / dt; vF = nv;
+    // the wheel: quick to turn, quicker to return; less lock as speed rises
+    const gripLock = Math.atan(1.05 * G * wb / Math.max(1, vF * vF)), lock = Math.min(K.lock / (1 + Math.abs(vF) * .02), gripLock), want = inp.steer * lock /* full input sits just past the grip limit */, rate = (Math.abs(want) < Math.abs(st.steer) ? 7 : 4.5) * dt;
+    st.steer += clamp(want - st.steer, -rate, rate);
+    const rDes = vF / wb * Math.tan(st.steer), aLat = Math.abs(vF * rDes);
+    // how much of the grip budget this asks for; power loads the driven wheels, braking loads the fronts
+    const kd = aLong < 0 ? .8 : drive === 'rwd' ? 1.35 : drive === 'awd' ? .75 : .6;
+    const e = Math.hypot(aLong * kd, aLat) / G + hb * .9;
+    let slide = 0;
+    if (Math.abs(vF) < 1.2) { st.r = rDes; st.vl *= Math.exp(-dt * 20); }
+    else if (e <= 1.06) { st.r += (rDes - st.r) * Math.min(1, dt * 14); st.vl -= clamp(st.vl, -1.1 * G * dt, 1.1 * G * dt); } // full grip: sideways speed is wiped out, the car tracks where it points
+    else {
+      slide = Math.min(1.6, e - 1.06);
+      const oversteer = hb || (drive === 'rwd' && aLong * kd > .25 * G) || (drive === 'awd' && aLong * kd > .6 * G && slide > .3); // it takes real power to step the rear out
+      if (oversteer) { // the rear lets go: the car rotates past the turn and slides; opposite lock catches it
+        const tgt = rDes * (1 + 1.3 * slide) + Math.sign(rDes || st.r) * slide * .25;
+        st.r += (tgt - st.r) * Math.min(1, dt * 3.2);
+        const rg = G * clamp(1.02 - slide * (hb ? 1.4 : .9), .3, 1); st.vl -= clamp(st.vl, -rg * dt, rg * dt); // rear grip falls with how far over the limit you are
+        const sp = Math.hypot(vF, st.vl); if (sp > .5) { const k = Math.max(0, 1 - slide * .35 * G * dt / sp); vF *= k; st.vl *= k; } // a sliding car loses speed to the tyres
+      } else { // the front washes wide: less turn than asked for, a little speed scrubbed
+        st.r += (rDes / (1 + slide) - st.r) * Math.min(1, dt * 8);
+        st.vl -= clamp(st.vl, -.8 * G * dt, .8 * G * dt);
+        vF -= Math.sign(vF) * Math.min(Math.abs(vF), slide * 2.5 * dt);
+      }
+    }
+    // keep yaw inside what the tyres can support while still allowing a slide
+    st.r = clamp(st.r, -Math.max(2.5, G * 1.8 / Math.max(1, Math.abs(vF))), Math.max(2.5, G * 1.8 / Math.max(1, Math.abs(vF))));
+    // move: heading turns by the yaw rate; the velocity keeps its direction, so turning faster than the tyres allow leaves sideways speed
+    const a0 = st.ang, fx = Math.cos(a0), fy = Math.sin(a0), nx = -fy, ny = fx;
+    const vx = fx * vF + nx * st.vl, vy = fy * vF + ny * st.vl;
+    st.ang += st.r * dt; const f2x = Math.cos(st.ang), f2y = Math.sin(st.ang);
+    st.speed = vx * f2x + vy * f2y; st.vl = vx * -f2y + vy * f2x;
+    st.x += vx * dt; st.y += vy * dt;
+    st.yaw = st.r; st.slide = slide; st.slip = Math.abs(st.vl);
+    return st;
+  };
+  // measured figures for a spec, so the numbers in the designer are what the car actually does
+  VC.measure = (spec, wb) => {
+    const K = VC.tune(spec), dt = 1 / 120;
+    let s = { speed: 0, steer: 0, ang: 0, x: 0, y: 0 }, t = 0; while (s.speed < 100 / 3.6 && t < 60) { VC.step(s, K, wb, { thr: 1, steer: 0 }, dt); t += dt; }
+    const t100 = s.speed >= 100 / 3.6 - .01 ? t : null;
+    s = { speed: 100 / 3.6, steer: 0, ang: 0, x: 0, y: 0 }; while (s.speed > 0) VC.step(s, K, wb, { thr: -1, steer: 0 }, dt); const stop = s.x;
+    let maxLat = 0; for (const v of [8, 12, 16, 20, 25, 30]) { s = { speed: v, steer: 0, ang: 0, x: 0, y: 0 }; for (let i = 0; i < 480; i++) VC.step(s, K, wb, { thr: s.speed < v ? 1 : 0, steer: 1 }, dt); maxLat = Math.max(maxLat, Math.abs(s.yaw * s.speed) / 9.81); }
+    const turn = 2 * (wb / Math.tan(K.lock) + .9);
+    return { t100, stop100: stop, latG: maxLat, turnM: turn, topKmh: spec.top };
+  };
+})();
+if (typeof module !== 'undefined') module.exports = VC;
+// ================= car designer UI =================
+const $ = id => document.getElementById(id), clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const KEY = 'co-car-designer-v1';
+let M = null; try { const s = localStorage.getItem(KEY); if (s) M = JSON.parse(s); } catch (e) { }
+if (!Array.isArray(M) || !M.length) M = VC.seeds();
+// new starter models from an update join a saved set without touching the user's own edits; ones already offered once stay deleted if removed
+{ const REN = { 'Marlock': 'Corral', 'Marlock Trail': 'Corral Trail', 'Cobber': 'Haymaker', 'Bullant': 'Granger HD', 'Quoll': 'Ridgeway', 'Dingo': 'Bison', 'Carrow Tradie': 'Carrow Contractor', 'Tamsin Estate': 'Tamsin Wagon', 'Meadow Estate': 'Meadow Wagon', 'Aldane Tourer': 'Aldane Wagon' };
+  for (const m of M) { if (REN[m.name]) m.name = REN[m.name]; for (const t of m.trims || []) if (REN[t.name]) t.name = REN[t.name]; } }
+{ let seen = []; try { seen = JSON.parse(localStorage.getItem(KEY + '-seen') || '[]'); } catch (e) { }
+  const have = new Set(M.map(m => m.name)), all = VC.seeds(); for (const s of all) if (!have.has(s.name) && !seen.includes(s.name)) { s.id = 'm' + Math.random().toString(36).slice(2, 9); M.push(s); }
+  try { localStorage.setItem(KEY + '-seen', JSON.stringify(all.map(s => s.name))); localStorage.setItem(KEY, JSON.stringify(M)); } catch (e) { } }
+let sel = 0, trim = 0, paint = 0, pick = null, view = 'turn', spin = true, dirty = true;
+const cache = new Map(); // model id + trim -> built slices
+const built = (m, t) => { const k = m.id + ':' + t + ':' + (m._v || 0); let b = cache.get(k); if (!b) { b = VC.build(m, t); cache.set(k, b); } return b; };
+const cur = () => M[sel], T = () => cur().trims[trim] || cur().trims[0];
+function save() { try { localStorage.setItem(KEY, JSON.stringify(M)); } catch (e) { } }
+function touch() { const m = cur(); m._v = (m._v || 0) + 1; dirty = true; save(); }
+const money = n => '$' + Math.round(n).toLocaleString('en-AU');
+
+// ---------- model list ----------
+const ORDER = Object.keys(VC.CLASSES);
+function renderList() {
+  const el = $('list'); el.innerHTML = '';
+  const byCls = {}; M.forEach((m, i) => (byCls[m.cls] = byCls[m.cls] || []).push(i));
+  for (const c of ORDER) if (byCls[c]) {
+    const h = document.createElement('div'); h.className = 'grp'; h.textContent = VC.CLASSES[c]; el.appendChild(h);
+    for (const i of byCls[c].sort((a, b) => M[a].trims[0].price - M[b].trims[0].price)) {
+      const b = document.createElement('button'); b.className = 'item' + (i === sel ? ' sel' : ''); b.innerHTML = `<b></b><span>${money(M[i].trims[0].price)}</span>`; b.querySelector('b').textContent = M[i].name;
+      b.onclick = () => { sel = i; trim = 0; paint = 0; pick = null; syncAll(); }; el.appendChild(b);
+    }
+  }
+}
+for (const c of ORDER) { for (const s of [$('newCls'), $('fCls')]) { const o = document.createElement('option'); o.value = c; o.textContent = VC.CLASSES[c]; s.appendChild(o); } }
+$('bNew').onclick = () => { M.push(VC.fromClass($('newCls').value)); sel = M.length - 1; trim = 0; touch(); syncAll(); };
+$('bDup').onclick = () => { const c = JSON.parse(JSON.stringify(cur())); c.id = 'm' + Date.now().toString(36); c.name += ' copy'; M.push(c); sel = M.length - 1; touch(); syncAll(); };
+$('bDel').onclick = () => { if (M.length < 2) return; M.splice(sel, 1); sel = Math.max(0, sel - 1); trim = 0; save(); syncAll(); };
+
+// ---------- fields ----------
+const bindR = (id, out, get, set, fmt) => { const el = $(id); el.oninput = () => { set(+el.value); $(out).textContent = fmt(+el.value); touch(); drawEditors(); measure(); }; return () => { el.value = get(); $(out).textContent = fmt(get()); }; };
+const scalePts = (key, axis, k) => { for (const p of cur()[key]) p[axis] *= k; };
+const syncers = [
+  bindR('sL', 'oL', () => cur().L, v => { const m = cur(), k = v / m.L; scalePts('side', 0, k); scalePts('top', 0, k); if (m.split != null) m.split *= k; m.L = v; VC.upgrade(m); m.win.pillars = m.win.pillars.map(p => p * k); m.doors = m.doors.map(p => p * k); m.wb = Math.min(m.wb, v * .8); }, v => v.toFixed(2) + ' m'),
+  bindR('sW', 'oW', () => cur().W, v => { const m = cur(); scalePts('top', 1, v / m.W); m.W = v; }, v => v.toFixed(2) + ' m'),
+  bindR('sH', 'oH', () => Math.max(...cur().side.map(p => p[1])), v => { const m = cur(), h = Math.max(...m.side.map(p => p[1])), k = v / h; scalePts('side', 1, k); m.belt *= k; m.H = v; VC.upgrade(m); for (const p of m.sec) p[0] = +(p[0] * k).toFixed(3); }, v => v.toFixed(2) + ' m'),
+  bindR('sWB', 'oWB', () => cur().wb, v => { cur().wb = Math.min(v, cur().L * .85); }, v => v.toFixed(2) + ' m'),
+  bindR('sBelt', 'oBelt', () => cur().belt, v => { cur().belt = v; }, v => v.toFixed(2) + ' m'),
+  bindR('sTum', 'oTum', () => cur().tumble, v => { const m = cur(); m.tumble = v; m.sec = VC.defaultSec(m, Math.max(...m.side.map(p => p[1])), v); }, v => Math.round(v * 100) + '%'),
+  bindR('sSplit', 'oSplit', () => cur().split == null ? -1 : cur().split / (cur().L / 2), v => { cur().split = v <= -.99 ? null : v * cur().L / 2; }, v => v <= -.99 ? 'off' : Math.round(v * 100) + '%'),
+  bindR('sWear', 'oWear', () => cur().wear, v => { cur().wear = v; }, v => v ? Math.round(v * 100) + '%' : 'new'),
+  bindR('hT', 'oT', () => cur().spec.t100, v => { cur().spec.t100 = v; }, v => v.toFixed(1) + ' s'),
+  bindR('hTop', 'oTop', () => cur().spec.top, v => { cur().spec.top = v; }, v => v + ' km/h'),
+  bindR('hBr', 'oBr', () => cur().spec.brake, v => { cur().spec.brake = v; }, v => (v / 9.81).toFixed(2) + ' g'),
+  bindR('hGr', 'oGr', () => cur().spec.grip, v => { cur().spec.grip = v; }, v => v.toFixed(2) + ' g'),
+  bindR('hLk', 'oLk', () => cur().spec.lock, v => { cur().spec.lock = v; }, v => v + '°'),
+];
+$('hEV').onchange = e => { cur().spec.ev = e.target.checked; touch(); measure(); };
+$('hDrive').onchange = e => { cur().spec.drive = e.target.value; touch(); measure(); if (view === 'drive') resetDrive(); };
+$('fName').oninput = e => { cur().name = e.target.value; save(); renderList(); };
+$('fCls').onchange = e => { cur().cls = e.target.value; save(); renderList(); };
+$('fTrimName').oninput = e => { T().name = e.target.value; save(); syncTrims(); };
+$('fPrice').oninput = e => { T().price = +e.target.value || 0; save(); renderList(); };
+$('fTrim').onchange = e => { trim = +e.target.value; syncAll(); };
+$('bTrimAdd').onclick = () => { const t = JSON.parse(JSON.stringify(T())); t.name = cur().name + ' ' + ['Sport', 'Premium', 'Limited', 'Trail', 'Fleet'][cur().trims.length % 5]; t.price = Math.round(T().price * 1.15 / 500) * 500; cur().trims.push(t); trim = cur().trims.length - 1; touch(); syncAll(); };
+$('bTrimDel').onclick = () => { if (cur().trims.length < 2 || trim === 0) return; cur().trims.splice(trim, 1); trim = 0; touch(); syncAll(); };
+$('fLights').onchange = e => { cur().lights = e.target.value; touch(); };
+for (const [id, key] of [['tT', 't100'], ['tTop', 'top'], ['tGr', 'grip']]) $(id).oninput = e => { const v = e.target.value; if (v === '') delete T().spec[key]; else T().spec[key] = +v; save(); measure(); };
+const EXTRAS = [['spoiler', 'Rear spoiler'], ['stripes', 'Stripes'], ['sunroof', 'Sunroof'], ['rack', 'Roof rack'], ['bullbar', 'Grille guard'], ['tray', 'Open bed'], ['taxi', 'Taxi sign'], ['police', 'Police lights']];
+for (const [k, label] of EXTRAS) { const l = document.createElement('label'); l.innerHTML = `<input type="checkbox" id="x-${k}"> ${label}`; $('extras').appendChild(l); l.querySelector('input').onchange = e => { const ex = T().extras || (T().extras = {}); if (e.target.checked) ex[k] = 1; else delete ex[k]; touch(); }; }
+// paint
+function syncPaints() {
+  const el = $('paints'); el.innerHTML = ''; const list = T().paints || cur().paints;
+  list.forEach((c, i) => { const b = document.createElement('button'); b.style.background = c; b.className = i === paint ? 'on' : ''; b.setAttribute('aria-label', 'Paint ' + c); b.onclick = () => { paint = i; syncPaints(); dirty = true; }; el.appendChild(b); });
+  const m = cur(); $('roofOn').checked = !!m.roof; if (m.roof) $('roofCol').value = m.roof; $('boxOn').checked = !!m.box; if (m.box) $('boxCol').value = m.box;
+}
+$('bPaintAdd').onclick = () => { const list = T().paints || cur().paints; list.push($('pAdd').value); paint = list.length - 1; touch(); syncPaints(); };
+$('bPaintDel').onclick = () => { const list = T().paints || cur().paints; if (list.length < 2) return; list.splice(paint, 1); paint = 0; touch(); syncPaints(); };
+$('roofOn').onchange = e => { cur().roof = e.target.checked ? $('roofCol').value : null; touch(); };
+$('roofCol').oninput = e => { if (cur().roof) { cur().roof = e.target.value; touch(); } };
+$('boxOn').onchange = e => { cur().box = e.target.checked ? $('boxCol').value : null; touch(); };
+$('boxCol').oninput = e => { if (cur().box) { cur().box = e.target.value; touch(); } };
+$('bShapeReset').onclick = () => { const f = VC.fromClass(cur().cls), m = cur(); const kL = m.L / f.L, kW = m.W / f.W, kH = m.H / f.H; m.side = f.side.map(([u, z]) => [u * kL, z * kH]); m.top = f.top.map(([u, v]) => [u * kL, v * kW]); m.belt = f.belt * kH; m.tumble = f.tumble; m.split = f.split == null ? null : f.split * kL; touch(); syncAll(); };
+// tabs
+for (const b of document.querySelectorAll('[data-tab]')) b.onclick = () => { for (const o of document.querySelectorAll('[data-tab]')) o.classList.toggle('on', o === b); for (const p of document.querySelectorAll('.pane')) p.hidden = p.id !== 'p-' + b.dataset.tab; };
+// data
+$('bCopy').onclick = () => { const t = JSON.stringify(M.map(m => { const c = Object.assign({}, m); delete c._v; return c; })); $('ioText').value = t; const ok = () => { $('ioMsg').textContent = 'Copied ' + M.length + ' models.'; }; try { navigator.clipboard.writeText(t).then(ok, () => { $('ioText').select(); $('ioMsg').textContent = 'Select all and copy the text above.'; }); } catch (e) { $('ioText').select(); } };
+$('bLoad').onclick = () => { try { const d = JSON.parse($('ioText').value); if (!Array.isArray(d) || !d[0].side) throw 0; M = d; sel = 0; trim = 0; save(); syncAll(); $('ioMsg').textContent = 'Loaded ' + d.length + ' models.'; } catch (e) { $('ioMsg').textContent = 'That text is not model data. Paste what Copy all models gives you.'; } };
+$('bReset').onclick = () => { M = VC.seeds(); sel = 0; trim = 0; save(); syncAll(); $('ioMsg').textContent = 'Starter models restored.'; };
+
+function syncTrims() { const s = $('fTrim'); s.innerHTML = ''; cur().trims.forEach((t, i) => { const o = document.createElement('option'); o.value = i; o.textContent = t.name; s.appendChild(o); }); s.value = trim; }
+function syncAll() {
+  const m = cur(); if (trim >= m.trims.length) trim = 0;
+  $('fName').value = m.name; $('fCls').value = m.cls; syncTrims(); $('fTrimName').value = T().name; $('fPrice').value = T().price;
+  for (const f of syncers) f(); $('hEV').checked = !!m.spec.ev; $('hDrive').value = m.spec.drive || 'rwd'; $('fLights').value = m.lights;
+  for (const [k] of EXTRAS) $('x-' + k).checked = !!(T().extras || {})[k];
+  for (const [id, key] of [['tT', 't100'], ['tTop', 'top'], ['tGr', 'grip']]) $(id).value = T().spec[key] ?? '';
+  paint = Math.min(paint, (T().paints || m.paints).length - 1); syncPaints(); syncLook(); syncDet(); $('fGlass').value = m.glass || 'std'; renderList(); drawEditors(); measure(); dirty = true;
+  if (view === 'drive') resetDrive();
+}
+function specOf(m, t) { return Object.assign({}, m.spec, (m.trims[t] || {}).spec || {}); }
+function measure() {
+  const r = VC.measure(specOf(cur(), trim), cur().wb), s = specOf(cur(), trim);
+  const cls = (a, b) => Math.abs(a - b) / b < .06 ? 'g' : 'b';
+  $('meas').innerHTML = `<tr><td>0 to 100 km/h</td><td class="${r.t100 ? cls(r.t100, s.t100) : 'b'}">${r.t100 ? r.t100.toFixed(1) + ' s' : 'never'}</td></tr>
+  <tr><td>100 to 0 km/h</td><td>${r.stop100.toFixed(1)} m</td></tr><tr><td>Cornering grip</td><td>${r.latG.toFixed(2)} g</td></tr>
+  <tr><td>Turning circle</td><td>${r.turnM.toFixed(1)} m</td></tr><tr><td>Top speed</td><td>${s.top} km/h</td></tr>`;
+}
+
+// ---------- editors ----------
+const cTop = $('cTop'), cSide = $('cSide'), gT = cTop.getContext('2d'), gS = cSide.getContext('2d');
+function fitCanvas(c, h) { const d = devicePixelRatio || 1, w = c.clientWidth; if (c.width !== Math.round(w * d)) { c.width = Math.round(w * d); c.height = Math.round(h * d); } return { w, h, d }; }
+function edScale() { const w = cTop.clientWidth, m = cur(); return Math.min((w - 70) / (m.L + .8), 190 / (m.W + .5), 175 / (Math.max(...m.side.map(p => p[1])) + .25)); }
+const topXY = (u, v, w, h, s) => [w / 2 + u * s, h / 2 + v * s];
+const sideXY = (u, z, w, h, s) => [w / 2 + u * s, h - 26 - z * s];
+function grid(g, w, h, s, ox, oy) { g.strokeStyle = 'rgba(255,255,255,.05)'; g.lineWidth = 1; g.beginPath(); for (let x = ox % (s / 2); x < w; x += s / 2) { g.moveTo(x, 0); g.lineTo(x, h); } for (let y = oy % (s / 2); y < h; y += s / 2) { g.moveTo(0, y); g.lineTo(w, y); } g.stroke(); }
+function drawEditors() {
+  const m = cur(), s = edScale(); VC.upgrade(m); drawEnds();
+  // top view: half outline below the centre line, mirrored above
+  { const { w, h, d } = fitCanvas(cTop, 230), g = gT; g.setTransform(d, 0, 0, d, 0, 0); g.clearRect(0, 0, w, h); underlay(g, 'top', w, h, s); grid(g, w, h, s, w / 2, h / 2);
+    const axF = m.L / 2 - (m.L - m.wb) / 2, axR = axF - m.wb;
+    g.fillStyle = '#2a2d31'; for (const au of [axF, axR]) for (const sg of [1, -1]) { const [x, y] = topXY(au, sg * (m.W / 2 - .13), w, h, s); g.fillRect(x - .34 * s, y - .14 * s, .68 * s, .28 * s); }
+    const full = [...m.top.map(([u, v]) => [u, v]), ...m.top.slice().reverse().map(([u, v]) => [u, -v])];
+    g.fillStyle = 'rgba(214,163,71,.12)'; g.strokeStyle = 'rgba(214,163,71,.55)'; g.lineWidth = 1.5; g.beginPath(); full.forEach(([u, v], i) => { const [x, y] = topXY(u, v, w, h, s); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath(); g.fill(); g.stroke();
+    // cabin outline where the roof is
+    const H = Math.max(...m.side.map(p => p[1])); g.strokeStyle = 'rgba(150,180,210,.45)'; g.setLineDash([4, 3]); g.beginPath(); let st = false;
+    for (let i = 0; i <= 60; i++) { const u = m.L / 2 - i * m.L / 60, hz = VC.heightAt(m, u); if (hz > m.belt + .05 && (m.split == null || u > m.split)) { const [x, y] = topXY(u, VC.halfAt(m, u) * m.tumble, w, h, s); st ? g.lineTo(x, y) : g.moveTo(x, y); st = true; } } g.stroke(); g.setLineDash([]);
+    g.strokeStyle = 'rgba(255,255,255,.15)'; g.beginPath(); g.moveTo(0, h / 2); g.lineTo(w, h / 2); g.stroke();
+    drawDetails(g, w, h, s);
+    if (topMode === 'out') m.top.forEach(([u, v], i) => { const [x, y] = topXY(u, v, w, h, s); g.fillStyle = pick && pick.v === 'top' && pick.i === i ? '#d6a347' : '#e7e9ec'; g.beginPath(); g.arc(x, y, 5, 0, 7); g.fill(); });
+    g.fillStyle = '#9ba2aa'; g.font = "11px 'IBM Plex Mono',monospace"; g.textAlign = 'right'; g.fillText('front →', w - 10, h - 10); g.textAlign = 'left'; g.fillText(`${m.L.toFixed(2)} × ${m.W.toFixed(2)} m`, 10, h - 10); }
+  // side view
+  { const { w, h, d } = fitCanvas(cSide, 230), g = gS; g.setTransform(d, 0, 0, d, 0, 0); g.clearRect(0, 0, w, h); underlay(g, 'side', w, h, s); grid(g, w, h, s, w / 2, h - 26);
+    g.strokeStyle = 'rgba(255,255,255,.2)'; g.beginPath(); g.moveTo(0, h - 26); g.lineTo(w, h - 26); g.stroke();
+    const pts = [[m.side[0][0], 0], ...m.side, [m.side[m.side.length - 1][0], 0]];
+    g.fillStyle = 'rgba(214,163,71,.12)'; g.strokeStyle = 'rgba(214,163,71,.55)'; g.lineWidth = 1.5; g.beginPath(); pts.forEach(([u, z], i) => { const [x, y] = sideXY(u, Math.max(z, i === 0 || i === pts.length - 1 ? .25 : z), w, h, s); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath(); g.fill(); g.stroke();
+    const axF = m.L / 2 - (m.L - m.wb) / 2, axR = axF - m.wb; g.fillStyle = '#1c1e22'; g.strokeStyle = '#5b6068';
+    for (const au of [axF, axR]) { const r = m.wheel ? m.wheel.r : .33, [x, y] = sideXY(au, r, w, h, s); g.fillStyle = '#0b0c0e'; g.beginPath(); g.arc(x, y, (r + (m.wheel ? m.wheel.gap : .05)) * s, Math.PI, 0); g.fill(); g.fillStyle = '#1c1e22'; g.beginPath(); g.arc(x, y, r * s, 0, 7); g.fill(); g.stroke(); g.fillStyle = '#6a6f77'; g.beginPath(); g.arc(x, y, r * (m.wheel ? m.wheel.rim : .6) * s, 0, 7); g.fill(); }
+    const [, by] = sideXY(0, m.belt, w, h, s); g.strokeStyle = 'rgba(150,180,210,.6)'; g.setLineDash([5, 4]); g.beginPath(); g.moveTo(10, by); g.lineTo(w - 10, by); g.stroke(); g.setLineDash([]);
+    g.fillStyle = 'rgba(150,180,210,.8)'; g.font = "11px 'IBM Plex Mono',monospace"; g.fillText('belt ' + m.belt.toFixed(2) + ' m', 10, by - 5);
+    if (m.split != null) { const [sx] = sideXY(m.split, 0, w, h, s); g.strokeStyle = 'rgba(224,122,98,.6)'; g.beginPath(); g.moveTo(sx, 10); g.lineTo(sx, h - 26); g.stroke(); }
+    drawSideWin(g, w, h, s); drawSideParts(g, w, h, s);
+    if (sideMode === 'prof') m.side.forEach(([u, z], i) => { const [x, y] = sideXY(u, z, w, h, s); g.fillStyle = pick && pick.v === 'side' && pick.i === i ? '#d6a347' : '#e7e9ec'; g.beginPath(); g.arc(x, y, 5, 0, 7); g.fill(); });
+    g.fillStyle = '#9ba2aa'; g.textAlign = 'right'; g.fillText('front →', w - 10, h - 8); g.textAlign = 'left'; g.fillText(`height ${Math.max(...m.side.map(p => p[1])).toFixed(2)} m`, 10, h - 8); }
+}
+function edEvents(c, kind) {
+  const toM = e => { const r = c.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, s = edScale(), w = c.clientWidth, h = 230; return kind === 'top' ? [(x - w / 2) / s, Math.abs(y - h / 2) / s, x, y, (y - h / 2) / s] : [(x - w / 2) / s, (h - 26 - y) / s, x, y]; };
+  const arr = () => kind === 'top' ? cur().top : cur().side;
+  let drag = null;
+  c.addEventListener('pointerdown', e => {
+    if (kind === 'top' && picking) { const [u, , , , sv] = toM(e); pickPaint(u, sv); picking = false; $('skinPick').classList.remove('on'); return; }
+    if (kind === 'top' && topMode === 'det') { const [u, , , , sv] = toM(e); const hit = hitDetail(u, sv); if (hit >= 0) detSel = hit; else { const t = $('detType').value, d = Object.assign({ t, u: +u.toFixed(2), v: +(DT[t].mir ? Math.abs(sv) : DT[t].c ? 0 : sv).toFixed(2), a: 0, zo: 0 }, DT[t].d); if (DT[t].mir) d.mir = 1; if (t === 'scut') { d.v = +(cur().W / 2).toFixed(2); d.z = +(cur().belt * .62).toFixed(2); } (cur().details = cur().details || []).push(d); detSel = cur().details.length - 1; touch(); } drag = 'det'; c.setPointerCapture(e.pointerId); syncDet(); drawEditors(); return; }
+    const [u, v, x, y] = toM(e), s = edScale(), w = c.clientWidth, h = 230; let best = -1, bd = 12;
+    arr().forEach((p, i) => { const q = kind === 'top' ? topXY(p[0], p[1], w, h, s) : sideXY(p[0], p[1], w, h, s); const dd = Math.hypot(q[0] - x, q[1] - y); if (dd < bd) { bd = dd; best = i; } });
+    if (best >= 0) { pick = { v: kind, i: best }; drag = 'pt'; }
+    else if (kind === 'side' && sideMode === 'win') { const hit = sideHandleAt(u, v, s); sideSel = hit; if (hit) drag = 'side'; c.setPointerCapture(e.pointerId); drawEditors(); return; }
+    else if (kind === 'side' && sidePartAt(u, v) >= 0) { detSel = sidePartAt(u, v); const dd = cur().details[detSel]; if (dd.t === 'scut') { drag = 'scut'; dz0 = [u, v, dd.u, dd.z]; } else { drag = 'zo'; dz0 = [v, dd.zo || 0]; } setTopKeep(); }
+    else if (kind === 'side' && Math.abs(v - cur().belt) * s < 8) { drag = 'belt'; pick = null; }
+    else pick = null;
+    c.setPointerCapture(e.pointerId); drawEditors();
+  });
+  c.addEventListener('pointermove', e => {
+    if (drag === 'side') { const [u] = toM(e), m = cur(); if (sideSel) { const A = sideSel.k === 'p' ? m.win.pillars : m.doors; A[sideSel.i] = +clamp(u, -m.L / 2 + .1, m.L / 2 - .1).toFixed(2); touch(); drawEditors(); } return; }
+    if (drag === 'scut') { const [u, v] = toM(e), d = cur().details[detSel]; d.u = +(dz0[2] + u - dz0[0]).toFixed(2); d.z = +clamp(dz0[3] + v - dz0[1], .2, 3).toFixed(2); touch(); drawEditors(); return; }
+    if (drag === 'zo') { const [, v] = toM(e), d = cur().details[detSel]; if (d) { d.zo = +clamp(dz0[1] + v - dz0[0], -.3, .8).toFixed(2); touch(); drawEditors(); syncDet(); } return; }
+    if (drag === 'det') { const [u, , , , sv] = toM(e), d = cur().details[detSel]; if (d) { d.u = +u.toFixed(2); d.v = +(d.mir ? Math.abs(sv) : sv).toFixed(2); touch(); drawEditors(); } return; }
+    if (!drag) return; const [u, v] = toM(e), m = cur();
+    if (drag === 'belt') { m.belt = clamp(v, .3, Math.max(...m.side.map(p => p[1])) - .1); }
+    else { const A = arr(), i = pick.i, hi = i > 0 ? A[i - 1][0] - .02 : m.L / 2 + .3, lo = i < A.length - 1 ? A[i + 1][0] + .02 : -m.L / 2 - .3;
+      A[i][0] = clamp(u, lo, hi); A[i][1] = kind === 'top' ? clamp(v, .05, m.W / 2 + .15) : clamp(v, .15, 4);
+      if (i === 0 || i === A.length - 1) { /* ends set the overall length */ const L2 = Math.max(cur().top[0][0], cur().side[0][0]) - Math.min(cur().top[cur().top.length - 1][0], cur().side[cur().side.length - 1][0]); m.L = +L2.toFixed(2); }
+      if (kind === 'top') m.W = +(Math.max(...m.top.map(p => p[1])) * 2).toFixed(2); else m.H = Math.max(...m.side.map(p => p[1])); }
+    touch(); drawEditors();
+  });
+  c.addEventListener('pointerup', () => { if (drag === 'det' || drag === 'zo' || drag === 'side' || drag === 'scut') { drag = null; return; } if (drag) { drag = null; syncAll(); } });
+  c.addEventListener('dblclick', e => { const [u, v] = toM(e), A = arr(); let bi = 1, bd = 1e9; for (let i = 1; i < A.length; i++) { const a = A[i - 1], b = A[i], dx = b[0] - a[0], dy = b[1] - a[1], t = clamp(((u - a[0]) * dx + (v - a[1]) * dy) / (dx * dx + dy * dy || 1), 0, 1), dd = Math.hypot(a[0] + dx * t - u, a[1] + dy * t - v); if (dd < bd) { bd = dd; bi = i; } }
+    if (u < A[bi - 1][0] && u > A[bi][0]) { A.splice(bi, 0, [u, kind === 'top' ? Math.max(.05, v) : Math.max(.15, v)]); pick = { v: kind, i: bi }; touch(); drawEditors(); } });
+}
+edEvents(cTop, 'top'); edEvents(cSide, 'side');
+addEventListener('keydown', e => { if ((e.key === 'Delete' || e.key === 'Backspace') && topMode === 'det' && detSel != null && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { cur().details.splice(detSel, 1); detSel = null; touch(); syncDet(); drawEditors(); e.preventDefault(); return; }
+  if ((e.key === 'Delete' || e.key === 'Backspace') && pick && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { const A = pick.v === 'top' ? cur().top : cur().side; if (A.length > 3) { A.splice(pick.i, 1); pick = null; touch(); drawEditors(); } e.preventDefault(); } });
+
+// ---------- preview ----------
+const cP = $('cPrev'), gP = cP.getContext('2d');
+for (const [id, v] of [['vTurn', 'turn'], ['vLot', 'lot'], ['vDrive', 'drive'], ['vShow', 'show']]) $(id).onclick = () => { view = v; for (const o of ['vTurn', 'vLot', 'vDrive', 'vShow']) $(o).classList.toggle('on', o === id); $('c3d').hidden = v !== 'show'; cP.hidden = v === 'show'; if (v === 'drive') resetDrive(); dirty = true; cP.focus(); };
+$('bSpin').onclick = e => { spin = !spin; e.target.classList.toggle('on', spin); };
+cP.tabIndex = 0;
+let yaw = -.6, tLast = performance.now();
+const keys = {}; addEventListener('keydown', e => { if (view !== 'drive' || /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return; keys[e.code] = true; if (e.code.startsWith('Arrow') || e.code === 'Space') e.preventDefault(); if (e.code === 'KeyR') resetDrive(); }); addEventListener('keyup', e => { keys[e.code] = false; });
+let D = null;
+function resetDrive() { D = { st: { x: 0, y: 30, ang: -Math.PI / 2, speed: 0, steer: 0 }, K: VC.tune(specOf(cur(), trim)), best: null, t0: null, trail: [], marks: [], seg: 0 }; }
+const CONES = []; for (let i = 0; i < 8; i++) CONES.push([-40 + i * 12, -60]); for (let a = 0; a < 24; a++) CONES.push([60 + Math.cos(a / 24 * 6.283) * 30, 10 + Math.sin(a / 24 * 6.283) * 30]);
+function lotLayout() { const out = []; M.forEach((m, i) => m.trims.forEach((t, k) => out.push([m, k]))); return out; }
+function frame() {
+  const now = performance.now(), dt = Math.min(.05, (now - tLast) / 1000); tLast = now;
+  const d = devicePixelRatio || 1, w = cP.clientWidth, h = 330; if (cP.width !== Math.round(w * d)) { cP.width = Math.round(w * d); cP.height = Math.round(h * d); }
+  const g = gP; g.setTransform(d, 0, 0, d, 0, 0); const lean = +$('lean').value;
+  const m = cur();
+  if (view === 'show') {
+    $('prevCtl').style.display = ''; $('prevHint').textContent = 'Drag to turn and tilt, scroll to zoom. This is how the car will look in the shop.';
+    const list = T().paints || m.paints;
+    if (!SHOW.draw(m, trim, colFor(m, trim, list[paint] || list[0]), dt)) { cP.hidden = false; $('c3d').hidden = true; g.fillStyle = '#2a2c30'; g.fillRect(0, 0, w, h); g.fillStyle = '#9ba2aa'; g.font = "13px 'IBM Plex Sans',sans-serif"; g.fillText('The showroom needs the 3D library, which could not load. Check the connection and reload.', 16, 30); }
+  } else if (view === 'turn') {
+    $('prevCtl').style.display = ''; $('prevHint').textContent = 'Drag to turn it. The lean shows the sides the way the city camera does.';
+    if (spin && !tDrag) yaw += dt * .35;
+    g.fillStyle = '#2a2c30'; g.fillRect(0, 0, w, h);
+    const s = Math.min(w / (m.L + 2.5), h / (m.L * .75 + 1.5)) * .9, LE = 84 / lean, cam = [-6, -4.5];
+    g.strokeStyle = 'rgba(235,232,222,.5)'; g.lineWidth = 2; g.setLineDash([18, 22]); g.beginPath(); g.moveTo(0, h / 2 + (m.W / 2 + 1.4) * s); g.lineTo(w, h / 2 + (m.W / 2 + 1.4) * s); g.stroke(); g.setLineDash([]);
+    const proj = (x, y, z) => { const k = s * (1 + z / LE); return [w / 2 + (x - cam[0]) * k + cam[0] * s, h / 2 + (y - cam[1]) * k + cam[1] * s]; };
+    const list = T().paints || m.paints, zl = $('pZoom').value;
+    if (zl !== 'close') { const s2 = +zl, LE2 = 84 * Math.max(1, 3 / s2), cam2 = [-9, -6], proj2 = (x, y, z) => { const k = s2 * (1 + z / LE2); return [w / 2 + (x - cam2[0]) * k + cam2[0] * s2, h / 2 + (y - cam2[1]) * k + cam2[1] * s2]; };
+      // draw at true game size on a small canvas, then show it four times larger with hard pixels
+      const Z = 4, ow = Math.ceil(w * d / Z), oh = Math.ceil(h * d / Z); if (!window.__oc || __oc.width !== ow || __oc.height !== oh) { window.__oc = document.createElement('canvas'); __oc.width = ow; __oc.height = oh; }
+      const og = __oc.getContext('2d'), sp = s2 * d, projS = (x, y, z) => { const k = sp * (1 + z / LE2); return [ow / 2 + (x - cam2[0]) * k + cam2[0] * sp, oh / 2 + (y - cam2[1]) * k + cam2[1] * sp]; };
+      og.fillStyle = '#2a2c30'; og.fillRect(0, 0, ow, oh); og.strokeStyle = 'rgba(235,232,222,.45)'; og.lineWidth = Math.max(1, .12 * sp); og.setLineDash([3 * sp, 4 * sp]); og.beginPath(); og.moveTo(0, oh / 2 + 2.6 * sp); og.lineTo(ow, oh / 2 + 2.6 * sp); og.stroke(); og.setLineDash([]);
+      VC.draw(og, built(m, trim), 0, 0, yaw, colFor(m, trim, list[paint] || list[0]), projS);
+      g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.imageSmoothingEnabled = false; g.drawImage(__oc, 0, 0, ow * Z, oh * Z); g.restore();
+      g.fillStyle = '#9ba2aa'; g.font = "12px 'IBM Plex Mono',monospace"; g.fillText(`Game size at ${zl} pixels per metre, shown 4 times larger. The car is ${Math.round(m.L * s2)} pixels long.`, 12, h - 14); }
+    else VC.draw(g, built(m, trim), 0, 0, yaw, colFor(m, trim, list[paint] || list[0]), proj);
+    g.fillStyle = '#e7e9ec'; g.font = "600 13px 'IBM Plex Sans',sans-serif"; g.fillText(T().name, 12, 22); g.fillStyle = '#9ba2aa'; g.font = "12px 'IBM Plex Mono',monospace"; g.fillText(`${VC.CLASSES[m.cls]} · ${money(T().price)}`, 12, 40);
+  } else if (view === 'lot') {
+    $('prevCtl').style.display = ''; $('prevHint').textContent = 'Every model and trim at game size, in random paint.';
+    const L = lotLayout(), cols = Math.max(4, Math.ceil(Math.sqrt(L.length * 1.8))), rows = Math.ceil(L.length / cols), bayW = 3, bayD = 6.2, s = Math.min(w / (cols * bayW + 4), h / (rows * (bayD + 1.5) + 2));
+    g.fillStyle = '#34373b'; g.fillRect(0, 0, w, h);
+    const ox = w / 2 - cols * bayW * s / 2, oy = h / 2 - rows * (bayD + 1.5) * s / 2, LE = 84 / lean * 1.2, cw = [cols * bayW / 2, rows * (bayD + 1.5) / 2];
+    const proj = (x, y, z) => { const k = s * (1 + z / LE); return [ox + cw[0] * s + (x - cw[0]) * k, oy + cw[1] * s + (y - cw[1]) * k]; };
+    g.strokeStyle = 'rgba(230,226,216,.55)'; g.lineWidth = 1; for (let r = 0; r < rows; r++) for (let c = 0; c <= cols; c++) { const a = proj(c * bayW, r * (bayD + 1.5), 0), b = proj(c * bayW, r * (bayD + 1.5) + bayD, 0); g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); }
+    let seed = 7; const rr = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+    L.forEach(([mm, k], i) => { const c = i % cols, r = Math.floor(i / cols), list = mm.trims[k].paints || mm.paints, pc = list[Math.floor(rr() * list.length)];
+      VC.draw(g, built(mm, k), c * bayW + bayW / 2, r * (bayD + 1.5) + bayD / 2 + (rr() - .5) * .6, (r % 2 ? 1 : -1) * Math.PI / 2 + (rr() - .5) * .06, randCol(mm, k, pc, mm.wear ? mm.wear : rr() < .25 ? rr() * .4 : 0, rr), proj); });
+  } else {
+    $('prevCtl').style.display = 'none';
+    if (!D) resetDrive();
+    const st = D.st, inp = { thr: (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0), hb: keys.Space ? 1 : 0, steer: (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) };
+    for (let k = 0; k < 4; k++) VC.step(st, D.K, m.wb, inp, dt / 4);
+    const kmh = Math.abs(st.speed) * 3.6; if (inp.thr > 0 && kmh < 1 && D.t0 == null) D.t0 = now; if (D.t0 != null && kmh >= 100) { D.best = (now - D.t0) / 1000; D.t0 = -1; } if (inp.thr <= 0 && kmh < 1 && D.t0 === -1) D.t0 = null;
+    D.trail.push([st.x, st.y]); if (D.trail.length > 400) D.trail.shift();
+    // skid marks from the rear tyres while sliding; the dark gets stronger the harder they slide
+    if (st.slide > .02 || st.slip > 1.4 || (inp.hb && Math.abs(st.speed) > 2)) { const ca = Math.cos(st.ang), sa = Math.sin(st.ang), ru = -m.wb / 2, hw = m.W / 2 - .2, k = clamp(.25 + st.slip * .06 + st.slide * .3, .2, .75); for (const sv of [-1, 1]) D.marks.push([st.x + ca * ru - sa * hw * sv, st.y + sa * ru + ca * hw * sv, k, D.seg]); }
+    else D.seg++;
+    if (D.marks.length > 3000) D.marks.splice(0, 400);
+    const s = clamp(16 - kmh * .07, 6, 16), cx = st.x + Math.cos(st.ang) * st.speed * .35, cy = st.y + Math.sin(st.ang) * st.speed * .35;
+    const proj = (x, y, z) => { const k = s * (1 + z / 84); return [w / 2 + (x - cx) * k, h / 2 + (y - cy) * k]; };
+    g.fillStyle = '#3a3d41'; g.fillRect(0, 0, w, h);
+    g.strokeStyle = 'rgba(235,232,222,.12)'; g.lineWidth = 1; const gx = 10; g.beginPath(); for (let x = Math.floor((cx - w / s) / gx) * gx; x < cx + w / s; x += gx) { const a = proj(x, cy - h / s, 0), b = proj(x, cy + h / s, 0); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); } for (let y = Math.floor((cy - h / s) / gx) * gx; y < cy + h / s; y += gx) { const a = proj(cx - w / s, y, 0), b = proj(cx + w / s, y, 0); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); } g.stroke();
+    g.lineCap = 'round'; for (let i = 2; i < D.marks.length; i++) { const a = D.marks[i - 2], b = D.marks[i]; if (a[3] !== b[3]) continue; const p = proj(a[0], a[1], 0), q = proj(b[0], b[1], 0); g.strokeStyle = `rgba(14,14,16,${b[2]})`; g.lineWidth = Math.max(1, s * .22); g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); g.stroke(); }
+    g.strokeStyle = 'rgba(20,20,22,.18)'; g.lineWidth = Math.max(1, s * .2); g.beginPath(); D.trail.forEach((p, i) => { const q = proj(p[0], p[1], 0); i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]); }); g.stroke();
+    for (const [x, y] of CONES) { const a = proj(x, y, 0), b = proj(x, y, .7); g.fillStyle = '#e2722d'; g.beginPath(); g.arc(a[0], a[1], s * .25, 0, 7); g.fill(); g.fillStyle = '#f5f1e6'; g.beginPath(); g.arc(b[0], b[1], s * .1, 0, 7); g.fill(); }
+    const list = T().paints || m.paints; VC.draw(g, built(m, trim), st.x, st.y, st.ang, colFor(m, trim, list[paint] || list[0]), proj);
+    g.fillStyle = 'rgba(22,24,28,.85)'; g.fillRect(10, 10, 300, 66); g.fillStyle = '#e7e9ec'; g.font = "500 22px 'IBM Plex Mono',monospace"; g.fillText(Math.round(kmh) + ' km/h', 20, 38);
+    g.font = "12px 'IBM Plex Mono',monospace"; g.fillStyle = '#9ba2aa'; g.fillText(D.best ? `0 to 100 in ${D.best.toFixed(1)} s` : 'WASD or arrows, Space handbrake, R resets', 20, 58); g.fillText(`slalom left, skidpad right`, 20, 72);
+  }
+  requestAnimationFrame(frame);
+}
+let tDrag = null;
+cP.addEventListener('pointerdown', e => { if (view === 'turn') { tDrag = e.clientX; cP.setPointerCapture(e.pointerId); } });
+cP.addEventListener('pointermove', e => { if (tDrag != null) { yaw += (e.clientX - tDrag) * .01; tDrag = e.clientX; } });
+cP.addEventListener('pointerup', () => { tDrag = null; });
+addEventListener('resize', () => drawEditors());
+// ---------- details on the top view ----------
+const DT = {
+  vent: { n: 'Vent', d: { l: .32, w: .1 }, mir: 1 }, scoop: { n: 'Bonnet scoop', d: { l: .55, w: .45 }, c: 1 }, line: { n: 'Panel line', d: { l: 1.2, w: .03 } },
+  head: { n: 'Headlight', d: { l: .12, w: .3 }, mir: 1 }, tail: { n: 'Tail light', d: { l: .1, w: .3 }, mir: 1 }, lightbar: { n: 'Light strip across', d: { l: .07, w: 1.4 }, c: 1 },
+  mirror: { n: 'Mirror', d: { l: .16, w: .22 }, mir: 1 }, window: { n: 'Window or glass panel', d: { l: .5, w: .5 } }, roofbox: { n: 'Roof box', d: { l: 1.6, w: .8 }, c: 1 },
+  rack: { n: 'Roof rack', d: { l: 1.6, w: 1.2 }, c: 1 }, ladder: { n: 'Ladder', d: { l: 2.6, w: .5 } }, spare: { n: 'Spare wheel', d: { l: .7, w: .7 }, c: 1 }, wing: { n: 'Rear wing', d: { l: .3, w: 1.6 }, c: 1 },
+  number: { n: 'Number roundel', d: { l: .5, w: .5 }, c: 1 }, cut: { n: 'Recess cut into the body', d: { l: .4, w: .3, dp: .05 } }, scut: { n: 'Side cut, placed in the side view', d: { l: .6, w: .22, dp: .07 }, mir: 1 }, tarp: { n: 'Bed cover', d: { l: 1.4, w: 1.5 }, c: 1 }, panel: { n: 'Accent panel', d: { l: .8, w: 1.2 } }, bar: { n: 'Push bar', d: { l: .15, w: 1.4 }, c: 1 },
+};
+const DCOL = { rack: '#3a3c40', cut: '#050506', scut: '#050506', vent: '#1d1f22', scoop: '#c8c2b4', line: '#000', head: '#e9e6d6', tail: '#c0392b', lightbar: '#e9e6d6', mirror: '#c8c2b4', window: '#5a7a96', roofbox: '#3a3c40', ladder: '#8a8f96', spare: '#141518', wing: '#3a3c40', number: '#f1efe8', tarp: '#3d4a3a', panel: '#d6a347', bar: '#3a3c40' };
+for (const k in DT) { const o = document.createElement('option'); o.value = k; o.textContent = DT[k].n; $('detType').appendChild(o); }
+let topMode = 'out', detSel = null;
+const setTop = mode => { topMode = mode; $('mOut').classList.toggle('on', mode === 'out'); $('mDet').classList.toggle('on', mode === 'det'); detSel = null; syncDet(); drawEditors(); };
+$('mOut').onclick = () => setTop('out'); $('mDet').onclick = () => setTop('det');
+function detPts(d, sv) { const a = (d.a || 0) * Math.PI / 180 * sv, ca = Math.cos(a), sa = Math.sin(a), v = d.v * sv; return [[1, 1], [1, -1], [-1, -1], [-1, 1]].map(([p, q]) => [d.u + ca * p * d.l / 2 - sa * q * d.w / 2, v + sa * p * d.l / 2 + ca * q * d.w / 2]); }
+function hitDetail(u, v) { const D = cur().details || []; for (let i = D.length - 1; i >= 0; i--) { const d = D[i]; for (const sv of d.mir ? [1, -1] : [1]) if (Math.abs(u - d.u) < Math.max(d.l / 2, .12) && Math.abs(v - d.v * sv) < Math.max(d.w / 2, .12)) return i; } return -1; }
+function drawDetails(g, w, h, s) { (cur().details || []).forEach((d, i) => { for (const sv of d.mir ? [1, -1] : [1]) { const P = detPts(d, sv).map(([u, v]) => topXY(u, v, w, h, s)); g.fillStyle = DCOL[d.t] || '#aaa'; g.globalAlpha = topMode === 'det' ? .85 : .5; g.beginPath(); P.forEach((p, k) => k ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); g.fill(); g.globalAlpha = 1; if (i === detSel) { g.strokeStyle = '#d6a347'; g.lineWidth = 2; g.stroke(); } } }); }
+function syncDet() {
+  const on = topMode === 'det', d = on && detSel != null ? (cur().details || [])[detSel] : null; $('detCtl').hidden = !d; $('detType').hidden = !on;
+  $('topHint').textContent = on ? (d ? DT[d.t].n + ' selected. Drag to move it, or press Delete to remove it.' : 'Pick a detail, then click the car to place it. Click a detail to select it.') : 'Drag points to reshape. Double-click to add a point, select one and press Delete to remove it.';
+  if (!d) return; $('dL').value = d.l; $('dW').value = d.w; $('dT').value = d.tilt || 0; $('dD').value = d.dp || .05; $('dD').parentElement.hidden = !(d.t === 'cut' || d.t === 'scut'); $('dA').value = d.a || 0; $('dZ').value = d.zo || 0; $('dMir').checked = !!d.mir; $('dPop').checked = !!d.pop; $('dOnly').checked = d.only != null;
+}
+for (const [id, key] of [['dL', 'l'], ['dW', 'w'], ['dA', 'a'], ['dZ', 'zo'], ['dT', 'tilt'], ['dD', 'dp']]) $(id).oninput = e => { const d = cur().details[detSel]; if (d) { d[key] = +e.target.value; touch(); drawEditors(); } };
+$('dMir').onchange = e => { const d = cur().details[detSel]; if (d) { d.mir = e.target.checked ? 1 : 0; if (d.mir) d.v = Math.abs(d.v); touch(); drawEditors(); } };
+$('dPop').onchange = e => { const d = cur().details[detSel]; if (d) { d.pop = e.target.checked ? 1 : 0; touch(); drawEditors(); } };
+$('dOnly').onchange = e => { const d = cur().details[detSel]; if (d) { if (e.target.checked) d.only = trim; else delete d.only; touch(); } };
+$('dDel').onclick = () => { if (detSel == null) return; cur().details.splice(detSel, 1); detSel = null; touch(); syncDet(); drawEditors(); };
+$('fGlass').onchange = e => { cur().glass = e.target.value; touch(); };
+
+// ---------- liveries ----------
+const LIV = [['plain', 'Plain'], ['twin', 'Twin stripes'], ['single', 'Wide stripe'], ['racing', 'Pinstripe'], ['number', 'Number roundels'], ['lower', 'Two-tone lower body'], ['band', 'Side band'], ['bonnet', 'Contrast bonnet'], ['boot', 'Contrast boot'], ['panel', 'Odd panel, for old cars']];
+for (const [k, n] of LIV) { const l = document.createElement('label'); l.innerHTML = `<input type="checkbox" id="l-${k}"> ${n}`; $('livs').appendChild(l); l.querySelector('input').onchange = e => { const t = T(); t.liveries = (t.liveries || ['plain']).filter(x => x !== k); if (e.target.checked) t.liveries.push(k); if (!t.liveries.length) t.liveries = ['plain']; touch(); syncLook(); }; }
+let accent = 0;
+const accList = m => m.accents || (m.accents = ['#f0eee8', '#151619']);
+function syncLook() {
+  const t = T(), ls = t.liveries || ['plain']; for (const [k] of LIV) $('l-' + k).checked = ls.includes(k);
+  const el = $('accents'); el.innerHTML = ''; accList(cur()).forEach((c, i) => { const b = document.createElement('button'); b.style.background = c; b.className = i === accent ? 'on' : ''; b.setAttribute('aria-label', 'Livery colour ' + c); b.onclick = () => { accent = i; syncLook(); }; el.appendChild(b); });
+  const pl = $('pLiv'), keep = pl.value; pl.innerHTML = '<option value="random">Random from this trim</option>'; for (const k of ls) { const o = document.createElement('option'); o.value = k; o.textContent = LIV.find(x => x[0] === k)[1]; pl.appendChild(o); } pl.value = [...pl.options].some(o => o.value === keep) ? keep : 'random';
+}
+$('bAccAdd').onclick = () => { accList(cur()).push($('aAdd').value); accent = accList(cur()).length - 1; touch(); syncLook(); };
+$('bAccDel').onclick = () => { const a = accList(cur()); if (a.length < 2) return; a.splice(accent, 1); accent = 0; touch(); syncLook(); };
+let rot = { t: 0, liv: 'plain', acc: 0 };
+function colFor(m, t, p) {
+  const c = VC.colours(m, p, t); withSkin(c, m, p); const ls = (m.trims[t].liveries || ['plain']), pick = $('pLiv').value;
+  if (pick !== 'random') { c.livery = pick; c.accent = VC.hex(accList(m)[accent] || '#f0eee8'); }
+  else { if (performance.now() - rot.t > 1600) rot = { t: performance.now(), liv: ls[Math.floor(Math.random() * ls.length)], acc: Math.floor(Math.random() * accList(m).length) }; c.livery = ls.includes(rot.liv) ? rot.liv : ls[0]; c.accent = VC.hex(accList(m)[rot.acc] || accList(m)[0]); }
+  if (c.livery === 'panel') { const ps = m.paints; c.accent = VC.hex(ps[(ps.indexOf(p) + 1 + Math.floor(rot.acc)) % ps.length] || ps[0]); }
+  return c;
+}
+function randCol(m, t, p, wear, rr) { const c = VC.colours(m, p, t, wear); withSkin(c, m, p); const ls = m.trims[t].liveries || ['plain'], ac = accList(m); c.livery = ls[Math.floor(rr() * ls.length)]; c.accent = VC.hex(c.livery === 'panel' ? m.paints[Math.floor(rr() * m.paints.length)] : ac[Math.floor(rr() * ac.length)]); return c; }
+
+// ---------- reference images: an underlay to trace, and an automatic trace of its outline ----------
+const REF = {}; // model id -> { top: {img, flip, op}, side: {...} }
+const refOf = (k) => { const r = REF[cur().id] || (REF[cur().id] = {}); return r[k]; };
+for (const k of ['top', 'side']) {
+  const K = k === 'top' ? 'Top' : 'Side';
+  $('ref' + K).onchange = e => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => { const img = new Image(); img.onload = () => { const r = REF[cur().id] || (REF[cur().id] = {}); r[k] = { img, flip: false, op: +$('ref' + K + 'O').value }; r[k].gf = groundFrac(img); drawEditors(); }; img.src = rd.result; }; rd.readAsDataURL(f); };
+  $('ref' + K + 'O').oninput = e => { const r = refOf(k); if (r) { r.op = +e.target.value; drawEditors(); } };
+  $('ref' + K + 'F').onclick = () => { const r = refOf(k); if (r) { r.flip = !r.flip; drawEditors(); } };
+  $('ref' + K + 'T').onclick = () => trace(k);
+}
+function refRect(k, w, h, s) { const r = refOf(k), m = cur(); if (!r) return null; const iw = m.L * s, ih = iw * r.img.height / r.img.width; return k === 'top' ? [w / 2 - iw / 2, h / 2 - ih / 2, iw, ih] : [w / 2 - iw / 2, h - 26 - ih * (r.gf || 1), iw, ih]; }
+function underlay(g, k, w, h, s) { const r = refOf(k); if (!r) return; if (k === 'top' && $('skinShow').checked && cur().skin) { const S = skinOf(cur()); if (S) { const [x, y, iw, ih] = refRect(k, w, h, s); g.save(); g.globalAlpha = .8; g.drawImage(maskCanvas(S), x, y, iw, ih); g.restore(); return; } } const [x, y, iw, ih] = refRect(k, w, h, s); g.save(); g.globalAlpha = r.op; if (r.flip) { g.translate(x + iw, y); g.scale(-1, 1); g.drawImage(r.img, 0, 0, iw, ih); } else g.drawImage(r.img, x, y, iw, ih); g.restore(); }
+function groundFrac(img) { // where the lowest part of the car sits in the picture, so the side view lines up with the ground
+  const W = 200, H = Math.max(1, Math.round(W * img.height / img.width)), cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d'); g.drawImage(img, 0, 0, W, H); const D = g.getImageData(0, 0, W, H).data;
+  const px = (x, y) => { const o = (y * W + x) * 4; return [D[o], D[o + 1], D[o + 2], D[o + 3]]; }, cs = [px(0, 0), px(W - 1, 0), px(0, H - 1), px(W - 1, H - 1)], tr = cs.every(c => c[3] < 30), bg = [0, 1, 2].map(i => cs.reduce((a, c) => a + c[i], 0) / 4);
+  for (let y = H - 1; y >= 0; y--) for (let x = 0; x < W; x += 2) { const c = px(x, y); if (tr ? c[3] > 100 : Math.hypot(c[0] - bg[0], c[1] - bg[1], c[2] - bg[2]) > 48) return (y + 1) / H; } return 1;
+}
+function trace(k) {
+  const r = refOf(k), m = cur(); if (!r) { $('topHint').textContent = 'Load a reference image first.'; return; }
+  const W = 400, H = Math.round(W * r.img.height / r.img.width), cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+  if (r.flip) { g.translate(W, 0); g.scale(-1, 1); } g.drawImage(r.img, 0, 0, W, H); const D = g.getImageData(0, 0, W, H).data;
+  // background: the corner colours; a pixel is car if it differs clearly, or is opaque on a transparent image
+  const px = (x, y) => { const o = (y * W + x) * 4; return [D[o], D[o + 1], D[o + 2], D[o + 3]]; }, corners = [px(0, 0), px(W - 1, 0), px(0, H - 1), px(W - 1, H - 1)];
+  const transparent = corners.every(c => c[3] < 30), bg = [0, 1, 2].map(i => corners.reduce((a, c) => a + c[i], 0) / 4);
+  const car = (x, y) => { const c = px(x, y); return transparent ? c[3] > 100 : Math.hypot(c[0] - bg[0], c[1] - bg[1], c[2] - bg[2]) > 48; };
+  const ppm = W / m.L, cols = []; for (let i = 0; i <= 18; i++) { const x = Math.min(W - 1, Math.round((1 - i / 18) * (W - 1))); let y0 = -1, y1 = -1; for (let y = 0; y < H; y++) if (car(x, y)) { if (y0 < 0) y0 = y; y1 = y; } cols.push([x, y0, y1]); }
+  const u = x => (x / (W - 1) - .5) * m.L;
+  if (k === 'top') { const pts = cols.filter(c => c[1] >= 0).map(([x, y0, y1]) => [+u(x).toFixed(3), +((y1 - y0) / 2 / ppm).toFixed(3)]); if (pts.length < 3) { $('topHint').textContent = 'Could not find the car in that image. Try one with a plain background.'; return; } m.top = simplify(pts); m.W = +(Math.max(...m.top.map(p => p[1])) * 2).toFixed(2); }
+  else { let ground = 0; for (const c of cols) ground = Math.max(ground, c[2]); const pts = cols.filter(c => c[1] >= 0).map(([x, y0]) => [+u(x).toFixed(3), +((ground - y0) / ppm).toFixed(3)]); if (pts.length < 3) { $('topHint').textContent = 'Could not find the car in that image. Try one with a plain background.'; return; } const oldH = Math.max(...m.side.map(p => p[1])); m.side = simplify(pts); m.H = Math.max(...m.side.map(p => p[1])); m.belt *= m.H / oldH; }
+  touch(); syncAll();
+}
+function simplify(pts) { // drop points that sit on a straight line between their neighbours
+  const out = [pts[0]]; for (let i = 1; i < pts.length - 1; i++) { const a = out[out.length - 1], b = pts[i], c = pts[i + 1], t = (b[0] - a[0]) / ((c[0] - a[0]) || 1), lin = a[1] + (c[1] - a[1]) * t; if (Math.abs(lin - b[1]) > .03) out.push(b); } out.push(pts[pts.length - 1]); return out;
+}
+// ---------- image skins ----------
+let picking = false, dz0 = [0, 0];
+const SKINS = new Map(); // model id -> { key, S, img }
+function setTopKeep() { if (topMode !== 'det') { topMode = 'det'; $('mOut').classList.remove('on'); $('mDet').classList.add('on'); } syncDet(); }
+function skinOf(m) {
+  if (!m.skin || !m.skin.src) return null; const k = m.skin.src.length + ':' + m.skin.key + ':' + m.skin.tol + ':' + !!m.skin.flip; let e = SKINS.get(m.id);
+  if (e && e.k === k) return e.S; if (e && e.img && e.img.complete && e.src === m.skin.src) { e.S = VC.skinPrep(e.img, m.skin.key, m.skin.tol, m.skin.flip); e.k = k; e.mc = null; return e.S; }
+  if (!e || e.src !== m.skin.src) { const img = new Image(); e = { img, src: m.skin.src, k: null, S: null }; SKINS.set(m.id, e); img.onload = () => { cache.clear(); dirty = true; drawEditors(); }; img.src = m.skin.src; }
+  return null;
+}
+function withSkin(c, m, p) { if (m.skin && m.skin.on) { const S = skinOf(m); if (S) { c.skin = VC.skinFor(S, p); c.skinH = S.H / S.W; } } }
+function maskCanvas(S) { if (S.mc) return S.mc; const cv = document.createElement('canvas'); cv.width = S.W; cv.height = S.H; const g = cv.getContext('2d'), im = g.createImageData(S.W, S.H); for (let i = 0; i < S.W * S.H; i++) { const o = i * 4; if (S.mask[i]) { im.data[o] = 214; im.data[o + 1] = 163; im.data[o + 2] = 71; im.data[o + 3] = 230; } else { im.data[o] = S.D[o] * .4; im.data[o + 1] = S.D[o + 1] * .4; im.data[o + 2] = S.D[o + 2] * .4; im.data[o + 3] = S.D[o + 3]; } } g.putImageData(im, 0, 0); return S.mc = cv; }
+function shrinkSrc(img) { const W = Math.min(480, img.width), H = Math.round(W * img.height / img.width), cv = document.createElement('canvas'); cv.width = W; cv.height = H; cv.getContext('2d').drawImage(img, 0, 0, W, H); return cv.toDataURL('image/png'); }
+function pickPaint(u, v) { const r = refOf('top'), m = cur(); if (!r) return; const W = 200, H = Math.round(W * r.img.height / r.img.width), cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d'); if (r.flip) { g.translate(W, 0); g.scale(-1, 1); } g.drawImage(r.img, 0, 0, W, H);
+  const ih = m.L * H / W, x = clamp(Math.round((u / m.L + .5) * (W - 1)), 0, W - 1), y = clamp(Math.round((v / ih + .5) * (H - 1)), 0, H - 1), d = g.getImageData(x, y, 1, 1).data;
+  const skin = m.skin || (m.skin = { on: true, tol: +$('skinTol').value }); skin.src = skin.src || shrinkSrc(r.img); skin.flip = r.flip; skin.key = [d[0], d[1], d[2]]; skin.on = true; touch(); syncSkin(); drawEditors(); }
+function autoKey(img) { if (!img) return [200, 30, 30]; const W = 120, H = Math.max(4, Math.round(W * img.height / img.width)), cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d'); g.drawImage(img, 0, 0, W, H); const D = g.getImageData(0, 0, W, H).data, bg = [D[0], D[1], D[2]], bins = new Map();
+  for (let i = 0; i < W * H; i++) { const o = i * 4, r = D[o], gg = D[o + 1], b = D[o + 2]; if (D[o + 3] < 100 || Math.hypot(r - bg[0], gg - bg[1], b - bg[2]) < 40) continue; const k = (r >> 5) * 64 + (gg >> 5) * 8 + (b >> 5), e = bins.get(k) || [0, 0, 0, 0]; e[0]++; e[1] += r; e[2] += gg; e[3] += b; bins.set(k, e); }
+  let best = null; for (const e of bins.values()) if (!best || e[0] > best[0]) best = e; return best ? [best[1] / best[0] | 0, best[2] / best[0] | 0, best[3] / best[0] | 0] : [200, 30, 30]; }
+function syncSkin() { const s = cur().skin; $('skinOn').checked = !!(s && s.on); $('skinKey').style.background = s && s.key ? `rgb(${s.key.join(',')})` : 'transparent'; if (s) $('skinTol').value = s.tol; }
+$('skinPick').onclick = e => { if (!refOf('top')) { $('topHint').textContent = 'Load a top-down image first, then pick the paint colour on it.'; return; } picking = !picking; e.target.classList.toggle('on', picking); $('topHint').textContent = picking ? 'Click a painted part of the car in the image.' : ''; };
+$('skinOn').onchange = e => { const r = refOf('top'), m = cur(); if (e.target.checked) { if (!r && !(m.skin && m.skin.src)) { e.target.checked = false; $('topHint').textContent = 'Load a top-down image first.'; return; } const s = m.skin || (m.skin = { tol: +$('skinTol').value }); if (r) { s.src = shrinkSrc(r.img); s.flip = r.flip; } if (!s.key) s.key = autoKey(r ? r.img : null); s.on = true; } else if (m.skin) m.skin.on = false; touch(); syncSkin(); drawEditors(); };
+$('skinTol').oninput = e => { if (cur().skin) { cur().skin.tol = +e.target.value; touch(); drawEditors(); } };
+$('skinShow').onchange = () => drawEditors();
+// side view: placed parts at the height they sit
+function sidePartAt(u, z) { const D = cur().details || []; for (let i = D.length - 1; i >= 0; i--) { const d = D[i]; if (d.t === 'scut') { if (Math.abs(u - d.u) < d.l / 2 && Math.abs(z - d.z) < d.w / 2) return i; continue; } const b = VC.surfaceUnder(cur(), VC.detailPts(d, 1), d.t) + (d.zo || 0), t = VC.SOLID_H[d.t] || .03; if (Math.abs(u - d.u) < Math.max(d.l / 2, .1) && z > b - .08 && z < b + t + .08) return i; } return -1; }
+function drawSideParts(g, w, h, s) { (cur().details || []).forEach((d, i) => { if (d.t === 'scut') { const [x0, y0] = sideXY(d.u - d.l / 2, d.z + d.w / 2, w, h, s), [x1, y1] = sideXY(d.u + d.l / 2, d.z - d.w / 2, w, h, s); g.fillStyle = 'rgba(5,5,6,.85)'; g.fillRect(x0, y0, x1 - x0, y1 - y0); if (i === detSel) { g.strokeStyle = '#d6a347'; g.lineWidth = 2; g.strokeRect(x0 - 1, y0 - 1, x1 - x0 + 2, y1 - y0 + 2); } return; } const surf = VC.surfaceUnder(cur(), VC.detailPts(d, 1), d.t), b = surf + (d.zo || 0), t = Math.max(VC.SOLID_H[d.t] || .03, .03), [x0, y0] = sideXY(d.u - d.l / 2, b + t, w, h, s), [x1, y1] = sideXY(d.u + d.l / 2, b, w, h, s);
+  if (d.pop && d.zo > .03) { const [, ys] = sideXY(0, surf, w, h, s); g.fillStyle = 'rgba(214,163,71,.25)'; g.fillRect(x0, y1, x1 - x0, ys - y1); }
+  g.fillStyle = DCOL[d.t] || '#aaa'; g.globalAlpha = .85; g.fillRect(x0, y0, Math.max(2, x1 - x0), Math.max(2, y1 - y0)); g.globalAlpha = 1; if (i === detSel) { g.strokeStyle = '#d6a347'; g.lineWidth = 2; g.strokeRect(x0 - 1, y0 - 1, Math.max(2, x1 - x0) + 2, Math.max(2, y1 - y0) + 2); } }); }
+// rebuild the top reference from a saved skin when a model is opened again
+const _syncAll = syncAll; syncAll = function () { _syncAll(); const m = cur(); if (m.skin && m.skin.src && !refOf('top')) { const img = new Image(); img.onload = () => { const r = REF[m.id] || (REF[m.id] = {}); r.top = { img, flip: !!m.skin.flip, op: .5 }; drawEditors(); }; img.src = m.skin.src; } syncSkin(); };
+// ---------- side view: windows, pillars and door lines ----------
+let sideMode = 'prof', sideSel = null;
+const setSide = mo => { sideMode = mo; $('sProf').classList.toggle('on', mo === 'prof'); $('sWin').classList.toggle('on', mo === 'win'); sideSel = null; drawEditors(); };
+$('sProf').onclick = () => setSide('prof'); $('sWin').onclick = () => setSide('win');
+function cabin(m) { let cf = -1e9, cr = 1e9; for (let i = 0; i <= 80; i++) { const u = m.L / 2 - i * m.L / 80; if (VC.heightAt(m, u) > m.belt + .05 && (m.split == null || u >= m.split)) { cf = Math.max(cf, u); cr = Math.min(cr, u); } } return [cf, cr]; }
+// side glass: between the belt and the roof line, inset by the frame, cut by each pillar
+function sideGlass(m) {
+  const [cf, cr] = cabin(m), fr = m.win.frame, pw = m.win.pw, cuts = [...(m.win.pillars || [])].sort((a, b) => b - a), out = [];
+  let start = cf; const ends = [...cuts.map(p => [p + pw, p - pw]), [cr, cr]];
+  for (const [e0, e1] of ends) { const pts = []; for (let i = 0; i <= 24; i++) { const u = start - (start - e0) * i / 24, top = VC.heightAt(m, u) - fr; if (top > m.belt + fr) pts.push([u, top]); } if (pts.length > 1) out.push([...pts, [pts[pts.length - 1][0], m.belt + fr * .6], [pts[0][0], m.belt + fr * .6]]); start = e1; }
+  return out;
+}
+function drawSideWin(g, w, h, s) {
+  const m = cur(); g.fillStyle = 'rgba(90,122,150,.55)'; for (const P of sideGlass(m)) { g.beginPath(); P.forEach(([u, z], i) => { const [x, y] = sideXY(u, z, w, h, s); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath(); g.fill(); }
+  g.strokeStyle = 'rgba(0,0,0,.55)'; g.lineWidth = 1.2; for (const d of m.doors) { const [x, y0] = sideXY(d, Math.min(VC.heightAt(m, d), m.belt + .02), w, h, s), [, y1] = sideXY(d, .28, w, h, s); g.beginPath(); g.moveTo(x, y0); g.lineTo(x, y1); g.stroke(); }
+  if (sideMode !== 'win') return;
+  const mark = (u, z, sel, sq) => { const [x, y] = sideXY(u, z, w, h, s); g.fillStyle = sel ? '#d6a347' : '#e7e9ec'; g.beginPath(); if (sq) g.rect(x - 5, y - 5, 10, 10); else { g.moveTo(x, y - 7); g.lineTo(x + 6, y); g.lineTo(x, y + 7); g.lineTo(x - 6, y); } g.fill(); };
+  m.win.pillars.forEach((p, i) => mark(p, (m.belt + VC.heightAt(m, p)) / 2, sideSel && sideSel.k === 'p' && sideSel.i === i));
+  m.doors.forEach((d, i) => mark(d, m.belt * .55, sideSel && sideSel.k === 'd' && sideSel.i === i, true));
+}
+function sideHandleAt(u, z, s) { const m = cur(), tol = 10 / s; for (let i = 0; i < m.win.pillars.length; i++) { const p = m.win.pillars[i]; if (Math.abs(u - p) < tol && z > m.belt - tol && z < VC.heightAt(m, p) + tol) return { k: 'p', i }; } for (let i = 0; i < m.doors.length; i++) if (Math.abs(u - m.doors[i]) < tol && z < m.belt + tol) return { k: 'd', i }; return null; }
+$('bPillar').onclick = () => { const m = cur(), [cf, cr] = cabin(m); m.win.pillars.push(+((cf + cr) / 2).toFixed(2)); sideSel = { k: 'p', i: m.win.pillars.length - 1 }; setSideKeep(); touch(); drawEditors(); };
+$('bDoor').onclick = () => { const m = cur(); m.doors.push(0); sideSel = { k: 'd', i: m.doors.length - 1 }; setSideKeep(); touch(); drawEditors(); };
+$('bSideCut').onclick = () => { const m = cur(); (m.details = m.details || []).push({ t: 'scut', u: +(-m.L * .12).toFixed(2), v: +(m.W / 2).toFixed(2), z: +(m.belt * .62).toFixed(2), l: .6, w: .22, dp: .07, mir: 1, a: 0, zo: 0 }); detSel = m.details.length - 1; setTopKeep(); touch(); drawEditors(); };
+$('bSideDel').onclick = () => { if (!sideSel) return; (sideSel.k === 'p' ? cur().win.pillars : cur().doors).splice(sideSel.i, 1); sideSel = null; touch(); drawEditors(); };
+const setSideKeep = () => { if (sideMode !== 'win') { sideMode = 'win'; $('sProf').classList.remove('on'); $('sWin').classList.add('on'); } };
+for (const [id, f] of [['wFrame', (m, v) => m.win.frame = v], ['wPw', (m, v) => m.win.pw = v], ['wR', (m, v) => m.wheel.r = v], ['wRim', (m, v) => m.wheel.rim = v]]) $(id).oninput = e => { f(cur(), +e.target.value); touch(); drawEditors(); };
+$('wStyle').onchange = e => { cur().wheel.style = e.target.value; touch(); };
+function syncSide() { const m = VC.upgrade(cur()); $('wFrame').value = m.win.frame; $('wPw').value = m.win.pw; $('wR').value = m.wheel.r; $('wRim').value = m.wheel.rim; $('wStyle').value = m.wheel.style; }
+
+// ---------- front and rear views ----------
+const cF = $('cFront'), cR = $('cRear');
+function endScale(c) { const m = cur(), w = c.clientWidth; return Math.min((w - 30) / (m.W + .5), 170 / (Math.max(...m.side.map(p => p[1])) + .2)); }
+const endXY = (v, z, w, h, s) => [w / 2 + v * s, h - 16 - z * s];
+// the silhouette seen end-on: the widest the body gets at each height
+function silhouette(m, cabOnly) { const H = Math.max(...m.side.map(p => p[1])), out = []; for (let z = 0.2; z <= H + 1e-6; z += .025) { let w = 0; for (let i = 0; i <= 60; i++) { const u = m.L / 2 - i * m.L / 60; if (VC.heightAt(m, u) >= z && (!cabOnly || (m.split == null || u >= m.split))) w = Math.max(w, VC.widthAt(m, u, z)); } if (w > 0) out.push([w, z]); } return out; }
+let endDrag = null;
+function drawEnd(c, rear) {
+  const m = cur(), s = endScale(c), d = devicePixelRatio || 1, w = c.clientWidth, h = 200; if (c.width !== Math.round(w * d)) { c.width = Math.round(w * d); c.height = Math.round(h * d); }
+  const g = c.getContext('2d'); g.setTransform(d, 0, 0, d, 0, 0); g.clearRect(0, 0, w, h); grid(g, w, h, s, w / 2, h - 16);
+  g.strokeStyle = 'rgba(255,255,255,.2)'; g.beginPath(); g.moveTo(0, h - 16); g.lineTo(w, h - 16); g.stroke();
+  const S = silhouette(m), r = m.wheel.r;
+  for (const sg of [1, -1]) { const [x, y] = endXY(sg * (m.W / 2 - .14), 0, w, h, s); g.fillStyle = '#141518'; g.fillRect(x - .12 * s, y - 2 * r * s, .24 * s, 2 * r * s); }
+  g.fillStyle = 'rgba(214,163,71,.14)'; g.strokeStyle = 'rgba(214,163,71,.6)'; g.lineWidth = 1.5; g.beginPath(); S.forEach(([v, z], i) => { const [x, y] = endXY(v, z, w, h, s); i ? g.lineTo(x, y) : g.moveTo(x, y); }); for (let i = S.length - 1; i >= 0; i--) { const [x, y] = endXY(-S[i][0], S[i][1], w, h, s); g.lineTo(x, y); } g.closePath(); g.fill(); g.stroke();
+  // windscreen or rear window: the cabin's end-on shape inside the frame
+  const C = silhouette(m, true).filter(([, z]) => z > m.belt + m.win.frame && z < Math.max(...m.side.map(p => p[1])) - m.win.frame);
+  if (C.length > 1 && m.glass !== 'open') { g.fillStyle = 'rgba(90,122,150,.6)'; g.beginPath(); C.forEach(([v, z], i) => { const [x, y] = endXY(v - m.win.frame, z, w, h, s); i ? g.lineTo(x, y) : g.moveTo(x, y); }); for (let i = C.length - 1; i >= 0; i--) { const [x, y] = endXY(-(C[i][0] - m.win.frame), C[i][1], w, h, s); g.lineTo(x, y); } g.closePath(); g.fill(); }
+  // parts near this end, at their height
+  (m.details || []).forEach((dd, i) => { const near = rear ? dd.u < -m.L / 2 + .9 : dd.u > m.L / 2 - .9; if (!near && dd.t !== 'mirror' && dd.t !== 'wing' && dd.t !== 'roofbox') return; const b = VC.surfaceUnder(m, VC.detailPts(dd, 1), dd.t) + (dd.zo || 0), t = Math.max(VC.SOLID_H[dd.t] || .05, .05);
+    for (const sv of dd.mir ? [1, -1] : [1]) { const [x0, y0] = endXY(dd.v * sv - dd.w / 2, b + t, w, h, s), [x1, y1] = endXY(dd.v * sv + dd.w / 2, b, w, h, s); g.fillStyle = DCOL[dd.t] || '#aaa'; g.fillRect(x0, y0, x1 - x0, Math.max(2, y1 - y0)); if (i === detSel) { g.strokeStyle = '#d6a347'; g.lineWidth = 2; g.strokeRect(x0 - 1, y0 - 1, x1 - x0 + 2, Math.max(2, y1 - y0) + 2); } } });
+  if (!rear) m.sec.forEach(([z, f], i) => { const [x, y] = endXY(f * m.W / 2, z, w, h, s); g.fillStyle = endDrag && endDrag.i === i ? '#d6a347' : '#e7e9ec'; g.beginPath(); g.arc(x, y, 5, 0, 7); g.fill(); });
+}
+function drawEnds() { drawEnd(cF, false); drawEnd(cR, true); }
+for (const [c, rear] of [[cF, false], [cR, true]]) {
+  const toE = e => { const r = c.getBoundingClientRect(), s = endScale(c), w = c.clientWidth, h = 200; return [(e.clientX - r.left - w / 2) / s, (h - 16 - (e.clientY - r.top)) / s, s]; };
+  c.addEventListener('pointerdown', e => { const [v, z, s] = toE(e), m = cur(); endDrag = null;
+    if (!rear) m.sec.forEach(([pz, f], i) => { if (Math.hypot((Math.abs(v) - f * m.W / 2) * s, (z - pz) * s) < 10) endDrag = { k: 'sec', i }; });
+    if (!endDrag) (m.details || []).forEach((dd, i) => { const near = rear ? dd.u < -m.L / 2 + .9 : dd.u > m.L / 2 - .9; if (!near && dd.t !== 'mirror' && dd.t !== 'wing' && dd.t !== 'roofbox') return; const b = VC.surfaceUnder(m, VC.detailPts(dd, 1), dd.t) + (dd.zo || 0); for (const sv of dd.mir ? [1, -1] : [1]) if (Math.abs(v - dd.v * sv) < Math.max(dd.w / 2, .08) && z > b - .1 && z < b + .15) endDrag = { k: 'det', i, sv, z0: z, zo0: dd.zo || 0 }; });
+    if (endDrag && endDrag.k === 'det') { detSel = endDrag.i; setTopKeep(); }
+    c.setPointerCapture(e.pointerId); drawEditors(); });
+  c.addEventListener('pointermove', e => { if (!endDrag) return; const [v, z] = toE(e), m = cur();
+    if (endDrag.k === 'sec') { const S = m.sec, i = endDrag.i, lo = i ? S[i - 1][0] + .02 : .1, hi = i < S.length - 1 ? S[i + 1][0] - .02 : 4; S[i][0] = +clamp(z, lo, hi).toFixed(3); S[i][1] = +clamp(Math.abs(v) / (m.W / 2), .3, 1.15).toFixed(3); }
+    else { const dd = m.details[endDrag.i]; dd.v = +(dd.mir ? Math.abs(v) : v * endDrag.sv).toFixed(2); dd.zo = +clamp(endDrag.zo0 + z - endDrag.z0, -.6, .8).toFixed(2); syncDet(); }
+    touch(); drawEditors(); });
+  c.addEventListener('pointerup', () => { endDrag = null; drawEditors(); });
+  if (!rear) c.addEventListener('dblclick', e => { const [v, z] = toE(e), m = cur(), S = m.sec; let i = S.findIndex(p => p[0] > z); if (i <= 0) return; S.splice(i, 0, [+z.toFixed(3), +clamp(Math.abs(v) / (m.W / 2), .3, 1.15).toFixed(3)]); touch(); drawEditors(); });
+}
+const _sa2 = syncAll; syncAll = function () { _sa2(); syncSide(); drawEnds(); };
+syncAll(); requestAnimationFrame(frame);
+// ================= showroom: the same model as a real 3D car =================
+const SHOW = (() => {
+  let R = null, scene, cam, root = null, key = '', ang = .7, tilt = .32, dist = 0, dragX = null, envTex = null;
+  const c3 = $('c3d');
+  function init() {
+    if (typeof THREE === 'undefined') return false;
+    R = new THREE.WebGLRenderer({ canvas: c3, antialias: true, preserveDrawingBuffer: true }); R.setPixelRatio(Math.min(2, devicePixelRatio || 1));
+    R.outputEncoding = THREE.sRGBEncoding; R.toneMapping = THREE.ACESFilmicToneMapping; R.toneMappingExposure = .9; R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFSoftShadowMap;
+    scene = new THREE.Scene(); scene.background = new THREE.Color(0x15171a);
+    cam = new THREE.PerspectiveCamera(32, 2, .1, 200);
+    // studio: a soft room for reflections, a key light with shadows, fill from the sky
+    const pm = new THREE.PMREMGenerator(R), room = new THREE.Scene();
+    const box = new THREE.Mesh(new THREE.BoxGeometry(40, 16, 40), new THREE.MeshBasicMaterial({ color: 0x3a3d42, side: THREE.BackSide })); box.position.y = 6; room.add(box);
+    for (const [x, y, z, w, h, k] of [[0, 13, 0, 18, 6, 6], [-15, 5, -6, 2, 8, 3], [15, 5, 6, 2, 8, 2.5], [0, 4, -19, 14, 4, 1.6]]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(k, k, k), side: THREE.DoubleSide })); p.position.set(x, y, z); p.lookAt(0, 2, 0); room.add(p); }
+    envTex = pm.fromScene(room, .04).texture; scene.environment = envTex;
+    scene.add(new THREE.HemisphereLight(0xdfe6ee, 0x2a2622, .55));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(4, 9, 5); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6, near: 1, far: 30 }); sun.shadow.bias = -.0006; sun.shadow.normalBias = .03; scene.add(sun);
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(7, 64), new THREE.MeshStandardMaterial({ color: 0x141518, roughness: .7, metalness: 0, envMapIntensity: .15 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(6.6, 6.75, 96), new THREE.MeshBasicMaterial({ color: 0xd6a347 })); ring.rotation.x = -Math.PI / 2; ring.position.y = .002; scene.add(ring);
+    c3.addEventListener('pointerdown', e => { dragX = [e.clientX, e.clientY]; c3.setPointerCapture(e.pointerId); });
+    c3.addEventListener('pointermove', e => { if (!dragX) return; ang -= (e.clientX - dragX[0]) * .008; tilt = clamp(tilt + (e.clientY - dragX[1]) * .004, .05, 1.1); dragX = [e.clientX, e.clientY]; });
+    c3.addEventListener('pointerup', () => { dragX = null; });
+    c3.addEventListener('wheel', e => { dist = clamp(dist + Math.sign(e.deltaY) * .6, -3, 8); e.preventDefault(); }, { passive: false });
+    return true;
+  }
+  const hexC = h => new THREE.Color(h);
+  // ---- body: rings across the car at each station, joined into one skin ----
+  function bodyMesh(m, t, col) {
+    VC.upgrade(m);
+    const L = m.L, H = Math.max(...m.side.map(p => p[1])), ex = (m.trims[t] || m.trims[0]).extras || {}, NS = 140, K = 34, KR = 14, zb = .2, cr = cabinRange(m), fr = m.win.frame, pw = m.win.pw;
+    const axF = L / 2 - (L - m.wb) / 2, axR = axF - m.wb, wr = m.wheel.r, gap = m.wheel.gap;
+    const liv = col.livery, acc = col.accent.map(v => v / 255), body = col.body.map(v => v / 255), roofC = col.roof.map(v => v / 255), boxC = col.box.map(v => v / 255);
+    const lin = c => c.map(v => Math.pow(v, 2.2));
+    const P = [], C = [], UV = [], idx = [], rings = [];
+    let cabTop = 0; for (let i = 0; i <= 60; i++) { const u = L / 2 - i * L / 60; if (m.split == null || u >= m.split + .15) cabTop = Math.max(cabTop, VC.heightAt(m, u)); }
+    const colourAt = (u, v, z, top) => { // what this point of the skin is: paint, glass, roof, wheel well
+      const av = Math.abs(v), inCab = u <= cr[0] && u >= cr[1] && (m.split == null || u >= m.split), h = VC.heightAt(m, u);
+      for (const ax of [axF, axR]) if (!top && Math.hypot(u - ax, z - wr) < wr + gap && z < wr * 2 + gap) return [.02, .02, .025];
+      if (m.split != null && u < m.split) return lin(boxC);
+      if (ex.tray && top && u < cr[1] - .05 && z < m.belt + .1 && av < VC.widthAt(m, u, z) - .08) return [.03, .032, .035]; // open tray floor
+      if (inCab && z > m.belt + .02 && m.glass !== 'open') {
+        const pillar = (m.win.pillars || []).some(p => Math.abs(u - p) < pw), nearTop = z > cabTop - .1 && top;
+        if (nearTop) { if (m.glass === 'pano') return [.04, .06, .08]; if (m.glass === 'targa') return [.03, .03, .035]; }
+        if (!top && !pillar && z > m.belt + fr * .6 && z < h - fr && u < cr[0] - fr * .5 && u > cr[1] + fr * .5) return [.025, .035, .045];
+        if (top && !nearTop && av < VC.widthAt(m, u, z) - fr && z > m.belt + fr) return [.025, .035, .045]; // windscreen and rear window
+        if (nearTop || pillar || top) return lin(liv === 'bonnet' ? acc : roofC);
+      }
+      let c = body;
+      if (liv === 'lower' && z < H * .32) c = acc;
+      else if (liv === 'band' && z > H * .42 && z < H * .55 && !top) c = acc;
+      else if ((liv === 'bonnet' || liv === 'panel') && u > cr[0] && top) c = acc;
+      else if (liv === 'boot' && u < cr[1] && top) c = acc;
+      if (top && (z < m.belt + .05 || z > cabTop - .12)) { const S = { twin: [[-.24, -.1], [.1, .24]], single: [[.18, .48]], racing: [[-.06, .06]] }[liv]; if (S && S.some(([a, b]) => v > a && v < b)) c = acc; }
+      return lin(c);
+    };
+    for (let i = 0; i <= NS; i++) {
+      const u = L / 2 - i * L / NS, endK = Math.min(i, NS - i), shrink = endK === 0 ? .88 : endK === 1 ? .95 : endK === 2 ? .985 : 1, h = Math.max(zb + .05, VC.heightAt(m, u) - (endK === 0 ? .05 : 0)), ring = [];
+      const roofW = VC.widthAt(m, u, h);
+      // right side, bottom to top, then over the roof to the centre line, then the left side mirrored
+      const side = []; for (let k = 0; k <= K; k++) { const z = zb + (h - zb) * k / K; let y = VC.widthAt(m, u, z) * (i === 0 || i === NS ? .97 : 1);
+        for (const ax of [axF, axR]) if (Math.hypot(u - ax, z - wr) < wr + gap) y = Math.min(y, m.W / 2 - .3); // wheel arch: the body steps in so the wheel shows
+        side.push([y * shrink, endK === 0 ? Math.max(z, zb + .06) : z, false]); }
+      const roof = []; for (let k = 1; k <= KR; k++) { const f = 1 - k / KR, y = roofW * f * shrink, z = h + .025 * (1 - f * f) * (h > m.belt + .1 ? 1 : .4); roof.push([y, z, true]); }
+      const half = [...side, ...roof];
+      const full = [...half.map(([y, z, tp]) => [y, z, tp]), ...half.slice(0, -1).reverse().map(([y, z, tp]) => [-y, z, tp])];
+      for (const [y, z0, tp] of full) { const base = P.length / 3, isTop = tp || z0 >= h - .02, rc = isTop ? VC.inRecess(m, u, y) : null, z = rc ? z0 - (rc.dp || .05) : z0; P.push(u, z, y);
+        let c = colourAt(u, y, z0, isTop); if (rc || (!isTop && VC.inSideCut(m, u, z0))) c = c.map(v => v * .18); C.push(...c); UV.push(u / L + .5, .5 - y / (L * (col.skinH || .5))); ring.push(base); }
+      rings.push(ring);
+    }
+    const n = rings[0].length;
+    for (let i = 0; i < NS; i++) for (let k = 0; k < n - 1; k++) { const a = rings[i][k], b = rings[i][k + 1], c = rings[i + 1][k], d = rings[i + 1][k + 1]; idx.push(a, b, c, b, d, c); }
+    // underside and end caps
+    // nose and tail faces and the underside get their own vertices, so their shading stays flat and the lower bumper reads dark
+    const copy = (vi, col) => { const k = P.length / 3; P.push(P[vi * 3], P[vi * 3 + 1], P[vi * 3 + 2]); C.push(...col); UV.push(UV[vi * 2], UV[vi * 2 + 1]); return k; };
+    const trimC = [.02, .021, .024];
+    for (const i of [0, NS]) { // a proper fill of the end outline, no centre point, so the face has no fan streaks
+      const rc = rings[i].slice(0, n - 1).map(vi => copy(vi, C.slice(vi * 3, vi * 3 + 3)));
+      const pts2 = rc.map(k => new THREE.Vector2(P[k * 3 + 2], P[k * 3 + 1])), tris = THREE.ShapeUtils.triangulateShape(pts2, []);
+      for (const [a, b, c] of tris) idx.push(rc[a], rc[b], rc[c]); }
+    const ub = rings.map(r => [copy(r[0], trimC), copy(r[n - 1], trimC)]);
+    for (let i = 0; i < NS; i++) idx.push(ub[i][0], ub[i + 1][0], ub[i][1], ub[i + 1][0], ub[i + 1][1], ub[i][1]);
+    // make every face point outwards: away from the car's centre line, or along the car for the nose and tail ends
+    for (let t = 0; t < idx.length; t += 3) { const A = idx[t] * 3, B = idx[t + 1] * 3, Cc = idx[t + 2] * 3;
+      const e1 = [P[B] - P[A], P[B + 1] - P[A + 1], P[B + 2] - P[A + 2]], e2 = [P[Cc] - P[A], P[Cc + 1] - P[A + 1], P[Cc + 2] - P[A + 2]], nx = e1[1] * e2[2] - e1[2] * e2[1], ny = e1[2] * e2[0] - e1[0] * e2[2], nz = e1[0] * e2[1] - e1[1] * e2[0];
+      const cx = (P[A] + P[B] + P[Cc]) / 3, cy = (P[A + 1] + P[B + 1] + P[Cc + 1]) / 3, cz = (P[A + 2] + P[B + 2] + P[Cc + 2]) / 3, cap = Math.abs(P[A] - P[B]) < 1e-6 && Math.abs(P[A] - P[Cc]) < 1e-6;
+      const midY = (zb + VC.heightAt(m, cx)) / 2, dot = cap ? nx * Math.sign(cx) : ny * (cy - midY) + nz * cz; /* outward from the middle of the body at this point along it */ if (dot < 0) { const k = idx[t + 1]; idx[t + 1] = idx[t + 2]; idx[t + 2] = k; } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(UV, 2)); g.setIndex(idx); g.computeVertexNormals();
+    const mat = new THREE.MeshPhysicalMaterial({ vertexColors: true, metalness: .25, roughness: .32, clearcoat: 1, clearcoatRoughness: .08, envMapIntensity: 1.1 });
+    if (col.skin) { const tx = new THREE.CanvasTexture(col.skin); tx.encoding = THREE.sRGBEncoding; mat.map = tx; for (let i = 0; i < C.length; i += 3) { const dark = C[i] < .06 && C[i + 1] < .06; if (!dark) { C[i] = C[i + 1] = C[i + 2] = 1; } } g.attributes.color.needsUpdate = true; }
+    const mesh = new THREE.Mesh(g, mat); mesh.castShadow = true; mesh.receiveShadow = true;
+    // a dark lower bumper and grille across the nose, and a lower valance at the tail
+    const trimM = new THREE.MeshStandardMaterial({ color: 0x17181b, roughness: .6 });
+    for (const [u, z0, z1, k] of [[L / 2, zb + .02, Math.min(.5, m.belt * .55), .8], [-L / 2, zb + .02, Math.min(.42, m.belt * .45), .86]]) { const wv = VC.widthAt(m, u, (z0 + z1) / 2) * .88 * k * 2; const b = new THREE.Mesh(new THREE.BoxGeometry(.06, z1 - z0, wv), trimM); b.position.set(u + Math.sign(u) * .005, (z0 + z1) / 2, 0); mesh.add(b); }
+    return mesh;
+  }
+  function cabinRange(m) { let cf = -1e9, cr = 1e9; for (let i = 0; i <= 80; i++) { const u = m.L / 2 - i * m.L / 80; if (VC.heightAt(m, u) > m.belt + .05 && (m.split == null || u >= m.split)) { cf = Math.max(cf, u); cr = Math.min(cr, u); } } return [cf, cr]; }
+  // ---- wheels: tyre, rim and spokes by style ----
+  function wheel(m) {
+    const grp = new THREE.Group(), r = m.wheel.r, rr = r * m.wheel.rim, wdt = .23;
+    const tyre = new THREE.Mesh(new THREE.CylinderGeometry(r, r, wdt, 40, 1), new THREE.MeshStandardMaterial({ color: 0x151618, roughness: .85 })); tyre.rotation.x = Math.PI / 2; tyre.castShadow = true; grp.add(tyre);
+    const metal = new THREE.MeshStandardMaterial({ color: m.wheel.style === 'steel' ? 0x3a3c40 : 0xb9bec4, metalness: m.wheel.style === 'steel' ? .3 : .9, roughness: m.wheel.style === 'steel' ? .6 : .22 });
+    const face = new THREE.Mesh(new THREE.CylinderGeometry(rr, rr, wdt + .01, 36, 1), m.wheel.style === 'dish' || m.wheel.style === 'steel' ? metal : new THREE.MeshStandardMaterial({ color: 0x0d0e10, roughness: .7 })); face.rotation.x = Math.PI / 2; grp.add(face);
+    const n = { multi: 10, spokes: 5, steel: 0, dish: 0 }[m.wheel.style] || 0, sw = m.wheel.style === 'spokes' ? rr * .26 : rr * .1;
+    for (let i = 0; i < n; i++) { const sp = new THREE.Mesh(new THREE.BoxGeometry(sw, rr * .95, .03), metal); sp.position.y = rr * .47; const piv = new THREE.Group(); piv.add(sp); piv.rotation.z = i / n * Math.PI * 2; piv.position.z = wdt / 2 + .006; grp.add(piv); const p2 = piv.clone(); p2.position.z = -wdt / 2 - .006; grp.add(p2); }
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(rr * .22, rr * .22, wdt + .04, 16), metal); hub.rotation.x = Math.PI / 2; grp.add(hub);
+    return grp;
+  }
+  // ---- placed parts as small solids on the body ----
+  // parts that lie on the body: they sit at the surface height under their centre and tilt with the bonnet or boot,
+  // so nothing pokes out of a slope. Vents read as cut in: a dark recess with body-coloured louvres across it.
+  const FLAT = { vent: 1, line: 1, head: 1, tail: 1, lightbar: 1, window: 1, number: 1, panel: 1 };
+  const hexOf = c => new THREE.Color('#' + c.map(v => (v | 0).toString(16).padStart(2, '0')).join(''));
+  function flatPart(m, d, sv, col, grp) {
+    const h = u => VC.heightAt(m, u), pitch = Math.atan2(h(d.u + .06) - h(d.u - .06), .12), z = h(d.u) + (d.zo || 0);
+    const holder = new THREE.Group(); holder.position.set(d.u, z, d.v * sv); holder.rotation.y = -(d.a || 0) * Math.PI / 180 * sv; grp.add(holder);
+    const tilt = new THREE.Group(); tilt.rotation.z = pitch + (d.tilt || 0) * Math.PI / 180; holder.add(tilt);
+    const paint = new THREE.MeshPhysicalMaterial({ color: hexOf(col.body), metalness: .25, roughness: .32, clearcoat: 1 });
+    const add = (geo, mat, y) => { const me = new THREE.Mesh(geo, mat); me.position.y = y; me.castShadow = true; tilt.add(me); return me; };
+    if (d.t === 'vent') {
+      add(new THREE.BoxGeometry(d.l, .006, d.w), new THREE.MeshStandardMaterial({ color: 0x08090a, roughness: .9 }), .002);
+      const n = Math.max(2, Math.round(d.l / .07)); for (let i = 0; i < n; i++) { const f = add(new THREE.BoxGeometry(.018, .01, d.w * .94), paint, .006); f.position.x = -d.l / 2 + (i + .5) * d.l / n; f.rotation.z = .5; }
+      return;
+    }
+    if (d.t === 'scoop') { // a raised intake: low at the back, open and tall at the front
+      const th = VC.SOLID_H.scoop + .05, sh = new THREE.Shape([new THREE.Vector2(-d.l / 2, 0), new THREE.Vector2(d.l / 2, 0), new THREE.Vector2(d.l / 2, th), new THREE.Vector2(-d.l / 2 + d.l * .25, th * .3)]);
+      const geo = new THREE.ExtrudeGeometry(sh, { depth: d.w, bevelEnabled: false }); geo.translate(0, 0, -d.w / 2); add(geo, paint, -.005);
+      const mouth = add(new THREE.PlaneGeometry(d.w * .86, th * .7), new THREE.MeshStandardMaterial({ color: 0x050506, roughness: 1 }), th * .48); mouth.position.x = d.l / 2 + .002; mouth.rotation.y = Math.PI / 2;
+      return;
+    }
+    const C = { line: 0x0d0e10, head: 0xf2efe2, tail: 0xb0241c, window: 0x1a2027, number: 0xf1efe8 }[d.t] ?? (d.t === 'lightbar' ? (d.u > 0 ? 0xf2efe2 : 0xb0241c) : hexOf(col.accent));
+    const light = d.t === 'head' || d.t === 'tail' || d.t === 'lightbar';
+    const mat = new THREE.MeshPhysicalMaterial({ color: C, roughness: light || d.t === 'window' ? .12 : .4, clearcoat: d.t === 'window' ? 1 : 0, emissive: light ? C : 0, emissiveIntensity: light ? .55 : 0 });
+    add(d.t === 'number' ? new THREE.CylinderGeometry(d.l / 2, d.l / 2, .006, 28) : new THREE.BoxGeometry(d.l, .006, d.w), mat, .004);
+  }
+  function parts(m, t, col, grp) {
+    const MC = { vent: 0x1d1f22, line: 0x111214, head: 0xf2efe2, tail: 0xb0241c, lightbar: null, mirror: null, window: 0x1a2027, roofbox: 0x2e3034, ladder: 0x8a8f96, spare: 0x141518, wing: 0x26282c, number: 0xf1efe8, tarp: 0x3d4a3a, panel: null, bar: 0x2e3034, scoop: null };
+    for (const d of m.details || []) { if (d.only != null && d.only !== t) continue;
+      for (const sv of d.mir ? [1, -1] : [1]) {
+        if (d.t === 'cut' || d.t === 'scut' || d.t === 'rack') continue; // carved into the body itself
+        if (FLAT[d.t] || d.t === 'scoop') { flatPart(m, d, sv, col, grp); continue; }
+        const surf = VC.surfaceUnder(m, VC.detailPts(d, sv), d.t), base = surf + (d.zo || 0), th = Math.max(VC.SOLID_H[d.t] || .025, .02);
+        let c = MC[d.t]; if (c == null) c = d.t === 'lightbar' ? (d.u > 0 ? 0xf2efe2 : 0xb0241c) : d.t === 'panel' ? hexC('#' + col.accent.map(v => (v | 0).toString(16).padStart(2, '0')).join('')) : hexC('#' + col.body.map(v => (v | 0).toString(16).padStart(2, '0')).join(''));
+        const light = d.t === 'head' || d.t === 'tail' || d.t === 'lightbar';
+        const mat = new THREE.MeshPhysicalMaterial({ color: c, roughness: light ? .2 : .4, metalness: d.t === 'ladder' ? .7 : .1, clearcoat: d.t === 'mirror' || d.t === 'scoop' ? 1 : 0, emissive: light ? c : 0, emissiveIntensity: light ? .55 : 0 });
+        const geo = d.t === 'spare' || d.t === 'number' ? new THREE.CylinderGeometry(d.l / 2, d.l / 2, th, 24) : new THREE.BoxGeometry(d.l, th, d.w);
+        const me = new THREE.Mesh(geo, mat); me.position.set(d.u, base + th / 2, d.v * sv); me.rotation.order = 'YZX'; me.rotation.y = -(d.a || 0) * Math.PI / 180 * sv; me.rotation.z = (d.tilt || 0) * Math.PI / 180; me.castShadow = true; grp.add(me);
+        if (d.pop && (d.zo || 0) > .03) { const pod = new THREE.Mesh(new THREE.BoxGeometry(d.l * .96, d.zo, d.w * .96), new THREE.MeshPhysicalMaterial({ color: hexC('#' + col.body.map(v => (v | 0).toString(16).padStart(2, '0')).join('')), clearcoat: 1, roughness: .3, metalness: .25 })); pod.position.set(d.u, surf + d.zo / 2, d.v * sv); pod.rotation.y = me.rotation.y; pod.castShadow = true; grp.add(pod); }
+        if (d.t === 'wing' && (d.zo || 0) > .05) for (const s2 of [-.35, .35]) { const st = new THREE.Mesh(new THREE.BoxGeometry(.04, d.zo, .04), mat); st.position.set(d.u, surf + d.zo / 2, d.v * sv + s2 * d.w); grp.add(st); }
+      } }
+    const ex = (m.trims[t] || m.trims[0]).extras || {}, H = Math.max(...m.side.map(p => p[1]));
+    const slab = (u0, u1, z0, z1, wv, colr) => { const me = new THREE.Mesh(new THREE.BoxGeometry(Math.abs(u1 - u0), z1 - z0, wv * 2), new THREE.MeshStandardMaterial({ color: colr, roughness: .4 })); me.position.set((u0 + u1) / 2, (z0 + z1) / 2, 0); me.castShadow = true; grp.add(me); };
+    const deck = VC.heightAt(m, -m.L / 2 + .25);
+    if (ex.spoiler) { slab(-m.L / 2 + .38, -m.L / 2 + .04, deck + .14, deck + .2, m.W / 2 * .9, 0x26282c); for (const s2 of [-.5, .5]) { const st = new THREE.Mesh(new THREE.BoxGeometry(.05, .14, .05), new THREE.MeshStandardMaterial({ color: 0x26282c })); st.position.set(-m.L / 2 + .2, deck + .07, s2 * m.W / 2); grp.add(st); } }
+    if (ex.bullbar) slab(m.L / 2 - .02, m.L / 2 + .14, .32, .82, m.W / 2 * .78, 0x2e3034);
+    if (ex.taxi) slab(-.15, .15, H + .02, H + .18, .3, 0xf2d14a);
+    if (ex.police) { slab(-.08, .14, H + .02, H + .12, m.W / 2 * .78, 0xd23a32); }
+    const rackD = (m.details || []).find(d => d.t === 'rack' && (d.only == null || d.only === t));
+    if (ex.rack || rackD) { const R2 = VC.rack(m, rackD), rm = new THREE.MeshStandardMaterial({ color: 0x22242a, roughness: .45, metalness: .4 }), bx = (l, h2, w, x, y, z) => { const me = new THREE.Mesh(new THREE.BoxGeometry(l, h2, w), rm); me.position.set(x, y, z); me.castShadow = true; grp.add(me); };
+      for (const v of [-1, 1]) { bx(R2.u1 - R2.u0, .035, .05, (R2.u0 + R2.u1) / 2, R2.z, v * R2.hw); for (const fu of [R2.u1 - .05, R2.u0 + .05]) bx(.1, R2.z - R2.base + .02, .07, fu, (R2.z + R2.base) / 2, v * R2.hw); }
+      for (const u of R2.bars) bx(.05, .03, R2.hw * 2 + .06, u, R2.z + .03, 0); }
+  }
+  function build(m, t, col) {
+    const grp = new THREE.Group(); grp.add(bodyMesh(m, t, col));
+    const axF = m.L / 2 - (m.L - m.wb) / 2, axR = axF - m.wb, wy = (m.W / 2 - .14);
+    for (const ax of [axF, axR]) for (const s of [1, -1]) { const w = wheel(m); w.position.set(ax, m.wheel.r, s * wy); grp.add(w); }
+    parts(m, t, col, grp);
+    return grp;
+  }
+  function draw(m, t, col, dt) {
+    if (!R && !init()) return false;
+    const w = c3.clientWidth, h = 420; if (c3.width !== Math.round(w * R.getPixelRatio())) { R.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); }
+    const k = m.id + ':' + (m._v || 0) + ':' + t + ':' + col.body.join(',') + ':' + col.livery + ':' + col.accent.join(',') + ':' + !!col.skin;
+    if (k !== key) { if (root) { scene.remove(root); root.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); } root = build(m, t, col); scene.add(root); key = k; }
+    if (spin && !dragX) ang += dt * .3;
+    const D = Math.max(m.L, 4) * 1.35 + 1.6 + dist; cam.position.set(Math.sin(ang) * Math.cos(tilt) * D, .6 + Math.sin(tilt) * D, Math.cos(ang) * Math.cos(tilt) * D); cam.lookAt(0, Math.max(...m.side.map(p => p[1])) * .42, 0);
+    R.render(scene, cam); return true;
+  }
+  return { draw, set: (a, t) => { ang = a; tilt = t; }, _body: (m, t, c) => bodyMesh(m, t, c) };
+})();
+</script>
+
+</body></html>
