@@ -4777,7 +4777,7 @@ window.GAME = (() => {
   async function useRoom(f) {
     const N = S.player.needs, h = gHour();
     if (f.id === 'lift') { fadeTo('', '', () => { enterInteriorSwap(f.to); }, 250); return; }
-    if (f.id === 'npc') { const nm = f.n.name; if (nm === 'Rob') return talkRob(); return say(nm, VOICE.forPerson(nm, f.n.L && f.n.L.fem ? 'f' : 'm', 30), { Jess: 'Hey! I am cramming for a pharmacology exam. Do not let me near the couch.', Grace: 'Good morning. Meridian is on thirty two, the lifts are just behind me.', Tom: 'Lanyard on you? Go on through.' }[nm] || 'Hi there.', [{ text: 'See you later', effects: { need: { mood: 1 } } }]); }
+    if (f.id === 'npc') { const nm = f.n.name; if (nm === 'Rob') return talkRob(); return say(nm, VOICE.forPerson(nm, f.n.L && f.n.L.fem ? 'f' : 'm', 30), { Jess: 'Hey! I am cramming for a pharmacology exam. Do not let me near the couch.', Grace: 'Good morning. Meridian is on thirty two, the lifts are just behind me.', Tom: 'Lanyard on you? Go on through.' }[nm] || 'Hi there.', [{ text: 'See you later', effects: { need: { mood: 1 } } }], f.n.L); }
     if (f.id === 'work') return atWork(); if (f.id === 'coffee') return menu('Office kitchen', 'Free coffee, one of the good things about the job.', [{ t: 'Make a coffee', s: 'Free, energy up', fn: () => { CR.passMinutes(S, 10); need('energy', 10); toast('Strong and bitter.'); closeMenu(); } }]);
     if (f.id === 'bed') return sleepPanel();
     if (f.id === 'fridge') { if (!S.items.meals) return toast('The fridge is empty. Takeout places sell meals to take home.');
