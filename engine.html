@@ -630,7 +630,11 @@ const FENCES = [];
     scatter(P0.x0, P0.y0, P0.x1, P0.y1, 16, .62, 31, 3, 4.4);
     playground(play.x, play.y, 0, true);
     for (const [a, b] of spokes) { const Lq = Math.hypot(b[0] - a[0], b[1] - a[1]), ux = (b[0] - a[0]) / Lq, uy = (b[1] - a[1]) / Lq; for (let d = 18, kq = 0; d < Lq - 10; d += 26, kq++) { const sd = kq % 2 ? 3.6 : -3.6; props.push({ t: 'pobj', k: 'bench', x: a[0] + ux * d - uy * sd, y: a[1] + uy * d + ux * sd, a: Math.atan2(uy, ux) + (sd > 0 ? 0 : Math.PI) }); } }
-    for (let kq = 0; kq < 14; kq++) { const an = kq / 14 * TAU; props.push({ t: 'pobj', k: 'bench', x: pond.x + Math.cos(an) * (ring.rx + 3.6), y: pond.y + Math.sin(an) * (ring.ry + 3.6), a: an + Math.PI / 2 }); } } }
+    for (let kq = 0; kq < 14; kq++) { const an = kq / 14 * TAU; props.push({ t: 'pobj', k: 'bench', x: pond.x + Math.cos(an) * (ring.rx + 3.6), y: pond.y + Math.sin(an) * (ring.ry + 3.6), a: an + Math.PI / 2 }); }
+    // the lake is water: you can not walk or drive across it
+    C.POND = pond; const isW = C.isWater; C.isWater = (x, y) => isW(x, y) || ((x - pond.x) / pond.rx) ** 2 + ((y - pond.y) / pond.ry) ** 2 < 1; }
+  // nothing planted in a street: drop any tree, shrub or park furniture whose base lands on or right beside a carriageway
+  for (let i = props.length - 1; i >= 0; i--) { const q = props[i]; if (q.t !== 'tree' && q.t !== 'shrub' && q.t !== 'pobj') continue; const [d] = kerbDist(q.x, q.y); if (d < (q.t === 'tree' ? 1.6 : 1)) props.splice(i, 1); } }
 
 // ---------- street lights, signals and kerbside furniture ----------
 const TOWN = new Set(['core', 'cbd', 'mid', 'east', 'west', 'hside', 'uni', 'hvillage']);
@@ -670,6 +674,8 @@ const STREETCARTS = [];
       const [name, col] = KINDS[Math.floor(hsh(e.id, Math.round(s), 33, 7) * KINDS.length)], c = { t: 'cart', x, y, col, name, street: true, out: [lx, ly] };
       props.push(c); STREETCARTS.push(c); solids.push({ F: frameOf(0, 0, 1, 0), x0: x - 1.1, y0: y - .6, x1: x + 1.1, y1: y + .6, wb: { x0: x - 1.1, y0: y - .6, x1: x + 1.1, y1: y + .6 } }); vents.push({ x: x + .5, y, parts: [], acc: 0, cart: true }); } } }
 // the kerbside furniture and posts are solid
+// plaza benches and the bollards along its edge are solid too
+for (const p of props) { if (p.t === 'bench') solids.push({ F: frameOf(0, 0, 1, 0), x0: p.x - .3, y0: p.y - .95, x1: p.x + .3, y1: p.y + .95, wb: { x0: p.x - .35, y0: p.y - 1, x1: p.x + .35, y1: p.y + 1 } }); else if (p.t === 'bollard') solids.push({ round: .14, x: p.x, y: p.y, wb: { x0: p.x - .2, y0: p.y - .2, x1: p.x + .2, y1: p.y + .2 } }); }
 for (const p of props) if (p.t === 'bin' || p.t === 'news') solids.push({ round: .32, x: p.x, y: p.y, wb: { x0: p.x - .4, y0: p.y - .4, x1: p.x + .4, y1: p.y + .4 } });
   else if (p.t === 'tree') solids.push({ round: .25, x: p.x, y: p.y, wb: { x0: p.x - .3, y0: p.y - .3, x1: p.x + .3, y1: p.y + .3 } });
   else if (p.t === 'pobj') solids.push({ round: p.k === 'bench' ? .5 : p.k === 'swing' ? 1.2 : p.k === 'dome' ? 1.6 : p.k === 'spin' ? 1.3 : .8, x: p.x, y: p.y, wb: { x0: p.x - 1.8, y0: p.y - 1.8, x1: p.x + 1.8, y1: p.y + 1.8 } });
@@ -704,6 +710,30 @@ const lotAt = (x, y) => { // the lot whose building footprint or outline holds a
   return bd < 30 ? best : null;
 };
 const LOTS = new Map(); for (const L of C.lots) if (L.id) LOTS.set(L.id, L);
+// ---------- street parking ----------
+// Kerbside bays on every street wide enough to keep a parking lane beside the traffic: midtown streets, avenues and
+// industrial roads. In town they are metered, 8 am to 6 pm Monday to Saturday; out in the suburbs they are free. Residential
+// side streets have no marked bays, and you can park along the kerb there for free. About half the bays already have a car in them.
+const BAYS = [], PARKED = [], BAYLEN = 6.2;
+const METERED = new Set(['core', 'cbd', 'mid', 'east', 'west', 'hside', 'uni', 'hvillage']), RATE = { core: 350, cbd: 350 };
+const PARKTYPES = [['sedan', 4.6, 1.84], ['sedan', 4.6, 1.84], ['suv', 4.9, 1.98], ['sedan', 4.6, 1.84], ['van', 5.3, 2.0]];
+const PARKCOL = [[38, 40, 44], [28, 29, 31], [150, 152, 154], [104, 108, 112], [196, 196, 192], [44, 52, 70], [86, 30, 32], [60, 64, 58], [120, 96, 70], [70, 30, 40]];
+for (const e of C.edges) {
+  if (e.circuit || !['mid', 'art', 'ind'].includes(e.kind)) continue;
+  const laneEdge = LANES[e.kind] * LANEW[e.kind], strip = e.w - laneEdge; if (strip < 2.4) continue;
+  const [s0, s1] = trims(e), from = s0 + 9, to = e.len - s1 - 9; if (to - from < BAYLEN * 2) continue;
+  e.bays = []; const mid = (laneEdge + e.w) / 2;
+  for (const side of [1, -1]) { const n = Math.floor((to - from) / BAYLEN), start = from + (to - from - n * BAYLEN) / 2;
+    for (let i = 0; i < n; i++) { const sc = start + (i + .5) * BAYLEN, q = pointAlong(e, sc), x = q[0] + side * q[3] * mid, y = q[1] - side * q[2] * mid;
+      if (signals.some(g => Math.hypot(g.x - x, g.y - y) < 9)) continue;
+      const z = C.districtAt(x, y), metered = METERED.has(z), ang = Math.atan2(side * q[3], side * q[2]);
+      const b = { e, side, s: sc, x, y, ang, metered, rate: metered ? (RATE[z] || 200) : 0, i }; BAYS.push(b); e.bays.push(b);
+      // a meter on the footpath for every pair of bays
+      if (metered && i % 2 === 0) { const o = e.w + .45; props.push({ t: 'meter', x: q[0] + side * q[3] * o, y: q[1] - side * q[2] * o }); }
+      if (hsh(e.id, i, side + 3, 41) < (metered ? .55 : .35)) { const [type, L, W] = PARKTYPES[Math.floor(hsh(e.id, i, side + 3, 42) * PARKTYPES.length)], c = Math.cos(ang), sn = Math.sin(ang);
+        const pc = { type, x, y, ang, a: ang, col: PARKCOL[Math.floor(hsh(e.id, i, side + 3, 43) * PARKCOL.length)], v: 0, speed: 0, brake: 0, parked: true, bay: b };
+        b.car = pc; PARKED.push(pc); solids.push({ F: frameOf(x, y, c, sn), x0: -L / 2, y0: -W / 2, x1: L / 2, y1: W / 2, wb: { x0: x - 3, y0: y - 3, x1: x + 3, y1: y + 3 }, car: pc }); } } } }
+for (const p of props) if (p.t === 'meter') solids.push({ round: .1, x: p.x, y: p.y, wb: { x0: p.x - .15, y0: p.y - .15, x1: p.x + .15, y1: p.y + .15 } });
 gridSolids();
 
 // ---------- the doors this build uses ----------
@@ -836,12 +866,19 @@ function updateCars(dt) {
     const ca = Math.cos(c.a), sa = Math.sin(c.a);
     const blockBy = (x, y, half, v) => { const dx = x - c.x, dy = y - c.y, f = dx * ca + dy * sa, lat = Math.abs(-dx * sa + dy * ca); if (f > 0 && f < 40 && lat < c.W / 2 + half) { const g2 = f - c.L / 2 - half - .6; if (g2 < gap) { gap = g2; vl = v; c.why = 'ped'; } } };
     if (pc) blockBy(PCAR.x, PCAR.y, PCAR.T.L / 2, Math.max(0, PCAR.speed));
+    // your parked car is in the way if it sticks out into the lane; after a while they squeeze past it
+    else if (c.wait < 8) { const dx = PCAR.x - c.x, dy = PCAR.y - c.y, f = dx * ca + dy * sa, lat = Math.abs(-dx * sa + dy * ca), rel = Math.abs(Math.sin(PCAR.ang - c.a)), half = PCAR.T.W / 2 + rel * (PCAR.T.L - PCAR.T.W) / 2;
+      if (f > 0 && f < 30 && lat < c.W / 2 + half - .35) { const g2 = f - c.L / 2 - (PCAR.T.L / 2 * (1 - rel) + PCAR.T.W / 2 * rel) - .8; if (g2 < gap) { gap = g2; vl = 0; c.why = 'player car'; } } }
     if (walker) blockBy(walker.x, walker.y, .5, 0);
     peopleNear(c.x + ca * 10, c.y + sa * 10, 11, o => blockBy(o.x, o.y, .45, 0));
     // other cars crossing in front, on turns or other lanes: give way rather than drive through them. When two cars each have
     // the other in front of them, the one that got there first goes, so they never lock each other up
-    carsNear(c.x + ca * 10, c.y + sa * 10, 13, o => { if (o === c || o.seg === c.seg) return; const g2 = pathGap(c, o, ca, sa); if (g2 >= gap) return;
+    // only at junctions: on a turn, or in the last stretch before one. Cars waiting at their own stop line are not in the way,
+    // and after twenty seconds stuck a car edges through rather than wait forever
+    const atJ = c.seg.turn || (c.seg.len - c.s < 16);
+    if (atJ) carsNear(c.x + ca * 10, c.y + sa * 10, 13, o => { if (o === c || o.seg === c.seg) return; if (o.v < .3 && !o.seg.turn && o.seg.len - o.s < 9) return; const g2 = pathGap(c, o, ca, sa); if (g2 >= gap) return;
       if (pathGap(o, c, Math.cos(o.a), Math.sin(o.a)) < Infinity && (o.w0 < c.w0 - .3 || (Math.abs(o.w0 - c.w0) <= .3 && o.id > c.id))) return;
+      if (c.w0 > 20 && o.w0 > 20 && c.id < o.id) return; // a ring of cars each waiting on the next: the oldest car goes
       gap = g2; vl = Math.max(0, o.v * Math.cos(o.a - c.a)); c.why = 'cross'; c.whyO = o; });
     // intelligent driver model: smooth to the limit, brake for the car, person or stop line ahead
     const ss = 2.2 + c.v * 1.1 + c.v * (c.v - vl) / (2 * Math.sqrt(2.2 * 3.2));
@@ -859,7 +896,7 @@ function updateCars(dt) {
   }
 }
 // spawning: full simulation near the player, nothing beyond; density by district
-const DENS = { core: 1 / 22, cbd: 1 / 30, mid: 1 / 50, east: 1 / 55, west: 1 / 55, hside: 1 / 60, inner: 1 / 110, outer: 1 / 170, uni: 1 / 80, docks: 1 / 90, precinct: 1 / 120, hills: 1 / 200, ranges: 1 / 400, park: 1 / 120, hvillage: 1 / 80 };
+const DENS = { core: 1 / 30, cbd: 1 / 38, mid: 1 / 55, east: 1 / 55, west: 1 / 55, hside: 1 / 60, inner: 1 / 110, outer: 1 / 170, uni: 1 / 80, docks: 1 / 90, precinct: 1 / 120, hills: 1 / 200, ranges: 1 / 400, park: 1 / 120, hvillage: 1 / 80 };
 for (const s of LSEG) { const m = s.pts[Math.floor(s.pts.length / 2)]; s.dens = DENS[C.districtAt(m[0], m[1])] || 1 / 150; s.mx = m[0]; s.my = m[1]; }
 let spawnT = 0, warm = false;
 const viewR = () => Math.hypot(W2, H2) / k;
@@ -868,7 +905,7 @@ const offScreen = (x, y) => { const s = P(x, y, 0); return s[0] < -80 || s[0] > 
 const carClear = (x, y) => { if (Math.hypot(x - PCAR.x, y - PCAR.y) < 14 || Math.hypot(x - player.x, y - player.y) < 14) return false; for (const o of CARS) if (Math.abs(o.x - x) < 10 && Math.abs(o.y - y) < 10) return false; return true; };
 function recycleCars(force) {
   const vr = viewR(), actR = Math.max(260, vr + 120), px = player.x, py = player.y, R2 = (actR + 150) ** 2;
-  for (let i = CARS.length - 1; i >= 0; i--) { const c = CARS[i]; if ((c.x - px) ** 2 + (c.y - py) ** 2 > (c.siren ? Math.max(R2, 360000) : R2)) { removeCar(c); CARS.splice(i, 1); } }
+  for (let i = CARS.length - 1; i >= 0; i--) { const c = CARS[i]; if ((c.x - px) ** 2 + (c.y - py) ** 2 > (c.siren ? Math.max(R2, 360000) : R2) || (c.wait > 30 && !c.siren && offScreen(c.x, c.y))) { removeCar(c); CARS.splice(i, 1); } } // a jam out of sight clears itself
   if (INSIDE) return;
   const nearS = LSEG.filter(s => (s.mx - px) ** 2 + (s.my - py) ** 2 < actR * actR);
   const target = Math.min(260, nearS.reduce((a, s) => a + s.len * s.dens, 0));
@@ -976,13 +1013,13 @@ function updatePeds(dt) {
     p.talkFace = null;
     if (p.idle > 0) { p.idle -= dt; continue; }
     if (p.cop && !p.cross && TR() < dt * .03) { p.idle = rnd(5, 14); continue; }
-    if (p.cross) { // walking straight over the road at the corner, to the next footpath
-      const c = p.cross;
+    if (p.cross) { // round the corner, and over the road on the crossing, leg by leg
+      const c = p.cross, L = c.legs[c.i], lx = L[2] - L[0], ly = L[3] - L[1], ll = Math.hypot(lx, ly) || 1;
       // at lights, wait on the kerb until the traffic you cross is held
-      if (c.t === 0 && c.n && c.n.phase && c.e) { const Lq = lightFor(c.n, c.e, simT); if (Lq !== 'r') { p.hx = (c.x1 - c.x0) / c.len; p.hy = (c.y1 - c.y0) / c.len; continue; } }
-      c.t += dt * p.speed * 1.1 / c.len;
-      if (c.t >= 1) { p.cross = null; p.seg = c.to; p.dir = c.toDir; p.s = c.toDir > 0 ? 0 : c.to.len; }
-      else { const nx = c.x0 + (c.x1 - c.x0) * c.t, ny = c.y0 + (c.y1 - c.y0) * c.t; p.hx = (c.x1 - c.x0) / c.len; p.hy = (c.y1 - c.y0) / c.len; p.x = nx; p.y = ny; p.phase += dt * p.speed * 4.6; p.moving = true; continue; }
+      if (L[4] && c.t === 0 && c.n && c.n.phase && c.e) { const Lq = lightFor(c.n, c.e, simT); if (Lq !== 'r' || ((simT + c.n.off) % CYCLE + CYCLE - (c.n.phase.get(c.e) ? 22 : 0)) % CYCLE > 40) { p.hx = lx / ll; p.hy = ly / ll; continue; } }
+      c.t += dt * p.speed * (L[4] ? 1.1 : 1) / ll;
+      if (c.t >= 1) { c.i++; c.t = 0; if (c.i >= c.legs.length) { p.cross = null; p.seg = c.to; p.dir = c.toDir; p.s = clamp(c.toS, 0, c.to.len); } continue; }
+      p.x = L[0] + lx * c.t; p.y = L[1] + ly * c.t; p.hx = lx / ll; p.hy = ly / ll; p.phase += dt * p.speed * 4.6; p.moving = true; continue;
     }
     const sg = p.seg, q0 = pointAt(sg, clamp(p.s, 0, sg.len)), a = q0[2] + (p.dir < 0 ? Math.PI : 0), hx = Math.cos(a), hy = Math.sin(a);
     // keep to one side so people pass each other; step round anyone standing in the way
@@ -993,13 +1030,10 @@ function updatePeds(dt) {
     p.s += p.dir * p.speed * slow * dt;
     if (p.s < 0 || p.s > sg.len) {
       const n = p.s < 0 ? sg.a : sg.b, end = p.s < 0 ? sg.pts[0] : sg.pts[sg.pts.length - 1];
-      const opts = PAT[n.id].filter(o => o !== sg); const to = opts.length ? opts[Math.floor(TR() * opts.length)] : sg;
-      const toDir = to.a === n ? 1 : -1, st = toDir > 0 ? to.pts[0] : to.pts[to.pts.length - 1];
-      const len = Math.hypot(st[0] - p.x, st[1] - p.y);
       p.s = clamp(p.s, 0, sg.len);
-      if (len < .5) { p.seg = to; p.dir = toDir; p.s = toDir > 0 ? 0 : to.len; continue; }
-      // a long step is a road crossing: at lights it waits for the traffic it crosses to be held
-      p.cross = { x0: p.x, y0: p.y, x1: st[0], y1: st[1], len, t: 0, to, toDir, n: len > 6 ? n : null, e: to.e === sg.e ? sg.e : to.e };
+      const plan = pedPlan(p, sg, n); if (!plan) { p.dir = -p.dir; continue; }
+      if (!plan.legs.length) { p.seg = plan.to; p.dir = plan.toDir; p.s = plan.toS; continue; }
+      p.cross = Object.assign(plan, { i: 0, t: 0 });
       continue;
     }
     const q = pointAt(sg, p.s), ax = Math.cos(q[2] + Math.PI / 2), ay = Math.sin(q[2] + Math.PI / 2), side = p.dir < 0 ? -1 : 1;
@@ -1009,6 +1043,25 @@ function updatePeds(dt) {
     p.x = nx; p.y = ny; p.hx = hx; p.hy = hy; p.moving = slow > .15; p.phase += dt * p.speed * slow * 4.6;
   }
 }
+// Where a walker goes at the end of a footpath. Round the corner onto the next footpath, or over one road on its crossing:
+// the zebra at lights, or the mouth of the junction where there are none. Never diagonally across the middle of a junction.
+const nodeAng = (n, x, y) => Math.atan2(y - n.y, x - n.x);
+const edgeAng = (e, n) => { const q = e.a === n ? e.pts[Math.min(1, e.pts.length - 1)] : e.pts[e.pts.length - 2]; return Math.atan2(q[1] - n.y, q[0] - n.x); };
+const angIn = (a, a0, a1) => { const w = ((a1 - a0) % TAU + TAU) % TAU, d = ((a - a0) % TAU + TAU) % TAU; return d > 0 && d < w; };
+function zebraOn(E, n) { const [s0, s1] = trims(E), fromA = E.a === n, setb = fromA ? s0 : s1, dz = n.phase ? setb + 1.9 : Math.max(1, setb - .4), q = pointAlong(E, fromA ? Math.min(E.len, dz) : Math.max(0, E.len - dz)); return { x: q[0], y: q[1], nx: -q[3], ny: q[2], w: E.w }; }
+function pedPlan(p, sg, n) {
+  const here = [p.x, p.y], aMe = nodeAng(n, p.x, p.y), opts = [];
+  for (const o of PAT[n.id]) { if (o === sg) continue; const toDir = o.a === n ? 1 : -1, st = toDir > 0 ? o.pts[0] : o.pts[o.pts.length - 1], d = Math.hypot(st[0] - p.x, st[1] - p.y);
+    if (d < 7) { opts.push({ to: o, toDir, toS: toDir > 0 ? 0 : o.len, legs: d < .5 ? [] : [[p.x, p.y, st[0], st[1], 0]] }); continue; }
+    // which roads lie between here and there, going the short way round the junction
+    const aTo = nodeAng(n, st[0], st[1]); let lo = aMe, hi = aTo; if (((aTo - aMe) % TAU + TAU) % TAU > Math.PI) { lo = aTo; hi = aMe; }
+    const crossed = (n.wE || []).filter(e => !e.circuit && angIn(edgeAng(e, n), lo, hi)); if (crossed.length !== 1) continue;
+    const E = crossed[0], z = zebraOn(E, n), side = Math.sign((p.x - z.x) * z.nx + (p.y - z.y) * z.ny) || 1, off = E.w + .5;
+    const A = [z.x + z.nx * off * side, z.y + z.ny * off * side], B = [z.x - z.nx * off * side, z.y - z.ny * off * side];
+    // join the far footpath level with the crossing, so nobody walks back to the corner first
+    let best = 0, bd = 1e9; for (let s2 = 0; s2 <= o.len; s2 += 1) { const q = pointAt(o, s2), dd = Math.hypot(q[0] - B[0], q[1] - B[1]); if (dd < bd) { bd = dd; best = s2; } } const J = pointAt(o, best);
+    opts.push({ to: o, toDir: toDir, toS: best, n, e: E, legs: [[p.x, p.y, A[0], A[1], 0], [A[0], A[1], B[0], B[1], 1], [B[0], B[1], J[0], J[1], 0]] }); }
+  if (!opts.length) return null; return opts[Math.floor(TR() * opts.length)]; }
 let pedT = 0;
 function recyclePeds(force) {
   const vr = viewR(), Rr = Math.min(300, vr + 60), px = player.x, py = player.y, R2 = (Rr + 60) ** 2;
@@ -1122,6 +1175,7 @@ function blocked(x, y, r) {
   return false;
 }
 function updatePlayer(dt) {
+  if (player.sit) { player.moving = false; return; } // seated: the game stands you up when you move
   if (player.driving) { updateDriving(dt); return; }
   let vx = 0, vy = 0;
   if (keys.KeyW || keys.ArrowUp) vy -= 1; if (keys.KeyS || keys.ArrowDown) vy += 1;
@@ -1334,6 +1388,10 @@ HOOK.mark = (g, vw, visE) => { // kerb-to-kerb markings: centre lines, lane line
       if (Ln > 1) { g.strokeStyle = 'rgba(232,229,220,.8)'; g.lineWidth = .12; g.setLineDash([3, 6]); for (const o of [-lw, lw]) { plg(g, offsetPL(mid, o)); g.stroke(); } }
       g.setLineDash([]);
     }
+    // parking bays: a white tick at each end of every bay along the kerb
+    if (e.bays) { g.strokeStyle = 'rgba(232,229,220,.7)'; g.lineWidth = .12; const laneEdge = LANES[e.kind] * LANEW[e.kind];
+      for (const b of e.bays) for (const ds of [-BAYLEN / 2, BAYLEN / 2]) { const q = pointAlong(e, b.s + ds), nx = b.side * q[3], ny = -b.side * q[2]; g.beginPath(); g.moveTo(q[0] + nx * laneEdge, q[1] + ny * laneEdge); g.lineTo(q[0] + nx * (e.w - .1), q[1] + ny * (e.w - .1)); g.stroke(); }
+      g.setLineDash([.6, .6]); for (const side of [1, -1]) { const B = e.bays.filter(b => b.side === side); if (!B.length) continue; const s0b = Math.min(...B.map(b => b.s)) - BAYLEN / 2, s1b = Math.max(...B.map(b => b.s)) + BAYLEN / 2; plg(g, offsetPL(subPL(e.pts, e.cum, s0b, s1b), side * laneEdge)); g.stroke(); } g.setLineDash([]); }
     for (const end of [0, 1]) {
       const n = end ? e.b : e.a; if (!n.wE || n.wE.length < 3) continue;
       const s = end ? e.len - s1 : s0, p = subPL(e.pts, e.cum, Math.max(0, s - .5), Math.min(e.len, s + .5)), a = p[0], b = p[p.length - 1];
@@ -1878,8 +1936,9 @@ function drawCar(c) {
   const ca = Math.cos(c.ang), sa = Math.sin(c.ang);
   const lamp = (l, v, z, col, r) => { const x = c.x + ca * l - sa * v, y = c.y + sa * l + ca * v; const p = P(x, y, z); ctx.fillStyle = col; ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, TAU); ctx.fill(); };
   const r = Math.max(1, k * .13);
-  const hl = n > .15 ? `rgba(255,248,220,${.6 + .4 * n})` : tone([200, 200, 196], .7);
-  const tl = c.brake ? 'rgba(255,40,40,.95)' : n > .15 ? 'rgba(200,24,24,.9)' : tone([120, 30, 30], .7);
+  const off = c.parked || (c.player && !player.driving); // parked cars sit dark
+  const hl = n > .15 && !off ? `rgba(255,248,220,${.6 + .4 * n})` : tone([200, 200, 196], .7);
+  const tl = off ? tone([120, 30, 30], .7) : c.brake ? 'rgba(255,40,40,.95)' : n > .15 ? 'rgba(200,24,24,.9)' : tone([120, 30, 30], .7);
   lamp(L / 2 - .05, Wd - .3, .7, hl, r); lamp(L / 2 - .05, -Wd + .3, .7, hl, r);
   lamp(-L / 2 + .05, Wd - .25, .8, tl, r); lamp(-L / 2 + .05, -Wd + .25, .8, tl, r);
   if (n > .15) { ctx.globalCompositeOperation = 'lighter'; const f = P(c.x + ca * L / 2, c.y + sa * L / 2, .7); const g = ctx.createRadialGradient(f[0], f[1], 0, f[0], f[1], k * 1.6); g.addColorStop(0, `rgba(255,240,200,${.35 * n})`); g.addColorStop(1, 'rgba(255,240,200,0)'); ctx.fillStyle = g; ctx.fillRect(f[0] - k * 1.6, f[1] - k * 1.6, k * 3.2, k * 3.2); ctx.globalCompositeOperation = 'source-over'; }
@@ -1943,6 +2002,7 @@ function drawTree(p) {
 }
 function drawProp(p) {
   switch (p.t) {
+    case 'meter': { drawCyl(p.x, p.y, .05, 0, 1.15, [70, 72, 76]); drawBox(p.x - .13, p.y - .09, p.x + .13, p.y + .09, 1.15, 1.5, [44, 48, 54], [86, 90, 96]); break; }
     case 'bin': drawBox(p.x - .28, p.y - .28, p.x + .28, p.y + .28, 0, 1.0, [50, 56, 54], [30, 32, 32]); break;
     case 'news': drawBox(p.x - .26, p.y - .22, p.x + .26, p.y + .22, 0, 1.1, (p.c = p.c || pick([[40, 60, 96], [110, 40, 40], [60, 62, 64]]))); break;
     case 'hyd': drawCyl(p.x, p.y, .14, 0, .7, [118, 42, 36]); break;
@@ -2490,6 +2550,8 @@ function drawCityMap(g, ox, oy, sc, rot, w, h, opts = {}) {
     g.fillStyle = 'rgba(28,30,34,.55)';
     for (const b of vBld(vw)) { if (b.bowl) continue; const T = b.tiers[0]; g.beginPath(); for (const [u, v] of [[T.x0, T.y0], [T.x1, T.y0], [T.x1, T.y1], [T.x0, T.y1]]) { const p = toW(b.F, u, v); g.lineTo(p[0], p[1]); } g.closePath(); g.fill(); } }
   // parking: a blue P on every car park, garage and mall lot
+  // street bays when zoomed in: blue where metered, grey where free
+  if (filterOn('parking') && opts.big && sc > 1.1 && typeof BAYS !== 'undefined') { g.lineWidth = 2.4; for (const b of BAYS) { if (b.x < vw.x0 || b.x > vw.x1 || b.y < vw.y0 || b.y > vw.y1) continue; const c = Math.cos(b.ang) * 2.6, sn = Math.sin(b.ang) * 2.6; g.strokeStyle = b.car ? 'rgba(140,150,160,.35)' : b.metered ? 'rgba(90,150,230,.95)' : 'rgba(190,196,204,.9)'; g.beginPath(); g.moveTo(b.x - c, b.y - sn); g.lineTo(b.x + c, b.y + sn); g.stroke(); } }
   if (filterOn('parking') && C.PARKING && (opts.big ? sc > .3 : true)) for (const [x, y] of C.PARKING) { if (x < vw.x0 || x > vw.x1 || y < vw.y0 || y > vw.y1) continue; g.save(); g.translate(x, y); g.rotate(-rot); g.scale(1 / sc, 1 / sc); drawMapIcon(g, 'parking', opts.big ? 7 : 6); g.restore(); }
   // places you can go in, each with its type's symbol
   const isz = opts.big ? (sc > .9 ? 11 : sc > .45 ? 8 : 0) : 7;
@@ -2534,15 +2596,21 @@ function findPath(a, b) {
 function setRoute(x, y) {
   x = clamp(x, 0, C.W); y = clamp(y, 0, C.H);
   const [, e] = kerbDist(x, y), dn = nearNode(x, y), pts = findPath(nearNode(player.x, player.y), dn), dest = [x, y];
-  pts.push(dest); ROUTE = { pts, dest, left: 0 }; routeTick();
+  pts.unshift([(player.driving ? PCAR : player).x, (player.driving ? PCAR : player).y]); pts.push(dest); ROUTE = { pts, dest, left: 0 }; routeTick();
 }
+// The route always starts where you are: the stretch already behind you drops away, and if you leave the route
+// it is worked out again from where you are now, so it never points back to where you set off.
 function routeTick() {
   if (!ROUTE) return;
-  const p = ROUTE.pts;
-  while (p.length > 1 && Math.hypot(p[0][0] - player.x, p[0][1] - player.y) < 14) p.shift();
-  let L = Math.hypot(p[0][0] - player.x, p[0][1] - player.y); for (let q = 1; q < p.length; q++) L += Math.hypot(p[q][0] - p[q - 1][0], p[q][1] - p[q - 1][1]);
+  const me = player.driving ? PCAR : player, p = ROUTE.pts, now = performance.now();
+  let bi = 0, bd = 1e9, bq = null; const lim = Math.min(p.length - 1, 80);
+  for (let i = 0; i < lim; i++) { const a = p[i], b = p[i + 1], vx = b[0] - a[0], vy = b[1] - a[1], t = clamp(((me.x - a[0]) * vx + (me.y - a[1]) * vy) / (vx * vx + vy * vy || 1), 0, 1), qx = a[0] + vx * t, qy = a[1] + vy * t, d = Math.hypot(me.x - qx, me.y - qy); if (d < bd || (d < 7 && i > bi)) { bd = d; bi = i; bq = [qx, qy]; } } // a later stretch you are already on wins, so no spur back to the last junction
+  if (p.length === 1) bd = 0;
+  if (bd > 28) { if (!ROUTE.re || now > ROUTE.re) { ROUTE.re = now + 1500; const pts = findPath(nearNode(me.x, me.y), nearNode(ROUTE.dest[0], ROUTE.dest[1])); pts.unshift([me.x, me.y]); pts.push(ROUTE.dest); ROUTE.pts = pts; } }
+  else if (bq) { p.splice(0, bi + 1, bq); }
+  const q = ROUTE.pts; let L = Math.hypot(q[0][0] - me.x, q[0][1] - me.y); for (let i = 1; i < q.length; i++) L += Math.hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]);
   ROUTE.left = L;
-  if (p.length === 1 && L < 12) ROUTE = null;
+  if (Math.hypot(ROUTE.dest[0] - me.x, ROUTE.dest[1] - me.y) < 14) ROUTE = null;
   routeInfo();
 }
 const fmtT = s => s < 90 ? Math.round(s) + ' s' : Math.round(s / 60) + ' min';
@@ -3426,7 +3494,7 @@ function roomNPC(I, name, kind, look, route, job, extra = {}) {
   const p = { uid: 5000 + Math.floor(R() * 90000), L, x: 0, y: 0, hx: 0, hy: 1, phase: R() * TAU, moving: false, idle: rnd(0, 4), route: [], pts: route, speed: rnd(1, 1.35), name: name || null, job: job || null, ...extra };
   if (extra.sit) { p.x = extra.sit.x; p.y = extra.sit.y; p.hx = extra.sit.hx; p.hy = extra.sit.hy; }
   else if (extra.fixedAt) { p.x = extra.fixedAt[0]; p.y = extra.fixedAt[1]; p.hx = extra.fixedAt[2]; p.hy = extra.fixedAt[3]; p.fixed = true; }
-  else if (route) { const s = route[0]; p.x = s[0]; p.y = s[1]; p.wi = 0; }
+  else if (route) { const i = Math.floor(R() * route.length), a = route[i], b = route[(i + 1) % route.length], t = R(); p.x = a[0] + (b[0] - a[0]) * t; p.y = a[1] + (b[1] - a[1]) * t; p.wi = i; p.idle = rnd(0, 1.5); } // somewhere along their walk, not all at the door
   if (name) { p.name = name; p.trait = name === 'Jess' ? 'warm' : name === 'Rob' ? 'chatty' : 'reserved'; p.knownJob = !!job; p.rel = name === 'Jess' || name === 'Rob' ? 22 : 0; p.gain = { day: 0, sum: 0 }; p.fin = false; p.fan = name === 'Rob'; p.jobLine = JOBLINE[name]; p.lines = NPCLINES[name]; }
   return p;
 }
@@ -3503,6 +3571,8 @@ function navPath(I, ax, ay, bx, by) {
   // pull the route tight: keep a corner only where you cannot see past it
   const out = []; let a = [ax, ay]; for (let q = 1; q < cells.length; q++) if (!navLine(N, I, a[0], a[1], cells[q][0], cells[q][1])) { out.push(cells[q - 1]); a = cells[q - 1]; }
   out.push(navLine(N, I, a[0], a[1], bx, by) ? [bx, by] : cells[cells.length - 1]); return out; }
+// send someone across the room on foot; onArrive runs when they get there (sit them down, put them to bed, hide them)
+function walkNPC(n, tx, ty, onArrive) { const I = INSIDE; n.sit = null; n.sleep = null; n.hidden = false; n.pts = null; n.idle = 0; n.arrive = onArrive || null; n.route = (I && navPath(I, n.x, n.y, tx, ty)) || [[tx, ty]]; n.speed = n.speed || 1.3; }
 function updateInside(dt) {
   const I = INSIDE;
   // exits trigger when you walk into them
@@ -3510,7 +3580,9 @@ function updateInside(dt) {
   else for (const e of I.exits) { if (e.to !== 'street') continue; const d = Math.hypot(player.x - I.ox - e.x, player.y - I.oy - e.y); if (d < e.r) { if (e.to === 'street') leaveInterior(); else { const back = INSIDE.name.startsWith('Northgate lobby') ? 'office' : 'lobby'; fade(() => enterInteriorSwap(back)); } return; } }
   for (const n of I.npcs) {
     n.moving = false; if (n.sit || n.fixed || talk && talk.p === n) continue;
+    if (!n.hidden && blockedInside(n.x, n.y, .15)) { const N = navGrid(I), c = navNearestFree(N, ...navCell(N, I, n.x, n.y)); if (c) { n.x = I.ox + (c[0] + .5) * N.cs; n.y = I.oy + (c[1] + .5) * N.cs; } } // never left standing inside a desk
     if (n.idle > 0) { n.idle -= dt; continue; }
+    if (!n.route.length && n.arrive) { const f = n.arrive; n.arrive = null; f(n); continue; }
     if (!n.route.length) { if (!n.pts) continue; n.wi = (n.wi + 1) % n.pts.length; const T = n.pts[n.wi]; n.route = navPath(I, n.x, n.y, T[0], T[1]) || [T]; n.idle = rnd(2, 6); continue; }
     const [tx, ty] = n.route[0], dx = tx - n.x, dy = ty - n.y, d = Math.hypot(dx, dy);
     if (d < .1) { n.route.shift(); continue; }
@@ -3518,7 +3590,7 @@ function updateInside(dt) {
     let nx = n.x + ux * st, ny = n.y + uy * st;
     if (blockedInside(nx, ny, .22)) { let ok = false; for (const a of [.7, -.7, 1.3, -1.3, 2, -2]) { const c = Math.cos(a), s = Math.sin(a), ax = ux * c - uy * s, ay = ux * s + uy * c; if (!blockedInside(n.x + ax * st, n.y + ay * st, .22)) { nx = n.x + ax * st; ny = n.y + ay * st; ok = true; break; } } if (!ok) { n.route.shift(); continue; } }
     // people in the way: the player and other walkers. Step around them if there is room, otherwise wait, and find another way after a few seconds
-    const crowded = (x, y) => Math.hypot(player.x - x, player.y - y) < .55 || I.npcs.some(o => o !== n && !o.hidden && !o.sleep && (o.sit || o.fixed || !o.pts || (o.uid || 0) < (n.uid || 0)) && Math.hypot(o.x - x, o.y - y) < .5 && Math.hypot(o.x - x, o.y - y) < Math.hypot(o.x - n.x, o.y - n.y)); // between two walkers, one always has right of way so they never wait on each other
+    const crowded = (x, y) => Math.hypot(player.x - x, player.y - y) < .55 || I.npcs.some(o => o !== n && !o.hidden && !o.sleep && (o.sit || o.fixed || !o.route.length || (o.uid || 0) < (n.uid || 0)) && Math.hypot(o.x - x, o.y - y) < .5 && Math.hypot(o.x - x, o.y - y) < Math.hypot(o.x - n.x, o.y - n.y)); // between two walkers, one always has right of way so they never wait on each other
     if (crowded(nx, ny)) { let ok = false; for (const a of [.6, -.6, 1.2, -1.2]) { const c = Math.cos(a), s2 = Math.sin(a), ax = ux * c - uy * s2, ay = ux * s2 + uy * c, qx = n.x + ax * st, qy = n.y + ay * st; if (!blockedInside(qx, qy, .22) && !crowded(qx, qy)) { nx = qx; ny = qy; ok = true; break; } }
       if (!ok && d < 1.3 && n.route.length === 1) { n.route.shift(); n.idle = rnd(1, 3); continue; } // someone is already standing where they were headed: close enough
       if (!ok) { n.blockT = (n.blockT || 0) + dt; if (n.blockT > 3) { n.blockT = 0; const T = n.route[n.route.length - 1]; n.route = navPath(I, n.x, n.y, T[0], T[1]) || n.route; n.idle = .6; } continue; } }
@@ -4132,12 +4204,13 @@ function renderScene() {
   if (!player.driving) { addSmall(player.x, player.y, 2.2, .6, () => drawPed(player, true)); smalls[smalls.length - 1].isPlayer = true; }
   if (near(PCAR, vw)) { addSmall(PCAR.x, PCAR.y, PCAR.T.hc + .4, PCAR.T.L / 2 + .3, () => drawCar(PCAR)); if (player.driving) smalls[smalls.length - 1].isPlayer = true; }
   for (const c of CARS) if (near(c, vw)) addSmall(c.x, c.y, c.T.hc + .4, c.T.L / 2 + .3, () => drawCar(c));
-  const addOver = (rect, hgt, draw) => { const x = (rect.x0 + rect.x1) / 2, y = (rect.y0 + rect.y1) / 2; addSmall(x, y, hgt, Math.max(rect.x1 - rect.x0, rect.y1 - rect.y0) / 2, draw); smalls[smalls.length - 1].over = rect; };
+  for (const c of PARKED) if (near(c, vw)) { if (!c.T) c.T = CARTYPES[c.type]; addSmall(c.x, c.y, c.T.hc + .4, c.T.L / 2 + .3, () => drawCar(c)); }
+  const addOver = (rect, hgt, draw, canopy) => { const x = (rect.x0 + rect.x1) / 2, y = (rect.y0 + rect.y1) / 2; addSmall(x, y, hgt, Math.max(rect.x1 - rect.x0, rect.y1 - rect.y0) / 2, draw); smalls[smalls.length - 1].over = rect; smalls[smalls.length - 1].canopy = canopy; };
   for (const p of vProps(vw)) if (near(p, vw)) {
-    if (p.t === 'tree') { addSmall(p.x, p.y, 3, .3, () => drawTrunk(p)); addOver({ x0: p.x - p.r, x1: p.x + p.r, y0: p.y - p.r, y1: p.y + p.r }, 8, () => drawTree(p)); }
+    if (p.t === 'tree') { addSmall(p.x, p.y, 3, .3, () => drawTrunk(p)); addOver({ x0: p.x - p.r, x1: p.x + p.r, y0: p.y - p.r, y1: p.y + p.r }, 8, () => drawTree(p), true); }
     else if (p.t === 'shrub') addSmall(p.x, p.y, 1, p.r, () => drawShrub(p));
     else if (p.t === 'pobj') addSmall(p.x, p.y, 2.6, p.k === 'bench' ? .9 : 2, () => drawParkObj(p));
-    else if (p.t === 'cart') { addSmall(p.x, p.y, 1.2, 1.1, () => drawProp(p)); addOver({ x0: p.x - 1.45, x1: p.x + 1.45, y0: p.y - 1.45, y1: p.y + 1.45 }, 2.8, () => drawCartUmbrella(p)); }
+    else if (p.t === 'cart') { addSmall(p.x, p.y, 1.2, 1.1, () => drawProp(p)); addOver({ x0: p.x - 1.45, x1: p.x + 1.45, y0: p.y - 1.45, y1: p.y + 1.45 }, 2.8, () => drawCartUmbrella(p), true); }
     else if (p.t === 'kiosk') addSmall(p.x, p.y, 2.6, 2, () => drawProp(p));
     else if (p.t === 'shelter') { addSmall(p.x, p.y, 2.5, 1.9, () => drawProp(p)); addOver(p.rect, 2.7, () => drawShelterRoof(p)); }
     else addSmall(p.x, p.y, p.t === 'sculpt' ? 8 : 1.4, p.t === 'sculpt' ? 1.2 : .5, () => drawProp(p));
@@ -4160,7 +4233,7 @@ function renderScene() {
   const span = r => { const xs = [screenX(r.x0, r.y0), screenX(r.x1, r.y0), screenX(r.x0, r.y1), screenX(r.x1, r.y1)], ys = [screenY(r.x0, r.y0), screenY(r.x1, r.y0), screenY(r.x0, r.y1), screenY(r.x1, r.y1)]; return [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)]; };
   for (const o of overs) o.sp = span(o.over);
   for (const s of smalls) { s.sx = screenX(s.x, s.y); s.key = s.over ? s.sp[3] + .001 : screenY(s.x, s.y); }
-  for (const s of smalls) if (!s.over) for (const o of overs) {
+  for (const s of smalls) if (!s.over) for (const o of overs) { if (o.canopy) continue; // free-standing canopies are above head height: behind is covered, in front covers them
     const r = o.over, [a0, a1, b0, b1] = o.sp; if (s.key <= b0 || s.key >= b1) continue;
     const inside = s.x > r.x0 - .15 && s.x < r.x1 + .15 && s.y > r.y0 - .15 && s.y < r.y1 + .15;
     if (!inside && s.sx > a0 - 2.5 && s.sx < a1 + 2.5) s.key = Math.max(s.key, b1 + .002);
@@ -4202,8 +4275,8 @@ function drawPed(p, isPlayer) {
   ctx.save(); ctx.translate(s[0], s[1]);
   if (ENV.shadowA < .05) { ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(0, 0, .26 * k, (people3D ? .22 : .1) * k, 0, 0, TAU); ctx.fill(); }
   let umb = false;
-  if (weather === 'rain' && !isPlayer) { umb = p.umbC === undefined ? (p.umbC = !['hivis', 'jog', 'courier'].includes(p.L.kind) && R() < .78) : p.umbC; }
-  if (isPlayer && weather === 'rain') umb = true;
+  if (weather === 'rain' && !isPlayer && !INSIDE) { umb = p.umbC === undefined ? (p.umbC = !['hivis', 'jog', 'courier'].includes(p.L.kind) && R() < .78) : p.umbC; }
+  if (isPlayer && weather === 'rain' && !INSIDE) umb = true; // nobody keeps an umbrella up indoors
   if (p.ghost) { ctx.restore(); if (!p.ghostL) { p.ghostL = JSON.parse(JSON.stringify(p.L)); for (const kk of ['top', 'bot', 'shoes', 'hairC', 'skin', 'shirt', 'tie', 'scarf', 'beanie', 'pack']) if (p.ghostL[kk]) p.ghostL[kk] = mixc(p.ghostL[kk], [200, 220, 240], .75); } const save = p.L, mv = p.moving; p.L = p.ghostL; p.moving = false; ctx.save(); ctx.globalAlpha = .42; ctx.translate(0, -k * (.25 + .08 * Math.sin(simT * 2 + p.x))); drawPerson3D(p, false, false); ctx.restore(); p.L = save; p.moving = mv; return; }
   if (people3D && k * DPR < 15 && !isPlayer) { ctx.restore(); drawPersonLite(p, umb); return; }
   if (people3D) { ctx.restore(); drawPerson3D(p, isPlayer, umb); if (isPlayer) { ctx.strokeStyle = 'rgba(214,163,71,.85)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(s[0], s[1], .45 * k, .45 * k, 0, 0, TAU); ctx.stroke(); } return; }
@@ -4262,8 +4335,10 @@ function frameBody(now) {
     const fl = event === 'nye' && nyeArmed === 'count' ? 1 / 60 : flow;
     const nh = hour + dt * fl / 60; if (nh >= 24) gameDay++; hour = nh % 24;
     if (fadeT > 0) { const was = fadeT; fadeT -= dt; if (was > .225 && fadeT <= .225 && fadeFn) { const f = fadeFn; fadeFn = null; f(); } if (fadeT <= 0) fadeFn = null; }
-    if (INSIDE) updateInside(dt);
-    updatePlayer(dt); updatePolice(dt); updateCars(dt); updatePeds(dt); updatePigeons(dt); updateFireworks(dt); updateWeather(dt, viewRect(30));
+    // while the game runs the clock fast (work, study, sleep), everyone else moves faster too: six steps a frame
+    const steps = window.GAME && GAME.FF && !GAME.FF.paused ? 6 : 1;
+    for (let st = 0; st < steps; st++) { if (st) simT += dt; if (INSIDE) updateInside(dt); updatePolice(dt); updateCars(dt); updatePeds(dt); updatePigeons(dt); }
+    updatePlayer(dt); updateFireworks(dt); updateWeather(dt, viewRect(30));
     if ((recT += dt) > .5) { recT = 0; recycleCars(); recyclePeds(); }
     // Driving never changes the zoom. Instead the camera moves ahead of the car in the direction it is travelling, about
     // two seconds of road, so the car sits back toward the trailing edge (never closer than about a third of the screen to
@@ -4285,7 +4360,7 @@ function frameBody(now) {
   if (lineupOn) drawLineup(now);
   if ((mmTick++ & 1) === 0) drawMinimap();
   if (mapOpen) drawBigMap();
-  if ((mmTick & 7) === 0 && !window.GAME) updatePrompt();
+  if ((mmTick & 7) === 0) { if (!window.GAME) updatePrompt(); else routeTick(); } // the route follows you in the game too
   if ((mmTick & 3) === 0 && hudEl) hudEl.innerHTML = INSIDE ? '' : `<b>${player.driving ? 'Driving' : 'On foot'}</b> · ${player.driving ? Math.round(Math.abs(PCAR.speed) * 3.6) + ' km/h' : (keys.ShiftLeft || keys.ShiftRight ? 'running' : 'walking')} · ${DNAME[districtAt(player.x, player.y)]}` + (ROUTE ? ` · ${(ROUTE.left / 1000).toFixed(2)} km to go` : '');
 }
 
