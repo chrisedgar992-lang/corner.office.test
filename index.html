@@ -160,6 +160,7 @@ textarea.io{width:100%;background:var(--btn);color:var(--text);border:1px solid 
 .tvbar button{background:var(--btn);border:1px solid var(--acc);color:var(--text);border-radius:8px;padding:6px 12px;font:inherit;cursor:pointer}
 #testview iframe{flex:1;border:0;width:100%;background:#fff}
 .tgrid button{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--text);font:inherit;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px}.tgrid button:hover{border-color:var(--acc);background:rgba(214,163,71,.08)}
+.row.tt{display:flex;flex-wrap:wrap;gap:6px}.row.tt button{flex:0 1 auto}.row.tt button.on{border-color:var(--acc);color:var(--acc)}.row.tt small{color:var(--muted);font-size:11px;margin-left:4px}
 /* title screen */
 #title{position:fixed;inset:0;z-index:40;overflow-y:auto;background:linear-gradient(90deg,rgba(8,10,13,.94),rgba(8,10,13,.78) 55%,rgba(8,10,13,.35));padding-block:calc(40px + env(safe-area-inset-top,0px)) 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));font:14px var(--ui);color:var(--text)}
 .tbox{max-width:760px;display:flex;flex-direction:column;gap:14px}
@@ -5448,11 +5449,13 @@ window.GAME = (() => {
     { id: 'x_drill', lv: [0, 4], text: () => 'The fire alarm goes off. A drill. Everyone is herded down thirty two floors of stairs.', ch: [['Go down with everyone', sh => { need('energy', -4); need('mood', 2); }, null], ['Hide in the stairwell and keep working', sh => { if (Math.random() < .35) { sh.perf -= 6; toast('A fire warden found you. Ms Calder heard about it.', 4); } else sh.perf += 2; }, null]] },
     { id: 'x_market', lv: [0, 4], text: () => 'The market drops four percent in an hour. The floor goes quiet, then every phone rings at once.', ch: [['Get on the phones and help', sh => { sh.perf += 5; need('energy', -6); }, null], ['Keep your head down on your own work', sh => { sh.perf += 1; }, null]] },
     { id: 'x_praise', lv: [0, 4], when: () => S.player.job.perf > 70, text: () => 'A partner you have never spoken to stops by. "You did the numbers on the logistics deal? Good work."', ch: [['Thank you. It was a team effort.', sh => { sh.perf += 3; need('mood', 8); }, null], ['Thanks. I have some ideas on the next one too.', sh => { sh.perf += 5; need('mood', 6); }, null]] }];
-  function workEvents(sh, mins) { const J = S.player.job, today = Math.floor(S.time / 1440);
-    if (J.lastEventDay != null && today - J.lastEventDay < 2) return []; if (Math.random() > .15) return [];
-    const pool = WORK_EVENTS.filter(e => J.level >= e.lv[0] && J.level <= e.lv[1] && !(S.seen['work:' + e.id] && S.time - S.seen['work:' + e.id] < 1440 * 30)); if (!pool.length) return [];
+  let forceEvent = null; // set from the test tools: an event id, or 'any'
+  function workEvents(sh, mins) { const J = S.player.job, today = Math.floor(S.time / 1440), forced = forceEvent; forceEvent = null;
+    if (!forced) { if (J.lastEventDay != null && today - J.lastEventDay < 2) return []; if (Math.random() > .15) return []; }
+    const fits = e => J.level >= e.lv[0] && J.level <= e.lv[1];
+    const pool = forced && forced !== 'any' ? WORK_EVENTS.filter(e => e.id === forced) : WORK_EVENTS.filter(e => fits(e) && (forced || !(S.seen['work:' + e.id] && S.time - S.seen['work:' + e.id] < 1440 * 30))); if (!pool.length) return [];
     const e = pool[Math.floor(Math.random() * pool.length)], at = Math.round(mins * (.25 + Math.random() * .5));
-    return [{ at, run: async () => { if (e.when && !e.when()) return; S.seen['work:' + e.id] = S.time; J.lastEventDay = today; const boss = e.who === 'boss';
+    return [{ at, run: async () => { if (e.when && !e.when() && !forced) return; S.seen['work:' + e.id] = S.time; J.lastEventDay = today; const boss = e.who === 'boss';
       const ch = await say(boss ? 'Ms Calder, your manager' : 'At work', boss ? VOICES.boss : 'none', e.text(), e.ch.map(([text, fx]) => ({ text, then: () => fx(sh) })), boss ? BOSSL : null);
       const pick = e.ch.find(c => c[0] === ch.text); if (pick && pick[2]) await say('At work', 'none', pick[2]); CR.note(S, 'At work: ' + ch.text + '.'); } }]; }
   async function promote() { const J = S.player.job; J.level++; J.shiftsAt = 0; const L = LADDER[J.level];
@@ -5508,7 +5511,7 @@ window.GAME = (() => {
     modalOpen = true; G.hold = true; const P2 = $('panel');
     P2.innerHTML = `<h2>Paused</h2><div class="kv"><span>Date</span><b>${CR.fmtDate(S.time)} ${CR.fmtTime(S.time)}</b><span>Age</span><b>${CR.ageOn(S.time, P0.birth)}</b><span>Job</span><b>${LADDER[J.level].t}</b><span>Shifts worked</span><b>${J.shifts}</b><span>Performance</span><b>${Math.round(J.perf)}</b><span>Cash</span><b>${money(P0.cash)}</b><span>Bank</span><b>${money(P0.bank)}</b><span>Meals in the fridge</span><b>${S.items.meals || 0}</b>${sk}</div>
       <h2 style="font-size:14px">Sound</h2><div id="sndrow"><span>City sound</span><button id="bSnd">${AU.on ? 'On' : 'Off'}</button>${['master', 'amb', 'traffic', 'people', 'music'].map(kq => `<span>${{ master: 'Master', amb: 'Ambience', traffic: 'Traffic', people: 'People', music: 'Venue music' }[kq]}</span><input type="range" min="0" max="100" value="${Math.round(AU.vol[kq] * 100)}" data-v="${kq}" style="accent-color:var(--acc)">`).join('')}</div><h2 style="font-size:14px">Saves</h2><div id="slots" class="opts"></div><textarea class="io" id="io" rows="2" placeholder="Save code"></textarea><div class="row"><button id="bExp">Copy save code</button><button id="bImp">Load save code</button><button id="bNew">New game</button></div><div class="sub2" id="ioMsg"></div>
-      <div class="sub2">WASD or arrows to move, Shift to run, E to use, enter, talk or get in the car. P for your phone. R for the radio, M for the map, Q and Z to turn the view, N to face north, mouse wheel or plus and minus to zoom, Esc for this menu.</div><button id="bRes">Resume</button>`;
+      <div class="sub2">WASD or arrows to move, Shift to run, E to use, enter, talk or get in the car. P for your phone. R for the radio, M for the map, Q and Z to turn the view, N to face north, mouse wheel or plus and minus to zoom, Esc for this menu.</div><div class="row"><button id="bTools">Test tools</button><button id="bRes">Resume</button></div>`;
     const SL = $('slots'); for (const s of store.list()) { const r = document.createElement('div'); r.className = 'slot'; const nm = { auto: 'Auto', quick: 'Quick', slot1: 'Slot 1', slot2: 'Slot 2', slot3: 'Slot 3' }[s.slot]; r.innerHTML = `<b>${nm}</b><span>${s.empty ? 'Empty' : s.broken ? 'Damaged' : s.date}</span>`;
       const sv = document.createElement('button'); sv.textContent = 'Save'; sv.onclick = () => { save(s.slot); pauseMenu(); }; if (s.slot === 'auto') sv.disabled = true; const ld = document.createElement('button'); ld.textContent = 'Load'; ld.disabled = s.empty || !!s.broken; ld.onclick = () => { load(store.load(s.slot)); closeMenu(); toast('Loaded.'); }; r.append(sv, ld); SL.appendChild(r); }
     $('bExp').onclick = () => { capture(); const t = CR.exportText(S); $('io').value = t; try { navigator.clipboard.writeText(t).then(() => $('ioMsg').textContent = 'Copied.', () => { $('io').select(); $('ioMsg').textContent = 'Select the text and copy it.'; }); } catch (e) { $('io').select(); } };
@@ -5516,7 +5519,7 @@ window.GAME = (() => {
     $('bNew').onclick = () => { if ($('bNew').dataset.sure) { load(fresh()); closeMenu(); intro(); } else { $('bNew').dataset.sure = 1; $('bNew').textContent = 'Press again to start over'; } };
     $('bSnd').onclick = () => { if (AU.on) { auStop(); G.soundOff = true; } else { G.soundOff = false; auStart(); } $('bSnd').textContent = AU.on ? 'On' : 'Off'; };
     for (const r of P2.querySelectorAll('[data-v]')) r.oninput = () => { const kq = r.dataset.v; AU.vol[kq] = r.value / 100; if (AC && au[kq]) ramp(au[kq].gain, AU.vol[kq], .05); };
-    $('bRes').onclick = closeMenu; $('modal').hidden = false; menu.keys = null; }
+    $('bRes').onclick = closeMenu; $('bTools').onclick = testTools; $('modal').hidden = false; menu.keys = null; }
 
   // ---------------- interiors: the share house, the Northgate lobby and the Meridian floor ----------------
   const ROOM_NAME = { house: 'Home', lobby: 'Northgate tower', office: EMPLOYER + ', level 32' };
@@ -5829,6 +5832,26 @@ window.GAME = (() => {
   // late fines double, once
   function fineCheck() { for (const f of S.fines || []) if (!f.paid && !f.late && S.time > f.due) { f.late = true; f.fine *= 2; toast(`An unpaid parking fine has doubled to ${money(f.fine)}.`, 5); } }
 
+  // ---------------- test tools ----------------
+  // For trying things out: set your job level, line up a work event for the next shift, jump the clock, top up needs and money.
+  // Open from the pause menu or with the backquote key.
+  const LVNAME = ['Graduate', 'Analyst', 'Senior', 'Associate', 'VP'];
+  function testTools() { modalOpen = true; G.hold = true; const J = S.player.job, P2 = $('panel');
+    const evs = WORK_EVENTS.map(e => `<button data-ev="${e.id}" class="${forceEvent === e.id ? 'on' : ''}" title="${esc(e.text().slice(0, 140))}">${esc(e.id)} <small>${e.lv[0] === e.lv[1] ? LVNAME[e.lv[0]] : LVNAME[e.lv[0]] + ' to ' + LVNAME[e.lv[1]]}</small></button>`).join('');
+    P2.innerHTML = `<h2>Test tools</h2><p class="sub2">Changes apply to this save. Hover an event to read it.</p>
+      <h2 style="font-size:14px">Job level</h2><div class="row tt">${LADDER.map((L, i) => `<button data-lv="${i}" class="${J.level === i ? 'on' : ''}">${L.t}</button>`).join('')}</div>
+      <h2 style="font-size:14px">Next shift's event</h2><p class="sub2">${forceEvent ? 'Lined up: ' + esc(forceEvent) + '. Start a shift to see it.' : 'None lined up. Pick one, or any event for your level.'}</p><div class="row tt"><button data-ev="any" class="${forceEvent === 'any' ? 'on' : ''}">Any for my level</button>${evs}</div>
+      <h2 style="font-size:14px">Clock, needs and money</h2><div class="row tt"><button id="ttWork">Next weekday 8:55, at the office door</button><button id="ttFull">Full energy, fed, good mood</button><button id="ttCash">Add $1,000</button><button id="ttFin">Finance skill up a level</button><button id="ttPerf">Performance 80</button></div>
+      <div class="row"><button id="ttBack">Done</button></div>`;
+    for (const b of P2.querySelectorAll('[data-lv]')) b.onclick = () => { J.level = +b.dataset.lv; J.shiftsAt = 0; toast('You are now ' + LADDER[J.level].t + '.', 2); testTools(); };
+    for (const b of P2.querySelectorAll('[data-ev]')) b.onclick = () => { forceEvent = forceEvent === b.dataset.ev ? null : b.dataset.ev; testTools(); };
+    $('ttWork').onclick = () => { let d = Math.floor(S.time / 1440) + 1; while ([0, 6].includes(CR.parts(d * 1440).dow)) d++; S.time = d * 1440 + 8 * 60 + 55; skyForDay(); closeMenu(); if (INSIDE) leaveInterior(); player.driving = false; player.x = workDoor.x + workDoor.nx * 1.5; player.y = workDoor.y + workDoor.ny * 1.5; cx = player.x; cy = player.y; toast('Next weekday, 8:55, outside Northgate tower.', 3); };
+    $('ttFull').onclick = () => { Object.assign(S.player.needs, { energy: 100, hunger: 10, mood: 80 }); testTools(); };
+    $('ttCash').onclick = () => { S.player.bank += 100000; testTools(); };
+    $('ttFin').onclick = () => { const lv = CR.levelOf(S.player.skills.finance || 0); let v = S.player.skills.finance || 0; while (CR.levelOf(v) <= lv) v += 25; S.player.skills.finance = v; toast('Finance level ' + CR.levelOf(v) + '.', 2); testTools(); };
+    $('ttPerf').onclick = () => { J.perf = 80; testTools(); };
+    $('ttBack').onclick = closeMenu; $('modal').hidden = false; menu.keys = null; }
+
   // ---------------- the title screen ----------------
   // The demo starts from here rather than dropping you into the city. Every component test we built opens from it too.
   const TESTS = [['prototype', 'Corner Office prototype', 'The first playable build'], ['portraits', 'Portrait Creator', 'Faces, hair and clothes'], ['car-designer', 'Car Designer', 'Car models and handling'], ['brand-studio', 'Brand Studio', 'Logos and signage styles'], ['track-designer', 'Grand Prix Track Designer', 'Race circuit layouts']];
@@ -5881,6 +5904,7 @@ window.GAME = (() => {
     if (e.code === 'KeyT' && !INSIDE && pedNow) { startTalk(pedNow); return true; }
     if (e.code === 'KeyM') { toggleMap(); return true; }
     if (e.code === 'KeyP') { openPhone(); return true; }
+    if (e.code === 'Backquote') { testTools(); return true; }
     if (e.code === 'KeyR' && player.driving) { e.shiftKey ? music.skip() : music.toggle(); return true; }
     return false;
   }

@@ -36,6 +36,7 @@ The game opens on a main menu. Continue or start a new game from there, or open 
 - M for the map, Q and Z to turn the view, N to face north
 - Mouse wheel, or plus and minus, to zoom
 - Esc for the menu, saves and sound settings
+- The backquote key, or Test tools in the menu, to set your job level, line up a work event, jump the clock and top up needs and money
 
 ## Files
 
