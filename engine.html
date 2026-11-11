@@ -3458,7 +3458,7 @@ function renderInterior() {
   }
   if ((event === 'december' || event === 'nye') && I.xtree) { const T = { x: I.ox + I.xtree[0], y: I.oy + I.xtree[1], sc: I.xtree[2] }; bigs.push({ r: { x0: T.x - 1, y0: T.y - 1, x1: T.x + 1, y1: T.y + 1 }, d: Math.hypot(T.x - cx, T.y - cy), draw: () => drawXmasTree(T), box: bigBox({ x0: T.x - 2, y0: T.y - 2, x1: T.x + 2, y1: T.y + 2 }, 14 * T.sc) }); }
   if (event === 'halloween' && I.pumpkins) for (const [px, py] of I.pumpkins) { const pk = { x: I.ox + px, y: I.oy + py, s: 1, seed: px * 10 | 0 }; smalls.push({ x: pk.x, y: pk.y, hgt: .4, rad: .3, draw: () => drawPumpkin(pk) }); }
-  for (const p of I.npcs) smalls.push({ x: p.x, y: p.y + (p.sit ? .5 : 0), hgt: 1.9, rad: .5, draw: () => drawPed(p) }); // seated people sort after their seat
+  for (const p of I.npcs) smalls.push({ x: p.x, y: p.y + (p.sleep ? 2.2 : p.sit ? .5 : 0), hgt: 1.9, rad: .5, draw: () => drawPed(p) }); // seated people sort after their seat
   smalls.push({ x: player.x, y: player.y, hgt: 1.9, rad: .5, draw: () => drawPed(player, true), isPlayer: true });
   bigs.sort((a, b) => b.d - a.d);
   const slots = bigs.map(() => []); slots.push([]);
@@ -4052,6 +4052,7 @@ function renderScene() {
   drawPost();
 }
 function drawPed(p, isPlayer) {
+  if (p.sleep && !p.hidden) return drawSleeper(p);
   const s = P(p.x, p.y, 0);
   ctx.save(); ctx.translate(s[0], s[1]);
   if (ENV.shadowA < .05) { ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(0, 0, .26 * k, (people3D ? .22 : .1) * k, 0, 0, TAU); ctx.fill(); }
@@ -4230,6 +4231,20 @@ function drawPersonLite(p, umb) {
   if (L.hair !== 'bald') { ctx.fillStyle = tone(L.hairC, 1.7); ctx.beginPath(); ctx.arc(hd[0], hd[1] - k * .04, Math.max(.8, k * .1), Math.PI, TAU); ctx.fill(); }
   if (umb) { const u = P(p.x, p.y, 2.1); ctx.fillStyle = tone(L.umb, 2.1); ctx.beginPath(); ctx.arc(u[0], u[1], k * .55, 0, TAU); ctx.fill(); }
   ctx.lineCap = 'butt';
+}
+
+// someone asleep in bed: their head on the pillow and the shape of their body under the duvet
+function drawSleeper(p) {
+  const S = p.sleep, fx = S.fx, fy = S.fy, sx = -fy, sy = fx, zt = S.z; // fx, fy point from the head toward the feet
+  const at = (a, b) => [S.x + fx * a + sx * b, S.y + fy * a + sy * b];
+  // the body under the duvet: a long low mound, a little wider at the shoulders
+  const outline = []; for (let i = 0; i <= 12; i++) { const t = i / 12, a = .25 + t * 1.45, w = .3 - .1 * t; outline.push(at(a, w)); } for (let i = 12; i >= 0; i--) { const t = i / 12, a = .25 + t * 1.45, w = .3 - .1 * t; outline.push(at(a, -w)); }
+  drawPrism(outline, outline, zt, zt + .16, mulc(S.col, .85), tone(mulc(S.col, 1.12), zt + .16));
+  // the head on the pillow, hair on the side away from the face
+  const L = p.L, h = P(S.x, S.y, zt + .12), r = .12 * k * LS(zt + .12);
+  ctx.fillStyle = tone(L.skin, zt + .12); ctx.beginPath(); ctx.arc(h[0], h[1], r, 0, TAU); ctx.fill();
+  const hb = P(S.x - fx * .04, S.y - fy * .04, zt + .16); ctx.fillStyle = tone(L.hairC, zt + .16); ctx.beginPath(); ctx.arc(hb[0], hb[1], r * .92, 0, TAU); ctx.fill();
+  if (L.beard) { const bd = P(S.x + fx * .09, S.y + fy * .09, zt + .13); ctx.fillStyle = tone(L.hairC, zt + .13); ctx.beginPath(); ctx.arc(bd[0], bd[1], r * .55, 0, TAU); ctx.fill(); }
 }
 // ================= sound panel (engine page) =================
 (function () {

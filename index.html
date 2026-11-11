@@ -3509,7 +3509,7 @@ function renderInterior() {
   }
   if ((event === 'december' || event === 'nye') && I.xtree) { const T = { x: I.ox + I.xtree[0], y: I.oy + I.xtree[1], sc: I.xtree[2] }; bigs.push({ r: { x0: T.x - 1, y0: T.y - 1, x1: T.x + 1, y1: T.y + 1 }, d: Math.hypot(T.x - cx, T.y - cy), draw: () => drawXmasTree(T), box: bigBox({ x0: T.x - 2, y0: T.y - 2, x1: T.x + 2, y1: T.y + 2 }, 14 * T.sc) }); }
   if (event === 'halloween' && I.pumpkins) for (const [px, py] of I.pumpkins) { const pk = { x: I.ox + px, y: I.oy + py, s: 1, seed: px * 10 | 0 }; smalls.push({ x: pk.x, y: pk.y, hgt: .4, rad: .3, draw: () => drawPumpkin(pk) }); }
-  for (const p of I.npcs) smalls.push({ x: p.x, y: p.y + (p.sit ? .5 : 0), hgt: 1.9, rad: .5, draw: () => drawPed(p) }); // seated people sort after their seat
+  for (const p of I.npcs) smalls.push({ x: p.x, y: p.y + (p.sleep ? 2.2 : p.sit ? .5 : 0), hgt: 1.9, rad: .5, draw: () => drawPed(p) }); // seated people sort after their seat
   smalls.push({ x: player.x, y: player.y, hgt: 1.9, rad: .5, draw: () => drawPed(player, true), isPlayer: true });
   bigs.sort((a, b) => b.d - a.d);
   const slots = bigs.map(() => []); slots.push([]);
@@ -4103,6 +4103,7 @@ function renderScene() {
   drawPost();
 }
 function drawPed(p, isPlayer) {
+  if (p.sleep && !p.hidden) return drawSleeper(p);
   const s = P(p.x, p.y, 0);
   ctx.save(); ctx.translate(s[0], s[1]);
   if (ENV.shadowA < .05) { ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(0, 0, .26 * k, (people3D ? .22 : .1) * k, 0, 0, TAU); ctx.fill(); }
@@ -4281,6 +4282,20 @@ function drawPersonLite(p, umb) {
   if (L.hair !== 'bald') { ctx.fillStyle = tone(L.hairC, 1.7); ctx.beginPath(); ctx.arc(hd[0], hd[1] - k * .04, Math.max(.8, k * .1), Math.PI, TAU); ctx.fill(); }
   if (umb) { const u = P(p.x, p.y, 2.1); ctx.fillStyle = tone(L.umb, 2.1); ctx.beginPath(); ctx.arc(u[0], u[1], k * .55, 0, TAU); ctx.fill(); }
   ctx.lineCap = 'butt';
+}
+
+// someone asleep in bed: their head on the pillow and the shape of their body under the duvet
+function drawSleeper(p) {
+  const S = p.sleep, fx = S.fx, fy = S.fy, sx = -fy, sy = fx, zt = S.z; // fx, fy point from the head toward the feet
+  const at = (a, b) => [S.x + fx * a + sx * b, S.y + fy * a + sy * b];
+  // the body under the duvet: a long low mound, a little wider at the shoulders
+  const outline = []; for (let i = 0; i <= 12; i++) { const t = i / 12, a = .25 + t * 1.45, w = .3 - .1 * t; outline.push(at(a, w)); } for (let i = 12; i >= 0; i--) { const t = i / 12, a = .25 + t * 1.45, w = .3 - .1 * t; outline.push(at(a, -w)); }
+  drawPrism(outline, outline, zt, zt + .16, mulc(S.col, .85), tone(mulc(S.col, 1.12), zt + .16));
+  // the head on the pillow, hair on the side away from the face
+  const L = p.L, h = P(S.x, S.y, zt + .12), r = .12 * k * LS(zt + .12);
+  ctx.fillStyle = tone(L.skin, zt + .12); ctx.beginPath(); ctx.arc(h[0], h[1], r, 0, TAU); ctx.fill();
+  const hb = P(S.x - fx * .04, S.y - fy * .04, zt + .16); ctx.fillStyle = tone(L.hairC, zt + .16); ctx.beginPath(); ctx.arc(hb[0], hb[1], r * .92, 0, TAU); ctx.fill();
+  if (L.beard) { const bd = P(S.x + fx * .09, S.y + fy * .09, zt + .13); ctx.fillStyle = tone(L.hairC, zt + .13); ctx.beginPath(); ctx.arc(bd[0], bd[1], r * .55, 0, TAU); ctx.fill(); }
 }
 // ================= Corner Office core: the systems every build shares =================
 // 1. Permanent IDs for buildings and lots, so saves survive map edits
@@ -4768,14 +4783,14 @@ window.GAME = (() => {
   // Rob is between jobs: he sleeps in, lives on the couch, and goes out on Friday and Saturday nights
   const robWhere = () => { const p = CR.parts(S.time), h = p.h + p.mi / 60, fri = p.dow === 5, sat = p.dow === 6, sun = p.dow === 0, mon = p.dow === 1;
     if ((fri || sat) && h >= 21) return null; if ((sat || sun) && h < 2.5) return null;
-    if (h >= 1.5 && h < 10.5) return 'robroom'; if (h < 1.5) return 'couch'; if (h < 12.5) return 'kitchen'; return h >= 18 && h < 19.5 ? 'kitchen' : 'couch'; };
-  function placeNPC(name, at) { const I = INSIDE; if (!I) return; const n = I.npcs.find(q => q.name === name); if (!n) return; n.hidden = !at;
+    if (h >= 1.5 && h < 9.5) return 'robroom'; if (h < 1.5) return 'couch'; if (h < 12.5) return 'kitchen'; return h >= 18 && h < 19.5 ? 'kitchen' : 'couch'; };
+  function placeNPC(name, at, sleep) { const I = INSIDE; if (!I) return; const n = I.npcs.find(q => q.name === name); if (!n) return; n.hidden = !at; n.sleep = sleep ? { x: I.ox + sleep[0], y: I.oy + sleep[1], fx: sleep[2], fy: sleep[3], z: sleep[4], col: sleep[5] } : null;
     if (!at) { n.sit = { x: I.ox - 500, y: I.oy - 500, z: 0, hx: 0, hy: 1 }; n.x = n.sit.x; n.y = n.sit.y; return; }
     n.sit = { x: I.ox + at[0], y: I.oy + at[1], z: at[4] ?? .44, hx: at[2], hy: at[3] }; n.x = n.sit.x; n.y = n.sit.y; }
-  function placeRob() { if (roomKey() !== 'house') return; const w = robWhere(); placeNPC('Rob', w === 'couch' ? [12.0, 9.15, 0, 1] : w === 'kitchen' ? [10.1, 5.4, 0, 1, .5] : w === 'robroom' ? [1.4, 10.4, 0, -1, .5] : null); }
+  function placeRob() { if (roomKey() !== 'house') return; const w = robWhere(); placeNPC('Rob', w === 'couch' ? [12.0, 9.15, 0, 1] : w === 'kitchen' ? [10.1, 5.4, 0, 1, .5] : w === 'robroom' ? [1.0, 9.6, 0, 1, .5] : null, w === 'robroom' ? [1.0, 9.55, 0, 1, .5, [70, 90, 76]] : null); }
   function nearFurn(pred, r = 1.3) { const I = INSIDE; let best = null, bd = r; for (const f of I.furn) { if (!pred(f)) continue; const [w, d] = FURN[f.t] ? FURN[f.t].size(f) : [1, 1], odd = f.rot === 1 || f.rot === 3, hw = (odd ? d : w) / 2, hd = (odd ? w : d) / 2;
       const lx = player.x - I.ox, ly = player.y - I.oy, dx = Math.max(Math.abs(lx - f.x) - hw, 0), dy = Math.max(Math.abs(ly - f.y) - hd, 0), dd = Math.hypot(dx, dy); if (dd < bd) { bd = dd; best = f; } } return best; }
-  function nearNPC(r = 1.8) { let best = null, bd = r; for (const n of INSIDE.npcs) { if (!n.name || n.hidden) continue; const d = Math.hypot(n.x - player.x, n.y - player.y); if (d < bd) { bd = d; best = n; } } return best; }
+  function nearNPC(r = 1.8) { let best = null, bd = r; for (const n of INSIDE.npcs) { if (!n.name || n.hidden || n.sleep) continue; const d = Math.hypot(n.x - player.x, n.y - player.y); if (d < bd) { bd = d; best = n; } } return best; }
   function nearLift() { const I = INSIDE; for (const e of I.exits) if (e.to !== 'street' && Math.hypot(player.x - I.ox - e.x, player.y - I.oy - e.y) < e.r + .6) return e; return null; }
   const MYBED = f => f.t === 'bed' && f.double, MYDESK = f => f.t === 'desk' && f.laptop && f.x > 8;
   let near = null, wasRoom = null;
