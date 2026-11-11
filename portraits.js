@@ -349,8 +349,10 @@ function fromLook(L) {
   const mr = Math.random; Math.random = r; let s; try { s = randomPerson(g); } finally { Math.random = mr; }
   let ti = 0, bd = 1e9; ENGSKIN.forEach((c, i) => { const d = (c[0] - L.skin[0]) ** 2 + (c[1] - L.skin[1]) ** 2 + (c[2] - L.skin[2]) ** 2; if (d < bd) { bd = d; ti = i; } }); s.tone = ti + 1;
   const hc = L.hairC || [60, 44, 32], grey = hc[0] > 125 && Math.abs(hc[0] - hc[2]) < 24;
-  // young people (students, Jess) never get the older or the fullest faces; grey hair usually means an older face
-  s.head = pk(META.heads.filter(h => h.startsWith(g) && (L.young ? /average|fit/.test(h) : grey ? /older/.test(h) || r() < .3 : !/older/.test(h))));
+    // the face follows their age: young people get the average or fit faces, seniors mostly the older faces, everyone else
+  // any face but the older ones. Grey hair on someone with no age set still reads as older.
+  const age = L.young ? 'young' : L.age || (grey ? 'senior' : 'mid');
+  s.head = pk(META.heads.filter(h => h.startsWith(g) && (age === 'young' ? /average|fit/.test(h) : age === 'senior' ? /older/.test(h) : !/older/.test(h))));
   s.hairRGB = hc; s.hair = pk((HAIRMAP[g][L.hair] || HAIRMAP[g][g === 'feminine' ? 'long' : 'short']));
   s.fh = L.fem ? 'none' : L.beard === 'stubble' ? 'stubble_01' : L.beard === 'beard' ? pk(['short_beard_02', 'full_beard_03']) : L.beard === 'mous' ? 'moustache_04' : 'none';
   s.glasses = L.glasses ? pk(META.glasses) : 'none'; s.lens = 'clear';

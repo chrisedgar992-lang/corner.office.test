@@ -947,6 +947,14 @@ function randomLook(kind) {
   kind = kind || (() => { const r = R(); return r < .44 ? 'suit' : r < .64 ? 'coat' : r < .8 ? 'casual' : r < .86 ? 'hivis' : r < .9 ? 'jog' : r < .95 ? 'courier' : 'tourist'; })();
   const L = { kind, fem, h: rnd(.93, 1.07) * (fem ? .95 : 1), skin: pick(SKIN), hairC: pick(HAIRC), shoes: pick([[22, 20, 20], [40, 30, 24], [60, 58, 56], [24, 24, 30]]), umb: pick(UMB), skirt: false, bag: null, glasses: R() < .18, beard: !fem && R() < .28 ? pick(['stubble', 'beard', 'mous']) : null };
   L.hair = fem ? pick(['long', 'long', 'bun', 'pony', 'bob', 'short', 'curly']) : pick(['short', 'short', 'side', 'buzz', 'bald', 'curly', 'side', 'long']);
+  // an age band that suits what they wear: a suit is often a graduate, a long coat is often senior. Seniors are often grey,
+  // young people never are. The band picks their job and their portrait's face, so a CEO never has a student's face.
+  { const AW = { suit: [.45, .4, .15], coat: [.1, .45, .45], casual: [.6, .3, .1], hivis: [.3, .5, .2], jog: [.6, .35, .05], courier: [.8, .2, 0], tourist: [.3, .4, .3], police: [.35, .5, .15] }[kind] || [.4, .4, .2], r2 = R();
+    L.age = r2 < AW[0] ? 'young' : r2 < AW[0] + AW[1] ? 'mid' : 'senior';
+    const grey = c => c[0] > 125 && Math.abs(c[0] - c[2]) < 24;
+    if (L.age === 'young') { while (grey(L.hairC)) L.hairC = pick(HAIRC); if (L.hair === 'bald') L.hair = 'short'; }
+    else if (L.age === 'senior' && R() < .6) L.hairC = pick([[138, 134, 128], [196, 192, 184], [110, 106, 100]]);
+    else if (L.age === 'mid' && grey(L.hairC) && R() < .7) L.hairC = pick([[28, 23, 20], [46, 34, 26], [72, 50, 34]]); }
   if (L.hairC[0] > 130 && R() < .5 && !fem) L.hair = pick(['side', 'short', 'bald']);
   if (kind === 'suit') { L.top = pick(SUITC); L.bot = R() < .8 ? L.top : pick(SUITC); L.shirt = pick([[226, 226, 222], [196, 210, 226], [230, 226, 214]]); L.tie = fem ? null : pick([[96, 30, 34], [30, 36, 60], [40, 40, 44], [90, 80, 50]]); L.skirt = fem && R() < .45; L.bag = R() < .45 ? 'case' : R() < .3 ? 'coffee' : null; }
   else if (kind === 'coat') { L.top = pick(COATC); L.bot = pick(SUITC); L.shirt = pick([[220, 220, 216], [60, 60, 64]]); L.coat = true; L.bag = R() < .35 ? 'case' : null; }
@@ -1124,7 +1132,7 @@ function updatePigeons(dt) {
 // ---------- player ----------
 const START = DOORS.find(d => d.to === 'lobby') || DOORS[0] || { x: CBD.x, y: CBD.y, nx: 0, ny: 1 };
 const player = { x: START.x + START.nx * 1.4, y: START.y + START.ny * 1.4, L: null, phase: 0, dir: 'up', moving: false, hx: START.nx, hy: START.ny };
-player.L = randomLook('suit'); player.L.fem = false; player.L.hair = 'side'; player.L.hairC = [46, 34, 26]; player.L.skin = SKIN[1]; player.L.top = [60, 66, 74]; player.L.bot = [60, 66, 74]; player.L.tie = [30, 36, 60]; player.L.skirt = false; player.L.bag = 'case'; player.L.beard = null; player.L.h = 1; player.L.glasses = false;
+player.L = randomLook('suit'); player.L.age = 'young'; player.L.fem = false; player.L.hair = 'side'; player.L.hairC = [46, 34, 26]; player.L.skin = SKIN[1]; player.L.top = [60, 66, 74]; player.L.bot = [60, 66, 74]; player.L.tie = [30, 36, 60]; player.L.skirt = false; player.L.bag = 'case'; player.L.beard = null; player.L.h = 1; player.L.glasses = false;
 const keys = {};
 let pointer = null;
 function blocked(x, y, r) {
@@ -2641,8 +2649,17 @@ document.getElementById('bmx').onclick = () => toggleMap(false);
 // ================= conversations =================
 const FIRST_F = ['Ava', 'Priya', 'Elena', 'Grace', 'Hannah', 'Mei', 'Isla', 'Ruth', 'Nadia', 'Zara', 'Ines', 'Chloe', 'Amara', 'Sofia', 'Leah', 'Yuki'], FIRST_M = ['Marcus', 'Tom', 'Daniel', 'Omar', 'Leo', 'Sam', 'Jonah', 'Theo', 'Felix', 'Callum', 'Raj', 'Victor', 'Ezra', 'Kwame', 'Luca', 'Hugo'];
 const LAST = ['Hale', 'Moreno', 'Shah', 'Becker', 'Okafor', 'Lindqvist', 'Park', 'Doyle', 'Mendes', 'Varga', 'Ito', 'Byrne', 'Novak', 'Reyes', 'Quinn', 'Adler'];
-const JOBS = { police: ['Police officer', 'Senior constable', 'Sergeant'], suit: ['Analyst at Northgate', 'Associate at Vantage', 'Corporate lawyer', 'Compliance officer', 'Junior banker'], coat: ['Fund manager', 'Managing director', 'Partner at a consulting firm', 'Commercial property agent'], casual: ['Barista', 'Student', 'Bartender', 'Retail worker', 'Freelance designer'], hivis: ['Site foreman', 'Crane operator', 'Electrician'], jog: ['Physio', 'Personal trainer'], courier: ['Courier', 'Food delivery rider'], tourist: ['Visiting from out of town'] };
-const FIN = /analyst|associate|banker|fund|managing director|compliance|property/i;
+const JOBS = { police: ['Police officer', 'Police officer', 'Sergeant'], suit: ['Analyst at Northgate', 'Associate at Vantage', 'Corporate lawyer', 'Compliance officer', 'Junior banker'], coat: ['Fund manager', 'Managing director', 'Partner at a consulting firm', 'Commercial property agent'], casual: ['Barista', 'Student', 'Bartender', 'Retail worker', 'Freelance designer'], hivis: ['Site foreman', 'Crane operator', 'Electrician'], jog: ['Physio', 'Personal trainer'], courier: ['Courier', 'Food delivery rider'], tourist: ['Visiting from out of town'] };
+// jobs by what they wear and how old they are: graduates and juniors are young, partners and chiefs are senior
+const JOBS_AGE = {
+  suit: { young: ['Graduate analyst', 'Junior banker', 'Paralegal', 'Analyst at Northgate'], mid: ['Associate at Vantage', 'Corporate lawyer', 'Compliance officer', 'Senior analyst'], senior: ['Partner at a law firm', 'Chief financial officer', 'Head of compliance', 'Vice president at Vantage'] },
+  coat: { young: ['Junior property agent', 'Associate at a consulting firm'], mid: ['Fund manager', 'Commercial property agent', 'Director of sales'], senior: ['Managing director', 'Chief executive of a logistics firm', 'Partner at a consulting firm', 'Chief investment officer'] },
+  casual: { young: ['Barista', 'Student', 'Bartender', 'Retail worker'], mid: ['Freelance designer', 'Store manager', 'Chef', 'Bartender'], senior: ['Bookshop owner', 'Retired teacher', 'Cafe owner'] },
+  hivis: { young: ['Apprentice electrician', 'Laborer'], mid: ['Electrician', 'Crane operator'], senior: ['Site foreman', 'Construction project manager'] },
+  jog: { young: ['Personal trainer', 'Student'], mid: ['Physio', 'Nurse'], senior: ['Retired accountant'] },
+  courier: { young: ['Food delivery rider', 'Courier'], mid: ['Courier'], senior: ['Courier'] },
+  police: { young: ['Police officer'], mid: ['Police officer', 'Detective'], senior: ['Sergeant', 'Lieutenant'] } };
+const FIN = /analyst|associate|banker|fund|managing director|compliance|property|financial|investment|vice president/i;
 // personalities: how much each topic is liked (+) or disliked (-), and how long they will talk
 const TRAITS = {
   chatty: { label: 'Chatty', small: 3, work: 1, sport: 2, market: -1, compliment: 2, coffee: 1, patience: 6 },
@@ -2659,7 +2676,7 @@ function ensureNPC(p) {
   if (p.name) return;
   const r2 = mulberry((p.uid !== undefined ? p.uid : PEDS.indexOf(p)) * 7919 + 99); const FN = p.L.fem ? FIRST_F : FIRST_M;
   p.name = FN[Math.floor(r2() * FN.length)] + ' ' + LAST[Math.floor(r2() * LAST.length)];
-  const js = JOBS[p.L.kind] || JOBS.casual; p.job = p.job || js[Math.floor(r2() * js.length)];
+  const ja = JOBS_AGE[p.L.cop ? 'police' : p.L.kind], js = (ja && ja[p.L.age]) || JOBS[p.L.kind] || JOBS.casual; p.job = p.job || js[Math.floor(r2() * js.length)];
   p.rel = Math.round(r2() * 14 - 6);
   const tk = Object.keys(TRAITS); p.trait = tk[Math.floor(r2() * tk.length)];
   if (FIN.test(p.job) && r2() < .5) p.trait = 'ambitious';
