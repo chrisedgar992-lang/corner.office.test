@@ -2780,11 +2780,8 @@ function drawPortrait(cvs, L, expr, flip) {
     // everyone else: a Portrait Creator portrait built from the same look as their street figure
     PORTRAIT.paint(g, L, expr, w, h, flip);
     if (night > .5) { g.save(); g.globalCompositeOperation = 'multiply'; g.fillStyle = 'rgb(204,209,240)'; g.fillRect(0, 0, w, h); g.restore(); }
-  } else {
-    g.save(); g.translate(w / 2, h * .12); if (flip) g.scale(-1, 1); g.scale(S * .93, S * 1.05);
-    paintHead(g, L, expr, amb, 1.6 / S, S);
-    g.restore();
-  }
+  } else { cvs.dataset.waiting = '1'; } // portraits still loading: the frame stays empty and fills in when they arrive
+  if ((sp && sp.complete && sp.naturalWidth) || (window.PORTRAIT && PORTRAIT.ready && !L.set)) delete cvs.dataset.waiting;
   const v = g.createRadialGradient(w / 2, h * .42, h * .25, w / 2, h * .5, h * .85); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.5)'); g.fillStyle = v; g.fillRect(0, 0, w, h);
 }
 // ---------- painted portrait ----------
@@ -3006,7 +3003,9 @@ addEventListener('keydown', e => {
 });
 
 // the portrait pack (about 6.5 MB) loads after the city is up, so starting the game stays quick
-setTimeout(() => { const s = document.createElement('script'); s.src = 'portraits.js'; s.onload = () => { if (talk) renderTalk(); }; document.body.appendChild(s); }, 1500);
+{ const s = document.createElement('script'); s.src = 'portraits.js'; document.body.appendChild(s);
+  // once the pack is in, redraw any portrait frame that was left waiting
+  const wait = setInterval(() => { if (!(window.PORTRAIT && PORTRAIT.ready)) return; const setOk = typeof SETP === 'undefined' || Object.values(SETP).every(o => o.neutral.complete); if (!setOk) return; clearInterval(wait); window.PORTRAITS_READY = true; if (talk) renderTalk(); for (const c of document.querySelectorAll('canvas[data-waiting]')) if (c.redraw) c.redraw(); }, 100); }
 // ================= seasons and holidays =================
 var season = 'autumn', event = 'none';
 const DAYLEN = { spring: [6.3, 19.3], summer: [5.4, 20.7], autumn: [6.9, 17.4], winter: [7.7, 16.5] };
@@ -3304,7 +3303,7 @@ function buildShareHouse(ox, oy) {
   F(I, 'rug', 12.0, 10.3, { w: 3.0, d: 2.0, col: [128, 76, 60] }); F(I, 'sofa', 12.0, 9.2, { w: 2.3, rot: 2 }); F(I, 'armchair', 9.5, 10.3, { rot: 3 }); F(I, 'tvunit', 12.0, 11.65); F(I, 'plant', 14.5, 11.5); F(I, 'lamp', 8.0, 11.5); F(I, 'shelf', 7.55, 9.7, { rot: 1, w: 1.0 });
   F(I, 'plant', 6.9, 11.5); I.xtree = [14.2, 9.3, .16]; I.pumpkins = [[10.6, 6.2], [6.6, 11.3]];
   // housemates
-  I.npcs.push(roomNPC(I, 'Jess', 'casual', { fem: true, hair: 'pony', hairC: [96, 58, 36], skin: SKIN[1], top: [120, 60, 70] }, [[13.75, 5.0], [13.8, 7.25], [12.4, 7.6], [13.8, 8.0]], 'Housemate. Studying nursing.'));
+  I.npcs.push(roomNPC(I, 'Jess', 'casual', { fem: true, hair: 'pony', hairC: [96, 58, 36], skin: SKIN[1], top: [120, 60, 70], young: true, seed: 2204 }, [[13.75, 5.0], [13.8, 7.25], [12.4, 7.6], [13.8, 8.0]], 'Housemate. Studying nursing.'));
   I.npcs.push(roomNPC(I, 'Rob', 'casual', { fem: false, hair: 'bob', hairC: [86, 56, 38], skin: SKIN[1], top: [222, 214, 200], beard: 'beard', set: 'rob' }, null, 'Roommate. On a career break, going on two years.', { sit: { x: 12.0, y: 9.15, z: .44, hx: 0, hy: 1 } }));
   return I;
 }
@@ -4630,7 +4629,7 @@ window.GAME = (() => {
   const VOICES = { rob: VOICE.make({ pitch: 118, rate: 7.4, mute: .5, bright: .65, wobble: .1 }), boss: VOICE.make({ pitch: 98, rate: 6, mute: .55, bright: .45, wobble: .05, vol: 1.1 }) };
   function say(who, voice, text, choices, look, expr) { look = look || (who.startsWith('Ms Calder') ? BOSSL : who === 'Rob' ? robLook() : null); return new Promise(res => {
     dlgOpen = true; G.hold = true; const D = $('dlg'); D.hidden = false; D.innerHTML = `<div class="body">${look ? '<canvas class="pt"></canvas>' : ''}<div class="txt"><div class="who"></div><div class="line"></div><div class="ch"></div></div></div>`; D.querySelector('.who').textContent = who;
-    if (look) { const pc = D.querySelector('.pt'), drawIt = () => drawPortrait(pc, look, expr || (look.set ? 'neutral' : 'neutral'), true); drawIt(); if (!(window.PORTRAIT && PORTRAIT.ready)) setTimeout(drawIt, 2500); }
+    if (look) { const pc = D.querySelector('.pt'), drawIt = () => drawPortrait(pc, look, expr || 'neutral', true); pc.redraw = drawIt; drawIt(); }
     const line = D.querySelector('.line'); VOICE.stop(); const dur = VOICE.say(text, voice); let i = 0; const step = Math.max(14, dur * 1000 / Math.max(1, text.length)); clearInterval(say.t);
     say.t = setInterval(() => { i += 1; line.textContent = text.slice(0, i); if (i >= text.length) clearInterval(say.t); }, step);
     const ch = D.querySelector('.ch'), list = choices && choices.length ? choices : [{ text: 'Continue' }];
@@ -4891,7 +4890,8 @@ window.GAME = (() => {
     hudT -= dt; if (hudT < 0) { hudT = .25; drawHud(); }
     const N = S.player.needs; if (!paused && N.energy < 8 && !tick.warned) { tick.warned = true; toast('You are exhausted. Find your bed or a coffee.', 5); } if (N.energy > 20) tick.warned = false;
   }
-  function intro() { setTimeout(() => say('Rob', VOICES.rob, 'Welcome home, roomie! Your room is the big one at the back, past the kitchen. Big first day at Meridian tomorrow, huh?', [{ text: 'Nine o clock sharp. Wish me luck.', effects: { rel: { rob: 3 } }, reply: 'You will smash it. Go sleep, I will keep the music down. Probably.' }], robLook(), 'happy'), 900); }
+  function intro() { const t0 = performance.now(); const go = () => { if (!window.PORTRAITS_READY && performance.now() - t0 < 8000) return setTimeout(go, 100); introSay(); }; setTimeout(go, 600); }
+  function introSay() { setTimeout(() => say('Rob', VOICES.rob, 'Welcome home, roomie! Your room is the big one at the back, past the kitchen. Big first day at Meridian tomorrow, huh?', [{ text: 'Nine o clock sharp. Wish me luck.', effects: { rel: { rob: 3 } }, reply: 'You will smash it. Go sleep, I will keep the music down. Probably.' }], robLook(), 'happy'), 0); }
 
   // ---------------- start ----------------
   const G = { hold: false, key, tick, get S() { return S; }, music, HOME, WORK, homeDoor, workDoor, save, load, interact, roomKey };
