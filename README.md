@@ -19,8 +19,8 @@ The game opens on a main menu. Continue or start a new game from there, or open 
 - Muted horn voices in conversations, the city soundscape and one radio station
 - Work shifts with promotions, needs, money, sleep and saving. Work, study, TV and sleep run the clock fast while you stay in the room
 - Conversations that follow a thread, with numbers to swap and coffee to arrange
-- Things that come up during a work shift, and a slower climb up the job ladder
-- Street parking: metered bays in town, free bays and kerbs elsewhere, parking officers and fines
+- Rare things that come up at work, different at each job level, and a slower climb up the job ladder
+- Street parking: two lanes plus parking on the CBD avenues, metered bays in town, free bays and kerbs elsewhere, parking officers and fines
 - Sitting on chairs, the couch and park benches
 - A phone with contacts, messages, bank, maps, calendar, music and a journal. Time stops while it is open
 - A stereo in the share house, and cars going past with their music up
