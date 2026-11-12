@@ -1011,8 +1011,8 @@ const GROUNDS = [];
 // landmark(name, face, build): turns the building's frame so its front (-v) faces the chosen street ('auto' picks the
 // busiest), clears the old box's shopfronts and awnings, then hands build() a kit of helpers in the new local frame.
 const ROADRANK = { major: 4, art: 3, mid: 2, local: 1 };
-function landmark(name, face, build) {
-  const b = buildings.find(q => q.name === name); if (!b) return null;
+function landmark(name, face, build) { const b = typeof name === 'string' ? buildings.find(q => q.name === name) : name; if (!b) return null; return landmarkB(b, face, build); }
+function landmarkB(b, face, build) {
   const F0 = b.F, o = b.fp, cu = (o.x0 + o.x1) / 2, cv = (o.y0 + o.y1) / 2;
   const SIDES = { N: [cu, o.y0, 0, -1], S: [cu, o.y1, 0, 1], W: [o.x0, cv, -1, 0], E: [o.x1, cv, 1, 0] };
   let side = face;
@@ -1261,6 +1261,49 @@ function landmark(name, face, build) {
       for (const u of [-.62, -.38, .38, .62]) { const q = W(hw * u, hd * .55); props.push({ t: 'bench', x: q[0], y: q[1] }); }
       for (const u of [-.9, .9]) for (const v of [-.9, .9]) { const q = W(hw * u, hd * v); lamps.push({ x: q[0], y: q[1], ax: 0, ay: 0, cool: false, short: true }); }
       gridSolids(); } }
+}
+// ---------- batch 5: sport and community from their sheets ----------
+{
+  const PAVE = [218, 212, 198], LAWN = [96, 124, 82];
+  const box = (K, u0, v0, u1, v1, z1, col, extra) => { const q = K.W((u0 + u1) / 2, (v0 + v1) / 2); props.push(Object.assign({ t: 'box', poly: K.rect(u0, v0, u1, v1), z1, col, x: q[0], y: q[1], h: z1, rad: Math.max(u1 - u0, v1 - v0) / 2 }, extra || {})); K.solidBox(u0, v0, u1, v1); };
+  const booths = (K, us, v) => { for (const u of us) box(K, u - 3, v, u + 3, v + 4, 3.2, [138, 160, 166], { top: [120, 136, 140], glowN: [255, 220, 170] }); };
+  // the arena: an oval with a glazed concourse, a glowing LED band and a ribbed upper drum
+  { const L = C.lots.find(l => l.kind === 'arena'), ab = L && LOTB.get(L.id); if (ab && ab[0]) { ab[0].name = ab[0].name || 'Arena';
+    landmarkB(ab[0], 'auto', K => { const Lt = K.lot, w = Lt.x1 - Lt.x0, d = Lt.y1 - Lt.y0, cv = Lt.y0 + d * .44 + 4, rx = w * .46, ry = d * .38;
+      const ov = (f, z0, z1, mat, extra) => polyTier(polyEllipse(0, cv, rx * f, ry * f, 32), z0, z1, mat, Object.assign({ smooth: true }, extra || {}));
+      K.setBuilding({ x0: -rx, y0: cv - ry, x1: rx, y1: cv + ry }, [ov(1, 0, 12, { wall: [226, 222, 208], frame: [230, 226, 214], glass: [70, 100, 116], kind: 'glass' }, { pat: 'tallbays' }), ov(1.015, 12, 14.4, { wall: [76, 210, 214], frame: [76, 210, 214], glass: [76, 210, 214], kind: 'punch' }, { pat: 'led' }), ov(.97, 14.4, 24, MAT.tealglass, { pat: 'spandrel' })],
+        { roofC: [150, 166, 160], lit: 'office', kit: [-.3, 0, .3].map(f => ({ x0: f * rx * 1.4 - 5, y0: cv - 5, x1: f * rx * 1.4 + 5, y1: cv + 5, h: .6, c: [176, 186, 176] })) });
+      K.ground(K.rect(Lt.x0, Lt.y0, Lt.x1, Lt.y1), PAVE, { tex: 'gran', grid: 3 }); booths(K, [-w * .38, -w * .24, w * .24, w * .38], Lt.y0 + 2); K.bollards(-w * .2, w * .2, Lt.y0 + 3, 2.4);
+      for (const u of [-w * .45, w * .45]) K.lamp(u, Lt.y0 + 5); K.glow(0, cv - ry, 30, [90, 230, 230], .35);
+      // searchlights round the arena, sweeping the sky after dark
+      [[-w * .46, Lt.y0 + 3], [w * .46, Lt.y0 + 3], [-w * .46, Lt.y1 - 3], [w * .46, Lt.y1 - 3], [0, Lt.y1 - 2.5]].forEach(([u, v], i) => { K.prop('search', u, v, { ph: i * 1.3, h: 1.6, rad: 1 }); K.solidRound(u, v, 1); });
+    }); } }
+  // the stadium: floodlight masts at the four corners and ticket booths along the front
+  { const sb = buildings.find(b => b.bowl); if (sb) { const F = sb.F, rx = sb.bowl.rx, ry = sb.bowl.ry;
+    for (const a of [.62, Math.PI - .62, Math.PI + .62, TAU - .62]) { const q = toW(F, Math.cos(a) * rx * 1.07, Math.sin(a) * ry * 1.07); props.push({ t: 'flood', x: q[0], y: q[1], h: 40, rad: 1.5 }); solids.push({ round: .6, x: q[0], y: q[1], wb: { x0: q[0] - 1, y0: q[1] - 1, x1: q[0] + 1, y1: q[1] + 1 } }); }
+    for (const u of [-.42, -.26, .26, .42]) { const c = toW(F, u * rx * 2, ry * 1.12), poly = [toW(F, u * rx * 2 - 3, ry * 1.12), toW(F, u * rx * 2 + 3, ry * 1.12), toW(F, u * rx * 2 + 3, ry * 1.12 + 4), toW(F, u * rx * 2 - 3, ry * 1.12 + 4)]; props.push({ t: 'box', poly, z1: 3.2, col: [138, 160, 166], top: [120, 136, 140], glowN: [255, 220, 170], x: c[0], y: c[1], h: 3.2, rad: 3 }); }
+    gridSolids(); } }
+  // the main grandstand: glazed boxes along the back, a cantilevered roof over the seats
+  { const g = buildings.find(b => b.name === 'Main Grandstand'); if (g) { const fp = g.fp, d = fp.y1 - fp.y0; g.tiers = [{ ...fp, zb: 0, zt: 9, mat: { wall: [232, 228, 216], frame: [236, 232, 222], glass: [70, 100, 116], kind: 'glass' }, pat: 'tallbays' }, { x0: fp.x0 + 4, y0: fp.y0 - 1, x1: fp.x1 - 4, y1: fp.y1 + 1, zb: 11, zt: 12, mat: { wall: [128, 150, 154], frame: [128, 150, 154], glass: [128, 150, 154], kind: 'punch' }, pat: 'hbands' }]; g.H = 12; g.roofC = [128, 150, 154]; g.kit = []; g.plant = null; g.cool = []; g.vents = []; } }
+  // fan zone: lawn, a big screen at the back, white marquee tents, food trucks and merch booths along the street
+  { const L = C.lots.find(l => l.kind === 'fanzone'); if (L && L.ab) { const F = frameOf((L.ab.x0 + L.ab.x1) / 2, (L.ab.y0 + L.ab.y1) / 2, 1, 0), hw = (L.ab.x1 - L.ab.x0) / 2 - 1, hd = (L.ab.y1 - L.ab.y0) / 2 - 1, W = (u, v) => toW(F, u, v), R = (u0, v0, u1, v1) => [W(u0, v0), W(u1, v0), W(u1, v1), W(u0, v1)];
+    GROUNDS.push({ wb: rectWB(F, { x0: -hw, y0: -hd, x1: hw, y1: hd }), clip: R(-hw, -hd, hw, hd), shapes: [{ pts: R(-hw, -hd, hw, hd), c: PAVE, tex: 'gran', grid: 2 }, { pts: R(-hw * .86, -hd * .84, hw * .86, hd * .5), c: [150, 172, 122], stripes: 2.4 }], glows: [] });
+    const sol = (u0, v0, u1, v1) => solids.push({ F, x0: u0, y0: v0, x1: u1, y1: v1, wb: rectWB(F, { x0: u0, y0: v0, x1: u1, y1: v1 }) });
+    const put = (t, u0, v0, u1, v1, o) => { const q = W((u0 + u1) / 2, (v0 + v1) / 2); props.push(Object.assign({ t, poly: R(u0, v0, u1, v1), x: q[0], y: q[1], rad: Math.max(u1 - u0, v1 - v0) / 2 }, o)); sol(u0, v0, u1, v1); };
+    put('screen', -hw * .3, -hd * .78, hw * .3, -hd * .74, { z1: 8, h: 8 });
+    for (const s2 of [-1, 1]) { put('tent', s2 * hw * .62 - 9, -hd * .1, s2 * hw * .62 + 9, hd * .05, { h: 4.4 }); put('box', s2 * hw * .36 - 4.5, hd * .2, s2 * hw * .36 + 4.5, hd * .3, { z1: 3, col: [176, 102, 90], top: [150, 92, 84], glowN: [255, 214, 160], h: 3 }); for (const f of [.42, .74]) put('box', s2 * hw * f - 4, hd * .62, s2 * hw * f + 4, hd * .76, { z1: 3.2, col: [190, 164, 128], top: [160, 146, 130], glowN: [255, 220, 170], h: 3.2 }); for (const f of [.42, .72]) put('box', s2 * hw * f - 4, -hd * .52, s2 * hw * f + 4, -hd * .4, { z1: 3, col: [138, 160, 166], top: [120, 136, 140], h: 3 }); }
+    for (const u of [-.9, .9]) { const q = W(hw * u, hd * .9); lamps.push({ x: q[0], y: q[1], ax: 0, ay: 0, cool: false, short: true }); }
+    gridSolids(); } }
+  // neighborhood centers: brick with a long fascia and sign, a small plaza with benches, bike racks and a playground
+  for (const nb of buildings.filter(b => b.name === 'Neighborhood Center')) landmarkB(nb, 'auto', K => { const L = K.lot, w = L.x1 - L.x0, d = L.y1 - L.y0;
+    const fp = { x0: L.x0 + w * .05, y0: L.y0 + d * .4, x1: L.x1 - w * .05, y1: L.y1 - 1 };
+    K.setBuilding(fp, [{ ...fp, zb: 0, zt: 6.2, mat: { wall: [170, 104, 86], frame: [158, 96, 80], glass: [64, 88, 96], kind: 'punch' }, pat: 'tallbays' }], { roofC: [150, 144, 136], lit: 'office', kit: [{ x0: -10, y0: fp.y0 + 2, x1: -6, y1: fp.y0 + 4, h: .5, c: [176, 186, 180] }, { x0: 6, y0: fp.y0 + 2, x1: 10, y1: fp.y0 + 4, h: .5, c: [176, 186, 180] }] });
+    K.ground(K.rect(L.x0, L.y0, L.x1, L.y1), PAVE, { tex: 'gran', grid: 2 }); K.slab(fp.x0 + 2, fp.y0 - 2, fp.x1 - 2, fp.y0, 5.2, .8, [204, 172, 132], 'NEIGHBORHOOD CENTER', { posts: false, textCol: [110, 70, 50] });
+    K.ground(K.rect(L.x0 + w * .1, L.y0 + 1, L.x0 + w * .32, fp.y0 - 3), LAWN, {}); for (const f of [.15, .22, .29]) K.prop('bench', L.x0 + w * f, (L.y0 + fp.y0) / 2);
+    K.ground(K.rect(L.x1 - w * .3, L.y0 + 1, L.x1 - w * .1, fp.y0 - 2.5), LAWN, {}); K.ground(K.rect(L.x1 - w * .28, L.y0 + 1.6, L.x1 - w * .12, fp.y0 - 3), [214, 190, 146], {});
+    box(K, L.x1 - w * .24, L.y0 + 2.2, L.x1 - w * .16, fp.y0 - 3.6, 2.4, [204, 120, 80], { top: [96, 140, 160] });
+    for (const f of [-.02, .02, .06]) K.ground(K.rect(w * f - .1, L.y0 + 1, w * f + .1, L.y0 + 3), [80, 84, 86], {});
+  });
 }
 // ---------- City Hall, from the concept sheet ----------
 // Two tall storeys of cream stone with pilasters, a columned portico with a pediment, a copper dome on a drum,
@@ -2329,6 +2372,8 @@ function drawPolyTier(b, T, ti) {
 function patFace(b, T, pt, L, zb, zt, z0, FH, sh2, fi, ti, litP, lf) {
   const pat = T.pat || b.pat, mat = T.mat, n = ENV.night, zm = (zb + zt) / 2;
   const win = new Path2D(), solid = new Path2D(), alt = new Path2D(); let anyLit = false;
+  if (pat === 'led') { const fq = new Path2D(); quadPath(fq, pt(0, zb), pt(L, zb), pt(L, zt), pt(0, zt)); const t = performance.now() / 1000, wv = .5 + .5 * Math.sin(t * 1.5 + fi);
+    ctx.fillStyle = n > .2 ? `rgba(${90 + 60 * wv | 0},${220 + 30 * wv | 0},${226 + 20 * wv | 0},${.65 + .3 * n})` : tone(mat.wall, zt, sh2); ctx.fill(fq); return false; }
   if (pat === 'tallbays') { const nb = Math.max(2, Math.round(L / 3.6)), bw = L / nb, g = new Path2D(), lit = n > .2;
     for (let i = 0; i < nb; i++) quadPath(g, pt(i * bw + .45, zb + .4), pt((i + 1) * bw - .45, zb + .4), pt((i + 1) * bw - .45, zt - 1.6), pt(i * bw + .45, zt - 1.6));
     ctx.fillStyle = lit ? `rgba(255,214,150,${.5 + .45 * n})` : tone(mat.glass, zm, sh2 * .9); ctx.fill(g);
@@ -2680,11 +2725,20 @@ function withFrame(F, fn) {
 }
 function drawBuilding(b) { withFrame(b.F, () => drawBuildingLocal(b)); }
 function drawBuildingLocal(b) {
-  if (b.bowl) { // stadium: an oval stand with the pitch inside
-    const n = 32, ring = (rx, ry) => { const a = []; for (let i = 0; i < n; i++) { const t = i / n * TAU; a.push([Math.cos(t) * rx, Math.sin(t) * ry]); } return a; };
-    const out = ring(b.bowl.rx, b.bowl.ry); drawPrism(out, out, 0, b.H, [168, 162, 152], tone([150, 146, 140], b.H));
-    fillPoly(ring(b.bowl.rx * .7, b.bowl.ry * .66).map(p => P(p[0], p[1], b.H * .35)), tone([150, 146, 140], b.H * .6));
-    fillPoly(ring(b.bowl.rx * .6, b.bowl.ry * .56).map(p => P(p[0], p[1], 1)), tone(ENV.snow ? [220, 224, 230] : [70, 120, 62], 1));
+  if (b.bowl) { // stadium from its sheet: glazed base, tan upper wall, canopy ring, segmented stands, a lined pitch
+    const n = 40, rx = b.bowl.rx, ry = b.bowl.ry, H = b.H, nt = ENV.night, ring = (fx, fy) => { const a = []; for (let i = 0; i < n; i++) { const t = i / n * TAU; a.push([Math.cos(t) * rx * fx, Math.sin(t) * ry * fy]); } return a; };
+    const out = ring(1, 1); drawPrism(out, out, 0, H * .42, nt > .3 ? [150, 130, 90] : [72, 100, 110], tone([90, 110, 116], H * .42)); drawPrism(out, out, H * .42, H * .74, [196, 164, 124], tone([186, 160, 126], H * .74));
+    if (nt > .3) { const g = []; ctx.fillStyle = `rgba(255,214,150,${.35 * nt})`; for (let i = 0; i < n; i += 2) { const t0 = i / n * TAU, t1 = (i + .7) / n * TAU, a = [Math.cos(t0) * rx, Math.sin(t0) * ry], c = [Math.cos(t1) * rx, Math.sin(t1) * ry]; if (Math.cos((t0 + t1) / 2) * (cx - a[0]) / rx + Math.sin((t0 + t1) / 2) * (cy - a[1]) / ry <= 0) continue; fillPoly([P(a[0], a[1], 1), P(c[0], c[1], 1), P(c[0], c[1], H * .4), P(a[0], a[1], H * .4)], ctx.fillStyle); } }
+    // stands: wedges stepping down from the canopy to the concourse, alternating tones
+    for (let i = 0; i < n; i++) { const t0 = i / n * TAU, t1 = (i + 1) / n * TAU, o0 = [Math.cos(t0) * rx * .97, Math.sin(t0) * ry * .97], o1 = [Math.cos(t1) * rx * .97, Math.sin(t1) * ry * .97], i0 = [Math.cos(t0) * rx * .64, Math.sin(t0) * ry * .6], i1 = [Math.cos(t1) * rx * .64, Math.sin(t1) * ry * .6];
+      fillPoly([P(o0[0], o0[1], H * .74), P(o1[0], o1[1], H * .74), P(i1[0], i1[1], H * .2), P(i0[0], i0[1], H * .2)], tone(ENV.snow ? [226, 230, 236] : (i % 4 < 2 ? [208, 210, 198] : [184, 194, 184]), H * .5)); }
+    const can = ring(1.02, 1.02), can2 = ring(.86, .84); ctx.fillStyle = tone([206, 210, 204], H); ctx.beginPath(); can.forEach((q, i) => { const p2 = P(q[0], q[1], H); i ? ctx.lineTo(p2[0], p2[1]) : ctx.moveTo(p2[0], p2[1]); }); ctx.closePath(); can2.slice().reverse().forEach((q, i) => { const p2 = P(q[0], q[1], H); i ? ctx.lineTo(p2[0], p2[1]) : ctx.moveTo(p2[0], p2[1]); }); ctx.closePath(); ctx.fill('evenodd');
+    fillPoly(ring(.62, .58).map(q => P(q[0], q[1], H * .2)), tone([212, 212, 200], H * .2));
+    const pw = rx * .5, pd = ry * .4, z = H * .2 + .05, pl = (u, v) => P(u, v, z); fillPoly([pl(-pw, -pd), pl(pw, -pd), pl(pw, pd), pl(-pw, pd)], tone(ENV.snow ? [222, 226, 232] : [104, 150, 92], z));
+    if (!ENV.snow) { const st = pw * 2 / 12; for (let i = 0; i < 12; i += 2) fillPoly([pl(-pw + i * st, -pd), pl(-pw + (i + 1) * st, -pd), pl(-pw + (i + 1) * st, pd), pl(-pw + i * st, pd)], tone([116, 162, 102], z));
+      ctx.strokeStyle = tone([240, 240, 236], z); ctx.lineWidth = clamp(k * .12, .5, 3); ctx.beginPath(); [[-pw, -pd], [pw, -pd], [pw, pd], [-pw, pd], [-pw, -pd]].forEach((q, i) => { const p2 = pl(q[0], q[1]); i ? ctx.lineTo(p2[0], p2[1]) : ctx.moveTo(p2[0], p2[1]); });
+      for (let i = 1; i < 10; i++) { const a = pl(-pw + pw * 2 * i / 10, -pd), c = pl(-pw + pw * 2 * i / 10, pd); ctx.moveTo(a[0], a[1]); ctx.lineTo(c[0], c[1]); } ctx.stroke(); }
+    if (nt > .3) beaconSoft(P(0, 0, H * .3), [255, 250, 230], clamp(k * rx * .8, 20, 600));
     return;
   }
   let order = b.tiers.map((T, i) => i);
@@ -2869,6 +2923,13 @@ function drawProp(p) {
       const cab = [w(L * .1, W2 * .55), w(-L * .25, W2 * .55), w(-L * .25, -W2 * .55), w(L * .1, -W2 * .55)]; drawPrism(cab, cab, 1.1 + bob, 2 + bob, [226, 228, 228], tone([92, 120, 132], 2));
       const m0 = w(L * .12, 0), a = P(m0[0], m0[1], 2 + bob), t = P(m0[0], m0[1], 11 + bob); ctx.strokeStyle = tone([210, 210, 206], 8); ctx.lineWidth = clamp(k * .08, .5, 2); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(t[0], t[1]); ctx.stroke();
       if (ENV.night > .3) beacon(t, [255, 255, 240], 2.2); break; }
+    case 'flood': { const h = p.h || 40, a = P(p.x, p.y, 0), t = P(p.x, p.y, h); ctx.strokeStyle = tone([110, 116, 120], h); ctx.lineWidth = clamp(k * .4, 1, 8); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(t[0], t[1]); ctx.stroke();
+      const hd = polyEllipse(p.x, p.y, 2.2, 1.2, 4, Math.PI / 4); drawPrism(hd, hd, h, h + 2, [80, 88, 92], tone(ENV.night > .3 ? [255, 250, 230] : [150, 156, 160], h + 2)); if (ENV.night > .3) beaconSoft(P(p.x, p.y, h + 1), [255, 250, 235], clamp(k * 6, 10, 120)); break; }
+    case 'screen': { const pz = p.poly; drawPrism(pz, pz, 0, p.z1, [70, 76, 80], tone([80, 86, 90], p.z1)); const a = pz[0], b2 = pz[1], f = [P(a[0], a[1], 2), P(b2[0], b2[1], 2), P(b2[0], b2[1], p.z1 - .5), P(a[0], a[1], p.z1 - .5)];
+      fillPoly(f, ENV.night > .2 ? `rgba(110,190,240,${.5 + .4 * ENV.night})` : tone([60, 110, 140], p.z1)); break; }
+    case 'tent': { const pz = p.poly, h = p.h || 4, ra = [(pz[0][0] + pz[3][0]) / 2, (pz[0][1] + pz[3][1]) / 2], rb = [(pz[1][0] + pz[2][0]) / 2, (pz[1][1] + pz[2][1]) / 2];
+      const f1 = [P(pz[0][0], pz[0][1], h * .55), P(pz[1][0], pz[1][1], h * .55), P(rb[0], rb[1], h), P(ra[0], ra[1], h)], f2 = [P(pz[3][0], pz[3][1], h * .55), P(pz[2][0], pz[2][1], h * .55), P(rb[0], rb[1], h), P(ra[0], ra[1], h)];
+      drawPrism(pz, pz, 0, h * .55, [236, 234, 228], tone([236, 234, 228], h * .55)); fillPoly(f1, tone([236, 236, 232], h, .95)); fillPoly(f2, tone([206, 210, 210], h, .85)); if (ENV.night > .3) beaconSoft(P(p.x, p.y, h * .4), [255, 226, 180], clamp(k * 3, 6, 60)); break; }
     case 'parasol': drawCyl(p.x, p.y, .45, .7, .76, [214, 210, 200]); break;
     case 'statue': { drawPrism(p.base, p.base, 0, 1.6, [200, 194, 182], tone([214, 208, 196], 1.6)); drawCyl(p.x, p.y, .45, 1.6, 3.4, [112, 88, 56]); drawCyl(p.x, p.y, .28, 3.4, 4, [120, 94, 60]); break; }
     case 'fence': { ctx.strokeStyle = tone([70, 74, 78], 1.2); ctx.lineWidth = clamp(k * .06, .5, 2); ctx.beginPath(); for (const z of [.15, p.h || 2.2]) p.pts.forEach((q, i) => { const a = P(q[0], q[1], z); i ? ctx.lineTo(a[0], a[1]) : ctx.moveTo(a[0], a[1]); }); for (let i = 0; i + 1 < p.pts.length; i++) { const A = p.pts[i], B = p.pts[i + 1], L = Math.hypot(B[0] - A[0], B[1] - A[1]), n = Math.max(1, Math.round(L / 1.2)); for (let j = 0; j <= n; j++) { const x = A[0] + (B[0] - A[0]) * j / n, y = A[1] + (B[1] - A[1]) * j / n, a = P(x, y, 0), c = P(x, y, p.h || 2.2); ctx.moveTo(a[0], a[1]); ctx.lineTo(c[0], c[1]); } } ctx.stroke(); break; }
