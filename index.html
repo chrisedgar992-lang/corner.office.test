@@ -1305,6 +1305,88 @@ function landmarkB(b, face, build) {
     for (const f of [-.02, .02, .06]) K.ground(K.rect(w * f - .1, L.y0 + 1, w * f + .1, L.y0 + 3), [80, 84, 86], {});
   });
 }
+// ---------- batch 6: variety for the generic building types, from the type sheets ----------
+{
+  Object.assign(MAT, {
+    vbrick: { wall: [168, 98, 78], frame: [150, 86, 68], glass: [56, 76, 84], kind: 'punch' },
+    vcream: { wall: [230, 216, 188], frame: [214, 198, 168], glass: [62, 86, 84], kind: 'deco' },
+    vtan: { wall: [214, 180, 136], frame: [196, 162, 120], glass: [64, 88, 96], kind: 'punch' },
+    vteal: { wall: [92, 140, 146], frame: [120, 158, 162], glass: [52, 92, 106], kind: 'glass' },
+    vslab: { wall: [96, 146, 146], frame: [106, 150, 150], glass: [46, 84, 92], kind: 'glass' },
+    vwhite: { wall: [238, 234, 224], frame: [240, 236, 228], glass: [64, 100, 116], kind: 'glass' },
+    vmetal: { wall: [88, 100, 100], frame: [80, 92, 92], glass: [128, 156, 160], kind: 'glass' },
+    vterra: { wall: [196, 140, 112], frame: [182, 126, 100], glass: [60, 80, 84], kind: 'punch' },
+    vshedw: { wall: [226, 222, 212], frame: [200, 196, 186], glass: [70, 100, 116], kind: 'shed' },
+    vshedt: { wall: [96, 146, 146], frame: [80, 126, 126], glass: [60, 90, 96], kind: 'shed' },
+    vshedb: { wall: [168, 98, 78], frame: [140, 82, 66], glass: [56, 66, 70], kind: 'shed' }
+  });
+  const kindOf = b => { const L = LOTS.get(b.lot); return L ? L.kind : null; };
+  const hv = (b, k) => hsh(b.id | 0, 9173, k, 5), clearRoof = b => Object.assign(b, { plant: null, cool: [], vents: [], tank: null, sky: null, ant: null, rail: false });
+  const setMat = (b, m) => { for (const T of b.tiers) T.mat = m; };
+  for (const b of buildings) { const k = kindOf(b); if (!k || b.name || b.signature || b.casino) continue;
+    const w = b.fp.x1 - b.fp.x0, d = b.fp.y1 - b.fp.y0, m = Math.min(w, d), r = hv(b, 1), r2 = hv(b, 2);
+    if (k === 'mid') { // chamfered glass, curved corner, tower on podium, brick and glass, metal fins, L-shaped block
+      if (r < .25) continue;
+      if (r < .4 && m > 14) { shapeTower(b, 'octagon', { base: 4.5, mat: MAT.vteal, ch: .25 }); b.pat = 'spandrel'; }
+      else if (r < .5 && m > 16 && w / d < 1.5 && d / w < 1.5) { shapeTower(b, 'round', { base: 4.5, mat: MAT.vteal }); b.pat = 'hbands'; }
+      else if (r < .6 && b.H > 22 && m > 18) { shapeTower(b, 'podium', { mat: MAT.vwhite, podMat: MAT.vcream, podPat: 'tallbays' }); b.pat = 'punch'; }
+      else if (r < .75) { setMat(b, MAT.vbrick); b.pat = 'punch'; }
+      else if (r < .87) { setMat(b, MAT.vmetal); b.pat = 'fins'; }
+      else if (m > 16) { shapeTower(b, 'L', { base: 4.5, mat: MAT.vtan }); b.pat = 'punch'; }
+      if (b.shape) clearRoof(b);
+    } else if (k === 'apt') { // courtyard block, balcony slab, brick walk-up, modern infill, corner block, mid-century slab
+      if (r < .2) continue;
+      if (r < .34 && m > 22) { const fp = b.fp, wi = w * .3, fr = d * .45; b.tiers = [polyTier([[fp.x0, fp.y0], [fp.x1, fp.y0], [fp.x1, fp.y1], [fp.x1 - wi, fp.y1], [fp.x1 - wi, fp.y0 + fr], [fp.x0 + wi, fp.y0 + fr], [fp.x0 + wi, fp.y1], [fp.x0, fp.y1]], 0, b.H, MAT.vcream, { pat: 'balcony' })]; b.shape = 'court'; clearRoof(b); b.kit = []; }
+      else if (r < .5) { setMat(b, MAT.vwhite); b.pat = 'balcony'; }
+      else if (r < .62 && b.H < 18) { setMat(b, MAT.vbrick); b.pat = 'punch'; }
+      else if (r < .72 && m > 12) { shapeTower(b, 'slant', { base: 0, noBase: true, mat: MAT.vteal, low: .82 }); b.pat = 'diagrid'; clearRoof(b); }
+      else if (r < .86 && m > 16) { shapeTower(b, 'L', { noBase: true, mat: MAT.vtan }); b.pat = 'punch'; clearRoof(b); }
+      else { setMat(b, MAT.vslab); b.pat = 'hbands'; }
+      if (b.H > 20 && r2 < .25 && !b.ztv) { b.top = { type: 'garden' }; b.kit = []; clearRoof(b); }
+    } else if (k === 'shop') { // brick and awning, art deco parapet, gables, glass, tall bay, stone shopfront
+      const T = b.tiers[0];
+      if (r < .2) { setMat(b, MAT.vbrick); }
+      else if (r < .36) { setMat(b, MAT.vcream); b.tiers.push({ x0: T.x0 + w * .28, y0: T.y0, x1: T.x1 - w * .28, y1: T.y0 + 1.2, zb: T.zt, zt: T.zt + 1.8, mat: MAT.vcream }); }
+      else if (r < .52) { setMat(b, MAT.vtan); b.pitched = { h: Math.min(3.4, w * .3), axis: 'y' }; b.roofC = [176, 140, 104]; }
+      else if (r < .62) { setMat(b, MAT.vteal); b.pat = 'tallbays'; }
+      else if (r < .74) { setMat(b, MAT.vslab); }
+      else if (r < .86) { setMat(b, MAT.vcream); b.pat = 'deco'; }
+    } else if (k === 'warehouse' || (!LOTS.get(b.lot) && b.tiers[0].mat.kind === 'shed')) { // sawtooth, curved, brick conversion, logistics, cold store, workshop
+      if (r < .22) { b.top = { type: 'saw', h: 2.8 }; setMat(b, MAT.vshedw); }
+      else if (r < .42) { b.top = { type: 'vault' }; setMat(b, MAT.vshedt); }
+      else if (r < .56) { setMat(b, MAT.vshedb); b.pitched = { h: Math.min(3, d * .1), axis: w >= d ? 'x' : 'y' }; b.roofC = [176, 106, 84]; }
+      else if (r < .72) { setMat(b, MAT.vshedw); b.pitched = { h: Math.min(2.4, d * .08), axis: w >= d ? 'x' : 'y' }; b.roofC = [214, 210, 200]; }
+      else if (r < .86) { setMat(b, MAT.vshedt); b.pitched = { h: Math.min(2.4, d * .08), axis: w >= d ? 'x' : 'y' }; b.roofC = [92, 140, 140]; }
+      if (b.top || b.pitched) { clearRoof(b); b.kit = []; }
+    } else if (k === 'house' && b.house && b.st && b.st.N) { // the modern box and split level, beside the existing pitched houses
+      if (r < .1 && m > 7) { const fp = b.fp; b.pitched = null; b.tiers = [{ ...fp, zb: 0, zt: 3.3, mat: MAT.vwhite, pat: 'tallbays' }, { x0: fp.x0 + w * .25, y0: fp.y0 - .8, x1: fp.x1, y1: fp.y1 - d * .3, zb: 3.3, zt: 6.6, mat: MAT.vteal, pat: 'tallbays' }]; b.H = 6.6; b.roofC = [210, 210, 204]; b.modern = true; }
+      else if (r < .18) { setMat(b, MAT.vteal); b.roofC = [86, 120, 120]; }
+    } else if (k === 'mansion') { // classic estate, glass villa, Mediterranean, colonial revival: chosen once per estate
+      const L = LOTS.get(b.lot), rl = hsh(strHash(L.id || 'm'), 7, 3, 1);
+      if (rl < .25) { setMat(b, MAT.vcream); b.roofC = [134, 144, 140]; }
+      else if (rl < .45 && !b.modern) { b.pitched = null; setMat(b, MAT.vteal); b.pat = 'tallbays'; b.roofC = [150, 176, 170]; b.top = { type: 'garden' }; }
+      else if (rl < .7) { setMat(b, MAT.vterra); b.roofC = [186, 112, 84]; if (b.pitched) b.pitched.hip = true; }
+      else { setMat(b, MAT.vbrick); b.roofC = [124, 132, 128]; }
+    } else if (k === 'campus') { // collegiate brick under grey gables, glazed science wings
+      if (r < .62) { setMat(b, MAT.vbrick); b.pat = 'punch'; if (m < 46) { b.pitched = { h: Math.min(8, m * .22), axis: w >= d ? 'x' : 'y' }; clearRoof(b); b.kit = []; } b.roofC = [134, 140, 136]; }
+      else if (r < .82) { setMat(b, MAT.vbrick); b.tiers[0].pat = 'hbands'; b.roofC = [150, 146, 138]; }
+      else { setMat(b, MAT.vteal); b.pat = 'tallbays'; }
+    }
+  }
+  // the great hall: the largest campus building, with a steep gable and its name over the door
+  { const cs = buildings.filter(b => kindOf(b) === 'campus').sort((a, c) => (c.fp.x1 - c.fp.x0) * (c.fp.y1 - c.fp.y0) - (a.fp.x1 - a.fp.x0) * (a.fp.y1 - a.fp.y0)); const gh = cs[0];
+    if (gh) { const w = gh.fp.x1 - gh.fp.x0, d = gh.fp.y1 - gh.fp.y0; gh.name = 'Great Hall'; gh.tiers = [{ ...gh.fp, zb: 0, zt: Math.max(gh.H, 18), mat: MAT.vbrick, pat: 'tallbays' }]; gh.H = Math.max(gh.H, 18); gh.pitched = { h: Math.min(10, Math.min(w, d) * .3), axis: w >= d ? 'x' : 'y' }; gh.roofC = [134, 140, 136]; clearRoof(gh); gh.kit = [];
+      const F = gh.F, c = toW(F, 0, gh.fp.y0 - 2), poly = [toW(F, 8, gh.fp.y0 - 4), toW(F, -8, gh.fp.y0 - 4), toW(F, -8, gh.fp.y0), toW(F, 8, gh.fp.y0)]; props.push({ t: 'slab', poly, z: 5, th: 1, col: [150, 158, 150], text: 'GREAT HALL', textCol: [236, 230, 210], posts: false, x: c[0], y: c[1], h: 6, rad: 8 }); } }
+  // stores for the shopping update: 24-hour markets in town (never near the estates), supermarkets and gyms in the suburbs
+  { const estates = C.lots.filter(l => l.kind === 'mansion'), nearEstate = (x, y) => estates.some(l => Math.hypot(l.cx - x, l.cy - y) < 450);
+    const spread = (list, gap, n) => { const out = []; for (const b of list) { const c = toW(b.F, 0, 0); if (out.every(o => Math.hypot(o.c[0] - c[0], o.c[1] - c[1]) > gap)) out.push({ b, c }); if (out.length >= n) break; } return out; };
+    const byHash = (a, k) => a.slice().sort((x, y) => hv(x, k) - hv(y, k));
+    C.STORES = [];
+    for (const { b, c } of spread(byHash(buildings.filter(b => kindOf(b) === 'shop' && b.shop.N && !nearEstate(...toW(b.F, 0, 0))), 7), 420, 12)) { b.shop.N = { name: '24 HOUR MARKET', awn: [70, 196, 206], lit: true }; b.store = 'conv'; setMat(b, MAT.vwhite); b.pat = null; C.STORES.push({ kind: 'conv', lot: b.lot, x: c[0], y: c[1] }); }
+    for (const { b, c } of spread(byHash(buildings.filter(b => kindOf(b) === 'mid' && Math.min(b.fp.x1 - b.fp.x0, b.fp.y1 - b.fp.y0) >= 22 && b.zone !== 'core' && b.st && b.st.N), 8), 900, 5)) { const fp = b.fp; b.tiers = [{ ...fp, zb: 0, zt: 8, mat: MAT.vwhite, pat: 'tallbays' }]; b.H = 8; b.shape = null; b.pat = null; b.shop.N = { name: 'MARKET', awn: [96, 140, 150], lit: true }; b.store = 'super'; clearRoof(b); b.kit = []; C.STORES.push({ kind: 'super', lot: b.lot, x: c[0], y: c[1] }); }
+    for (const { b, c } of spread(byHash(buildings.filter(b => kindOf(b) === 'mid' && !b.store && Math.min(b.fp.x1 - b.fp.x0, b.fp.y1 - b.fp.y0) >= 16 && b.st && b.st.N), 9), 900, 5)) { const fp = b.fp; b.tiers = [{ ...fp, zb: 0, zt: 9, mat: MAT.vbrick, pat: 'punch' }]; b.H = 9; b.shape = null; b.pat = null; b.shop.N = { name: 'GYM', awn: [84, 92, 92], lit: true }; b.store = 'gym'; clearRoof(b); b.kit = []; C.STORES.push({ kind: 'gym', lot: b.lot, x: c[0], y: c[1] }); }
+  }
+}
 // ---------- City Hall, from the concept sheet ----------
 // Two tall storeys of cream stone with pilasters, a columned portico with a pediment, a copper dome on a drum,
 // four roof skylights. The sheet's site was larger than the lot, so the building is scaled to leave a civic plaza in front:
@@ -2434,6 +2516,17 @@ function drawTop(b, T, zt) {
   else if (t.type === 'antenna') { const h = t.h || 28, a = P(cxm, cym, zt), c = P(cxm, cym, zt + h); drawBox(cxm - 2, cym - 2, cxm + 2, cym + 2, zt, zt + 3, [96, 98, 100]);
     ctx.strokeStyle = tone([70, 72, 74], zt + h); ctx.lineWidth = clamp(k * .2, .8, 4); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(c[0], c[1]); for (const f of [.4, .62, .8]) { const z = zt + h * f, e = 3 * (1 - f); const p1 = P(cxm - e, cym, z), p2 = P(cxm + e, cym, z); ctx.moveTo(p1[0], p1[1]); ctx.lineTo(p2[0], p2[1]); } ctx.stroke();
     if (n > .1 && (simT % 1.6) < .8) beacon(c, [255, 40, 40], 5); }
+  else if (t.type === 'saw') { // sawtooth roof: north-light glazing on the steep side of each tooth
+    const n = Math.max(2, Math.round(w / 10)), tw = w / n, h = t.h || 2.6, order = []; for (let i = 0; i < n; i++) order.push(i); order.sort((a, b2) => Math.abs(cx - (T.x0 + (b2 + .5) * tw)) - Math.abs(cx - (T.x0 + (a + .5) * tw)));
+    for (const i of order) { const xa = T.x0 + i * tw, xb = xa + tw;
+      fillPoly([P(xa, T.y0, zt), P(xb, T.y0, zt + h), P(xb, T.y1, zt + h), P(xa, T.y1, zt)], tone(ENV.snow ? [228, 232, 238] : T.mat.wall, zt + h, .95));
+      if (cx > xb) fillPoly([P(xb, T.y0, zt), P(xb, T.y1, zt), P(xb, T.y1, zt + h), P(xb, T.y0, zt + h)], ENV.night > .3 ? `rgba(255,214,150,${.3 + .3 * ENV.night})` : tone([90, 112, 120], zt + h));
+      for (const yy of [T.y0, T.y1]) if ((yy === T.y0) === (cy < T.y0)) fillPoly([P(xa, yy, zt), P(xb, yy, zt), P(xb, yy, zt + h)], tone(T.mat.frame, zt + h, .8)); } }
+  else if (t.type === 'vault') { // curved roof: a barrel vault across the short span
+    const h = t.h || Math.min(5, d * .12), N = 8, strips = []; for (let i = 0; i < N; i++) strips.push(i); const yAt = i => T.y0 + d * i / N, zAt = i => zt + h * Math.sin(Math.PI * i / N);
+    strips.sort((a, b2) => Math.abs(cy - yAt(b2 + .5)) - Math.abs(cy - yAt(a + .5)));
+    for (const i of strips) fillPoly([P(T.x0, yAt(i), zAt(i)), P(T.x1, yAt(i), zAt(i)), P(T.x1, yAt(i + 1), zAt(i + 1)), P(T.x0, yAt(i + 1), zAt(i + 1))], tone(ENV.snow ? [228, 232, 238] : mixc(T.mat.wall, [150, 160, 156], .5), zt + h, i < N / 2 ? 1.04 : .9));
+    for (const xx of [T.x0, T.x1]) if ((xx === T.x0) === (cx < T.x0)) { const pts = []; for (let i = 0; i <= N; i++) pts.push(P(xx, yAt(i), zAt(i))); fillPoly(pts, tone(T.mat.frame, zt + h, .85)); } }
   else if (t.type === 'stepped') { const gold = [196, 160, 84], wall = T.mat.wall; let z = zt; const steps = [.78, .58, .4, .24];
     steps.forEach((f, i) => { const pr = polyXform(poly, cxm, cym, f), h = 4.5 - i * .5; drawPrism(pr, pr, z, z + h, i === steps.length - 1 ? gold : wall, tone(i === steps.length - 1 ? gold : mixc(wall, [255, 250, 240], .2), z + h)); z += h; });
     const a = P(cxm, cym, z), c = P(cxm, cym, z + (t.h || 14)); ctx.strokeStyle = tone(gold, z); ctx.lineWidth = clamp(k * .35, 1, 7); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(c[0], c[1]); ctx.stroke(); ctx.lineCap = 'butt';
