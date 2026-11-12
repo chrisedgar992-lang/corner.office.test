@@ -122,7 +122,8 @@ textarea.io{width:100%;background:var(--btn);color:var(--text);border:1px solid 
 #phoneBtn em{font-style:normal;background:#d66b5f;color:#fff;border-radius:9px;padding:0 6px;margin-left:6px;font-size:11px}
 #phone{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)}
 #phone .ph{width:min(340px,calc(100% - 32px));height:min(640px,calc(100% - 40px));background:#0f1114;border:2px solid #2c3036;border-radius:34px;box-shadow:0 20px 60px rgba(0,0,0,.6);display:flex;flex-direction:column;overflow:hidden;font:14px var(--ui);color:var(--text)}
-#phbar{display:flex;justify-content:space-between;padding:12px 22px 4px;font-size:12px}#phbar span{color:var(--muted)}
+#phbar{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 18px 4px;font-size:12px}#phbar span{color:var(--muted);flex:1}#phX{background:var(--btn);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:5px 10px;font:12px var(--ui);cursor:pointer}
+#phhome{margin:4px auto 10px;background:none;border:0;color:var(--muted);font:12px var(--ui);cursor:pointer;padding:6px 20px;border-top:3px solid #3a3f46;border-radius:2px}
 #phhead{display:flex;align-items:center;gap:10px;padding:6px 14px;min-height:30px}#phhead:empty{display:none}
 #phhead button{background:none;border:0;color:var(--acc);font:inherit;cursor:pointer;padding:4px 2px}#phhead b{font-size:15px}
 #phbody{flex:1;overflow-y:auto;padding:6px 14px 14px;display:flex;flex-direction:column;gap:6px}
@@ -227,7 +228,7 @@ body.titling #ghud,body.titling #menuBtn,body.titling #useBtn,body.titling #phon
 <button id="menuBtn">Menu <small style="color:var(--muted)">Esc</small></button>
 <button id="useBtn">Use</button>
 <button id="phoneBtn">Phone <small style="color:var(--muted)">P</small></button>
-<div id="phone" hidden><div class="ph"><div id="phbar"></div><div id="phhead"></div><div id="phbody"></div></div></div>
+<div id="phone" hidden><div class="ph"><div id="phbar"></div><div id="phhead"></div><div id="phbody"></div><button id="phhome" aria-label="Home">‹ Back</button></div></div>
 <div id="ff" hidden></div>
 <div id="title" hidden></div>
 <div id="testview" hidden></div>
@@ -1282,18 +1283,20 @@ function blocked(x, y, r) {
   for (let gx = g0; gx <= g1; gx++) for (let gy = h0; gy <= h1; gy++) { const cell = SGRID.get(gx * 100003 + gy); if (cell) for (const s of cell) if (solidHit(s, x, y, r)) return true; }
   return false;
 }
+const STICK = { on: false, x: 0, y: 0 };
 function updatePlayer(dt) {
   if (player.sit) { player.moving = false; return; } // seated: the game stands you up when you move
   if (player.driving) { updateDriving(dt); return; }
   let vx = 0, vy = 0;
   if (keys.KeyW || keys.ArrowUp) vy -= 1; if (keys.KeyS || keys.ArrowDown) vy += 1;
   if (keys.KeyA || keys.ArrowLeft) vx -= 1; if (keys.KeyD || keys.ArrowRight) vx += 1;
+  if (!vx && !vy && STICK.on) { vx = STICK.x; vy = STICK.y; } // the on-screen joystick on touch screens
   if (!vx && !vy && pointer) { const [wx, wy] = screenToWorld(pointer.x, pointer.y); const dx = wx - player.x, dy = wy - player.y, d = Math.hypot(dx, dy); if (d > .6) { vx = dx / d; vy = dy / d; } }
-  if (keys.KeyW || keys.ArrowUp || keys.KeyS || keys.ArrowDown || keys.KeyA || keys.ArrowLeft || keys.KeyD || keys.ArrowRight) { const sx = vx, sy = vy; vx = sx * CT + sy * ST; vy = -sx * ST + sy * CT; }
+  if (STICK.on || keys.KeyW || keys.ArrowUp || keys.KeyS || keys.ArrowDown || keys.KeyA || keys.ArrowLeft || keys.KeyD || keys.ArrowRight) { const sx = vx, sy = vy; vx = sx * CT + sy * ST; vy = -sx * ST + sy * CT; }
   const m = Math.hypot(vx, vy);
   player.moving = m > 0;
   if (!m) return;
-  const run = keys.ShiftLeft || keys.ShiftRight || (pointer && pointer.far);
+  const run = keys.ShiftLeft || keys.ShiftRight || (pointer && pointer.far) || (STICK.on && Math.hypot(STICK.x, STICK.y) > .92);
   const sp = INSIDE ? (run ? 3.4 : 2) : run ? 7 : 4.5;
   vx /= m; vy /= m;
   const nx = player.x + vx * sp * dt, ny = player.y + vy * sp * dt;
@@ -5734,11 +5737,14 @@ window.GAME = (() => {
   const contactList = () => [{ cid: 'rob', name: 'Rob', job: 'Housemate', rel: S.rels.rob.score, rob: true }, ...Object.values(S.contacts)].map(c => c.rob ? c : Object.assign({}, c));
   const unread = () => S.msgs.filter(m => !m.me && !m.read).length;
   function phoneBadge() { const n = S ? unread() : 0; $('phoneBtn').innerHTML = `Phone <small style="color:var(--muted)">P</small>${n ? `<em>${n}</em>` : ''}`; }
+  // tapping outside the phone, or the bar at the bottom, puts it away
+  $('phone').addEventListener('pointerdown', e => { if (e.target === $('phone')) closePhone(); });
   function openPhone(view) { if (FF || fading) return; phoneOpen = true; G.hold = true; phoneView = [view || 'home']; $('phone').hidden = false; drawPhone(); }
   function closePhone() { phoneOpen = false; $('phone').hidden = true; G.hold = !!(modalOpen || dlgOpen || fading || FF); phoneBadge(); }
+  $('phhome').onclick = () => back();
   const go = v => { phoneView.push(v); drawPhone(); }, back = () => { if (phoneView.length > 1) { phoneView.pop(); drawPhone(); } else closePhone(); };
   function drawPhone() { const v = phoneView[phoneView.length - 1], [app, arg] = v.split(':'), p = CR.parts(S.time), body = $('phbody'); let title = '', html = '';
-    $('phbar').innerHTML = `<b>${String(p.h).padStart(2, '0')}:${String(p.mi).padStart(2, '0')}</b><span>Paused</span>`;
+    $('phbar').innerHTML = `<b>${String(p.h).padStart(2, '0')}:${String(p.mi).padStart(2, '0')}</b><span>Paused</span><button id="phX" aria-label="Close phone">Close ✕</button>`; $('phX').onclick = closePhone;
     const A = APPS.find(a => a[0] === app);
     if (app === 'home') { html = `<div class="phdate">${CR.fmtDate(S.time)}</div><div class="phgrid">${APPS.map(([k, n, c, d], i) => `<button data-go="${k}"><i style="background:${c}"><svg viewBox="0 0 24 24"><path d="${d}"/></svg>${k === 'messages' && unread() ? `<em>${unread()}</em>` : ''}</i><span>${n}</span><kbd>${i + 1}</kbd></button>`).join('')}</div>`; }
     else if (app === 'contacts' && !arg) { title = 'Contacts'; const L = contactList().sort((a, b) => b.rel - a.rel);
@@ -5951,5 +5957,53 @@ window.GAME = (() => {
   const G = { hold: false, key, tick, say, get S() { return S; }, music, HOME, WORK, homeDoor, workDoor, save, load, interact, roomKey, openPhone, closePhone, startGame, ffwd, get FF() { return FF; }, get phoneOpen() { return phoneOpen; } };
   setTimeout(showTitle, 0);
   return G;
+})();
+// ---------- touch controls ----------
+// On a phone or tablet: a thumb joystick bottom left, and buttons bottom right, laid out like an emulator. Walking is analogue,
+// pushing right to the edge runs. In the car, up and down are throttle and brake, left and right steer. The buttons press the same
+// keys a keyboard would, so everything else works unchanged. Hidden on screens with a mouse.
+(() => {
+  const touch = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
+  if (!touch) return;
+  document.body.classList.add('touch');
+  const st = document.createElement('style'); st.textContent = `
+#tc{position:fixed;inset:0;z-index:12;pointer-events:none;user-select:none;-webkit-user-select:none;touch-action:none}
+#tc .stick{position:absolute;left:calc(22px + env(safe-area-inset-left,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));width:140px;height:140px;border-radius:50%;background:rgba(20,22,26,.42);border:2px solid rgba(255,255,255,.18);pointer-events:auto;touch-action:none}
+#tc .knob{position:absolute;left:50%;top:50%;width:62px;height:62px;margin:-31px 0 0 -31px;border-radius:50%;background:rgba(235,235,235,.55);border:2px solid rgba(255,255,255,.6);box-shadow:0 2px 8px rgba(0,0,0,.4)}
+#tc .pad{position:absolute;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));width:170px;height:150px;pointer-events:none}
+#tc button{position:absolute;pointer-events:auto;touch-action:none;border-radius:50%;border:2px solid rgba(255,255,255,.28);background:rgba(20,22,26,.55);color:#fff;font:700 15px system-ui,sans-serif;display:flex;align-items:center;justify-content:center;padding:0}
+#tc button.on{background:rgba(214,163,71,.65)}
+#tc .bA{right:0;bottom:34px;width:76px;height:76px;font-size:22px;background:rgba(214,163,71,.5)}
+#tc .bB{right:86px;bottom:0;width:62px;height:62px;font-size:13px}
+#tc .bC{right:92px;bottom:78px;width:52px;height:52px;font-size:12px}
+#tc .top{position:absolute;right:calc(12px + env(safe-area-inset-right,0px));top:calc(10px + env(safe-area-inset-top,0px));display:flex;flex-direction:row;gap:8px;pointer-events:none}
+#tc .top button{position:static;width:auto;min-width:54px;height:38px;padding:0 10px;font-size:12px;border-radius:10px}
+body.touch #ghud{transform:scale(.72);transform-origin:top left}body.touch #radio{top:calc(56px + env(safe-area-inset-top,0px))!important;transform:scale(.8);transform-origin:top right}body.touch .phgrid kbd,body.touch #prompt kbd{display:none}
+body.touch #useBtn,body.touch #menuBtn,body.touch #phoneBtn{display:none!important}
+body.touch #mm{width:118px!important;height:118px!important;left:calc(170px + env(safe-area-inset-left,0px))!important;right:auto!important;bottom:calc(26px + env(safe-area-inset-bottom,0px))!important}
+body.touch #prompt{bottom:calc(190px + env(safe-area-inset-bottom,0px))}
+#tc.hide{display:none}`;
+  document.head.appendChild(st);
+  const tc = document.createElement('div'); tc.id = 'tc';
+  tc.innerHTML = `<div class="stick"><div class="knob"></div></div><div class="pad"><button class="bA" data-k="KeyE">E</button><button class="bB" data-hold="ShiftLeft">Run</button><button class="bC" data-k="KeyT">Talk</button></div>
+    <div class="top"><button data-k="Escape">Menu</button><button data-k="KeyP">Phone</button><button data-k="KeyM">Map</button><button data-k="KeyR">Radio</button></div>`;
+  document.body.appendChild(tc);
+  const key = (code, type = 'keydown') => dispatchEvent(new KeyboardEvent(type, { code, key: code === 'Escape' ? 'Escape' : code.replace(/^Key/, '').toLowerCase(), bubbles: true }));
+  for (const b of tc.querySelectorAll('[data-k]')) b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); key(b.dataset.k); setTimeout(() => key(b.dataset.k, 'keyup'), 60); });
+  for (const b of tc.querySelectorAll('[data-hold]')) { let on = false; b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); on = !on; b.classList.toggle('on', on); keys[b.dataset.hold] = on; }); }
+  // the stick: analogue for walking, the arrow keys for the car
+  const S = tc.querySelector('.stick'), K = tc.querySelector('.knob'); let id = null;
+  const setKeys = (x, y) => { const d = player.driving; keys.ArrowUp = d && y < -.3; keys.ArrowDown = d && y > .3; keys.ArrowLeft = d && x < -.3; keys.ArrowRight = d && x > .3; };
+  const move = e => { const r = S.getBoundingClientRect(), cxs = r.left + r.width / 2, cys = r.top + r.height / 2, R = r.width / 2; let x = (e.clientX - cxs) / R, y = (e.clientY - cys) / R; const m = Math.hypot(x, y); if (m > 1) { x /= m; y /= m; }
+    K.style.transform = `translate(${x * R * .62}px,${y * R * .62}px)`; const dead = Math.hypot(x, y) < .15; STICK.on = !dead && !player.driving; STICK.x = x; STICK.y = y; setKeys(dead ? 0 : x, dead ? 0 : y);
+    // a push on the stick gets you up from a seat, like a key would
+    if (!dead && player.sit && window.GAME && !(GAME.FF)) key('KeyW'), key('KeyW', 'keyup'); };
+  const end = () => { id = null; K.style.transform = ''; STICK.on = false; STICK.x = STICK.y = 0; setKeys(0, 0); };
+  S.addEventListener('pointerdown', e => { e.preventDefault(); id = e.pointerId; S.setPointerCapture(id); move(e); });
+  S.addEventListener('pointermove', e => { if (e.pointerId === id) move(e); });
+  S.addEventListener('pointerup', end); S.addEventListener('pointercancel', end);
+  // out of the way while a menu, the phone, a conversation or the title screen is up
+  const vis = id2 => { const el = document.getElementById(id2); return el && !el.hidden && getComputedStyle(el).display !== 'none'; };
+  setInterval(() => { const busy = document.body.classList.contains('titling') || vis('modal') || vis('phone') || vis('dlg') || vis('talk') || vis('testview') || vis('bigmap') || (typeof LOOKOUT !== 'undefined' && LOOKOUT.open); tc.classList.toggle('hide', busy); if (busy && id != null) end(); }, 150);
 })();
 </script></body></html>
