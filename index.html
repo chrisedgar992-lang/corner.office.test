@@ -1007,6 +1007,141 @@ const GROUNDS = [];
     if (b.H > 90 && !b.top && sh !== 'twin') { const t = r3 < .12 ? 'pyramid' : r3 < .22 ? 'crown' : r3 < .29 ? 'lantern' : r3 < .41 ? 'helipad' : r3 < .48 ? 'garden' : r3 < .54 ? 'pool' : r3 < .62 ? 'antenna' : null; if (t) { b.top = { type: t }; if (!b.shape) { b.kit = []; b.plant = null; b.cool = []; b.vents = []; b.tank = null; b.sky = null; b.ant = null; } } }
   }
 }
+// ---------- landmarks from concept sheets ----------
+// landmark(name, face, build): turns the building's frame so its front (-v) faces the chosen street ('auto' picks the
+// busiest), clears the old box's shopfronts and awnings, then hands build() a kit of helpers in the new local frame.
+const ROADRANK = { major: 4, art: 3, mid: 2, local: 1 };
+function landmark(name, face, build) {
+  const b = buildings.find(q => q.name === name); if (!b) return null;
+  const F0 = b.F, o = b.fp, cu = (o.x0 + o.x1) / 2, cv = (o.y0 + o.y1) / 2;
+  const SIDES = { N: [cu, o.y0, 0, -1], S: [cu, o.y1, 0, 1], W: [o.x0, cv, -1, 0], E: [o.x1, cv, 1, 0] };
+  let side = face;
+  if (!SIDES[side]) { let best = -1; for (const k in SIDES) { const [u, v, nx, ny] = SIDES[k], q = toW(F0, u + nx * 14, v + ny * 14), [d, e] = kerbDist(q[0], q[1]); const sc = (e && d < 12 ? ROADRANK[e.kind] || 1 : 0) + (k === 'S' ? .2 : k === 'E' ? .1 : 0); if (sc > best) { best = sc; side = k; } } }
+  const [, , nx, ny] = SIDES[side], wx = F0.c * nx - F0.s * ny, wy = F0.s * nx + F0.c * ny;
+  const F = { ox: F0.ox, oy: F0.oy, c: -wy, s: wx };
+  let lot; { const pts = [[o.x0, o.y0], [o.x1, o.y0], [o.x1, o.y1], [o.x0, o.y1]].map(([u, v]) => { const w = toW(F0, u, v); return toL(F, w[0], w[1]); }); lot = polyBBox(pts); }
+  for (let i = storefronts.length - 1; i >= 0; i--) { const f = storefronts[i]; const q = toL(F, (f.ax + f.bx) / 2, (f.ay + f.by) / 2); if (q[0] > lot.x0 - .5 && q[0] < lot.x1 + .5 && q[1] > lot.y0 - .5 && q[1] < lot.y1 + .5) storefronts.splice(i, 1); }
+  for (let i = awnings.length - 1; i >= 0; i--) if (awnings[i].b === b.id) awnings.splice(i, 1);
+  b.F = F; Object.assign(b, { shop: {}, blade: null, crown: null, plant: null, cool: [], vents: [], tank: null, sky: null, ant: null, rail: false, heli: false, kit: [] });
+  const W = (u, v) => toW(F, u, v), rect = (u0, v0, u1, v1) => [W(u0, v0), W(u1, v0), W(u1, v1), W(u0, v1)], rectV = (u0, v0, u1, v1) => [W(u0, v0), W(u0, v1), W(u1, v1), W(u1, v0)];
+  const ell = (cu2, cv2, ru, rv, n = 28) => polyEllipse(cu2, cv2, ru, rv, n).map(([u, v]) => W(u, v));
+  const rr = (u0, v0, u1, v1, r) => { const out = [], arc = (cu2, cv2, a0) => { for (let i = 0; i <= 6; i++) { const a = a0 + i / 6 * Math.PI / 2; out.push(W(cu2 + Math.cos(a) * r, cv2 + Math.sin(a) * r)); } }; arc(u1 - r, v1 - r, 0); arc(u0 + r, v1 - r, Math.PI / 2); arc(u0 + r, v0 + r, Math.PI); arc(u1 - r, v0 + r, Math.PI * 1.5); return out; };
+  const solidRound = (u, v, r) => { const q = W(u, v); solids.push({ round: r, x: q[0], y: q[1], wb: { x0: q[0] - r - .1, y0: q[1] - r - .1, x1: q[0] + r + .1, y1: q[1] + r + .1 } }); };
+  const solidBox = (u0, v0, u1, v1) => solids.push({ F, x0: u0, y0: v0, x1: u1, y1: v1, wb: rectWB(F, { x0: u0, y0: v0, x1: u1, y1: v1 }) });
+  const G = { wb: rectWB(F, lot), clip: rect(lot.x0, lot.y0, lot.x1, lot.y1), shapes: [], glows: [] }; GROUNDS.push(G);
+  const K = { b, F, W, lot, rect, rectV, ell, rr, solidRound, solidBox, G, ang: Math.atan2(F.s, F.c),
+    ground: (pts, c, o2 = {}) => G.shapes.push(Object.assign({ pts, c }, o2)), circ: (u, v, r, c, o2 = {}) => { const q = W(u, v); G.shapes.push(Object.assign({ circ: [q[0], q[1], r], c }, o2)); },
+    glow: (u, v, r, c, a) => { const q = W(u, v); G.glows.push({ x: q[0], y: q[1], r, c, a }); },
+    prop: (t, u, v, extra) => { const q = W(u, v); const p = Object.assign({ t, x: q[0], y: q[1] }, extra || {}); props.push(p); return p; },
+    tree: (u, v, r = 2.8) => { const q = W(u, v); props.push({ t: 'tree', x: q[0], y: q[1], r, seed: (u * 7 + v * 13) | 0 }); K.solidRound(u, v, .3); },
+    shrub: (u, v, r = 1.2) => { const q = W(u, v); props.push({ t: 'shrub', x: q[0], y: q[1], r, seed: (u * 5 + v * 11) | 0 }); },
+    palm: (u, v, h = 9) => { const q = W(u, v); props.push({ t: 'palm', x: q[0], y: q[1], h, lean: hsh(u | 0, v | 0, 3, 9) * TAU, r: 3.2 }); K.solidRound(u, v, .35); },
+    lamp: (u, v) => { const q = W(u, v); lamps.push({ x: q[0], y: q[1], ax: 0, ay: 0, cool: false, short: true }); },
+    bollards: (u0, u1, v, step = 3.2) => { for (let u = u0; u <= u1 + .01; u += step) { const q = W(u, v); props.push({ t: 'bollard', x: q[0], y: q[1] }); K.solidRound(u, v, .14); } },
+    flags: (u0, u1, v, n, cols) => { for (let i = 0; i < n; i++) { const u = n > 1 ? u0 + (u1 - u0) * i / (n - 1) : u0, q = W(u, v); props.push({ t: 'flagpole', x: q[0], y: q[1], c: cols[i % cols.length], ang: Math.atan2(F.s, F.c), h: 10, rad: .3 }); K.solidRound(u, v, .15); } },
+    stalls: (u0, u1, v0, v1, n, c = [236, 236, 230]) => { for (let i = 0; i <= n; i++) { const u = u0 + (u1 - u0) * i / n; G.shapes.push({ line: [W(u, v0), W(u, v1)], c, w: .14 }); } },
+    slab: (u0, v0, u1, v1, z, th, col, text, extra) => { const poly = [W(u1, v0), W(u0, v0), W(u0, v1), W(u1, v1)], q = W((u0 + u1) / 2, (v0 + v1) / 2); props.push(Object.assign({ t: 'slab', poly, z, th, col, text, x: q[0], y: q[1], h: z + th, rad: Math.max(u1 - u0, v1 - v0) / 2 }, extra || {})); },
+    // the building: set its footprint and tiers in the new frame and refit its solid
+    setBuilding: (fp, tiers, o2 = {}) => { b.fp = fp; b.tiers = tiers; b.H = Math.max(...tiers.map(t => t.ztv ? Math.max(...t.ztv) : t.zt)); b.wb = rectWB(F, fp); Object.assign(b, o2);
+      const sd = solids.find(q => q.b === b); if (sd) Object.assign(sd, { F, x0: fp.x0, y0: fp.y0, x1: fp.x1, y1: fp.y1, wb: rectWB(F, fp) }); else solids.push({ F, x0: fp.x0, y0: fp.y0, x1: fp.x1, y1: fp.y1, wb: rectWB(F, fp), b }); }
+  };
+  build(K); gridSolids(); return b;
+}
+// ---------- batch 3: civic buildings and hotels from their sheets ----------
+{
+  Object.assign(MAT, {
+    civic: { wall: [232, 220, 196], frame: [212, 198, 170], glass: [50, 78, 86], kind: 'deco' },
+    police: { wall: [190, 198, 200], frame: [206, 210, 210], glass: [56, 92, 110], kind: 'punch' },
+    hosp: { wall: [234, 234, 228], frame: [238, 238, 232], glass: [62, 100, 118], kind: 'glass' },
+    hotelcream: { wall: [226, 218, 198], frame: [214, 204, 180], glass: [62, 86, 80], kind: 'punch' },
+    hotelgreen: { wall: [222, 212, 188], frame: [226, 216, 194], glass: [70, 98, 88], kind: 'glass' },
+    wharf: { wall: [236, 232, 222], frame: [238, 234, 226], glass: [66, 104, 120], kind: 'glass' }
+  });
+  const STONE = [214, 208, 194], LAWN = [96, 124, 82], ASPH = [86, 88, 90], RED = [[176, 52, 52]], RB = [[176, 52, 52], [52, 86, 150], [236, 236, 236]];
+  const plaza = K => K.ground(K.rect(K.lot.x0, K.lot.y0, K.lot.x1, K.lot.y1), STONE, { tex: 'gran', grid: 2 });
+  const steps = (K, u0, u1, v0, v1) => K.ground(K.rectV(u0, v0, u1, v1), [200, 194, 180], { stripes: 1 });
+  const dropLoop = (K, cu, cv, ru, rv, lane = 6.5, mid) => { K.ground(K.ell(cu, cv, ru, rv), ASPH, { tex: 'gran', grid: 1, edge: { c: [210, 206, 196], w: .2 } }); K.ground(K.ell(cu, cv, ru - lane, rv - lane), LAWN, { stripes: 1.8, edge: { c: [226, 220, 204], w: .35 } }); if (mid === 'fountain') { const q = K.W(cu, cv); props.push({ t: 'cfount', x: q[0], y: q[1], r: Math.min(ru - lane, rv - lane) * .55 }); K.solidRound(cu, cv, Math.min(ru - lane, rv - lane) * .6); K.glow(cu, cv, 9, [140, 190, 255], .35); } };
+  const porticoSolids = (K, p) => { for (let i = 0; i < p.cols; i++) K.solidRound(p.u0 + 1.4 + i * (p.u1 - p.u0 - 2.8) / (p.cols - 1), p.v0 + .8, .55); };
+  const sky = (u0, v0, w, d) => ({ x0: u0, y0: v0, x1: u0 + w, y1: v0 + d, h: .7, c: [176, 186, 180] });
+
+  landmark('Courthouse', 'auto', K => { const L = K.lot, w = L.x1 - L.x0, d = L.y1 - L.y0, bw = Math.min(w * .82, 76), bd = Math.min(d * .54, 48);
+    const fp = { x0: -bw / 2, y0: L.y1 - 4 - bd, x1: bw / 2, y1: L.y1 - 4 };
+    K.setBuilding(fp, [{ ...fp, zb: 0, zt: 35, mat: MAT.civic }, { x0: -bw * .26, y0: fp.y0 + bd * .2, x1: bw * .26, y1: fp.y0 + bd * .62, zb: 35, zt: 45, mat: MAT.civic }], { civic: { name: 'COURTHOUSE' }, roofC: [132, 146, 142], lit: 'office', kit: [sky(fp.x0 + 5, fp.y0 + 6, 6, 5), sky(fp.x1 - 11, fp.y0 + 6, 6, 5)] });
+    const pt = { u0: -bw * .24, u1: bw * .24, v0: fp.y0 - 7, v1: fp.y0, cols: 6, z: 28, name: 'COURTHOUSE' }; K.b.portico = pt; porticoSolids(K, pt);
+    plaza(K); K.ground(K.rect(L.x0 + 2, fp.y0, fp.x0 - 1.5, L.y1 - 1.5), LAWN, { stripes: 2 }); K.ground(K.rect(fp.x1 + 1.5, fp.y0, L.x1 - 2, L.y1 - 1.5), LAWN, { stripes: 2 });
+    steps(K, pt.u0 - 3, pt.u1 + 3, pt.v0 - 8, pt.v0);
+    for (const [u, v] of [[pt.u0 - 9, pt.v0 - 3], [pt.u0 - 9, pt.v0 - 8], [pt.u1 + 9, pt.v0 - 3], [pt.u1 + 9, pt.v0 - 8]]) { K.prop('planter', u, v); K.shrub(u, v, 1.1); }
+    const fv = (L.y0 + pt.v0 - 8) / 2; K.prop('cfount', 0, fv, { r: 3.4 }); K.solidRound(0, fv, 3.6); K.glow(0, fv, 8, [140, 190, 255], .35);
+    { const su = -bw * .2, q = K.W(su, fv), base = [K.W(su - 1, fv - 1), K.W(su + 1, fv - 1), K.W(su + 1, fv + 1), K.W(su - 1, fv + 1)]; props.push({ t: 'statue', x: q[0], y: q[1], base, h: 4, rad: 1 }); K.solidRound(su, fv, 1.1); }
+    for (const [u, v] of [[L.x0 + 6, L.y0 + 7], [L.x0 + 11, L.y0 + 7], [L.x1 - 6, L.y0 + 7], [L.x1 - 11, L.y0 + 7]]) K.tree(u, v, 2.4);
+    K.bollards(L.x0 + 2, L.x1 - 2, L.y0 + 1.3); for (const u of [-14, 14]) K.lamp(u, pt.v0 - 10); K.glow(0, fp.y0 - 4, 16, [255, 214, 160], .45);
+  });
+
+  landmark('Central Police Station', 'S', K => { const L = K.lot, w = L.x1 - L.x0, d = L.y1 - L.y0, bw = w * .84, bd = d * .44;
+    const fp = { x0: -bw / 2, y0: L.y0 + d * .2, x1: bw / 2, y1: L.y0 + d * .2 + bd };
+    K.setBuilding(fp, [{ ...fp, zb: 0, zt: 3.6, mat: { wall: [196, 180, 150], frame: [206, 192, 164], glass: [60, 70, 72], kind: 'punch' }, pat: 'tallbays' }, { x0: fp.x0 + .6, y0: fp.y0 + .6, x1: fp.x1 - .6, y1: fp.y1 - .6, zb: 3.6, zt: 28.8, mat: MAT.police, pat: 'punch' }],
+      { roofC: [150, 160, 160], lit: 'office', kit: [{ x0: 2, y0: fp.y0 + bd * .2, x1: 10, y1: fp.y0 + bd * .55, h: 3.2, c: [118, 128, 126] }], ant: [-6, fp.y0 + 8, 9] });
+    K.ground(K.rect(L.x0, L.y0, L.x1, L.y1), STONE, { tex: 'gran', grid: 2 });
+    K.ground(K.rect(L.x0, fp.y1 + 2, L.x1, L.y1), ASPH, { tex: 'gran', grid: 3 });
+    steps(K, -6, 6, fp.y0 - 4.5, fp.y0); K.slab(-7, fp.y0 - 3.5, 7, fp.y0, 4.2, .8, [74, 84, 88], 'CENTRAL POLICE', { textCol: [236, 236, 230] });
+    K.stalls(-11, 11, L.y0 + .5, L.y0 + 6, 3); K.ground(K.rect(-11, L.y0 + .5, 11, L.y0 + 6), [120, 124, 126], {});
+    { const q = K.W(L.x0 + 1, fp.y1 + 2), pts = [K.W(L.x0 + .8, fp.y1 + 1.5), K.W(L.x0 + .8, L.y1 - .8), K.W(L.x1 - .8, L.y1 - .8), K.W(L.x1 - .8, fp.y1 + 1.5)]; props.push({ t: 'fence', pts, x: q[0], y: q[1], h: 2.4, rad: 20 }); }
+    K.stalls(L.x0 + 3, L.x1 - 3, fp.y1 + 8, fp.y1 + 14, 5);
+    const pc = (u, v, ang) => { const q = K.W(u, v), a = K.ang + ang, c = { type: 'police', x: q[0], y: q[1], ang: a, a, col: [236, 236, 238], v: 0, speed: 0, brake: 0, parked: true, bay: null }; PARKED.push(c); solids.push({ F: frameOf(q[0], q[1], Math.cos(a), Math.sin(a)), x0: -2.45, y0: -.94, x1: 2.45, y1: .94, wb: { x0: q[0] - 3, y0: q[1] - 3, x1: q[0] + 3, y1: q[1] + 3 }, car: c }); };
+    pc(-7.3, L.y0 + 3.2, Math.PI / 2); pc(0, L.y0 + 3.2, Math.PI / 2); for (let i = 0; i < 4; i++) pc(L.x0 + 3 + (L.x1 - L.x0 - 6) * (i + .5) / 5, fp.y1 + 11, Math.PI / 2);
+    K.lamp(-9, fp.y0 - 3); K.lamp(9, fp.y0 - 3); K.glow(0, fp.y0 - 2, 10, [255, 220, 170], .4);
+  });
+
+  landmark('Stock Exchange', 'auto', K => { const L = K.lot, w = L.x1 - L.x0, d = L.y1 - L.y0, bw = w * .78, bd = d * .56;
+    const fp = { x0: -bw / 2, y0: L.y1 - 5 - bd, x1: bw / 2, y1: L.y1 - 5 };
+    K.setBuilding(fp, [{ ...fp, zb: 0, zt: 30, mat: { wall: [230, 218, 192], frame: [212, 198, 170], glass: [64, 96, 88], kind: 'deco' } }, { x0: -bw * .26, y0: fp.y0 + bd * .25, x1: bw * .26, y1: fp.y0 + bd * .7, zb: 30, zt: 45, mat: { wall: [226, 214, 190], frame: [230, 220, 198], glass: [62, 92, 86], kind: 'deco' }, pat: 'tallbays' }],
+      { civic: { name: 'STOCK EXCHANGE' }, roofC: [160, 166, 152], lit: 'office' });
+    const pt = { u0: -bw * .3, u1: bw * .3, v0: fp.y0 - 8, v1: fp.y0, cols: 8, z: 24, name: ' ', banner: 'STOCK EXCHANGE' }; K.b.portico = pt; porticoSolids(K, pt);
+    plaza(K); steps(K, pt.u0 - 4, pt.u1 + 4, pt.v0 - 9, pt.v0);
+    K.flags(pt.u0 - 10, pt.u0 - 2, L.y0 + 7, 3, RED); K.flags(pt.u1 + 2, pt.u1 + 10, L.y0 + 7, 3, RED);
+    { const su = bw * .34, sv = L.y0 + 9, q = K.W(su, sv), base = [K.W(su - 2.2, sv - 1.4), K.W(su + 2.2, sv - 1.4), K.W(su + 2.2, sv + 1.4), K.W(su - 2.2, sv + 1.4)]; props.push({ t: 'statue', x: q[0], y: q[1], base, h: 4, rad: 2 }); K.solidRound(su, sv, 2); }
+    K.bollards(L.x0 + 3, L.x1 - 3, L.y0 + 1.3, 4); for (const u of [-w * .4, -w * .2, w * .2, w * .4]) K.lamp(u, L.y0 + 4);
+    K.glow(0, fp.y0 - 4, 22, [255, 214, 160], .5);
+  });
+
+  landmark('City General Hospital', 'auto', K => { const L = K.lot, w = L.x1 - L.x0, d = L.y1 - L.y0;
+    const main = { x0: L.x0 + w * .3, y0: L.y0 + d * .36, x1: L.x1 - 2, y1: L.y1 - 2 }, wing = { x0: L.x0 + 2, y0: L.y0 + d * .3, x1: main.x0, y1: L.y1 - d * .22 };
+    const fp = { x0: wing.x0, y0: wing.y0, x1: main.x1, y1: main.y1 };
+    K.setBuilding(fp, [{ ...wing, zb: 0, zt: 22, mat: MAT.tealglass, pat: 'fins' }, { ...main, zb: 0, zt: 34, mat: MAT.hosp, pat: 'hbands' }], { multi: true, roofC: [150, 162, 158], lit: 'office', top: { type: 'helipad' }, name: 'City General Hospital' });
+    K.ground(K.rect(L.x0, L.y0, L.x1, L.y1), [220, 216, 206], { tex: 'gran', grid: 2 });
+    const cu = (L.x0 + L.x1) / 2 - w * .04, cv = (L.y0 + main.y0) / 2; dropLoop(K, cu, cv, w * .3, (main.y0 - L.y0) * .42, 5.5);
+    K.slab(cu - w * .16, main.y0 - 5, cu + w * .16, main.y0, 4.4, .9, [128, 160, 170], 'CITY GENERAL', { textCol: [240, 244, 246] });
+    K.slab(wing.x0 + 1, wing.y0 - 3, wing.x1 - 2, wing.y0, 3.6, .7, [236, 234, 226], 'EMERGENCY', { textCol: [176, 40, 40] });
+    K.ground(K.rect(L.x0 + 2, L.y0 + 2, L.x0 + w * .2, wing.y0 - 2), LAWN, { stripes: 1.6 }); K.tree(L.x0 + w * .1, (L.y0 + wing.y0) / 2, 2.4); K.prop('bench', L.x0 + w * .15, (L.y0 + wing.y0) / 2 + 2);
+    K.ground(K.rect(L.x1 - w * .22, L.y0 + 2, L.x1 - 2, main.y0 - 2), [104, 106, 108], {}); K.stalls(L.x1 - w * .22, L.x1 - 2, L.y0 + 2, main.y0 - 2, 4);
+    K.lamp(cu - w * .3, L.y0 + 3); K.lamp(cu + w * .3, L.y0 + 3); K.glow(cu, main.y0 - 2, 14, [220, 236, 255], .4);
+  });
+
+  const hotel = (name, face, cfg) => landmark(name, face, K => { const L = K.lot, w = L.x1 - L.x0, d = L.y1 - L.y0;
+    const pod = { x0: L.x0 + w * (cfg.podX || .06), y0: L.y0 + d * (cfg.podFront || .36), x1: L.x1 - w * (cfg.podX || .06), y1: L.y1 - 2 };
+    const tw = Math.min(w * (cfg.tw || .36), cfg.twMax || 60), td = Math.min((pod.y1 - pod.y0) * (cfg.td || .8), cfg.tdMax || 40), tc = (pod.y0 + pod.y1) / 2 + (cfg.tdy || 0);
+    const tower = { x0: -tw / 2, y0: tc - td / 2, x1: tw / 2, y1: tc + td / 2 };
+    const tiers = [{ ...pod, zb: 0, zt: cfg.podH, mat: cfg.podMat || MAT.hotelgreen, pat: 'tallbays' }];
+    if (cfg.tower === 'octo') { const base = polyChamfer(tower.x0, tower.y0, tower.x1, tower.y1, Math.min(tw, td) * .3), n = 6; for (let i = 0; i < n; i++) tiers.push(polyTier(polyXform(base, 0, tc, 1 - .14 * i / n), cfg.podH + (cfg.H - cfg.podH) * i / n, cfg.podH + (cfg.H - cfg.podH) * (i + 1) / n, cfg.mat, { pat: cfg.pat })); }
+    else tiers.push({ ...tower, zb: cfg.podH, zt: cfg.H, mat: cfg.mat, pat: cfg.pat });
+    K.setBuilding(pod, tiers, { roofC: cfg.roofC || [156, 162, 150], lit: 'resi', top: cfg.top || null, kit: cfg.top ? [] : [sky(-tw * .3, tc - 3, 6, 4), sky(tw * .05, tc - 3, 6, 4)] });
+    K.ground(K.rect(L.x0, L.y0, L.x1, L.y1), [222, 216, 202], { tex: 'gran', grid: 2 });
+    if (cfg.water) K.ground(K.rect(L.x0, L.y0, L.x1, L.y0 + 2.4), [196, 168, 132], {});
+    const front = pod.y0, cw = Math.min(w * .3, 28);
+    if (cfg.loop) dropLoop(K, 0, (L.y0 + front) / 2 + 1, Math.min(w * .32, 34), (front - L.y0) * .44, Math.min(6, (front - L.y0) * .3), cfg.loop);
+    K.slab(-cw / 2, front - 6, cw / 2, front, 4.6, 1, cfg.canopy || [168, 176, 172], cfg.sign, { textCol: [52, 60, 58] });
+    if (cfg.flags) K.flags(L.x0 + 4, L.x0 + w * .22, L.y0 + 3, 4, RB);
+    if (cfg.palms) for (const u of [L.x0 + 3, L.x1 - 3]) K.palm(u, L.y0 + 3.5);
+    if (cfg.parasols) for (const u of cfg.parasols) { const q = K.W(u * w, L.y0 + 4.5); props.push({ t: 'parasol', x: q[0], y: q[1], c: [234, 206, 170] }); K.solidRound(u * w, L.y0 + 4.5, .5); }
+    if (cfg.pool) { const [pu, pv, pr, pd] = cfg.pool(L, w, d, front); K.ground(K.ell(pu, pv, pr, pd), [92, 172, 192], { water: true, edge: { c: [236, 232, 220], w: .5 } }); K.glow(pu, pv, pr * 1.6, [90, 210, 240], .4); }
+    if (cfg.garden) { K.ground(K.rect(L.x1 - w * .14, L.y0 + 3, L.x1 - 3, front - 3), LAWN, { stripes: 1.6 }); K.tree(L.x1 - w * .085, (L.y0 + front) / 2, 2.6); }
+    for (const u of [-w * .38, w * .38]) K.lamp(u, L.y0 + 2.5); K.glow(0, front - 3, 16, [255, 214, 160], .5);
+  });
+  hotel('Grand Hotel', 'auto', { podH: 28.8, H: 180, mat: MAT.hotelcream, pat: 'punch', tw: .34, td: .78, tdMax: 36, top: { type: 'crown', h: 6 }, loop: 'lawn', sign: 'GRAND HOTEL', canopy: [226, 216, 192], flags: true, garden: true, podFront: .4 });
+  hotel('Harbor Grand Hotel', 'auto', { podH: 24.75, H: 99, mat: MAT.hotelcream, pat: 'punch', tw: .78, twMax: 62, td: .78, top: { type: 'crown', h: 4.5 }, loop: 'lawn', sign: 'HARBOR GRAND', canopy: [226, 216, 192], palms: true, parasols: [-.3, -.18, .18, .3], water: true, podFront: .34, podX: .08 });
+  hotel('The Wharf Hotel', 'auto', { podH: 8, H: 91, mat: MAT.wharf, pat: 'hbands', podMat: MAT.tealglass, tw: .8, twMax: 90, td: .8, sign: 'THE WHARF', canopy: [150, 166, 170], palms: true, parasols: [-.32, -.22, .22], water: true, podFront: .32, pool: (L, w, d, f) => [w * .26, (L.y0 + f) / 2, w * .1, (f - L.y0) * .3] });
+  hotel('Bayview Hotel', 'auto', { podH: 10, H: 90, mat: MAT.tealglass, pat: 'spandrel', podMat: MAT.tealglass, tower: 'octo', tw: .62, td: .7, top: { type: 'pool' }, loop: 'fountain', sign: 'BAYVIEW', canopy: [128, 160, 170], podFront: .45 });
+}
 // ---------- City Hall, from the concept sheet ----------
 // Two tall storeys of cream stone with pilasters, a columned portico with a pediment, a copper dome on a drum,
 // four roof skylights. The sheet's site was larger than the lot, so the building is scaled to leave a civic plaza in front:
@@ -1804,8 +1939,9 @@ function drawGrounds(vw) {
   for (const G of GROUNDS) { if (!rectHit(G.wb, vw)) continue;
     ctx.save(); if (G.clip) { ctx.beginPath(); G.clip.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); ctx.clip(); }
     for (const S of G.shapes) {
+      if (S.line) { ctx.strokeStyle = tone(snow ? [236, 238, 242] : S.c); ctx.lineWidth = S.w || .12; ctx.beginPath(); ctx.moveTo(S.line[0][0], S.line[0][1]); ctx.lineTo(S.line[1][0], S.line[1][1]); ctx.stroke(); continue; }
       ctx.beginPath(); if (S.circ) ctx.arc(S.circ[0], S.circ[1], S.circ[2], 0, TAU); else { S.pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); }
-      const c = snow ? mixc(S.c, [224, 228, 234], S.stripes ? .85 : .7) : wet ? mulc(S.c, .72) : S.c;
+      const c = S.water ? S.c : snow ? mixc(S.c, [224, 228, 234], S.stripes ? .85 : .7) : wet ? mulc(S.c, .72) : S.c;
       ctx.fillStyle = tone(c); ctx.fill();
       if (S.tex === 'gran' && !snow) { ctx.save(); ctx.clip(); ctx.globalAlpha = .4; ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = patFill(TEX.granP, 24); ctx.fill(); ctx.restore(); }
       if ((S.stripes || S.grid) && !snow) { ctx.save(); ctx.clip(); const xs = S.pts ? S.pts.map(p => p[0]) : [S.circ[0] - S.circ[2], S.circ[0] + S.circ[2]], ys = S.pts ? S.pts.map(p => p[1]) : [S.circ[1] - S.circ[2], S.circ[1] + S.circ[2]];
@@ -1995,7 +2131,7 @@ function drawFaceBody(b, T, s, ti, fo) {
   g.addColorStop(1, tone(topC, zt, sh2 * 1.06));
   ctx.fillStyle = g; ctx.beginPath(); quadPath(ctx, p0, p1, p2, p3); ctx.fill();
   if (ENV.snow && !glass) { ctx.fillStyle = 'rgba(230,236,244,.06)'; ctx.fill(); }
-  if (b.civic) { civicFace(b, T, s, ti, pt, L, zb, zt, sh2); return; }
+  if (b.civic && !T.pat) { civicFace(b, T, s, ti, pt, L, zb, zt, sh2); return; }
   // windows
   const FH = b.house ? 3.0 : 3.8, z0 = zb === 0 ? (b.house ? 0 : 5.2) : zb;
   const cw0 = glass ? 3 : mat.kind === 'deco' ? 2.6 : 3.3, n = Math.max(1, Math.round(L / cw0)), cw = L / n;
@@ -2073,6 +2209,10 @@ function drawPolyTier(b, T, ti) {
 function patFace(b, T, pt, L, zb, zt, z0, FH, sh2, fi, ti, litP, lf) {
   const pat = T.pat || b.pat, mat = T.mat, n = ENV.night, zm = (zb + zt) / 2;
   const win = new Path2D(), solid = new Path2D(), alt = new Path2D(); let anyLit = false;
+  if (pat === 'tallbays') { const nb = Math.max(2, Math.round(L / 3.6)), bw = L / nb, g = new Path2D(), lit = n > .2;
+    for (let i = 0; i < nb; i++) quadPath(g, pt(i * bw + .45, zb + .4), pt((i + 1) * bw - .45, zb + .4), pt((i + 1) * bw - .45, zt - 1.6), pt(i * bw + .45, zt - 1.6));
+    ctx.fillStyle = lit ? `rgba(255,214,150,${.5 + .45 * n})` : tone(mat.glass, zm, sh2 * .9); ctx.fill(g);
+    const band = new Path2D(); quadPath(band, pt(0, zt - 1.6), pt(L, zt - 1.6), pt(L, zt), pt(0, zt)); ctx.fillStyle = tone(mixc(mat.wall, [250, 246, 236], .4), zt, sh2); ctx.fill(band); return false; }
   const ribbon = pat === 'hbands' || pat === 'spandrel' || pat === 'twotone' || pat === 'balcony';
   const cw0 = pat === 'punch' ? 3.2 : pat === 'deco' ? 2.4 : pat === 'fins' ? 1.6 : 3, nc = Math.max(1, Math.round(L / cw0)), cw = L / nc;
   const q = (path, u0, z0q, u1, z1q) => quadPath(path, pt(u0, z0q), pt(u1, z0q), pt(u1, z1q), pt(u0, z1q));
@@ -2138,18 +2278,20 @@ function drawTop(b, T, zt) {
 function civicFace(b, T, s, ti, pt, L, zb, zt, sh2) {
   const w = T.mat.wall, n = ENV.night, q = (u0, z0, u1, z1, c) => { ctx.fillStyle = c; ctx.beginPath(); quadPath(ctx, pt(u0, z0), pt(u1, z0), pt(u1, z1), pt(u0, z1)); ctx.fill(); };
   const lite = mixc(w, [255, 250, 236], .45), dark = mulc(w, .82);
-  q(0, 0, L, 1.8, tone(dark, 1, sh2));
+  q(0, zb, L, zb + 1.8, tone(dark, zb + 1, sh2));
   const nb = Math.max(2, Math.round(L / 6.4)), bw = L / nb, fi = 'NSEW'.indexOf(s);
+  const top = zt - 2.4, nr = Math.max(1, Math.round((top - 2) / 9.5)), rh = (top - 2) / nr, rows = []; for (let r = 0; r < nr; r++) rows.push([zb + 2 + r * rh + 1.8, zb + 2 + r * rh + rh - 1.6, r]);
   for (let i = 0; i < nb; i++) { const c = (i + .5) * bw;
-    for (const [z0, z1, row] of [[4, 10.2, 0], [14, 20.4, 1]]) {
+    for (const [z0, z1, row] of rows) {
       const lit = n > .2 && hsh(b.id, row, i, fi) < .55;
       q(c - 1.45, z0 - .25, c + 1.45, z1 + .35, tone(lite, z1, sh2));
       q(c - 1.15, z0, c + 1.15, z1, lit ? `rgba(255,${206 + Math.round(hsh(b.id, i, row, 7) * 30)},150,${.55 + .4 * n})` : tone(T.mat.glass, z1, sh2));
       if (!lit) q(c - .06, z0, c + .06, z1, tone(lite, z1, sh2)); }
   }
-  for (let i = 0; i <= nb; i++) { const u = Math.min(L - .45, Math.max(.45, i * bw)); q(u - .45, 1.8, u + .45, 22.6, tone(lite, 12, sh2)); }
-  q(0, 11.8, L, 12.5, tone(lite, 12, sh2)); q(0, 22.6, L, 23.9, tone(mixc(w, lite, .5), 23, sh2)); q(0, 24.2, L, zt, tone(lite, zt, sh2 * 1.04));
-  ctx.strokeStyle = tone(dark, zt, sh2); ctx.lineWidth = clamp(k * .06, .5, 2); ctx.beginPath(); const a = pt(0, 24.1), c2 = pt(L, 24.1); ctx.moveTo(a[0], a[1]); ctx.lineTo(c2[0], c2[1]); ctx.stroke();
+  for (let i = 0; i <= nb; i++) { const u = Math.min(L - .45, Math.max(.45, i * bw)); q(u - .45, zb + 1.8, u + .45, top - 2.4, tone(lite, (zb + zt) / 2, sh2)); }
+  for (let r = 1; r < nr; r++) { const z = zb + 2 + r * rh; q(0, z - .2, L, z + .5, tone(lite, z, sh2)); }
+  q(0, top - 2.4, L, top - 1.1, tone(mixc(w, lite, .5), top, sh2)); q(0, top - .8, L, zt, tone(lite, zt, sh2 * 1.04));
+  ctx.strokeStyle = tone(dark, zt, sh2); ctx.lineWidth = clamp(k * .06, .5, 2); ctx.beginPath(); const a = pt(0, top - .9), c2 = pt(L, top - .9); ctx.moveTo(a[0], a[1]); ctx.lineTo(c2[0], c2[1]); ctx.stroke();
 }
 // a copper dome on a windowed drum over a stone plinth, with ribs and a lantern
 function drawDome(b, zt) {
@@ -2182,8 +2324,11 @@ function drawPortico(b) {
     fillPoly([P(U0, p.v0, ze), P(U1, p.v0, ze), P(uc, p.v0, zr)], tone([238, 230, 210], zr, faceShade(0, -1)));
     ctx.strokeStyle = tone([206, 194, 168], zr); ctx.lineWidth = clamp(k * .06, .5, 2); ctx.beginPath(); const t = [P(U0 + 1.6, p.v0 - .02, ze + .5), P(U1 - 1.6, p.v0 - .02, ze + .5), P(uc, p.v0 - .02, zr - .9)]; ctx.moveTo(t[0][0], t[0][1]); ctx.lineTo(t[1][0], t[1][1]); ctx.lineTo(t[2][0], t[2][1]); ctx.closePath(); ctx.stroke();
     const a = P(uc - 1, p.v0, ze - 1), c = P(uc + 1, p.v0, ze - 1), m = P(uc, p.v0 - .02, ze - 1); const fs = clamp(k * 1.25, 5, 40);
-    if (fs > 6) { ctx.save(); ctx.translate(m[0], m[1]); ctx.rotate(Math.atan2(c[1] - a[1], c[0] - a[0])); ctx.fillStyle = tone([92, 84, 70], ze); ctx.font = `600 ${fs}px Georgia, serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(b.civic.name, 0, 0); ctx.restore(); }
+    if (fs > 6) { ctx.save(); ctx.translate(m[0], m[1]); ctx.rotate(Math.atan2(c[1] - a[1], c[0] - a[0])); ctx.fillStyle = tone([92, 84, 70], ze); ctx.font = `600 ${fs}px Georgia, serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(p.name || b.civic.name, 0, 0); ctx.restore(); }
   }
+  if (p.banner && cy < p.v0) { const bw2 = (p.u1 - p.u0) * .55, z1 = z - 1.2, z0 = z1 - 5.5, o = P(uc + bw2 / 2, p.v0 + .3, z1), ex = sub(P(uc + bw2 / 2 - 1, p.v0 + .3, z1), o), ey = sub(P(uc + bw2 / 2, p.v0 + .3, z1 - 1), o);
+    fillPoly([P(uc + bw2 / 2, p.v0 + .3, z1), P(uc - bw2 / 2, p.v0 + .3, z1), P(uc - bw2 / 2, p.v0 + .3, z0), P(uc + bw2 / 2, p.v0 + .3, z0)], tone([128, 52, 56], z));
+    planeText([o[0] + ey[0] * 1.6, o[1] + ey[1] * 1.6], ex, ey, bw2, 2.4, p.banner, ENV.night > .3 ? `rgba(255,226,170,${.6 + .4 * ENV.night})` : tone([232, 206, 150], z), { w: 700 }); }
   if (ENV.night > .3) beaconSoft(P(uc, p.v0, z * .6), [255, 214, 160], clamp(k * 6, 10, 140));
 }
 function casinoFace(b, ti, s, pt, L, zb, zt, sh2) {
@@ -2585,6 +2730,18 @@ function drawProp(p) {
     case 'bin': drawBox(p.x - .28, p.y - .28, p.x + .28, p.y + .28, 0, 1.0, [50, 56, 54], [30, 32, 32]); break;
     case 'news': drawBox(p.x - .26, p.y - .22, p.x + .26, p.y + .22, 0, 1.1, (p.c = p.c || pick([[40, 60, 96], [110, 40, 40], [60, 62, 64]]))); break;
     case 'hyd': drawCyl(p.x, p.y, .14, 0, .7, [118, 42, 36]); break;
+    case 'slab': { // an entrance canopy: a slab on slim posts with the name along its front edge
+      const z = p.z, th = p.th, c = p.col || [190, 196, 196], pz = p.poly;
+      if (p.posts !== false) for (const q of [pz[0], pz[1]]) { const a = P(q[0], q[1], 0), t = P(q[0], q[1], z); ctx.strokeStyle = tone([150, 156, 158], z); ctx.lineWidth = clamp(k * .14, .6, 3); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(t[0], t[1]); ctx.stroke(); }
+      drawPrism(pz, pz, z, z + th, c, tone(mixc(c, [255, 255, 255], .12), z + th));
+      if (p.text) { const a = pz[0], b2 = pz[1], L = Math.hypot(b2[0] - a[0], b2[1] - a[1]), ux = (b2[0] - a[0]) / L, uy = (b2[1] - a[1]) / L, nx = uy, ny = -ux; // the front face looks away from the slab
+        const facing = nx * (cx - a[0]) + ny * (cy - a[1]) > 0 || true; if (facing) { const w = Math.min(L * .8, p.text.length * th * .9), u0 = (L - w) / 2, o = P(a[0] + ux * u0, a[1] + uy * u0, z + th - .08), ex = sub(P(a[0] + ux * (u0 + 1), a[1] + uy * (u0 + 1), z + th - .08), o), ey = sub(P(a[0] + ux * u0, a[1] + uy * u0, z + th - 1.08), o);
+          planeText(o, ex, ey, w, th * .8, p.text, ENV.night > .3 ? `rgba(255,236,196,${.6 + .4 * ENV.night})` : tone(p.textCol || [60, 64, 66], z), { w: 700, font: 'Georgia,serif' }); } }
+      if (ENV.night > .3) { const q = P(p.x, p.y, z - .2); beaconSoft(q, [255, 220, 170], clamp(k * 3, 6, 70)); }
+      break; }
+    case 'parasol': drawCyl(p.x, p.y, .45, .7, .76, [214, 210, 200]); break;
+    case 'statue': { drawPrism(p.base, p.base, 0, 1.6, [200, 194, 182], tone([214, 208, 196], 1.6)); drawCyl(p.x, p.y, .45, 1.6, 3.4, [112, 88, 56]); drawCyl(p.x, p.y, .28, 3.4, 4, [120, 94, 60]); break; }
+    case 'fence': { ctx.strokeStyle = tone([70, 74, 78], 1.2); ctx.lineWidth = clamp(k * .06, .5, 2); ctx.beginPath(); for (const z of [.15, p.h || 2.2]) p.pts.forEach((q, i) => { const a = P(q[0], q[1], z); i ? ctx.lineTo(a[0], a[1]) : ctx.moveTo(a[0], a[1]); }); for (let i = 0; i + 1 < p.pts.length; i++) { const A = p.pts[i], B = p.pts[i + 1], L = Math.hypot(B[0] - A[0], B[1] - A[1]), n = Math.max(1, Math.round(L / 1.2)); for (let j = 0; j <= n; j++) { const x = A[0] + (B[0] - A[0]) * j / n, y = A[1] + (B[1] - A[1]) * j / n, a = P(x, y, 0), c = P(x, y, p.h || 2.2); ctx.moveTo(a[0], a[1]); ctx.lineTo(c[0], c[1]); } } ctx.stroke(); break; }
     case 'flagpole': { const t = performance.now() / 1000, h = p.h, a = P(p.x, p.y, 0), tp = P(p.x, p.y, h); ctx.strokeStyle = tone([208, 210, 212], h); ctx.lineWidth = clamp(k * .1, .6, 2.5); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(tp[0], tp[1]); ctx.stroke();
       const ca = Math.cos(p.ang + .5 + .2 * Math.sin(t * 1.3 + p.x)), sa = Math.sin(p.ang + .5 + .2 * Math.sin(t * 1.3 + p.x)), fl = 3.2, fw = s => .35 * Math.sin(t * 4 + s * 3 + p.y);
       const pts = []; for (let i = 0; i <= 4; i++) { const f = i / 4 * fl; pts.push(P(p.x + ca * f - sa * fw(i), p.y + sa * f + ca * fw(i), h - .3)); } for (let i = 4; i >= 0; i--) { const f = i / 4 * fl; pts.push(P(p.x + ca * f - sa * fw(i), p.y + sa * f + ca * fw(i), h - 2.2)); }
@@ -2658,6 +2815,8 @@ function drawBeams(vw) {
   ctx.restore();
 }
 
+function drawParasol(p) { const c = p.c || [236, 226, 206], pts = polyEllipse(p.x, p.y, 1.5, 1.5, 8).map(q => P(q[0], q[1], 2.3)), top = P(p.x, p.y, 2.8);
+  for (let i = 0; i < 8; i++) fillPoly([pts[i], pts[(i + 1) % 8], top], tone(i % 2 ? c : mulc(c, .9), 2.6)); }
 function drawCartUmbrella(p) {
   const r = 1.45, z = 2.35, n = 16; if (underRect({ x0: p.x - r, x1: p.x + r, y0: p.y - r, y1: p.y + r })) ctx.globalAlpha = .55;
   const pole0 = P(p.x, p.y, 1), pole1 = P(p.x, p.y, z); ctx.strokeStyle = tone([60, 60, 62], 2); ctx.lineWidth = Math.max(1, k * .05); ctx.beginPath(); ctx.moveTo(pole0[0], pole0[1]); ctx.lineTo(pole1[0], pole1[1]); ctx.stroke();
@@ -4836,6 +4995,8 @@ function renderScene() {
     else if (p.t === 'cart') { addSmall(p.x, p.y, 1.2, 1.1, () => drawProp(p)); addOver({ x0: p.x - 1.45, x1: p.x + 1.45, y0: p.y - 1.45, y1: p.y + 1.45 }, 2.8, () => drawCartUmbrella(p), true); }
     else if (p.t === 'kiosk') addSmall(p.x, p.y, 2.6, 2, () => drawProp(p));
     else if (p.t === 'palm') { addSmall(p.x, p.y, p.h, .3, () => drawPalmTrunk(p)); const tp = palmTop(p); addOver({ x0: tp[0] - p.r, x1: tp[0] + p.r, y0: tp[1] - p.r, y1: tp[1] + p.r }, p.h + 1, () => drawPalmCrown(p), true); }
+    else if (p.t === 'slab') { const xs = p.poly.map(q => q[0]), ys = p.poly.map(q => q[1]); addOver({ x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) }, p.z + p.th, () => drawProp(p), true); }
+    else if (p.t === 'parasol') { addSmall(p.x, p.y, .8, .6, () => drawProp(p)); addOver({ x0: p.x - 1.6, x1: p.x + 1.6, y0: p.y - 1.6, y1: p.y + 1.6 }, 2.6, () => drawParasol(p), true); }
     else if (p.t === 'ccanopy') { const xs = p.poly.map(q => q[0]), ys = p.poly.map(q => q[1]); addOver({ x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) }, 6.2, () => drawProp(p), true); }
     else if (p.t === 'shelter') { addSmall(p.x, p.y, 2.5, 1.9, () => drawProp(p)); addOver(p.rect, 2.7, () => drawShelterRoof(p)); }
     else addSmall(p.x, p.y, p.h || (p.t === 'sculpt' ? 8 : 1.4), p.rad || (p.t === 'sculpt' ? 1.2 : .5), () => drawProp(p));
@@ -5312,6 +5473,28 @@ function drawXmas() {
 }
 // fireworks over the harbour at midnight on New Year's Eve
 const FW = [], FLASH = [];
+// ---------- planes: now and then after dark, the lights of an airliner crossing far off ----------
+const PLANES = []; let planeT = 6;
+function updatePlanes(dt) {
+  if (E.lit < .2 || st.weather === 'fog') { PLANES.length = 0; planeT = 6; return; }
+  planeT -= dt;
+  if (planeT < 0 && PLANES.length < 2) {
+    planeT = 30 + Math.random() * 60;
+    const yaw = C.yaw0 + st.look + (Math.random() - .5) * 1.2, fx = Math.cos(yaw), fy = Math.sin(yaw), lx = -fy, ly = fx, dist = 2600 + Math.random() * 3600, sgn = Math.random() < .5 ? -1 : 1, span = 2600;
+    const cx0 = cam.x + fx * dist, cy0 = cam.y + fy * dist, head = (Math.random() - .5) * .5, vx = (lx * Math.cos(head) - fx * Math.sin(head)) * sgn, vy = (ly * Math.cos(head) - fy * Math.sin(head)) * sgn;
+    PLANES.push({ x: cx0 - vx * span, y: cy0 - vy * span, z: 650 + Math.random() * 600, vx: vx * 72, vy: vy * 72, vz: (Math.random() - .5) * 3, life: span * 2 / 72, t: 0, ph: Math.random() * 3, nav: sgn > 0 ? [255, 60, 50] : [70, 255, 120] });
+  }
+  for (let i = PLANES.length - 1; i >= 0; i--) { const p = PLANES[i]; p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt; if (p.t > p.life) PLANES.splice(i, 1); }
+}
+function drawPlanes(now) {
+  if (!PLANES.length) return; const a0 = st.weather === 'rain' || st.weather === 'snow' ? .45 : 1;
+  ctx.globalCompositeOperation = 'lighter';
+  for (const p of PLANES) { const q = proj(p.x, p.y, p.z); if (!q) continue; const t = now / 1000 + p.ph;
+    ctx.fillStyle = rgb(p.nav, .75 * a0); ctx.fillRect(q[0] - .8, q[1] - .8, 1.6, 1.6);
+    if (t % 1.15 < .14) glow(q[0] + 1.2, q[1] - .6, 3.2, [255, 50, 40], .9 * a0);
+    const s = t % 1.7; if (s < .05 || (s > .16 && s < .21)) glow(q[0] - 1.4, q[1], 4.5, [255, 255, 255], a0); }
+  ctx.globalCompositeOperation = 'source-over';
+}
 function updateFireworks(dt) {
   if (st.event !== 'nye') { FW.length = 0; return; }
   if (Math.random() < dt * 3) {
@@ -5465,12 +5648,12 @@ function drawWeather(dt) {
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     const lk = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0); st.look = clamp(st.look + lk * dt * .6, -.75, .75);
     if (PL.sync) PL.sync(st); E = TOD[st.tod];
-    updateCam(); updateFireworks(dt);
+    updateCam(); updateFireworks(dt); updatePlanes(dt);
     const key = [st.look.toFixed(3), W, H, st.tod, st.season, st.weather, st.event].join('|');
     if (!CACHE || CACHE.key !== key) renderCity(key);
     ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(CACHE.cv, 0, 0); ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     if (E.lit > .2) for (const b of C.tallest) { const c = proj(b.x, b.y, b.zt + 4); if (c && (now / 700 + b.seed) % 2 < 1.2) { ctx.fillStyle = 'rgba(255,50,40,.9)'; ctx.fillRect(c[0] - 1, c[1] - 1, 2, 2); } }
-    drawFireworks(); drawForeground(); drawWeather(dt);
+    drawPlanes(now); drawFireworks(); drawForeground(); drawWeather(dt);
     if (E === TOD.night) { ctx.fillStyle = 'rgba(10,14,30,.12)'; ctx.fillRect(0, 0, W, H); }
     requestAnimationFrame(frame);
   }
