@@ -556,10 +556,7 @@ MAT.casinogold = { wall: [156, 122, 60], frame: [118, 90, 40], glass: [132, 104,
 { const cb = buildings.find(b => b.name === 'Casino'); if (cb) { const fp = cb.fp, w = fp.x1 - fp.x0, d = fp.y1 - fp.y0, cxl = (fp.x0 + fp.x1) / 2;
     cb.tiers = [{ ...fp, zb: 0, zt: 16, mat: MAT.casinopod }, { x0: fp.x0 + w * .3, y0: fp.y0 + d * .38, x1: fp.x1 - w * .3, y1: fp.y1 - 4, zb: 16, zt: 96, mat: MAT.casinogold }];
     cb.H = 96; cb.crown = 'CASINO'; cb.casino = true; cb.roofC = [150, 116, 54]; cb.kit = []; cb.lit = 'hotel'; cb.plant = null; cb.cool = []; cb.vents = []; cb.sky = null; cb.tank = null; cb.ant = null; cb.rail = false; cb.spire = false;
-    const W = (u, v) => toW(cb.F, u, v);
-    props.push({ t: 'ccanopy', poly: [W(cxl - 10, fp.y0 - 7), W(cxl + 10, fp.y0 - 7), W(cxl + 10, fp.y0), W(cxl - 10, fp.y0)], cols: [W(cxl - 9.3, fp.y0 - 6.4), W(cxl + 9.3, fp.y0 - 6.4)], x: W(cxl, fp.y0 - 3.5)[0], y: W(cxl, fp.y0 - 3.5)[1] });
-    for (const sx of [-1, 1]) { const q = W(cxl + sx * 17, fp.y0 - 6); props.push({ t: 'cfount', x: q[0], y: q[1], r: 3.2 }); solids.push({ round: 3.3, x: q[0], y: q[1], wb: { x0: q[0] - 3.5, y0: q[1] - 3.5, x1: q[0] + 3.5, y1: q[1] + 3.5 } }); }
-    for (const sx of [-1, 1]) { const q = W(cxl + sx * 9.3, fp.y0 - 6.4); solids.push({ round: .35, x: q[0], y: q[1], wb: { x0: q[0] - .5, y0: q[1] - .5, x1: q[0] + .5, y1: q[1] + .5 } }); } } }
+  } }
 // the city's tallest tower near the centre is Northgate, the player's employer in the art test
 { const core = buildings.filter(b => b.kind === 'tower' && b.tiers[0].mat.kind === 'glass').sort((a, b) => Math.hypot(a.F.ox - CBD.x, a.F.oy - CBD.y) - Math.hypot(b.F.ox - CBD.x, b.F.oy - CBD.y));
   for (const b of buildings) if (b.crown === 'NORTHGATE') b.crown = 'MERIDIAN';
@@ -749,6 +746,69 @@ for (const e of C.edges) {
 for (const p of props) if (p.t === 'meter') solids.push({ round: .1, x: p.x, y: p.y, wb: { x0: p.x - .15, y0: p.y - .15, x1: p.x + .15, y1: p.y + .15 } });
 gridSolids();
 
+// ---------- landmark grounds ----------
+// Flat ground layouts for special sites (paving, lawns, drives, carpets) drawn with the ground, plus night glows.
+// Each entry: { wb, clip, shapes: [{ pts | circ, c, tex, stripes, grid, edge }], glows: [{ x, y, r, c, a }] }
+const GROUNDS = [];
+{ const cb = buildings.find(b => b.casino), L = cb && C.lots.find(l => l.id === cb.lot); if (cb && L) {
+  const F = cb.F, fp = cb.fp, W = (u, v) => toW(F, u, v);
+  const rect = (u0, v0, u1, v1) => [W(u0, v0), W(u1, v0), W(u1, v1), W(u0, v1)];
+  const rrect = (u0, v0, u1, v1, r) => { const o = [], arc = (cu, cv, a0) => { for (let i = 0; i <= 6; i++) { const a = a0 + i / 6 * Math.PI / 2; o.push(W(cu + Math.cos(a) * r, cv + Math.sin(a) * r)); } };
+    arc(u1 - r, v1 - r, 0); arc(u0 + r, v1 - r, Math.PI / 2); arc(u0 + r, v0 + r, Math.PI); arc(u1 - r, v0 + r, Math.PI * 1.5); return o; };
+  const solidBox = (u0, v0, u1, v1) => { const q = rect(u0, v0, u1, v1), xs = q.map(p => p[0]), ys = q.map(p => p[1]); solids.push({ F, x0: u0, y0: v0, x1: u1, y1: v1, wb: { x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys) } }); };
+  const solidRound = (q, r) => solids.push({ round: r, x: q[0], y: q[1], wb: { x0: q[0] - r - .1, y0: q[1] - r - .1, x1: q[0] + r + .1, y1: q[1] + r + .1 } });
+  const GR = [218, 210, 196], LAWN = [74, 112, 58], DRIVE = [62, 58, 58], GOLD = [204, 170, 96];
+  const ap = { u0: fp.x0 - 5, v0: fp.y0 - 4.5, u1: fp.x1 + 5, v1: fp.y1 + 5 };
+  // the drop-off loop: a one-way ring round a fountain island, two drives out to the street
+  const ring = { u0: -34, v0: -70.5, u1: 34, v1: ap.v0 }, isl = { u0: -27, v0: -63.5, u1: 27, v1: ap.v0 - 7 };
+  const FX = W(0, (isl.v0 + isl.v1) / 2), FR = 6.6;
+  const G = { wb: null, clip: L.block, shapes: [
+    { pts: L.block, c: GR, tex: 'gran' },
+    { pts: rrect(-82, -70.5, 80, 74, 6), c: LAWN, stripes: 3.2 },
+    { pts: rrect(ap.u0, ap.v0, ap.u1, ap.v1, 2.5), c: GR, tex: 'gran', grid: 1.5 },
+    { pts: rect(-54, -78, -50, ap.v0), c: GR, tex: 'gran', grid: 1.5 }, { pts: rect(50, -78, 54, ap.v0), c: GR, tex: 'gran', grid: 1.5 },
+    { pts: rrect(ring.u0, ring.v0, ring.u1, ring.v1 + 2, 9), c: DRIVE, tex: 'gran', grid: .9, edge: { c: GOLD, w: .18 } },
+    { pts: rect(-30, -79, -23, -66), c: DRIVE, tex: 'gran', grid: .9 }, { pts: rect(23, -79, 30, -66), c: DRIVE, tex: 'gran', grid: .9 },
+    { pts: rrect(isl.u0, isl.v0, isl.u1, isl.v1, 4), c: LAWN, stripes: 2.4, edge: { c: [196, 190, 178], w: .35 } },
+    { circ: [FX[0], FX[1], FR + 1.6], c: GR, tex: 'gran' },
+    // red carpet from the kerb of the drop-off lane to the doors, gold-edged
+    { pts: rect(-2.2, ap.v0 + .2, 2.2, fp.y0), c: [150, 18, 30], edge: { c: GOLD, w: .14 } }
+  ], glows: [] };
+  { const xs = L.block.map(p => p[0]), ys = L.block.map(p => p[1]); G.wb = { x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys) }; }
+  GROUNDS.push(G);
+  // porte-cochere over the drop-off lane, gold columns on the island side
+  props.push({ t: 'ccanopy', poly: rect(-12, ap.v0 - 7.6, 12, fp.y0), cols: [W(-11.2, ap.v0 - 7.2), W(11.2, ap.v0 - 7.2)], x: W(0, -42)[0], y: W(0, -42)[1] });
+  for (const su of [-11.2, 11.2]) solidRound(W(su, ap.v0 - 7.2), .4);
+  // the grand fountain
+  props.push({ t: 'cfountbig', x: FX[0], y: FX[1], r: FR, h: 5, rad: FR }); solidRound(FX, FR + .2);
+  G.glows.push({ x: FX[0], y: FX[1], r: FR + 6, c: [120, 170, 255], a: .5, hue: true });
+  // velvet ropes along the carpet
+  for (const su of [-2.6, 2.6]) props.push({ t: 'rope', pts: [W(su, ap.v0 + .6), W(su, ap.v0 + 2.2), W(su, ap.v0 + 3.8)], x: W(su, ap.v0 + 2.2)[0], y: W(su, ap.v0 + 2.2)[1] });
+  G.glows.push({ x: W(0, ap.v0)[0], y: W(0, ap.v0)[1], r: 13, c: [255, 196, 120], a: .55 });
+  // valet stand beside the carpet
+  { const q = W(5.5, ap.v0 + 1.6); props.push({ t: 'valet', x: q[0], y: q[1], ang: Math.atan2(F.s, F.c) }); solidRound(q, .5); }
+  // palms: four on the island, rows down both forecourt lawns, a ring round the sides and back
+  const palms = [];
+  for (const su of [-21, -13, 13, 21]) palms.push([su, (isl.v0 + isl.v1) / 2]);
+  for (const su of [-44, -60, -72, 44, 60, 68]) for (const sv of [-62, -48]) palms.push([su, sv]);
+  for (let sv = -26; sv <= 32; sv += 14) { palms.push([ap.u0 - 7, sv]); palms.push([ap.u1 + 7, sv]); }
+  for (let su = -48; su <= 48; su += 16) palms.push([su, ap.v1 + 8]);
+  let seed = 1; for (const [u, v] of palms) { const q = W(u, v); props.push({ t: 'palm', x: q[0], y: q[1], h: 8.5 + hsh(77, seed, 3, 9) * 3, lean: hsh(77, seed++, 4, 9) * TAU, r: 3.4 }); solidRound(q, .35); G.glows.push({ x: q[0], y: q[1], r: 4.5, c: [255, 214, 150], a: .35 }); }
+  // clipped hedges along the street edge of the lawns, broken for the walks and drives
+  const hedge = (u0, v0, u1, v1) => { props.push({ t: 'hedge', poly: rect(u0, v0, u1, v1), x: W((u0 + u1) / 2, (v0 + v1) / 2)[0], y: W((u0 + u1) / 2, (v0 + v1) / 2)[1], rad: Math.max(u1 - u0, v1 - v0) / 2 }); solidBox(u0, v0, u1, v1); };
+  for (const [a, b] of [[-80, -56], [-48, -32], [32, 48], [56, 72]]) hedge(a, -72.6, b, -71.4);
+  for (const [a, b] of [[ap.u0 - 1.6, ap.u0 - .4], [ap.u1 + .4, ap.u1 + 1.6]]) hedge(a, -28, b, 36);
+  // warm lanterns round the drive and the walks
+  for (const [u, v] of [[-30, ap.v0 + 1.2], [-18, ap.v0 + 1.2], [18, ap.v0 + 1.2], [30, ap.v0 + 1.2], [-26, -61], [26, -61], [-26, isl.v1 - 1.5], [26, isl.v1 - 1.5], [-55.6, -64], [-55.6, -50], [55.6, -64], [55.6, -50]]) { const q = W(u, v); lamps.push({ x: q[0], y: q[1], ax: 0, ay: 0, cool: false, short: true }); }
+  // searchlights at the four corners of the grounds, sweeping the sky after dark
+  for (const [u, v, ph] of [[-66, -64, 0], [64, -64, 1.7], [-70, 62, 3.1], [62, 62, 4.6]]) { const q = W(u, v); props.push({ t: 'search', x: q[0], y: q[1], ph, h: 1.6, rad: 1 }); solidRound(q, 1); }
+  // a black limousine waiting at the carpet, and nobody parked across the drives
+  for (const [su] of [[-26.5], [26.5]]) { const q = W(su, -77); for (let i = BAYS.length - 1; i >= 0; i--) { const b = BAYS[i]; if (Math.hypot(b.x - q[0], b.y - q[1]) > 8) continue; if (b.e.bays) b.e.bays.splice(b.e.bays.indexOf(b), 1); BAYS.splice(i, 1); if (b.car) clearParkedNear(b.x, b.y, .5); } }
+  { const q = W(-.8, ap.v0 - 3.6), ang = Math.atan2(F.s, F.c), Lm = 7.6, Wm = 1.96; const pc = { type: 'limo', x: q[0], y: q[1], ang, a: ang, col: [14, 14, 16], v: 0, speed: 0, brake: 0, parked: true, bay: null };
+    PARKED.push(pc); solids.push({ F: frameOf(q[0], q[1], Math.cos(ang), Math.sin(ang)), x0: -Lm / 2, y0: -Wm / 2, x1: Lm / 2, y1: Wm / 2, wb: { x0: q[0] - 4, y0: q[1] - 4, x1: q[0] + 4, y1: q[1] + 4 }, car: pc }); }
+  gridSolids();
+} }
+
 // ---------- the doors this build uses ----------
 const VENUE_NAME = u => ({ studentbar: 'Student bar', fastfood: 'Fast food', club: 'Nightclub', gym: 'Gym' }[u] || (u ? u[0].toUpperCase() + u.slice(1) : 'Shop'));
 if (!window.GAME_BUILD) { const ng = buildings.find(b => b.crown === 'NORTHGATE'); if (ng) doorFor(ng.lot, { to: 'lobby', name: 'Northgate tower', sign: 'NORTHGATE' });
@@ -772,6 +832,7 @@ const CARTYPES = {
   van: { L: 5.3, W: 2.0, hb: 1.05, hc: 2.15, cab: [.0, .74] },
   bus: { L: 12, W: 2.55, hb: 1.1, hc: 3.1, cab: [.0, 1] },
   police: { L: 4.9, W: 1.88, hb: .8, hc: 1.46, cab: [.3, .78] },
+  limo: { L: 7.6, W: 1.96, hb: .8, hc: 1.42, cab: [.2, .84] },
 };
 const CARCOL = [[38, 40, 44], [28, 29, 31], [150, 152, 154], [104, 108, 112], [196, 196, 192], [44, 52, 70], [86, 30, 32], [60, 64, 58], [120, 112, 100], [214, 212, 206], [40, 52, 72]];
 const LIMIT = { local: 40, mid: 50, ind: 50, art: 60, major: 60 }; // km/h
@@ -1479,9 +1540,30 @@ function drawGround(vw) {
     ctx.fillStyle = tone([150, 146, 140]); ctx.beginPath(); ctx.arc(plaza.fx, plaza.fy, 1.1, 0, TAU); ctx.fill();
     if (!snow2) { ctx.strokeStyle = toneAl([150, 180, 190], 0, 1, .35); ctx.lineWidth = .08; for (let r2 = 0; r2 < 3; r2++) { const rr = ((simT * .8 + r2 * 2.2) % 6.6); ctx.globalAlpha = 1 - rr / 6.6; ctx.beginPath(); ctx.arc(plaza.fx, plaza.fy, rr + .3, 0, TAU); ctx.stroke(); } ctx.globalAlpha = 1; }
   }
+  drawGrounds(vw);
   drawLeaves(vw);
   drawFences(vw);
   if (wet) for (const s of SPLASH) { if (!near(s, vw)) continue; const r2 = .08 + s.t * .9; ctx.strokeStyle = `rgba(200,210,225,${(1 - s.t / .35) * .35})`; ctx.lineWidth = .04; ctx.beginPath(); ctx.ellipse(s.x, s.y, r2, r2 * .8, 0, 0, TAU); ctx.stroke(); }
+}
+// landmark grounds: paving, mown lawns, drives and carpets, under everything else
+function drawGrounds(vw) {
+  const snow = ENV.snow, wet = ENV.wet;
+  for (const G of GROUNDS) { if (!rectHit(G.wb, vw)) continue;
+    ctx.save(); if (G.clip) { ctx.beginPath(); G.clip.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); ctx.clip(); }
+    for (const S of G.shapes) {
+      ctx.beginPath(); if (S.circ) ctx.arc(S.circ[0], S.circ[1], S.circ[2], 0, TAU); else { S.pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); }
+      const c = snow ? mixc(S.c, [224, 228, 234], S.stripes ? .85 : .7) : wet ? mulc(S.c, .72) : S.c;
+      ctx.fillStyle = tone(c); ctx.fill();
+      if (S.tex === 'gran' && !snow) { ctx.save(); ctx.clip(); ctx.globalAlpha = .4; ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = patFill(TEX.granP, 24); ctx.fill(); ctx.restore(); }
+      if ((S.stripes || S.grid) && !snow) { ctx.save(); ctx.clip(); const xs = S.pts ? S.pts.map(p => p[0]) : [S.circ[0] - S.circ[2], S.circ[0] + S.circ[2]], ys = S.pts ? S.pts.map(p => p[1]) : [S.circ[1] - S.circ[2], S.circ[1] + S.circ[2]];
+        const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys), a = S.pts ? Math.atan2(S.pts[1][1] - S.pts[0][1], S.pts[1][0] - S.pts[0][0]) : 0, mx = (x0 + x1) / 2, my = (y0 + y1) / 2, R = Math.hypot(x1 - x0, y1 - y0) / 2 + 2;
+        ctx.translate(mx, my); ctx.rotate(a);
+        if (S.stripes) { ctx.fillStyle = tone(mulc(c, 1.13)); for (let u = -R, i = 0; u < R; u += S.stripes, i++) if (i % 2) ctx.fillRect(u, -R, S.stripes, R * 2); }
+        if (S.grid) { ctx.strokeStyle = toneAl([20, 20, 20], 0, 1, .22); ctx.lineWidth = .05; ctx.beginPath(); for (let u = -R; u < R; u += S.grid) { ctx.moveTo(u, -R); ctx.lineTo(u, R); ctx.moveTo(-R, u); ctx.lineTo(R, u); } ctx.stroke(); }
+        ctx.restore(); }
+      if (S.edge) { ctx.beginPath(); if (S.circ) ctx.arc(S.circ[0], S.circ[1], S.circ[2], 0, TAU); else { S.pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); } ctx.strokeStyle = tone(S.edge.c); ctx.lineWidth = S.edge.w; ctx.stroke(); }
+    }
+    ctx.restore(); }
 }
 // fences are low enough to draw with the ground: a wall face and a lit top rail, far ones first
 function drawFences(vw) {
@@ -1563,6 +1645,9 @@ function drawLightPools(vw) {
       ctx.fillStyle = g2; ctx.fillRect(-1.6, -1.6, 3.2, 3.2); ctx.restore();
     }
   }
+  for (const G of GROUNDS) { if (!rectHit(G.wb, vw)) continue; const t = performance.now() / 1000;
+    for (const l of G.glows) { let c = l.c; if (l.hue) { const h = (t * .08) % 1, f = i => Math.round(150 + 105 * Math.cos(TAU * (h + i / 3))); c = [f(0), f(1), f(2)]; }
+      const g = ctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, l.r); g.addColorStop(0, rgb(c, l.a * n * wetB)); g.addColorStop(1, rgb(c, 0)); ctx.fillStyle = g; ctx.fillRect(l.x - l.r, l.y - l.r, l.r * 2, l.r * 2); } }
   if (plaza && plaza.uplights) {
     for (const p of vProps(vw)) { if (!near(p, vw)) continue; let r = 0, c = null, al = .32;
       if (p.t === 'tree') { r = 5.5; c = [220, 180, 120]; al = .42; } else if (p.t === 'cart') { r = 6; c = [230, 170, 100]; al = .38; } else if (p.t === 'kiosk') { r = 7; c = [220, 190, 140]; } else continue;
@@ -2062,11 +2147,38 @@ function drawProp(p) {
   switch (p.t) {
     case 'ccanopy': { // the casino's entrance canopy: gold edge, red soffit lit from below, two columns
       for (const c of p.cols) drawCyl(c[0], c[1], .32, 0, 5.2, [176, 138, 62]);
-      drawPrism(p.poly, p.poly, 5.2, 6.0, [176, 138, 62], [70, 20, 26]);
-      if (ENV.night > .2) { const t = performance.now() / 1000, ph = Math.floor(t * 7); for (let i = 0; i < 4; i++) { const a = p.poly[i], b2 = p.poly[(i + 1) % 4]; for (let j = 0; j < 8; j++) { const q = P(a[0] + (b2[0] - a[0]) * j / 8, a[1] + (b2[1] - a[1]) * j / 8, 6.0); ctx.fillStyle = (j + i * 8 + ph) % 3 === 0 ? 'rgba(255,236,170,1)' : 'rgba(255,190,90,.6)'; ctx.beginPath(); ctx.arc(q[0], q[1], clamp(k * .14, .8, 3), 0, TAU); ctx.fill(); } } beaconSoft(P(p.x, p.y, 4.8), [255, 200, 130], clamp(k * 4, 8, 90)); }
+      drawPrism(p.poly, p.poly, 5.6, 6.0, [176, 138, 62], ENV.snow ? tone([226, 230, 236], 6) : ENV.night > .3 ? `rgba(255,214,150,${.18 + .1 * ENV.night})` : 'rgba(190,206,214,.28)');
+      { const q = p.poly.map(v => P(v[0], v[1], 6.0)); ctx.strokeStyle = tone([196, 160, 80], 6); ctx.lineWidth = clamp(k * .2, .8, 4); ctx.beginPath(); q.forEach((v, i) => i ? ctx.lineTo(v[0], v[1]) : ctx.moveTo(v[0], v[1])); ctx.closePath();
+        for (let j = 1; j < 6; j++) { const a = P(p.poly[0][0] + (p.poly[1][0] - p.poly[0][0]) * j / 6, p.poly[0][1] + (p.poly[1][1] - p.poly[0][1]) * j / 6, 6), b2 = P(p.poly[3][0] + (p.poly[2][0] - p.poly[3][0]) * j / 6, p.poly[3][1] + (p.poly[2][1] - p.poly[3][1]) * j / 6, 6); ctx.moveTo(a[0], a[1]); ctx.lineTo(b2[0], b2[1]); }
+        ctx.stroke(); }
+      if (ENV.night > .2) { const t = performance.now() / 1000, ph = Math.floor(t * 7); for (let i = 0; i < 4; i++) { const a = p.poly[i], b2 = p.poly[(i + 1) % 4]; const nb = Math.max(6, Math.round(Math.hypot(b2[0] - a[0], b2[1] - a[1]) / 1.2)); for (let j = 0; j < nb; j++) { const q = P(a[0] + (b2[0] - a[0]) * j / nb, a[1] + (b2[1] - a[1]) * j / nb, 6.0); ctx.fillStyle = (j + i * 8 + ph) % 3 === 0 ? 'rgba(255,236,170,1)' : 'rgba(255,190,90,.6)'; ctx.beginPath(); ctx.arc(q[0], q[1], clamp(k * .14, .8, 3), 0, TAU); ctx.fill(); } } beaconSoft(P(p.x, p.y, 4.8), [255, 200, 130], clamp(k * 4, 8, 90)); }
       break; }
     case 'cfount': { drawCyl(p.x, p.y, p.r, 0, .55, [196, 186, 168]); drawCyl(p.x, p.y, p.r - .35, .5, .56, ENV.night > .3 ? [60, 110, 150] : [96, 150, 180]); drawCyl(p.x, p.y, .5, .5, 1.2, [200, 190, 172]);
       const t = performance.now() / 1000, j = P(p.x, p.y, 2.4 + .4 * Math.sin(t * 3)); ctx.fillStyle = 'rgba(220,236,248,.75)'; ctx.beginPath(); ctx.arc(j[0], j[1], clamp(k * .5, 1.5, 9), 0, TAU); ctx.fill(); if (ENV.night > .3) beaconSoft(P(p.x, p.y, 1), [255, 200, 120], clamp(k * 2.2, 5, 50)); break; }
+    case 'cfountbig': { // three tiers of carved stone, a ring of arcing jets and a tall plume; lit in slow colour after dark
+      const n = ENV.night, t = performance.now() / 1000, r = p.r, st = [214, 206, 190], h = (t * .08) % 1, f = i => Math.round(150 + 105 * Math.cos(TAU * (h + i / 3)));
+      const wc = n > .3 ? mixc([50, 90, 130], [f(0), f(1), f(2)], .55 * n) : [92, 146, 176];
+      drawCyl(p.x, p.y, r, 0, .75, st); drawCyl(p.x, p.y, r - .45, .62, .7, ENV.snow ? [200, 206, 214] : wc);
+      drawCyl(p.x, p.y, 1.0, .7, 2.1, st); drawCyl(p.x, p.y, 2.9, 2.1, 2.45, st); drawCyl(p.x, p.y, 2.55, 2.38, 2.46, wc);
+      drawCyl(p.x, p.y, .55, 2.46, 3.5, st); drawCyl(p.x, p.y, 1.35, 3.5, 3.75, st); drawCyl(p.x, p.y, .28, 3.75, 4.5, [196, 160, 80]);
+      if (!ENV.snow) { const jc = n > .3 ? `rgba(${f(0)},${f(1)},${f(2)},.7)` : 'rgba(226,240,250,.7)'; ctx.strokeStyle = jc; ctx.lineWidth = clamp(k * .07, .6, 2.4); ctx.beginPath();
+        for (let i = 0; i < 18; i++) { const a = i / 18 * TAU, ca = Math.cos(a), sa = Math.sin(a), hh = 3.1 + .25 * Math.sin(t * 3 + i), A = P(p.x + ca * (r - .7), p.y + sa * (r - .7), .75), M = P(p.x + ca * (r * .62), p.y + sa * (r * .62), hh), B = P(p.x + ca * 3.2, p.y + sa * 3.2, .8);
+          ctx.moveTo(A[0], A[1]); ctx.quadraticCurveTo(2 * M[0] - (A[0] + B[0]) / 2, 2 * M[1] - (A[1] + B[1]) / 2, B[0], B[1]); }
+        ctx.stroke();
+        // sheets of water falling from the middle bowl, and the central plume
+        ctx.fillStyle = n > .3 ? `rgba(${f(0)},${f(1)},${f(2)},.25)` : 'rgba(220,236,248,.3)'; for (let i = 0; i < 24; i++) { const a = i / 24 * TAU, a2 = (i + 1) / 24 * TAU; fillPoly([P(p.x + Math.cos(a) * 2.9, p.y + Math.sin(a) * 2.9, 2.2), P(p.x + Math.cos(a2) * 2.9, p.y + Math.sin(a2) * 2.9, 2.2), P(p.x + Math.cos(a2) * 3.1, p.y + Math.sin(a2) * 3.1, .7), P(p.x + Math.cos(a) * 3.1, p.y + Math.sin(a) * 3.1, .7)], ctx.fillStyle); }
+        const pt0 = P(p.x, p.y, 4.5), pt1 = P(p.x, p.y, 7.2 + .5 * Math.sin(t * 2.4)); ctx.strokeStyle = n > .3 ? `rgba(${f(0)},${f(1)},${f(2)},.85)` : 'rgba(236,246,252,.85)'; ctx.lineWidth = clamp(k * .3, 1, 7); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(pt0[0], pt0[1]); ctx.lineTo(pt1[0], pt1[1]); ctx.stroke(); ctx.lineCap = 'butt'; }
+      if (n > .3) beaconSoft(P(p.x, p.y, 2), [f(0), f(1), f(2)], clamp(k * 2.4, 6, 60));
+      break; }
+    case 'rope': { // gold stanchions with a red velvet rope looping between them
+      const g = [206, 170, 92]; for (const q of p.pts) { drawCyl(q[0], q[1], .07, 0, 1.0, g); drawCyl(q[0], q[1], .12, .98, 1.08, g); }
+      ctx.strokeStyle = tone([150, 20, 32], 1); ctx.lineWidth = clamp(k * .07, .7, 2.5); ctx.beginPath();
+      for (let i = 0; i + 1 < p.pts.length; i++) { const a = P(p.pts[i][0], p.pts[i][1], .95), b2 = P(p.pts[i + 1][0], p.pts[i + 1][1], .95), m = P((p.pts[i][0] + p.pts[i + 1][0]) / 2, (p.pts[i][1] + p.pts[i + 1][1]) / 2, .55); ctx.moveTo(a[0], a[1]); ctx.quadraticCurveTo(2 * m[0] - (a[0] + b2[0]) / 2, 2 * m[1] - (a[1] + b2[1]) / 2, b2[0], b2[1]); }
+      ctx.stroke(); break; }
+    case 'valet': { drawCyl(p.x, p.y, .38, 0, 1.15, [60, 34, 28]); drawCyl(p.x, p.y, .44, 1.15, 1.22, [206, 170, 92]); if (ENV.night > .3) beaconSoft(P(p.x, p.y, 1.3), [255, 220, 160], clamp(k * .5, 2, 10)); break; }
+    case 'hedge': drawPrism(p.poly, p.poly, 0, 1.15, ENV.snow ? [214, 220, 226] : [44, 78, 42], tone(ENV.snow ? [228, 232, 238] : [58, 98, 52], 1.15)); break;
+    case 'search': { // a searchlight on a drum: the beam itself is drawn last, over everything
+      drawCyl(p.x, p.y, .9, 0, .5, [56, 58, 62]); drawCyl(p.x, p.y, .55, .5, 1.5, [70, 72, 78]); const e = P(p.x, p.y, 1.55); ctx.fillStyle = ENV.night > .3 ? 'rgba(255,250,236,1)' : tone([150, 156, 164], 1.5); ctx.beginPath(); ctx.arc(e[0], e[1], clamp(k * .45, 1.2, 10), 0, TAU); ctx.fill(); break; }
     case 'meter': { drawCyl(p.x, p.y, .05, 0, 1.15, [70, 72, 76]); drawBox(p.x - .13, p.y - .09, p.x + .13, p.y + .09, 1.15, 1.5, [44, 48, 54], [86, 90, 96]); break; }
     case 'bin': drawBox(p.x - .28, p.y - .28, p.x + .28, p.y + .28, 0, 1.0, [50, 56, 54], [30, 32, 32]); break;
     case 'news': drawBox(p.x - .26, p.y - .22, p.x + .26, p.y + .22, 0, 1.1, (p.c = p.c || pick([[40, 60, 96], [110, 40, 40], [60, 62, 64]]))); break;
@@ -2108,6 +2220,36 @@ function drawProp(p) {
       break;
     }
   }
+}
+
+// palms: a curved ringed trunk and a crown of drooping fronds
+function palmTop(p) { return [p.x + Math.cos(p.lean) * 1.3, p.y + Math.sin(p.lean) * 1.3, p.h]; }
+function drawPalmTrunk(p) {
+  const tp = palmTop(p); ctx.strokeStyle = tone([116, 96, 72], p.h / 2); ctx.lineCap = 'round'; ctx.lineWidth = Math.max(1.2, k * .32); ctx.beginPath();
+  for (let i = 0; i <= 8; i++) { const f = i / 8, e = f * f, q = P(p.x + (tp[0] - p.x) * e, p.y + (tp[1] - p.y) * e, p.h * f); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }
+  ctx.stroke(); ctx.lineCap = 'butt';
+}
+function drawPalmCrown(p) {
+  const tp = palmTop(p), r = p.r, bare = ENV.snow, rr = mulberry(Math.round(p.x * 7 + p.y * 13)), fr = [];
+  for (let i = 0; i < 10; i++) { const a = i / 10 * TAU + rr() * .4, ln = r * (.8 + rr() * .3); fr.push([a, ln, rr()]); }
+  fr.sort((A, B) => Math.sin(A[0]) - Math.sin(B[0]));
+  for (const [a, ln, v] of fr) { const ca = Math.cos(a), sa = Math.sin(a), px = -sa, py = ca;
+    const T = P(tp[0], tp[1], tp[2]), M1 = P(tp[0] + ca * ln * .45 + px * .5, tp[1] + sa * ln * .45 + py * .5, tp[2] + .5), M2 = P(tp[0] + ca * ln * .45 - px * .5, tp[1] + sa * ln * .45 - py * .5, tp[2] + .5), E = P(tp[0] + ca * ln, tp[1] + sa * ln, tp[2] - 1.9);
+    fillPoly([T, M1, E, M2], tone(bare ? [200, 206, 200] : v < .5 ? [58, 98, 50] : [76, 122, 60], tp[2])); }
+  const c = P(tp[0], tp[1], tp[2] + .1); ctx.fillStyle = tone([92, 70, 44], tp[2]); ctx.beginPath(); ctx.arc(c[0], c[1], Math.max(1, k * .35), 0, TAU); ctx.fill();
+}
+// searchlight beams sweep the sky after dark: drawn after the scene so they rise over the rooftops
+function drawBeams(vw) {
+  const n = ENV.night; if (n < .3) return; const t = performance.now() / 1000;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (const p of inView(props, viewRect(30), RP, 60)) { if (p.t !== 'search') continue;
+    const a = p.ph + Math.sin(t * .35 + p.ph) * 1.1, tilt = .55 + .25 * Math.sin(t * .23 + p.ph * 2), Lh = 260, ca = Math.cos(a), sa = Math.sin(a), px = -sa, py = ca;
+    const z1 = Lh * Math.cos(tilt) * .55, d1 = Lh * Math.sin(tilt) * .55, w0 = .35, w1 = 6;
+    const A = P(p.x + px * w0, p.y + py * w0, 1.6), B = P(p.x - px * w0, p.y - py * w0, 1.6), Cc = P(p.x + ca * d1 - px * w1, p.y + sa * d1 - py * w1, z1), D = P(p.x + ca * d1 + px * w1, p.y + sa * d1 + py * w1, z1);
+    const o = P(p.x, p.y, 1.6), e = P(p.x + ca * d1, p.y + sa * d1, z1), g = ctx.createLinearGradient(o[0], o[1], e[0], e[1]);
+    g.addColorStop(0, `rgba(255,248,226,${.42 * n})`); g.addColorStop(.35, `rgba(240,240,255,${.16 * n})`); g.addColorStop(1, 'rgba(230,236,255,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(D[0], D[1]); ctx.lineTo(Cc[0], Cc[1]); ctx.lineTo(B[0], B[1]); ctx.closePath(); ctx.fill(); }
+  ctx.restore();
 }
 
 function drawCartUmbrella(p) {
@@ -4287,8 +4429,10 @@ function renderScene() {
     else if (p.t === 'pobj') addSmall(p.x, p.y, 2.6, p.k === 'bench' ? .9 : 2, () => drawParkObj(p));
     else if (p.t === 'cart') { addSmall(p.x, p.y, 1.2, 1.1, () => drawProp(p)); addOver({ x0: p.x - 1.45, x1: p.x + 1.45, y0: p.y - 1.45, y1: p.y + 1.45 }, 2.8, () => drawCartUmbrella(p), true); }
     else if (p.t === 'kiosk') addSmall(p.x, p.y, 2.6, 2, () => drawProp(p));
+    else if (p.t === 'palm') { addSmall(p.x, p.y, p.h, .3, () => drawPalmTrunk(p)); const tp = palmTop(p); addOver({ x0: tp[0] - p.r, x1: tp[0] + p.r, y0: tp[1] - p.r, y1: tp[1] + p.r }, p.h + 1, () => drawPalmCrown(p), true); }
+    else if (p.t === 'ccanopy') { const xs = p.poly.map(q => q[0]), ys = p.poly.map(q => q[1]); addOver({ x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) }, 6.2, () => drawProp(p), true); }
     else if (p.t === 'shelter') { addSmall(p.x, p.y, 2.5, 1.9, () => drawProp(p)); addOver(p.rect, 2.7, () => drawShelterRoof(p)); }
-    else addSmall(p.x, p.y, p.t === 'sculpt' ? 8 : 1.4, p.t === 'sculpt' ? 1.2 : .5, () => drawProp(p));
+    else addSmall(p.x, p.y, p.h || (p.t === 'sculpt' ? 8 : 1.4), p.rad || (p.t === 'sculpt' ? 1.2 : .5), () => drawProp(p));
   }
   for (const l of vLamps(vw)) if (near(l, vw)) { addSmall(l.x, l.y, 3, .2, () => drawLampBase(l)); const ex = l.x + l.ax * 1.25, ey = l.y + l.ay * 1.25; addOver({ x0: Math.min(l.x, ex) - .3, x1: Math.max(l.x, ex) + .3, y0: Math.min(l.y, ey) - .3, y1: Math.max(l.y, ey) + .3 }, 9.2, () => drawLamp(l)); }
   for (const s of vSig(vw)) if (near(s, vw)) { addSmall(s.x, s.y, 3, .2, () => drawSignalBase(s)); const ex = s.x + s.arm[0] * 5.4, ey = s.y + s.arm[1] * 5.4; addOver({ x0: Math.min(s.x, ex) - .3, x1: Math.max(s.x, ex) + .3, y0: Math.min(s.y, ey) - .3, y1: Math.max(s.y, ey) + .3 }, 6.6, () => drawSignal(s)); }
@@ -4339,6 +4483,7 @@ function renderScene() {
     for (const s of sl) s.draw();
     if (i < bigs.length) { if (bigs[i].fade) ctx.globalAlpha = .38; bigs[i].draw(); ctx.globalAlpha = 1; }
   }
+  drawBeams(vw);
   drawWeather();
   drawBats();
   drawFireworks();
