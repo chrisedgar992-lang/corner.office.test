@@ -657,6 +657,18 @@ if (C.DRESS) {
   for (const S of C.DRESS.stands) { const pts = [...S.A, ...S.B.slice().reverse()]; const a = S.A[0], b2 = S.A[S.A.length - 1], F = frameOf((a[0] + b2[0]) / 2, (a[1] + b2[1]) / 2, b2[0] - a[0], b2[1] - a[1]); const rr = mulberry(9500 + n++);
     newBuilding(null, F, localBox(F, pts), 11, 'inner', { mat: 'stand', shops: null, lit: 'none' }, rr); }
 }
+// ---------- the casino ----------
+// Not a plain box: a gold glass tower set back on a deep red podium, CASINO across the crown, a lit marquee and chasing bulbs
+// along the podium, gold light fins up the tower that ripple at night, and a canopied entrance between two fountains.
+MAT.casinopod = { wall: [98, 26, 30], frame: [178, 138, 62], glass: [72, 18, 24], kind: 'glass' };
+MAT.casinogold = { wall: [156, 122, 60], frame: [118, 90, 40], glass: [132, 104, 50], kind: 'glass' };
+{ const cb = buildings.find(b => b.name === 'Casino'); if (cb) { const fp = cb.fp, w = fp.x1 - fp.x0, d = fp.y1 - fp.y0, cxl = (fp.x0 + fp.x1) / 2;
+    cb.tiers = [{ ...fp, zb: 0, zt: 16, mat: MAT.casinopod }, { x0: fp.x0 + w * .3, y0: fp.y0 + d * .38, x1: fp.x1 - w * .3, y1: fp.y1 - 4, zb: 16, zt: 96, mat: MAT.casinogold }];
+    cb.H = 96; cb.crown = 'CASINO'; cb.casino = true; cb.roofC = [150, 116, 54]; cb.kit = []; cb.lit = 'hotel'; cb.plant = null; cb.cool = []; cb.vents = []; cb.sky = null; cb.tank = null; cb.ant = null; cb.rail = false; cb.spire = false;
+    const W = (u, v) => toW(cb.F, u, v);
+    props.push({ t: 'ccanopy', poly: [W(cxl - 10, fp.y0 - 7), W(cxl + 10, fp.y0 - 7), W(cxl + 10, fp.y0), W(cxl - 10, fp.y0)], cols: [W(cxl - 9.3, fp.y0 - 6.4), W(cxl + 9.3, fp.y0 - 6.4)], x: W(cxl, fp.y0 - 3.5)[0], y: W(cxl, fp.y0 - 3.5)[1] });
+    for (const sx of [-1, 1]) { const q = W(cxl + sx * 17, fp.y0 - 6); props.push({ t: 'cfount', x: q[0], y: q[1], r: 3.2 }); solids.push({ round: 3.3, x: q[0], y: q[1], wb: { x0: q[0] - 3.5, y0: q[1] - 3.5, x1: q[0] + 3.5, y1: q[1] + 3.5 } }); }
+    for (const sx of [-1, 1]) { const q = W(cxl + sx * 9.3, fp.y0 - 6.4); solids.push({ round: .35, x: q[0], y: q[1], wb: { x0: q[0] - .5, y0: q[1] - .5, x1: q[0] + .5, y1: q[1] + .5 } }); } } }
 // the city's tallest tower near the centre is Northgate, the player's employer in the art test
 { const core = buildings.filter(b => b.kind === 'tower' && b.tiers[0].mat.kind === 'glass').sort((a, b) => Math.hypot(a.F.ox - CBD.x, a.F.oy - CBD.y) - Math.hypot(b.F.ox - CBD.x, b.F.oy - CBD.y));
   for (const b of buildings) if (b.crown === 'NORTHGATE') b.crown = 'MERIDIAN';
@@ -1749,7 +1761,7 @@ function drawFace(b, T, s, ti) {
   // windows
   const FH = b.house ? 3.0 : 3.8, z0 = zb === 0 ? (b.house ? 0 : 5.2) : zb;
   const cw0 = glass ? 3 : mat.kind === 'deco' ? 2.6 : 3.3, n = Math.max(1, Math.round(L / cw0)), cw = L / n;
-  const lf = litFrac(b.lit), emA = .05 + .92 * ENV.night;
+  const lf = b.casino ? 0 : litFrac(b.lit), emA = .05 + .92 * ENV.night;
   const fi = 'NSEW'.indexOf(s);
   const litP = [new Path2D(), new Path2D(), new Path2D(), new Path2D()];
   let anyLit = false;
@@ -1800,7 +1812,40 @@ function drawFace(b, T, s, ti) {
     const zc = zt - 6.2, hgt = 3.4, w = Math.min(L * .8, b.crown.length * 2.6), u0 = (L - w) / 2;
     const o = pt(u0, zc + hgt), ex = sub(pt(u0 + 1, zc + hgt), o), ey = sub(pt(u0, zc + hgt - 1), o);
     const col = ENV.night > .35 ? `rgba(236,240,246,${.4 + .6 * ENV.night})` : tone([196, 198, 200], zt, sh2);
-    planeText(o, ex, ey, w, hgt, b.crown, col, { w: 600, font: 'Georgia,serif' });
+    planeText(o, ex, ey, w, hgt, b.crown, b.casino ? (ENV.night > .3 ? `rgba(255,214,120,${.5 + .5 * ENV.night})` : tone([214, 176, 96], zt, sh2)) : col, { w: 600, font: 'Georgia,serif' });
+  }
+  if (b.casino) casinoFace(b, ti, s, pt, L, zb, zt, sh2);
+}
+// the casino's light show: a marquee and chasing bulbs on the podium's street face, gold fins rippling up the tower
+function casinoFace(b, ti, s, pt, L, zb, zt, sh2) {
+  const n = ENV.night, t = performance.now() / 1000;
+  if (ti === 0) {
+    // a gold band along the top of the podium with bulbs that chase round it after dark
+    const band = new Path2D(); quadPath(band, pt(0, zt - 1.6), pt(L, zt - 1.6), pt(L, zt - .2), pt(0, zt - .2)); ctx.fillStyle = tone([170, 132, 58], zt, sh2); ctx.fill(band);
+    const step = 1.4, ph = Math.floor(t * 7);
+    for (let u = .7, i = 0; u < L - .3; u += step, i++) { const on = n > .2 && (i + ph) % 3 === 0, p = pt(u, zt - .9); ctx.fillStyle = on ? 'rgba(255,236,170,1)' : n > .2 ? 'rgba(255,190,90,.55)' : tone([226, 206, 150], zt, sh2); ctx.beginPath(); ctx.arc(p[0], p[1], clamp(k * .16, .8, 3), 0, TAU); ctx.fill(); if (on && n > .4) beaconSoft(p, [255, 220, 140], clamp(k * .5, 2, 9)); }
+    { const fq = new Path2D(); quadPath(fq, pt(0, zb), pt(L, zb), pt(L, zt - 1.6), pt(0, zt - 1.6)); ctx.fillStyle = n > .25 ? `rgba(255,96,70,${.35 * n})` : 'rgba(255,190,150,.06)'; ctx.fill(fq); }
+    if (s === 'N' && L > 20) { // the marquee over the entrance
+      const w = Math.min(L * .55, 30), u0 = (L - w) / 2, z0 = 7.4, z1 = 12.8;
+      const bg = new Path2D(); quadPath(bg, pt(u0 - .6, z0 - .5), pt(u0 + w + .6, z0 - .5), pt(u0 + w + .6, z1 + .5), pt(u0 - .6, z1 + .5)); ctx.fillStyle = tone([40, 12, 16], z1, sh2); ctx.fill(bg);
+      ctx.strokeStyle = n > .2 ? 'rgba(255,214,120,.95)' : tone([196, 158, 80], z1, sh2); ctx.lineWidth = clamp(k * .14, .6, 3); ctx.stroke(bg);
+      const o = pt(u0, z1), ex = sub(pt(u0 + 1, z1), o), ey = sub(pt(u0, z1 - 1), o);
+      planeText(o, ex, ey, w, z1 - z0, 'CASINO', n > .2 ? `rgba(255,${200 + 40 * Math.sin(t * 2.2) | 0},120,1)` : tone([232, 196, 110], z1, sh2), { w: 800, font: 'Georgia,serif' });
+      if (n > .3) beaconSoft(pt(L / 2, (z0 + z1) / 2), [255, 190, 110], clamp(k * w * .35, 8, 140));
+    }
+  } else {
+    // the tower is one sheet of gold glass: a sheen by day, a warm amber glow from inside after dark
+    const fq = new Path2D(); quadPath(fq, pt(0, zb), pt(L, zb), pt(L, zt), pt(0, zt));
+    const ga = pt(0, zb), gb = pt(L, zt), gg = ctx.createLinearGradient(ga[0], ga[1], gb[0], gb[1]);
+    if (n > .25) { gg.addColorStop(0, `rgba(255,170,80,${.45 * n})`); gg.addColorStop(.5, `rgba(255,214,130,${.6 * n})`); gg.addColorStop(1, `rgba(255,160,70,${.45 * n})`); }
+    else { gg.addColorStop(0, 'rgba(255,226,150,.10)'); gg.addColorStop(.45, 'rgba(255,240,190,.38)'); gg.addColorStop(.55, 'rgba(255,240,190,.12)'); gg.addColorStop(1, 'rgba(255,214,120,.22)'); }
+    ctx.fillStyle = gg; ctx.fill(fq);
+    // gold light fins every six metres; at night a wave of red and gold climbs them
+    const nf = Math.max(2, Math.floor(L / 6));
+    for (let i = 1; i < nf; i++) { const u = L * i / nf, a = pt(u, zb + .5), bq = pt(u, zt - .5);
+      if (n > .25) { const g = ctx.createLinearGradient(a[0], a[1], bq[0], bq[1]), wv = (t * .35 + i * .13) % 1; g.addColorStop(0, 'rgba(255,200,100,.9)'); g.addColorStop(Math.max(0, wv - .12), 'rgba(255,190,90,.85)'); g.addColorStop(wv, 'rgba(255,70,60,1)'); g.addColorStop(Math.min(1, wv + .12), 'rgba(255,190,90,.85)'); g.addColorStop(1, 'rgba(255,220,140,.9)'); ctx.strokeStyle = g; }
+      else ctx.strokeStyle = tone([206, 170, 90], (zb + zt) / 2, sh2);
+      ctx.lineWidth = clamp(k * .22, .8, 4.5); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(bq[0], bq[1]); ctx.stroke(); }
   }
 }
 const sub = (a, b) => [a[0] - b[0], a[1] - b[1]];
@@ -1866,6 +1911,11 @@ function drawRoof(b, T, top) {
   if (b.rail) { ctx.strokeStyle = tone([96, 98, 100], zt); ctx.lineWidth = Math.max(1, k * .08); const rr = roofPoly(T.x0 + 1.4, T.y0 + 1.4, T.x1 - 1.4, T.y1 - 1.4, zt + .05); ctx.beginPath(); rr.forEach((p, j) => j ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); ctx.stroke(); }
   if (b.sky) { const s = b.sky; ctx.fillStyle = tone([60, 74, 86], zt); ctx.strokeStyle = tone([90, 92, 94], zt); ctx.lineWidth = 1; for (let i = 0; i < 4; i++) { const q = roofPoly(s.x0 + i * 2.4, s.y0, s.x0 + i * 2.4 + 1.8, s.y0 + 5, zt + .1); fillPoly(q, ctx.fillStyle); } if (ENV.night > .3) { for (let i = 0; i < 4; i++) fillPoly(roofPoly(s.x0 + i * 2.4, s.y0, s.x0 + i * 2.4 + 1.8, s.y0 + 5, zt + .1), `rgba(255,214,160,${.5 * ENV.night})`); } }
   if (b.vents) for (const [vx, vy] of b.vents) drawBox(vx - .35, vy - .35, vx + .35, vy + .35, zt, zt + .7, [118, 118, 116]);
+  if (b.casino && top) { // a gold crown ring on the tower roof, lit after dark
+    const i = 2.2, rr = roofPoly(T.x0 + i, T.y0 + i, T.x1 - i, T.y1 - i, zt + .1), n = ENV.night;
+    ctx.strokeStyle = n > .25 ? `rgba(255,214,120,${.6 + .4 * n})` : tone([206, 170, 90], zt); ctx.lineWidth = clamp(k * .5, 1.5, 9); ctx.beginPath(); rr.forEach((q, j) => j ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.closePath(); ctx.stroke();
+    const c = P((T.x0 + T.x1) / 2, (T.y0 + T.y1) / 2, zt); if (n > .3) beaconSoft(c, [255, 190, 100], clamp(k * 14, 20, 260));
+  }
   if (b.plant) { const p = b.plant; drawBox(p.x0, p.y0, p.x1, p.y1, zt, zt + p.h, [104, 104, 102]); const lp = roofPoly(p.x0 + .6, p.y0 + .6, p.x1 - .6, p.y1 - .6, zt + p.h); ctx.strokeStyle = toneAl([0, 0, 0], zt + p.h, 1, .25); ctx.lineWidth = 1; ctx.beginPath(); lp.forEach((q, j) => j ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.closePath(); ctx.stroke(); }
   if (b.cool) for (const c of b.cool) { drawCyl(c.x, c.y, c.r, zt, zt + 3.4, [120, 122, 124]); const q = P(c.x, c.y, zt + 3.45); ctx.fillStyle = tone([40, 42, 44], zt + 3.4); ctx.beginPath(); ctx.arc(q[0], q[1], c.r * .72 * k * LS(zt + 3.4), 0, TAU); ctx.fill(); }
   for (const kq of b.kit) drawBox(kq.x0, kq.y0, kq.x1, kq.y1, zt, zt + kq.h, kq.c);
@@ -2119,6 +2169,13 @@ function drawTree(p) {
 }
 function drawProp(p) {
   switch (p.t) {
+    case 'ccanopy': { // the casino's entrance canopy: gold edge, red soffit lit from below, two columns
+      for (const c of p.cols) drawCyl(c[0], c[1], .32, 0, 5.2, [176, 138, 62]);
+      drawPrism(p.poly, p.poly, 5.2, 6.0, [176, 138, 62], [70, 20, 26]);
+      if (ENV.night > .2) { const t = performance.now() / 1000, ph = Math.floor(t * 7); for (let i = 0; i < 4; i++) { const a = p.poly[i], b2 = p.poly[(i + 1) % 4]; for (let j = 0; j < 8; j++) { const q = P(a[0] + (b2[0] - a[0]) * j / 8, a[1] + (b2[1] - a[1]) * j / 8, 6.0); ctx.fillStyle = (j + i * 8 + ph) % 3 === 0 ? 'rgba(255,236,170,1)' : 'rgba(255,190,90,.6)'; ctx.beginPath(); ctx.arc(q[0], q[1], clamp(k * .14, .8, 3), 0, TAU); ctx.fill(); } } beaconSoft(P(p.x, p.y, 4.8), [255, 200, 130], clamp(k * 4, 8, 90)); }
+      break; }
+    case 'cfount': { drawCyl(p.x, p.y, p.r, 0, .55, [196, 186, 168]); drawCyl(p.x, p.y, p.r - .35, .5, .56, ENV.night > .3 ? [60, 110, 150] : [96, 150, 180]); drawCyl(p.x, p.y, .5, .5, 1.2, [200, 190, 172]);
+      const t = performance.now() / 1000, j = P(p.x, p.y, 2.4 + .4 * Math.sin(t * 3)); ctx.fillStyle = 'rgba(220,236,248,.75)'; ctx.beginPath(); ctx.arc(j[0], j[1], clamp(k * .5, 1.5, 9), 0, TAU); ctx.fill(); if (ENV.night > .3) beaconSoft(P(p.x, p.y, 1), [255, 200, 120], clamp(k * 2.2, 5, 50)); break; }
     case 'meter': { drawCyl(p.x, p.y, .05, 0, 1.15, [70, 72, 76]); drawBox(p.x - .13, p.y - .09, p.x + .13, p.y + .09, 1.15, 1.5, [44, 48, 54], [86, 90, 96]); break; }
     case 'bin': drawBox(p.x - .28, p.y - .28, p.x + .28, p.y + .28, 0, 1.0, [50, 56, 54], [30, 32, 32]); break;
     case 'news': drawBox(p.x - .26, p.y - .22, p.x + .26, p.y + .22, 0, 1.1, (p.c = p.c || pick([[40, 60, 96], [110, 40, 40], [60, 62, 64]]))); break;
@@ -2694,7 +2751,7 @@ function drawCityMap(g, ox, oy, sc, rot, w, h, opts = {}) {
     g.fillStyle = '#cfd4da'; g.font = '11px system-ui,sans-serif'; g.textAlign = 'center'; g.fillText(SB >= 1000 ? '1 km' : SB + ' m', bx + L / 2, by - 8);
     g.restore(); g.save(); g.translate(w / 2, h / 2); g.rotate(rot); g.scale(sc, sc); g.translate(-ox, -oy);
   }
-  g.translate(player.x, player.y); g.rotate(Math.atan2(player.hy || 1, player.hx || 0));
+  g.translate(player.x, player.y); g.rotate(player.driving ? PCAR.ang : Math.atan2(player.hy || 1, player.hx || 0));
   const s = (opts.big ? 7 : 9) / sc;
   g.fillStyle = '#d6a347'; g.strokeStyle = '#111'; g.lineWidth = 1.2 / sc; g.beginPath(); g.moveTo(s, 0); g.lineTo(-s * .7, s * .62); g.lineTo(-s * .35, 0); g.lineTo(-s * .7, -s * .62); g.closePath(); g.fill(); g.stroke();
   g.restore();
@@ -2802,11 +2859,11 @@ function drawMinimap() {
   if (mm.width !== Math.round(size * d)) { mm.width = mm.height = Math.round(size * d); }
   mmc.setTransform(d, 0, 0, d, 0, 0); mmc.clearRect(0, 0, size, size);
   mmc.save(); mmc.beginPath(); mmc.arc(size / 2, size / 2, size / 2 - 1, 0, TAU); mmc.clip();
-  if (INSIDE) drawIndoorMap(mmc, size); else drawCityMap(mmc, player.x, player.y, size / 300, -ROT, size, size);
+  if (INSIDE) drawIndoorMap(mmc, size); else drawCityMap(mmc, player.x, player.y, size / 300, ROT, size, size); // turned exactly like the street view, so up on the minimap is up on screen
   mmc.restore();
   mmc.strokeStyle = 'rgba(255,255,255,.22)'; mmc.lineWidth = 1.5; mmc.beginPath(); mmc.arc(size / 2, size / 2, size / 2 - 1, 0, TAU); mmc.stroke();
   // north marker rides the rim
-  const a = -ROT - Math.PI / 2, r = size / 2 - 10, nx = size / 2 + Math.cos(a) * r, ny = size / 2 + Math.sin(a) * r;
+  const a = ROT - Math.PI / 2, r = size / 2 - 10, nx = size / 2 + Math.cos(a) * r, ny = size / 2 + Math.sin(a) * r;
   mmc.fillStyle = '#0e1013'; mmc.beginPath(); mmc.arc(nx, ny, 8, 0, TAU); mmc.fill();
   mmc.fillStyle = '#e6e8eb'; mmc.font = '700 10px system-ui,sans-serif'; mmc.textAlign = 'center'; mmc.textBaseline = 'middle'; mmc.fillText('N', nx, ny + .5);
 }
