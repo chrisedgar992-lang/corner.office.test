@@ -5782,6 +5782,12 @@ function drawWeather(dt) {
   setInterval(() => { if (dbg.hidden) return; const st = __ART.state(), stuck = CARS.filter(c => c.wait > 15).length;
     dbg.textContent = `Frame ${__ART.ms()} ms, ${__ART.fps()} fps\nCars ${st.cars}, waiting over 15 s ${stuck}\nWalkers ${st.peds}, pigeons ${typeof PIGEONS !== 'undefined' ? PIGEONS.length : 0}\nDistrict ${DNAME[districtAt(player.x, player.y)] || ''}\nAt ${player.x.toFixed(0)}, ${player.y.toFixed(0)}  ${INSIDE ? 'inside ' + INSIDE.name : ''}`; }, 400);
 })();
+
+// opened as engine.html#lookout (from the main menu's tests): go straight to the rail at The Ranges; T moves the clock on two hours
+if (location.hash === '#lookout') {
+  setTimeout(() => { const L = C.lots.find(l => l.kind === 'lookout'); if (L && typeof LOOKOUT !== 'undefined') { const g = document.getElementById('sndgate'); if (g) g.hidden = true; player.x = L.cx; player.y = L.cy; LOOKOUT.show({ L, sync: lookoutSync }); } }, 800);
+  addEventListener('keydown', e => { if (e.code === 'KeyT' && typeof __ART !== 'undefined') __ART.setHour((hour + 2) % 24); });
+}
 // ---------- touch controls ----------
 // On a phone or tablet: a thumb joystick bottom left, and buttons bottom right, laid out like an emulator. Walking is analogue,
 // pushing right to the edge runs. In the car, up and down are throttle and brake, left and right steer. The buttons press the same
