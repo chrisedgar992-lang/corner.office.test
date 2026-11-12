@@ -6280,6 +6280,8 @@ window.GAME = (() => {
   const EMPLOYER = 'Meridian Capital';
   for (const b of buildings) if (b.crown === 'NORTHGATE') b.crown = 'MERIDIAN';
   if (WORK) LOTB.get(WORK.id)[0].crown = 'NORTHGATE';
+  // the share house keeps its pitched roof whatever the street's variety pass picked for the lot
+  if (HOME) for (const b of LOTB.get(HOME.id)) if (b.modern || (b.top && b.top.type === 'gables') || !b.pitched) { const fp = b.fp; b.tiers = [{ ...fp, zb: 0, zt: 6.2, mat: MAT.siding || b.tiers[0].mat }]; b.H = 6.2; b.top = null; b.modern = false; b.pat = null; b.pitched = { h: 2.6, axis: 'x', hip: false }; b.roofC = [118, 84, 70]; }
   const homeDoor = HOME && doorFor(HOME.id, { to: 'house', name: 'Home', sub: 'Share house with Rob', sign: '41', k: 'home' });
   if (HOME) LOTB.get(HOME.id)[0].isHome = true;
   const workDoor = WORK && doorFor(WORK.id, { to: 'lobby', name: 'Northgate tower', sub: EMPLOYER + ', level 32', sign: 'NORTHGATE', k: 'work' });
@@ -6309,7 +6311,7 @@ window.GAME = (() => {
   }
   let S = null;
   // older saves predate the phone
-  const upgrade = s => { s.contacts = s.contacts || {}; s.msgs = s.msgs || []; s.plans = s.plans || []; s.tx = s.tx || []; s.stereo = s.stereo || { on: false, by: null, day: -1 }; s.fines = s.fines || []; s.cart = s.cart || {}; s.orders = s.orders || []; s.owned = s.owned || {}; s.items = s.items || { meals: 0 }; return s; };
+  const upgrade = s => { s.contacts = s.contacts || {}; s.msgs = s.msgs || []; s.plans = s.plans || []; s.tx = s.tx || []; s.stereo = s.stereo || { on: false, by: null, day: -1 }; s.fines = s.fines || []; s.cart = s.cart || {}; s.orders = s.orders || []; s.owned = s.owned || {}; s.items = s.items || { meals: 0 }; s.port = s.port || {}; if (!s.mkt && s.time != null) initMarket(s); return s; };
   const txn = (text, cents) => { S.tx.unshift({ t: S.time, text, c: cents }); if (S.tx.length > 60) S.tx.length = 60; };
 
   // ---------------- clock, needs, money, season and weather ----------------
@@ -6645,7 +6647,8 @@ window.GAME = (() => {
       return menu('Fridge', 'What is in there.', o); }
     if (f.id === 'stove') { if (!S.items.meals) return toast('Nothing to cook with. Order groceries on your phone or laptop.'); return menu('Kitchen', 'Cooking takes longer than reheating but you feel better for it.', [{ t: 'Cook dinner', s: '45 minutes, fills you up, mood up', fn: () => { S.items.meals--; CR.passMinutes(S, 45); need('hunger', -55); need('mood', 6); toast('Not bad at all.'); closeMenu(); } }]); }
     if (f.id === 'sofa') { const tv = hrs => () => { closeMenu(); ffwd(hrs * 60, { label: 'Watching TV', pose: seated ? null : poseAt(12.75, 9.15, .44, 0, 1), each: m => { need('mood', 7 * m / 60); need('energy', 2 * m / 60); } }); };
-      return menu('Lounge', 'Put your feet up.', [{ t: 'Watch TV for an hour', s: 'Mood up', fn: tv(1) }, { t: 'Watch a movie', s: 'Two and a half hours, mood up more', fn: tv(2.5) }].concat(seated ? [{ t: 'Get up', s: '', fn: () => { closeMenu(); standUp(); } }] : [])); }
+      const tvNews = () => { closeMenu(); stepMarket(S, S.time); const L = S.mkt.stories.filter(st => st.t <= S.time).sort((a, b) => b.t - a.t).slice(0, 4), ix = indexOf(S.mkt); CR.passMinutes(S, 30); return menu('Channel 4 News', (mktOpen(S.time) ? 'The HCX 25 is at ' : 'The HCX 25 last closed at ') + ix.toFixed(1) + '.', L.map(st => ({ t: st.head, s: st.body, off: true }))); };
+      return menu('Lounge', 'Put your feet up.', [{ t: 'Watch TV for an hour', s: 'Mood up', fn: tv(1) }, { t: 'Watch a movie', s: 'Two and a half hours, mood up more', fn: tv(2.5) }, { t: 'Watch the news', s: 'Half an hour, the day\'s stories and the market', fn: tvNews }].concat(seated ? [{ t: 'Get up', s: '', fn: () => { closeMenu(); standUp(); } }] : [])); }
     if (f.id === 'stereo') return stereoMenu();
     if (f.id === 'shower') return menu('Shower', 'A hot shower.', [{ t: 'Take a shower', s: '15 minutes, mood up a little', fn: () => { closeMenu(); CR.passMinutes(S, 15); need('mood', 4); need('energy', 3); toast('Much better.'); } }]);
     if (f.id === 'desk') { closeMenu && modalOpen && closeMenu(); return openLaptop(); }
@@ -6768,11 +6771,110 @@ window.GAME = (() => {
       S.msgs.unshift({ cid: pl.cid, me: false, t: S.time, text: pick2(['Guess something came up. No worries.', 'I waited a while. Everything okay?', 'Stood up! Rude. Rain check?']) }); toast(`You missed coffee with ${c.name.split(' ')[0]}.`, 4); phoneBadge(); }
     S.plans = S.plans.filter(pl => !pl.done || S.time - pl.t < 1440 * 3); }
 
+  // ---------------- news and the market ----------------
+  // The Harbor City Exchange: 25 listed companies and the HCX 25 index. Trading 9:30 am to 4 pm on weekdays. Each morning at six
+  // the day's stories are written: company news, earnings, sector moves and city events. Each story carries a move for the
+  // stocks it touches, but the market does not read the paper perfectly: the real move is the story's size times a random
+  // factor, now and then the reverse ("sell the news"). Stories before the open move prices at the bell, stories in hours move
+  // them over the next half hour. Earnings are scheduled ahead with a hidden result, which is what tips are about.
+  const CO = [
+    ['HBF', 'Harbor Federal', 'Banks', 4200, 1.3], ['FHT', 'Fairhaven Trust', 'Banks', 6100, 1.1], ['CLC', 'Calloway Capital', 'Banks', 2850, 1.6],
+    ['KSY', 'Kestrel Systems', 'Tech', 11800, 2.4], ['BWS', 'Brightwater Software', 'Tech', 7400, 2.2], ['ORD', 'Orion Devices', 'Tech', 15600, 2.0], ['CVN', 'Corvid Networks', 'Tech', 3200, 2.8],
+    ['BLE', 'Bayline Energy', 'Energy', 5200, 1.7], ['RDO', 'Redfern Oil', 'Energy', 3900, 2.0], ['SMS', 'Summit Solar', 'Energy', 2100, 3.0],
+    ['HLS', 'Hollis Stores', 'Retail', 3400, 1.4], ['WBB', 'Westbrook Brands', 'Retail', 5800, 1.3], ['PTF', 'Pantry Foods', 'Retail', 2600, 1.0],
+    ['LGP', 'Langford Property', 'Property', 1900, 1.4], ['SBR', 'Seabright Realty', 'Property', 2400, 1.2],
+    ['TRH', 'Trident Health', 'Health', 8800, 1.5], ['ALP', 'Alder Pharma', 'Health', 4600, 2.6],
+    ['PHL', 'Port Haven Logistics', 'Transport', 3100, 1.6], ['SKA', 'Skyline Air', 'Transport', 1700, 2.5],
+    ['MRM', 'Marlowe Media', 'Media', 2200, 1.9], ['STT', 'Sterling Telecom', 'Telecom', 3300, .9],
+    ['OKM', 'Oakmont Mining', 'Mining', 4400, 2.3], ['HBM', 'Halberd Metals', 'Mining', 2700, 2.4],
+    ['ACI', 'Ashcroft Industries', 'Industrial', 6700, 1.3], ['PNC', 'Pinnacle Construction', 'Industrial', 3600, 1.8]];
+  const OPEN = 570, CLOSE = 960, FEE = 995;
+  const gauss = r => { let u = 0, v = 0; while (!u) u = r(); v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(TAUg * v); }, TAUg = Math.PI * 2;
+  const tradingDay = d => { const w = CR.parts(d * 1440 + 720).dow; return w >= 1 && w <= 5; };
+  const rngFor = seed => { let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
+  const pickR = (r, a) => a[Math.floor(r() * a.length)];
+  const coBy = sym => CO.find(c => c[0] === sym);
+  // story templates: [kind, weight, make(r, co) => { head, body, eff }]
+  const BROKERS = ['Dunmore Securities', 'Halsey and Grant', 'Bramwell Research', 'Northcote Partners'];
+  function companyStory(r, c) { const [sym, name, sec] = c, roll = r();
+    if (roll < .18) { const up = r() < .5, by = BROKERS[Math.floor(r() * BROKERS.length)]; return { head: `${by} ${up ? 'upgrades' : 'downgrades'} ${name} to ${up ? 'buy' : 'sell'}`, body: `Analysts say ${up ? 'the shares look cheap after a quiet quarter' : 'the valuation has run ahead of the business'}.`, eff: [[sym, up ? 2 + r() * 2.5 : -(2 + r() * 2.5)]] }; }
+    if (roll < .32) { const ok = r() < .6; return { head: ok ? `${name} wins a major ${sec === 'Tech' ? 'software' : sec === 'Health' ? 'hospital' : 'city'} contract` : `${name} loses a key contract to a rival`, body: ok ? 'The deal runs five years and is bigger than analysts expected.' : 'The company says it will cut costs to make up the gap.', eff: [[sym, ok ? 2.5 + r() * 4 : -(2.5 + r() * 4)]] }; }
+    if (roll < .44) return { head: `${name} faces a lawsuit over ${pickR(r, ['billing practices', 'a product recall', 'a failed merger', 'safety claims'])}`, body: 'The company says the claims are without merit and it will defend itself.', eff: [[sym, -(2 + r() * 4)]] };
+    if (roll < .54) return { head: `${name} chief executive steps down`, body: r() < .5 ? 'The board has started a search. Investors are nervous about the timing.' : 'The move was planned. A long-serving deputy takes over.', eff: [[sym, -(1 + r() * 4)]] };
+    if (roll < .64) { const fizz = r() < .4; return { head: `Rumors of a takeover bid for ${name}`, body: 'Neither company would comment. Traders piled in late in the day.', eff: [[sym, 6 + r() * 8]], fizz: fizz ? sym : null }; }
+    if (roll < .8 && (sec === 'Tech' || sec === 'Health' || sec === 'Retail' || sec === 'Telecom')) { const good = r() < .62; return { head: `${name} ${sec === 'Health' ? (good ? 'drug passes a key trial' : 'drug trial disappoints') : good ? 'launch draws long lines' : 'launch falls flat'}`, body: good ? 'Early numbers are ahead of the company\'s own forecasts.' : 'Reviews are mixed and the company has cut its sales outlook.', eff: [[sym, good ? 2 + r() * (sec === 'Health' ? 9 : 5) : -(2 + r() * (sec === 'Health' ? 12 : 5))]] }; }
+    const up = r() < .5; return { head: `${name} ${up ? 'raises' : 'trims'} its dividend`, body: up ? 'A sign of confidence from the board.' : 'The board wants to keep cash for investment.', eff: [[sym, up ? 1 + r() * 2 : -(1 + r() * 2)]] }; }
+  const SECTOR = [
+    r => { const up = r() < .5; return { head: `Oil prices ${up ? 'jump' : 'slide'} overnight`, body: up ? 'Supply worries are back. Airlines and freight feel the pinch.' : 'Producers are pumping more than the market needs.', eff: [['Energy', up ? 2 + r() * 2 : -(2 + r() * 2)], ['Transport', up ? -(1 + r() * 2) : 1 + r()]] }; },
+    r => { const hike = r() < .45; return { head: `Central bank ${hike ? 'raises rates' : r() < .5 ? 'holds rates steady' : 'cuts rates'}`, body: hike ? 'Borrowing costs go up again. Banks gain, property and builders lose.' : 'Markets had expected the move.', eff: hike ? [['Banks', 1.5 + r()], ['Property', -(2 + r() * 2)], ['Industrial', -(1 + r())], ['all', -.6]] : [['Property', 1 + r() * 2], ['all', .5 + r() * .5]] }; },
+    r => ({ head: 'Dock workers walk off the job at the port', body: 'The strike could run all week. Freight is piling up at the quay.', eff: [['Transport', -(2 + r() * 3)], ['Retail', -(.5 + r())]] }),
+    r => ({ head: 'City Hall approves the harbor redevelopment', body: 'Thousands of new homes and offices along the waterfront over ten years.', eff: [['Property', 2 + r() * 3], ['PNC', 3 + r() * 4], ['Industrial', 1 + r()]] }),
+    r => { const up = r() < .55; return { head: `Jobs report ${up ? 'beats expectations' : 'comes in weak'}`, body: up ? 'Hiring picked up across the country last month.' : 'Employers added far fewer jobs than forecast.', eff: [['all', up ? .8 + r() * .8 : -(.8 + r())], ['Retail', up ? 1 : -1]] }; },
+    r => { const up = r() < .5; return { head: `Tech stocks ${up ? 'rally' : 'sell off'} on Wall Street overnight`, body: up ? 'Chipmakers led the way.' : 'Investors took profits after a long run.', eff: [['Tech', up ? 1.5 + r() * 2.5 : -(1.5 + r() * 3)]] }; },
+    r => { const up = r() < .5; return { head: `Metal prices ${up ? 'surge' : 'fall'} on demand from overseas`, body: up ? 'Factories are buying again.' : 'Orders have dried up.', eff: [['Mining', up ? 2 + r() * 3 : -(2 + r() * 3)]] }; },
+    r => ({ head: 'Heatwave grips the city for a week', body: 'Power use is at a record. Shops report strong sales of fans and cold drinks.', eff: [['Energy', 1 + r() * 2], ['Retail', .5 + r()], ['SKA', -(1 + r())]] }),
+    r => ({ head: 'Holiday shopping season starts strong', body: 'Malls report foot traffic up on last year.', eff: [['Retail', 1.5 + r() * 2]] }) ];
+  const CITY = ['A new bike lane opens downtown', 'The Arena announces a sold-out concert season', 'Tourist numbers at a five-year high', 'Commuters face delays as roadworks begin on the avenue', 'Harbor Grand Hotel reopens its rooftop bar', 'University enrolments rise again', 'Fan zone opens ahead of race weekend', 'Midtown Plaza hosts a weekend food festival'];
+  function initMarket(S) { const M = { px: {}, open: {}, hist: {}, intra: {}, idx0: 0, day: -1, t: S.time, stories: [], earn: [], pend: [], fizz: [] }, r = rngFor(77);
+    for (const c of CO) { let p = c[3]; const h = []; for (let i = 0; i < 60; i++) { p = Math.max(100, p * (1 + gauss(r) * c[4] / 100 + .0003)); h.push(Math.round(p)); } M.px[c[0]] = p; M.hist[c[0]] = h; M.open[c[0]] = p; M.intra[c[0]] = [Math.round(p)]; }
+    M.idx0 = 1; M.base = {}; for (const c of CO) M.base[c[0]] = M.hist[c[0]][0];
+    S.mkt = M; S.port = S.port || {}; scheduleEarnings(S, Math.floor(S.time / 1440)); return M; }
+  const indexOf = M => { let s = 0; for (const c of CO) s += M.px[c[0]] / M.base[c[0]]; return 1000 * s / CO.length; };
+  const indexHist = M => { const n = M.hist[CO[0][0]].length, out = []; for (let i = 0; i < n; i++) { let s = 0; for (const c of CO) s += M.hist[c[0]][i] / M.base[c[0]]; out.push(1000 * s / CO.length); } return out; };
+  function scheduleEarnings(S, d0) { const M = S.mkt, r = rngFor(d0 * 31 + 7);
+    for (const c of CO) if (!M.earn.some(e => e.sym === c[0] && e.day >= d0)) { let d = d0 + 3 + Math.floor(r() * 40); while (!tradingDay(d)) d++; const s = gauss(r); M.earn.push({ sym: c[0], day: d, surprise: s, done: false }); } }
+  // the day's stories, written at 6 am
+  function writeDay(S, d) { const M = S.mkt, r = rngFor(d * 977 + 13), td = tradingDay(d), out = [];
+    const at = () => Math.round(360 + r() * (td ? 600 : 720));
+    const n = td ? 3 + Math.floor(r() * 3) : 1 + Math.floor(r() * 2);
+    for (let i = 0; i < n; i++) { const st = r() < .45 ? pickR(r, SECTOR)(r) : companyStory(r, pickR(r, CO)); st.t = d * 1440 + at(); out.push(st); }
+    for (const e of M.earn) if (e.day === d && !e.done) { const c = coBy(e.sym), s = e.surprise, pct = s > .35 ? 3 + s * 3 : s < -.35 ? -(3 - s * 3) : s * 2;
+      out.push({ t: d * 1440 + 480, head: s > .35 ? `${c[1]} profit beats forecasts` : s < -.35 ? `${c[1]} misses profit forecasts` : `${c[1]} results in line with forecasts`, body: s > .35 ? 'Revenue and margins both came in ahead. The company raised its outlook for the year.' : s < -.35 ? 'Costs ran higher than expected and the outlook was cut.' : 'No surprises. Management kept its guidance.', eff: [[e.sym, pct]], earn: true }); e.done = true; }
+    for (const sym of M.fizz) { const c = coBy(sym); out.push({ t: d * 1440 + 420, head: `${c[1]} denies takeover talks`, body: 'The company says it has received no approach.', eff: [[sym, -(4 + r() * 5)]] }); } M.fizz = [];
+    out.push({ t: d * 1440 + 400 + Math.round(r() * 600), head: pickR(r, CITY), body: 'Around the city.', eff: [], city: true });
+    for (const st of out) { if (st.fizz) M.fizz.push(st.fizz); st.day = d; st.real = st.eff.map(([k, p]) => [k, p * (r() < .12 ? -.6 : .4 + r() * 1.1)]); }
+    M.stories = M.stories.filter(s => s.day >= d - 6).concat(out.sort((a, b) => a.t - b.t)); scheduleEarnings(S, d); }
+  const touches = (k, c) => k === 'all' || k === c[0] || k === c[2];
+  // price path: five-minute steps through trading hours; news lands as a jump spread over half an hour
+  function stepMarket(S, t1) { const M = S.mkt; if (!M) return; let t = M.t; if (t1 - t > 1440 * 40) t = t1 - 1440 * 40;
+    while (t < t1) { const d = Math.floor(t / 1440), m = t - d * 1440;
+      if (d !== M.day) { M.day = d; writeDay(S, d); if (tradingDay(d)) for (const c of CO) { M.open[c[0]] = M.px[c[0]]; M.intra[c[0]] = [Math.round(M.px[c[0]])]; } M.mood = gauss(rngFor(d * 5 + 1)) * .5; }
+      const td = tradingDay(d);
+      if (!td || m < OPEN || m >= CLOSE) { const nx = !td || m >= CLOSE ? (d + 1) * 1440 : d * 1440 + OPEN; // closed: just collect stories for the bell
+        for (const st of M.stories) if (!st.queued && st.t <= Math.min(nx, t1)) { st.queued = true; M.pend.push({ real: st.real, left: 1, at: 'open' }); }
+        t = Math.min(nx, t1); if (td && m >= CLOSE && t >= (d + 1) * 1440 - 1) { for (const c of CO) { const h = M.hist[c[0]]; h.push(Math.round(M.px[c[0]])); if (h.length > 90) h.shift(); } } continue; }
+      const dt = Math.min(5, t1 - t), r = rngFor(Math.floor(t) * 7 + 3), mk = gauss(r) * .09 * Math.sqrt(dt / 5) + (M.mood || 0) * .008 * dt / 5;
+      for (const st of M.stories) if (!st.queued && st.t <= t + dt) { st.queued = true; M.pend.push({ real: st.real, left: 1, at: 'now' }); }
+      for (const c of CO) { const v = c[4] * .75 / Math.sqrt(78); let ret = (gauss(r) * v * Math.sqrt(dt / 5) + mk * c[4] / 1.6) / 100;
+        for (const pe of M.pend) for (const [k, p] of pe.real) if (touches(k, c)) ret += (pe.at === 'open' ? p * .7 : p / 6 * Math.min(1, dt / 5)) / 100;
+        M.px[c[0]] = Math.max(50, M.px[c[0]] * (1 + ret)); }
+      for (const pe of M.pend) { if (pe.at === 'open') { pe.real = pe.real.map(([k, p]) => [k, p * .3]); pe.at = 'now'; pe.left = 1; } else pe.left -= Math.min(1, dt / 5) / 6; }
+      M.pend = M.pend.filter(pe => pe.left > .01);
+      t += dt; if (Math.floor(t) % 15 === 0 || t >= t1) for (const c of CO) { const a = M.intra[c[0]]; if (a.length < 80) a.push(Math.round(M.px[c[0]])); } }
+    M.t = t1; }
+  const mktOpen = () => { const d = Math.floor(S.time / 1440), m = S.time - d * 1440; return tradingDay(d) && m >= OPEN && m < CLOSE; };
+  const nextOpen = () => { let d = Math.floor(S.time / 1440); if (S.time - d * 1440 >= OPEN) d++; while (!tradingDay(d)) d++; return d * 1440 + OPEN; };
+  const chg = sym => { const M = S.mkt, h = M.hist[sym], prev = mktOpen() || (S.time - Math.floor(S.time / 1440) * 1440) >= CLOSE && tradingDay(Math.floor(S.time / 1440)) ? M.open[sym] : h[h.length - 2] || h[h.length - 1]; return (M.px[sym] / prev - 1) * 100; };
+  const pct = v => `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`, pctCol = v => v >= 0 ? 'var(--good,#6bc48a)' : 'var(--bad,#d66b5f)';
+  const spark = (a, w = 300, h = 70) => { if (!a || a.length < 2) return ''; const lo = Math.min(...a), hi = Math.max(...a), sx = w / (a.length - 1), sy = (hi - lo) || 1; const d = a.map((v, i) => `${i ? 'L' : 'M'}${(i * sx).toFixed(1)},${(h - 4 - (v - lo) / sy * (h - 8)).toFixed(1)}`).join(''); const up = a[a.length - 1] >= a[0];
+    return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:${h}px;display:block"><path d="${d}" fill="none" stroke="${up ? '#6bc48a' : '#d66b5f'}" stroke-width="2"/></svg>`; };
+  const portValue = () => Object.entries(S.port).reduce((a, [k, h]) => a + h.q * S.mkt.px[k], 0);
+  function trade(sym, q) { const M = S.mkt, px = Math.round(M.px[sym]), h = S.port[sym] || (S.port[sym] = { q: 0, cost: 0 });
+    if (!mktOpen()) return toast(`The market is closed. It opens ${dayWord(nextOpen())} at 9:30 am.`, 3);
+    if (q > 0) { const tot = px * q + FEE; if (S.player.bank < tot) return toast('Not enough in your bank account.'); S.player.bank -= tot; txn(`Bought ${q} ${sym}`, -tot); h.cost += px * q + FEE; h.q += q; toast(`Bought ${q} ${sym} at ${money(px)}.`, 2.5); }
+    else { q = Math.min(-q, h.q); if (!q) return; const tot = px * q - FEE, avg = h.cost / h.q; S.player.bank += tot; txn(`Sold ${q} ${sym}`, tot); h.cost -= avg * q; h.q -= q; if (!h.q) delete S.port[sym]; toast(`Sold ${q} ${sym} at ${money(px)}.`, 2.5); }
+    CR.note(S, `Traded ${sym}.`); }
+  // tips: what people have heard about results coming up. How often they are right depends on who they are.
+  const TIPACC = c => c.rob ? .35 : /analyst|bank|trader|finance|broker|account|invest/i.test(c.job || '') ? .72 : .5;
+  function tipFrom(c) { const M = S.mkt, d0 = Math.floor(S.time / 1440), up = M.earn.filter(e => !e.done && e.day > d0 && e.day <= d0 + 12); if (!up.length) return 'Honestly? No idea. Quiet week by the sound of it.';
+    const r = rngFor(d0 * 13 + (c.cid || 'x').length * 7 + Math.floor(S.time)), e = pickR(r, up), co = coBy(e.sym), right = r() < TIPACC(c), good = (e.surprise > 0) === right;
+    return c.rob ? `Guy at the poker game reckons ${co[1]} ${good ? 'is about to smash its numbers' : 'is in trouble'}. Results ${dayWord(e.day * 1440)}. Do not quote me.` :
+      pickR(r, [`I keep hearing ${co[1]} ${good ? 'will beat its numbers' : 'is going to disappoint'} when it reports ${dayWord(e.day * 1440)}. Just talk, mind you.`, `Word is ${co[1]}'s results ${dayWord(e.day * 1440)} will be ${good ? 'strong' : 'rough'}. Could be nothing.`]); }
   // ---------------- the phone ----------------
   // Owned from the start. The clock stops while it is open. P opens it, Esc goes back.
   let phoneOpen = false, phoneView = ['home'], phoneData = {};
   const APPS = [['contacts', 'Contacts', '#5f8fd6', 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm-7 8c0-3.3 3.1-6 7-6s7 2.7 7 6z'], ['messages', 'Messages', '#5fb37a', 'M4 5h16v11H8l-4 4z'], ['bank', 'Bank', '#d6a347', 'M3 9l9-5 9 5v2H3zm2 3h2v6H5zm4 0h2v6H9zm4 0h2v6h-2zm4 0h2v6h-2zM3 19h18v2H3z'], ['maps', 'Maps', '#d66b5f', 'M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z'],
-    ['calendar', 'Calendar', '#c46fb0', 'M5 5h14v15H5zm0 4h14M8 3v4m8-4v4'], ['music', 'Music', '#e0874a', 'M9 18a3 3 0 1 1-2-2.8V5l12-2v11a3 3 0 1 1-2-2.8V6.3L9 7.6z'], ['notes', 'Journal', '#8a96a3', 'M6 3h12v18H6zm3 4h6m-6 4h6m-6 4h4'], ['shop', 'Shop', '#c7584f', 'M5 8h14l-1.5 12h-11zm3 0a4 4 0 0 1 8 0']];
+    ['calendar', 'Calendar', '#c46fb0', 'M5 5h14v15H5zm0 4h14M8 3v4m8-4v4'], ['music', 'Music', '#e0874a', 'M9 18a3 3 0 1 1-2-2.8V5l12-2v11a3 3 0 1 1-2-2.8V6.3L9 7.6z'], ['notes', 'Journal', '#8a96a3', 'M6 3h12v18H6zm3 4h6m-6 4h6m-6 4h4'], ['shop', 'Shop', '#c7584f', 'M5 8h14l-1.5 12h-11zm3 0a4 4 0 0 1 8 0'], ['news', 'News', '#5a6f86', 'M4 5h13v14H6a2 2 0 0 1-2-2zm13 4h3v8a2 2 0 0 1-2 2M7 9h7M7 12h7M7 15h4'], ['trade', 'Trading', '#3f9a8a', 'M4 18l5-6 4 3 7-9M15 6h5v5']];
   const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const relWord = r => r <= -40 ? 'Dislikes you' : r <= -10 ? 'Cool toward you' : r < 15 ? 'Acquaintance' : r < 40 ? 'Friendly' : r < 70 ? 'Good terms' : 'Close';
   const contactList = () => [{ cid: 'rob', name: 'Rob', job: 'Housemate', rel: S.rels.rob.score, rob: true }, ...Object.values(S.contacts)].map(c => c.rob ? c : Object.assign({}, c));
@@ -6797,6 +6899,7 @@ window.GAME = (() => {
         <button class="phbtn" data-act="hi:${c.cid}" ${texted ? 'disabled' : ''}>${texted ? 'You have messaged today' : 'Send a message'}</button>
         ${c.rob ? '' : `<button class="phbtn" data-act="coffee:${c.cid}" ${plan || texted ? 'disabled' : ''}>${plan ? `Coffee ${CR.fmtTime(plan.t)} ${dayWord(plan.t)}` : 'Ask them to get a coffee'}</button>`}
         ${plan ? `<button class="phbtn" data-act="route:${plan.door}">Show ${esc(plan.place)} on the map</button>` : ''}
+        <button class="phbtn" data-act="tip:${c.cid}" ${(c.rob ? S.robTip : c.tipDay) === Math.floor(S.time / 1440) ? 'disabled' : ''}>${(c.rob ? S.robTip : c.tipDay) === Math.floor(S.time / 1440) ? 'Asked about the market today' : 'Ask if they have heard anything about the market'}</button>
         <div class="phthread">${S.msgs.filter(m => m.cid === c.cid).slice(0, 6).reverse().map(m => `<p class="${m.me ? 'me' : ''}">${esc(m.text)}</p>`).join('')}</div>`;
       for (const m of S.msgs) if (m.cid === c.cid) m.read = true;
       setTimeout(() => { const cv = body.querySelector('.phpt'); if (cv) drawPortrait(cv, c.rob ? robLook() : c.L, c.rel > 25 ? 'smile' : 'neutral', true); }, 0); }
@@ -6833,6 +6936,17 @@ window.GAME = (() => {
         <button class="phbtn" data-act="checkout:std">Order, standard delivery, ${money(sub + ship)}</button><button class="phbtn" data-act="checkout:exp">Order, express delivery, ${money(sub + 1200)}</button>` : '<p class="phnote">Your cart is empty.</p>'; }
     else if (app === 'orders') { title = 'Deliveries'; const L = S.orders.filter(o => !o.got);
       html = L.map(o => `<div class="phrow" style="cursor:default"><b>${o.arrived ? 'At your front door' : 'Arrives ' + dayWord(o.at) + (o.at - S.time < 1440 * 3 ? ', ' + CR.fmtTime(o.at) : '')}</b><span>${o.items.map(([k, q]) => { const it = CATALOG.find(c => c.k === k); return (q > 1 ? q + ' × ' : '') + (it ? it.n : k); }).join(', ')}</span></div>`).join('') || '<p class="phnote">Nothing on the way.</p>'; }
+    else if (app === 'news') { title = 'News'; const M = S.mkt, ix = indexOf(M), ih = indexHist(M), prev = ih[ih.length - (mktOpen() ? 1 : 2)] || ih[ih.length - 1], ch = (ix / prev - 1) * 100;
+      const L = M.stories.filter(st => st.t <= S.time).sort((a, b) => b.t - a.t).slice(0, 14);
+      html = `<div class="phbal"><span>HCX 25 index</span><b>${ix.toFixed(1)}</b><span>${mktOpen() ? 'Today' : 'Last session'}</span><b style="color:${pctCol(ch)}">${pct(ch)}</b></div>` + (L.map(st => `<div class="phrow" style="cursor:default"><span>${dayWord(st.t)}, ${CR.fmtTime(st.t)}${st.earn ? ' · Results' : st.city ? ' · City' : ''}</span><b>${esc(st.head)}</b><span>${esc(st.body)}</span></div>`).join('') || '<p class="phnote">Nothing yet today.</p>'); }
+    else if (app === 'trade' && !arg) { title = 'Trading'; const M = S.mkt, ix = indexOf(M), pv = portValue(), cost = Object.values(S.port).reduce((a, h) => a + h.cost, 0);
+      html = `<div class="phbal"><span>Market</span><b>${mktOpen() ? 'Open until 4 pm' : 'Closed, opens ' + dayWord(nextOpen()) + ' 9:30 am'}</b><span>HCX 25</span><b>${ix.toFixed(1)}</b><span>Your shares</span><b>${money(pv)}</b><span>Gain or loss</span><b style="color:${pctCol(pv - cost)}">${money(pv - cost)}</b></div>` +
+        CO.map(([sym, n]) => { const c = chg(sym), h = S.port[sym]; return `<button class="phrow" data-go="trade:${sym}"><b>${sym} <span style="float:right">${money(Math.round(M.px[sym]))} <span style="color:${pctCol(c)}">${pct(c)}</span></span></b><span>${esc(n)}${h ? ` · you hold ${h.q}` : ''}</span></button>`; }).join('') + `<p class="phnote">Brokerage ${money(FEE)} a trade, paid from your bank account.</p>`; }
+    else if (app === 'trade') { const M = S.mkt, c = coBy(arg); if (!c) return null; title = c[0]; const h = S.port[arg], px = Math.round(M.px[arg]), e = M.earn.find(q => q.sym === arg && !q.done), ch = chg(arg);
+      html = `<div class="phbal"><span>${esc(c[1])}</span><b>${money(px)}</b><span>${esc(c[2])}</span><b style="color:${pctCol(ch)}">${pct(ch)} today</b></div><span class="phnote" style="margin:0">Today</span>${spark(M.intra[arg], 300, 60)}<span class="phnote" style="margin:0">Last 60 sessions</span>${spark(M.hist[arg].slice(-60).concat([px]), 300, 70)}
+        <div class="phbal"><span>You hold</span><b>${h ? h.q : 0}</b><span>Average cost</span><b>${h ? money(Math.round(h.cost / h.q)) : '-'}</b><span>Next results</span><b>${e ? dayWord(e.day * 1440) : '-'}</b></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">${[1, 10, 100].map(q => `<button class="phbtn" data-act="buy:${arg}.${q}">Buy ${q}</button>`).join('')}${[1, 10].map(q => `<button class="phbtn" data-act="buy:${arg}.-${q}" ${h ? '' : 'disabled'}>Sell ${q}</button>`).join('')}<button class="phbtn" data-act="buy:${arg}.-999999" ${h ? '' : 'disabled'}>Sell all</button></div>
+        ${M.stories.filter(st => st.t <= S.time && st.eff.some(([k]) => touches(k, c))).slice(-4).reverse().map(st => `<p class="phlog"><small>${dayWord(st.t)}</small>${esc(st.head)}</p>`).join('')}`; }
     else if (app === 'work') { title = 'Work email'; const J = S.player.job;
       html = `<div class="phbal"><span>${esc(EMPLOYER)}</span><b>${esc(LADDER[J.level].t)}</b><span>Shifts worked</span><b>${J.shifts}</b></div><p class="phnote">Work happens at the office from 9 am on weekdays. Messages from your manager land here.</p>`; }
     else if (app === 'study') { title = 'Study'; const f = S.player.skills.finance;
@@ -6856,6 +6970,8 @@ window.GAME = (() => {
     if (k === 'add') { const it = CATALOG.find(c => c.k === arg); if (it && !(it.once && (S.cart[arg] || S.owned[arg]))) S.cart[arg] = (S.cart[arg] || 0) + 1; return refreshApps(); }
     if (k === 'rem') { if (S.cart[arg]) S.cart[arg]--; if (!S.cart[arg]) delete S.cart[arg]; return refreshApps(); }
     if (k === 'checkout') return checkout(arg);
+    if (k === 'buy') { const [sym, q] = arg.split('.'); trade(sym, +q); return refreshApps(); }
+    if (k === 'tip') { askTip(arg); return refreshApps(); }
     if (k === 'cash') { const c = +arg; if (S.player.bank < c) toast('Not enough in the bank.'); else { S.player.bank -= c; S.player.cash += c; toast(`${money(c)} moved to cash.`, 2); } return refreshApps(); }
     if (k === 'mplay') music.phonePlay(); if (k === 'mstop') music.phoneStop(); if (k === 'mnext') music.phoneStep(1); if (k === 'mprev') music.phoneStep(-1); if (k === 'mshuf') music.phoneShuffle(); if (k === 'mpick') music.phonePlay(+arg);
     if (k[0] === 'm') return setTimeout(refreshApps, 80);
@@ -6932,6 +7048,10 @@ window.GAME = (() => {
         hd.onpointermove = m => { w.x = clampv(m.clientX - sx, -w.w + 80, R.width - 80); w.y = clampv(m.clientY - sy, 0, Math.max(0, R.height - 40 - Math.min(w.h, 120))); el.style.left = w.x + 'px'; el.style.top = w.y + 'px'; };
         hd.onpointerup = () => { hd.onpointermove = null; hd.onpointerup = null; }; }; } }
   $('laptop').addEventListener('pointerdown', e => { if (e.target === $('laptop')) closeLaptop(); });
+  function askTip(cid) { const d = Math.floor(S.time / 1440), c = cid === 'rob' ? { cid: 'rob', rob: true, job: 'between jobs' } : S.contacts[cid]; if (!c) return;
+    S.msgs.unshift({ cid, me: true, t: S.time, text: 'Random one. Heard anything about the market lately?' });
+    if (!c.rob && (c.rel || 0) < 15) { S.msgs.unshift({ cid, me: false, t: S.time, read: true, text: pick2(['Not really my thing, sorry.', 'Ha, no idea. Why?']) }); c.tipDay = d; return; }
+    S.msgs.unshift({ cid, me: false, t: S.time, read: true, text: tipFrom(c) }); if (c.rob) S.robTip = d; else c.tipDay = d; }
   function textHi(cid) { const mine = pick2(['Hey, how is your week going?', 'Hey! Hope the week is treating you well.', 'Hey, what are you up to?']);
     if (cid === 'rob') { S.robMsg = S.time; const w = robWhere(); S.msgs.unshift({ cid, me: false, t: S.time, read: true, text: w === 'couch' ? 'Couch. Game is on. Living the dream.' : w === 'kitchen' ? 'Making toast. Want some? Too late, ate it.' : w === 'robroom' ? 'zzz' : 'Out! Come find us, the Rusty Anchor probably.' }); S.msgs.splice(1, 0, { cid, me: true, t: S.time, text: 'What are you up to?' }); S.rels.rob.score += 1; return; }
     const c = S.contacts[cid]; if (!c) return; c.last = S.time; const r = c.rel, warm = r > 10;
@@ -7016,7 +7136,8 @@ window.GAME = (() => {
     if (saved) { load(saved); toast('Welcome back.'); } else { S = upgrade(fresh()); startAtHome(); skyForDay(); drawHud(); intro(); } phoneBadge(); }
 
   // ---------------- using things ----------------
-  let doorNow = null, pedNow = null, cartNow = null, benchNow = null;
+  let doorNow = null, pedNow = null, cartNow = null, benchNow = null, paperNow = null;
+  const PAPERS = props.filter(p => p.t === 'news'), paperNear = (x, y) => { let b = null, bd = 1.5; for (const p of PAPERS) { const d = Math.hypot(p.x - x, p.y - y); if (d < bd) { bd = d; b = p; } } return b; };
   function interact() {
     if (seated && !INSIDE) { standUp(); return; }
     if (INSIDE) { if (near) useRoom(near); return; }
@@ -7027,6 +7148,7 @@ window.GAME = (() => {
       if (d.k === 'work') { fadeTo('', '', () => goIn('lobby', d), 200); return; }
       if (d.k === 'venue') return venue(d); if (d.k === 'dealer') return dealer(d); if (d.k === 'store') return storeMenu(d); return toast(d.name + ' opens in a later build.', 2); }
     if (Math.hypot(player.x - PCAR.x, player.y - PCAR.y) < 3.6) { toggleCar(); music.drive(true); ticketCheck(); return; }
+    if (paperNow) { if (!spend(200, 'Newspaper')) return toast('You cannot afford it.'); stepMarket(S, S.time); return openPhone('news'); }
     if (cartNow) return cartMenu(cartNow);
     if (benchNow) { sitDown(benchNow); toast('A moment off your feet.', 2); return; }
     if (pedNow) { startTalk(pedNow); return; }
@@ -7071,11 +7193,11 @@ window.GAME = (() => {
     if (mapOpen && !G.hold) { G.hold = true; tick.mapHeld = true; } else if (!mapOpen && tick.mapHeld) { tick.mapHeld = false; G.hold = !!(modalOpen || dlgOpen || fading || phoneOpen); }
     if (!paused) runClock(dt);
     if (seated && !paused) { need('energy', dt * .004); if (seated.st.bench) need('mood', dt * .003); }
-    if ((tick.pl = (tick.pl || 0) - dt) < 0) { tick.pl = .5; checkPlans(); checkOrders(); window.RUNMUL = S.owned && S.owned.shoes ? 1.12 : 1; if (S.owned && S.owned.headphones && music.phoneOn && !paused) need('mood', .02); if (parcelP) parcelP.show = S.orders.some(o => o.arrived && !o.got); else if (S.orders.some(o => o.arrived && !o.got)) parcelProp(); parkPatrol(); fineCheck(); music.level(); const st = INSIDE && INSIDE.furn.find(f => f.t === 'stereo'); if (st) st.on = !!S.stereo.on; }
+    if ((tick.pl = (tick.pl || 0) - dt) < 0) { tick.pl = .5; checkPlans(); checkOrders(); if (S.mkt) stepMarket(S, S.time); window.RUNMUL = S.owned && S.owned.shoes ? 1.12 : 1; if (S.owned && S.owned.headphones && music.phoneOn && !paused) need('mood', .02); if (parcelP) parcelP.show = S.orders.some(o => o.arrived && !o.got); else if (S.orders.some(o => o.arrived && !o.got)) parcelProp(); parkPatrol(); fineCheck(); music.level(); const st = INSIDE && INSIDE.furn.find(f => f.t === 'stereo'); if (st) st.on = !!S.stereo.on; }
     hour = gHour(); flow = 0; // the game's clock drives the street's light
     roomTick(dt);
     if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').hidden = true; }
-    promptT -= dt; if (promptT < 0) { promptT = .15; let t = ''; doorNow = null; pedNow = null; cartNow = null; benchNow = null;
+    promptT -= dt; if (promptT < 0) { promptT = .15; let t = ''; doorNow = null; pedNow = null; cartNow = null; benchNow = null; paperNow = null;
       if (!paused) { if (INSIDE) { if (near) t = `<kbd>E</kbd>${near.act}`; }
         else if (player.driving) t = Math.abs(PCAR.speed) < 1.5 ? '<kbd>E</kbd>Get out' : '';
         else if (seated) t = '<kbd>E</kbd>Stand up';
@@ -7083,6 +7205,7 @@ window.GAME = (() => {
           if (LOOKOUT.near(player.x, player.y)) t = '<kbd>E</kbd>Take in the view <span style="color:var(--muted)">The Ranges lookout</span>';
           else if (doorNow) t = `<kbd>E</kbd>${doorNow.k === 'home' ? 'Go inside' : doorNow.k === 'work' ? 'Enter ' + doorNow.name : doorNow.k === 'shop' ? doorNow.name : 'Visit ' + doorNow.name} <span style="color:var(--muted)">${doorNow.sub || ''}</span>`;
           else if (Math.hypot(player.x - PCAR.x, player.y - PCAR.y) < 3.6) t = '<kbd>E</kbd>Get in your car';
+          else if ((paperNow = paperNear(player.x, player.y))) t = '<kbd>E</kbd>Buy today\'s paper <span style="color:var(--muted)">$2</span>';
           else if ((cartNow = cartNear(player.x, player.y))) t = `<kbd>E</kbd>${CARTNAME[cartNow.name] || 'Food cart'} <span style="color:var(--muted)">cheap food</span>`;
           else { pedNow = nearestPed(); if (pedNow) { ensureNPC(pedNow); t = `<kbd>E</kbd>Talk to ${pedNow.name}`; } else if ((benchNow = benchNear())) t = '<kbd>E</kbd>Sit on the bench'; } } }
       const pe = $('prompt'); pe.hidden = !t; if (t) pe.innerHTML = t; }
