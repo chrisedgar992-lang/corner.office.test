@@ -1358,6 +1358,10 @@ function landmarkB(b, face, build) {
       else if (r < .72) { setMat(b, MAT.vshedw); b.pitched = { h: Math.min(2.4, d * .08), axis: w >= d ? 'x' : 'y' }; b.roofC = [214, 210, 200]; }
       else if (r < .86) { setMat(b, MAT.vshedt); b.pitched = { h: Math.min(2.4, d * .08), axis: w >= d ? 'x' : 'y' }; b.roofC = [92, 140, 140]; }
       if (b.top || b.pitched) { clearRoof(b); b.kit = []; }
+    } else if (k === 'terrace' && b.house && b.st && b.st.N) { // townhouse terraces: a gable to each house along the street, alternating brick
+      const n = Math.max(2, Math.round(w / 6)); b.pitched = null; b.tiers[0].pat = 'punch'; b.top = { type: 'gables', n, alt: mixc(b.tiers[0].mat.wall, [236, 226, 206], .35) }; b.kit = []; clearRoof(b);
+    } else if (k === 'house' && b.house && b.st && b.st.N && r >= .82 && w >= 11 && b.H > 5) { // duplexes: two gables side by side on the two-storey houses
+      b.pitched = null; setMat(b, r < .91 ? MAT.vbrick : MAT.vtan); b.top = { type: 'gables', n: 2 }; b.roofC = r < .91 ? [150, 92, 76] : [176, 140, 104]; b.kit = []; clearRoof(b);
     } else if (k === 'house' && b.house && b.st && b.st.N) { // the modern box and split level, beside the existing pitched houses
       if (r < .1 && m > 7) { const fp = b.fp; b.pitched = null; b.tiers = [{ ...fp, zb: 0, zt: 3.3, mat: MAT.vwhite, pat: 'tallbays' }, { x0: fp.x0 + w * .25, y0: fp.y0 - .8, x1: fp.x1, y1: fp.y1 - d * .3, zb: 3.3, zt: 6.6, mat: MAT.vteal, pat: 'tallbays' }]; b.H = 6.6; b.roofC = [210, 210, 204]; b.modern = true; }
       else if (r < .18) { setMat(b, MAT.vteal); b.roofC = [86, 120, 120]; }
@@ -2516,6 +2520,12 @@ function drawTop(b, T, zt) {
   else if (t.type === 'antenna') { const h = t.h || 28, a = P(cxm, cym, zt), c = P(cxm, cym, zt + h); drawBox(cxm - 2, cym - 2, cxm + 2, cym + 2, zt, zt + 3, [96, 98, 100]);
     ctx.strokeStyle = tone([70, 72, 74], zt + h); ctx.lineWidth = clamp(k * .2, .8, 4); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(c[0], c[1]); for (const f of [.4, .62, .8]) { const z = zt + h * f, e = 3 * (1 - f); const p1 = P(cxm - e, cym, z), p2 = P(cxm + e, cym, z); ctx.moveTo(p1[0], p1[1]); ctx.lineTo(p2[0], p2[1]); } ctx.stroke();
     if (n > .1 && (simT % 1.6) < .8) beacon(c, [255, 40, 40], 5); }
+  else if (t.type === 'gables') { // a row of gable-fronted units: each ridge runs back from the street, far units first
+    const n = t.n, uw = w / n, h = t.h || Math.min(3.4, uw * .5), rc = b.roofC || [150, 96, 80], order = []; for (let i = 0; i < n; i++) order.push(i); order.sort((a, b2) => Math.abs(cx - (T.x0 + (b2 + .5) * uw)) - Math.abs(cx - (T.x0 + (a + .5) * uw)));
+    for (const i of order) { const xa = T.x0 + i * uw - .2, xb = xa + uw + .4, xm = (xa + xb) / 2, y0 = T.y0 - .3, y1 = T.y1 + .3, col = ENV.snow ? [230, 234, 240] : rc;
+      const L = [P(xa, y0, zt), P(xm, y0, zt + h), P(xm, y1, zt + h), P(xa, y1, zt)], R = [P(xb, y0, zt), P(xm, y0, zt + h), P(xm, y1, zt + h), P(xb, y1, zt)];
+      if (cx < xm) { fillPoly(R, tone(col, zt + h, .82)); fillPoly(L, tone(col, zt + h, 1.05)); } else { fillPoly(L, tone(col, zt + h, .82)); fillPoly(R, tone(col, zt + h, 1.05)); }
+      const ye = cy < T.y0 ? T.y0 : cy > T.y1 ? T.y1 : null; if (ye != null) fillPoly([P(xa + .2, ye, zt), P(xb - .2, ye, zt), P(xm, ye, zt + h - .2)], tone(i % 2 && t.alt ? t.alt : T.mat.wall, zt + h, .95)); } }
   else if (t.type === 'saw') { // sawtooth roof: north-light glazing on the steep side of each tooth
     const n = Math.max(2, Math.round(w / 10)), tw = w / n, h = t.h || 2.6, order = []; for (let i = 0; i < n; i++) order.push(i); order.sort((a, b2) => Math.abs(cx - (T.x0 + (b2 + .5) * tw)) - Math.abs(cx - (T.x0 + (a + .5) * tw)));
     for (const i of order) { const xa = T.x0 + i * tw, xb = xa + tw;
