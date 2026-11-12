@@ -918,6 +918,61 @@ const GROUNDS = [];
   gridSolids();
 } }
 
+// ---------- City Hall, from the concept sheet ----------
+// Two tall storeys of cream stone with pilasters, a columned portico with a pediment, a copper dome on a drum,
+// four roof skylights. The sheet's site was larger than the lot, so the building is scaled to leave a civic plaza in front:
+// broad steps, two formal lawns, a fountain, a row of flagpoles and bollards along the street, tree-lined lawns down both sides.
+{ const ch = buildings.find(b => b.name === 'City Hall'), L = ch && C.lots.find(l => l.id === ch.lot); if (ch && L) {
+  // face the park to the east: a frame turned a quarter so the design's front (-v) points along the old +x
+  const F0 = ch.F, o = ch.fp, F = { ox: F0.ox, oy: F0.oy, c: -F0.s, s: F0.c }, W = (u, v) => toW(F, u, v), lot = { x0: o.y0, x1: o.y1, y0: -o.x1, y1: -o.x0 };
+  ch.F = F;
+  const rect = (u0, v0, u1, v1) => [W(u0, v0), W(u1, v0), W(u1, v1), W(u0, v1)];
+  const rectV = (u0, v0, u1, v1) => [W(u0, v0), W(u0, v1), W(u1, v1), W(u1, v0)]; // first edge along v, so stripes run across
+  const solidRound = (q, r) => solids.push({ round: r, x: q[0], y: q[1], wb: { x0: q[0] - r - .1, y0: q[1] - r - .1, x1: q[0] + r + .1, y1: q[1] + r + .1 } });
+  // drop anything the old box left on its faces
+  const inLot = (x, y) => { const q = toL(F, x, y); return q[0] > lot.x0 - .5 && q[0] < lot.x1 + .5 && q[1] > lot.y0 - .5 && q[1] < lot.y1 + .5; };
+  for (let i = storefronts.length - 1; i >= 0; i--) { const f = storefronts[i]; if (inLot((f.ax + f.bx) / 2, (f.ay + f.by) / 2)) storefronts.splice(i, 1); }
+  for (let i = awnings.length - 1; i >= 0; i--) if (awnings[i].b === ch.id) awnings.splice(i, 1);
+  MAT.civic = { wall: [232, 220, 196], frame: [212, 198, 170], glass: [50, 78, 86], kind: 'deco' };
+  const fp = { x0: -34, y0: lot.y0 + 36, x1: 34, y1: lot.y1 - 2.5 };
+  ch.fp = fp; ch.tiers = [{ ...fp, zb: 0, zt: 25, mat: MAT.civic }]; ch.H = 45; ch.wb = rectWB(F, fp);
+  ch.roofC = [132, 146, 142]; ch.plant = null; ch.cool = []; ch.vents = []; ch.tank = null; ch.ant = null; ch.sky = null; ch.rail = false; ch.crown = null; ch.shop = {}; ch.blade = null; ch.lit = 'office';
+  ch.civic = { name: 'CITY HALL' };
+  const dv = (fp.y0 + fp.y1) / 2;
+  ch.dome = { u: 0, v: dv, plinth: 13, rDrum: 9.5, zDrum: 27.2, zSpring: 33.8, rDome: 9.6, hDome: 9, top: 45 };
+  ch.kit = [[-22, fp.y0 + 8], [16, fp.y0 + 8], [-22, fp.y1 - 14], [16, fp.y1 - 14]].map(([u, v]) => ({ x0: u, y0: v, x1: u + 6, y1: v + 6.5, h: .7, c: [176, 186, 180], sky: true }));
+  ch.portico = { u0: -16, u1: 16, v0: fp.y0 - 7, v1: fp.y0, cols: 8, z: 15 };
+  const sd = solids.find(q => q.b === ch); if (sd) { Object.assign(sd, { F, x0: fp.x0, y0: fp.y0, x1: fp.x1, y1: fp.y1, wb: rectWB(F, fp) }); }
+  for (let i = 0; i < 8; i++) solidRound(W(-14.6 + i * 29.2 / 7, fp.y0 - 6.2), .55);
+  // grounds
+  const STONE = [214, 208, 194], LAWN = [96, 124, 82], sv0 = fp.y0 - 7 - 5.5;
+  const G = { wb: rectWB(F, lot), clip: rect(lot.x0, lot.y0, lot.x1, lot.y1), shapes: [
+    { pts: rect(lot.x0, lot.y0, lot.x1, lot.y1), c: STONE, tex: 'gran', grid: 2 },
+    { pts: rect(lot.x0 + 1.2, fp.y0 - 1, fp.x0 - 1.8, lot.y1 - 1.2), c: LAWN, stripes: 2.2 },
+    { pts: rect(fp.x1 + 1.8, fp.y0 - 1, lot.x1 - 1.2, lot.y1 - 1.2), c: LAWN, stripes: 2.2 },
+    { pts: rectV(-18, sv0, 18, fp.y0 - 7), c: [196, 190, 176], stripes: 1.1 },
+    { pts: rect(lot.x0 + 4, lot.y0 + 9, -11, sv0 - 2), c: LAWN, stripes: 2.2, edge: { c: [236, 228, 210], w: .5 } },
+    { pts: rect(11, lot.y0 + 9, lot.x1 - 4, sv0 - 2), c: LAWN, stripes: 2.2, edge: { c: [236, 228, 210], w: .5 } },
+    { circ: [...W(0, (lot.y0 + 9 + sv0 - 2) / 2), 6.8], c: [228, 220, 202], tex: 'gran' }
+  ], glows: [] };
+  GROUNDS.push(G);
+  const fc = W(0, (lot.y0 + 9 + sv0 - 2) / 2);
+  props.push({ t: 'cfount', x: fc[0], y: fc[1], r: 5 }); solidRound(fc, 5.1);
+  G.glows.push({ x: fc[0], y: fc[1], r: 10, c: [140, 190, 255], a: .4 });
+  // trees down both side lawns, round clipped shrubs at the plaza lawn corners
+  let sd2 = 11;
+  for (const u of [(lot.x0 + fp.x0) / 2, (lot.x1 + fp.x1) / 2]) for (let v = fp.y0 + 3; v < lot.y1 - 4; v += 8.5) { const q = W(u, v); props.push({ t: 'tree', x: q[0], y: q[1], r: 3, seed: sd2++ }); solidRound(q, .3); }
+  for (const [u, v] of [[lot.x0 + 7, lot.y0 + 12], [-14, lot.y0 + 12], [lot.x0 + 7, sv0 - 5], [-14, sv0 - 5], [14, lot.y0 + 12], [lot.x1 - 7, lot.y0 + 12], [14, sv0 - 5], [lot.x1 - 7, sv0 - 5]]) { const q = W(u, v); props.push({ t: 'shrub', x: q[0], y: q[1], r: 1.3, seed: sd2++ }); }
+  // flagpoles along the front of the plaza, bollards at the kerb line
+  const FLAGC = [[176, 52, 52], [52, 86, 150], [60, 120, 96], [176, 52, 52], [52, 86, 150], [60, 120, 96], [176, 52, 52]];
+  for (let i = 0; i < 7; i++) { const q = W(-27 + i * 9, lot.y0 + 5); props.push({ t: 'flagpole', x: q[0], y: q[1], c: FLAGC[i], ang: Math.atan2(F.s, F.c), h: 11, rad: .3 }); solidRound(q, .15); }
+  for (let u = lot.x0 + 2; u <= lot.x1 - 2; u += 3.4) { const q = W(u, lot.y0 + 1.4); props.push({ t: 'bollard', x: q[0], y: q[1] }); solidRound(q, .14); }
+  for (const [u, v] of [[-20, sv0 - .8], [20, sv0 - .8], [lot.x0 + 3.5, lot.y0 + 30], [lot.x1 - 3.5, lot.y0 + 30]]) { const q = W(u, v); lamps.push({ x: q[0], y: q[1], ax: 0, ay: 0, cool: false, short: true }); }
+  // floodlights wash the portico and the dome after dark
+  { const q = W(0, fp.y0 - 4); G.glows.push({ x: q[0], y: q[1], r: 16, c: [255, 214, 160], a: .45 }); }
+  gridSolids();
+} }
+
 // ---------- the doors this build uses ----------
 const VENUE_NAME = u => ({ studentbar: 'Student bar', fastfood: 'Fast food', club: 'Nightclub', gym: 'Gym' }[u] || (u ? u[0].toUpperCase() + u.slice(1) : 'Shop'));
 if (!window.GAME_BUILD) { const ng = buildings.find(b => b.crown === 'NORTHGATE'); if (ng) doorFor(ng.lot, { to: 'lobby', name: 'Northgate tower', sign: 'NORTHGATE' });
@@ -1843,6 +1898,7 @@ function drawFace(b, T, s, ti) {
   g.addColorStop(1, tone(topC, zt, sh2 * 1.06));
   ctx.fillStyle = g; ctx.beginPath(); quadPath(ctx, p0, p1, p2, p3); ctx.fill();
   if (ENV.snow && !glass) { ctx.fillStyle = 'rgba(230,236,244,.06)'; ctx.fill(); }
+  if (b.civic) { civicFace(b, T, s, ti, pt, L, zb, zt, sh2); return; }
   // windows
   const FH = b.house ? 3.0 : 3.8, z0 = zb === 0 ? (b.house ? 0 : 5.2) : zb;
   const cw0 = glass ? 3 : mat.kind === 'deco' ? 2.6 : 3.3, n = Math.max(1, Math.round(L / cw0)), cw = L / n;
@@ -1902,6 +1958,58 @@ function drawFace(b, T, s, ti) {
   if (b.casino) casinoFace(b, ti, s, pt, L, zb, zt, sh2);
 }
 // the casino's light show: a marquee and chasing bulbs on the podium's street face, gold fins rippling up the tower
+// civic stone facade from the City Hall sheet: plinth, pilasters, two storeys of tall windows, string course, frieze and cornice
+function civicFace(b, T, s, ti, pt, L, zb, zt, sh2) {
+  const w = T.mat.wall, n = ENV.night, q = (u0, z0, u1, z1, c) => { ctx.fillStyle = c; ctx.beginPath(); quadPath(ctx, pt(u0, z0), pt(u1, z0), pt(u1, z1), pt(u0, z1)); ctx.fill(); };
+  const lite = mixc(w, [255, 250, 236], .45), dark = mulc(w, .82);
+  q(0, 0, L, 1.8, tone(dark, 1, sh2));
+  const nb = Math.max(2, Math.round(L / 6.4)), bw = L / nb, fi = 'NSEW'.indexOf(s);
+  for (let i = 0; i < nb; i++) { const c = (i + .5) * bw;
+    for (const [z0, z1, row] of [[4, 10.2, 0], [14, 20.4, 1]]) {
+      const lit = n > .2 && hsh(b.id, row, i, fi) < .55;
+      q(c - 1.45, z0 - .25, c + 1.45, z1 + .35, tone(lite, z1, sh2));
+      q(c - 1.15, z0, c + 1.15, z1, lit ? `rgba(255,${206 + Math.round(hsh(b.id, i, row, 7) * 30)},150,${.55 + .4 * n})` : tone(T.mat.glass, z1, sh2));
+      if (!lit) q(c - .06, z0, c + .06, z1, tone(lite, z1, sh2)); }
+  }
+  for (let i = 0; i <= nb; i++) { const u = Math.min(L - .45, Math.max(.45, i * bw)); q(u - .45, 1.8, u + .45, 22.6, tone(lite, 12, sh2)); }
+  q(0, 11.8, L, 12.5, tone(lite, 12, sh2)); q(0, 22.6, L, 23.9, tone(mixc(w, lite, .5), 23, sh2)); q(0, 24.2, L, zt, tone(lite, zt, sh2 * 1.04));
+  ctx.strokeStyle = tone(dark, zt, sh2); ctx.lineWidth = clamp(k * .06, .5, 2); ctx.beginPath(); const a = pt(0, 24.1), c2 = pt(L, 24.1); ctx.moveTo(a[0], a[1]); ctx.lineTo(c2[0], c2[1]); ctx.stroke();
+}
+// a copper dome on a windowed drum over a stone plinth, with ribs and a lantern
+function drawDome(b, zt) {
+  const d = b.dome, x = d.u, y = d.v, n = ENV.night, R = d.rDome, zs = d.zSpring, H = d.hDome, pl = d.plinth;
+  const sq = [[x - pl, y - pl], [x + pl, y - pl], [x + pl, y + pl], [x - pl, y + pl]];
+  drawPrism(sq, sq, zt, d.zDrum, [222, 212, 190], tone([200, 198, 188], d.zDrum));
+  drawCyl(x, y, d.rDrum, d.zDrum, zs, [236, 226, 204]);
+  const face = a => Math.cos(a) * (cx - x) + Math.sin(a) * (cy - y) > 0;
+  for (let i = 0; i < 24; i++) { const a = i / 24 * TAU; if (!face(a)) continue; const r = d.rDrum + .05, a0 = a - .075, a1 = a + .075, lit = n > .2 && hsh(b.id, i, 3, 9) < .7;
+    fillPoly([P(x + Math.cos(a0) * r, y + Math.sin(a0) * r, d.zDrum + 1.2), P(x + Math.cos(a1) * r, y + Math.sin(a1) * r, d.zDrum + 1.2), P(x + Math.cos(a1) * r, y + Math.sin(a1) * r, zs - 1.2), P(x + Math.cos(a0) * r, y + Math.sin(a0) * r, zs - 1.2)], lit ? `rgba(255,214,150,${.6 + .35 * n})` : tone([46, 70, 76], zs)); }
+  drawCyl(x, y, d.rDrum + .5, zs - .7, zs, [244, 236, 216]);
+  const N = 12; for (let i = 0; i < N; i++) { const t0 = i / N * Math.PI / 2, t1 = (i + 1) / N * Math.PI / 2; drawCyl(x, y, R * Math.cos(t0), zs + H * Math.sin(t0), zs + H * Math.sin(t1), ENV.snow && i > 3 ? [226, 230, 236] : mixc([66, 116, 106], [124, 172, 158], i / N)); }
+  ctx.strokeStyle = tone([46, 88, 80], zs + H / 2); ctx.lineWidth = clamp(k * .07, .5, 2.2);
+  for (let i = 0; i < 16; i++) { const a = i / 16 * TAU; if (!face(a)) continue; ctx.beginPath(); for (let j = 0; j <= 8; j++) { const t = j / 8 * Math.PI / 2, q = P(x + Math.cos(a) * R * Math.cos(t), y + Math.sin(a) * R * Math.cos(t), zs + H * Math.sin(t)); j ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); } ctx.stroke(); }
+  drawCyl(x, y, 1.7, zs + H - .2, zs + H + 1.4, [236, 226, 204]); drawCyl(x, y, 2, zs + H + 1.4, zs + H + 1.8, [210, 200, 178]);
+  const f0 = P(x, y, zs + H + 1.8), f1 = P(x, y, d.top); ctx.strokeStyle = tone([196, 160, 80], d.top); ctx.lineWidth = clamp(k * .14, .8, 3); ctx.beginPath(); ctx.moveTo(f0[0], f0[1]); ctx.lineTo(f1[0], f1[1]); ctx.stroke();
+  if (n > .3) beaconSoft(P(x, y, zs + H * .4), [255, 222, 170], clamp(k * 9, 14, 200));
+}
+// the portico: a raised floor, a row of columns, the entablature and a pediment with the name across it
+function drawPortico(b) {
+  const p = b.portico, z = p.z, ze = z + 2, uc = (p.u0 + p.u1) / 2, zr = ze + 5.2, cr = [240, 232, 212];
+  const fl = [[p.u0 - 1, p.v0], [p.u1 + 1, p.v0], [p.u1 + 1, p.v1], [p.u0 - 1, p.v1]]; drawPrism(fl, fl, 0, 1.2, [214, 206, 190], tone([222, 214, 198], 1.2));
+  for (let i = 0; i < p.cols; i++) { const u = p.u0 + 1.4 + i * (p.u1 - p.u0 - 2.8) / (p.cols - 1), v = p.v0 + .8; drawCyl(u, v, .6, 1.2, z - .6, cr); drawCyl(u, v, .85, z - .6, z, [246, 240, 222]); }
+  const U0 = p.u0 - .6, U1 = p.u1 + .6, en = [[U0, p.v0], [U1, p.v0], [U1, p.v1], [U0, p.v1]]; drawPrism(en, en, z, ze, [236, 228, 208], tone([226, 218, 200], ze));
+  const rc = ENV.snow ? [226, 230, 236] : [146, 156, 150];
+  const left = [P(U0, p.v0, ze), P(uc, p.v0, zr), P(uc, p.v1, zr), P(U0, p.v1, ze)], right = [P(U1, p.v0, ze), P(uc, p.v0, zr), P(uc, p.v1, zr), P(U1, p.v1, ze)];
+  const lc = tone(rc, zr, faceShade(-1, 0)), rcC = tone(rc, zr, faceShade(1, 0));
+  if (cx < uc) { fillPoly(right, rcC); fillPoly(left, lc); } else { fillPoly(left, lc); fillPoly(right, rcC); }
+  if (cy < p.v0) {
+    fillPoly([P(U0, p.v0, ze), P(U1, p.v0, ze), P(uc, p.v0, zr)], tone([238, 230, 210], zr, faceShade(0, -1)));
+    ctx.strokeStyle = tone([206, 194, 168], zr); ctx.lineWidth = clamp(k * .06, .5, 2); ctx.beginPath(); const t = [P(U0 + 1.6, p.v0 - .02, ze + .5), P(U1 - 1.6, p.v0 - .02, ze + .5), P(uc, p.v0 - .02, zr - .9)]; ctx.moveTo(t[0][0], t[0][1]); ctx.lineTo(t[1][0], t[1][1]); ctx.lineTo(t[2][0], t[2][1]); ctx.closePath(); ctx.stroke();
+    const a = P(uc - 1, p.v0, ze - 1), c = P(uc + 1, p.v0, ze - 1), m = P(uc, p.v0 - .02, ze - 1); const fs = clamp(k * 1.25, 5, 40);
+    if (fs > 6) { ctx.save(); ctx.translate(m[0], m[1]); ctx.rotate(Math.atan2(c[1] - a[1], c[0] - a[0])); ctx.fillStyle = tone([92, 84, 70], ze); ctx.font = `600 ${fs}px Georgia, serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(b.civic.name, 0, 0); ctx.restore(); }
+  }
+  if (ENV.night > .3) beaconSoft(P(uc, p.v0, z * .6), [255, 214, 160], clamp(k * 6, 10, 140));
+}
 function casinoFace(b, ti, s, pt, L, zb, zt, sh2) {
   const n = ENV.night, t = performance.now() / 1000;
   if (ti === 0) {
@@ -1996,6 +2104,7 @@ function drawRoof(b, T, top) {
   if (b.rail) { ctx.strokeStyle = tone([96, 98, 100], zt); ctx.lineWidth = Math.max(1, k * .08); const rr = roofPoly(T.x0 + 1.4, T.y0 + 1.4, T.x1 - 1.4, T.y1 - 1.4, zt + .05); ctx.beginPath(); rr.forEach((p, j) => j ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); ctx.stroke(); }
   if (b.sky) { const s = b.sky; ctx.fillStyle = tone([60, 74, 86], zt); ctx.strokeStyle = tone([90, 92, 94], zt); ctx.lineWidth = 1; for (let i = 0; i < 4; i++) { const q = roofPoly(s.x0 + i * 2.4, s.y0, s.x0 + i * 2.4 + 1.8, s.y0 + 5, zt + .1); fillPoly(q, ctx.fillStyle); } if (ENV.night > .3) { for (let i = 0; i < 4; i++) fillPoly(roofPoly(s.x0 + i * 2.4, s.y0, s.x0 + i * 2.4 + 1.8, s.y0 + 5, zt + .1), `rgba(255,214,160,${.5 * ENV.night})`); } }
   if (b.vents) for (const [vx, vy] of b.vents) drawBox(vx - .35, vy - .35, vx + .35, vy + .35, zt, zt + .7, [118, 118, 116]);
+  if (b.dome && top) drawDome(b, zt);
   if (b.casino && top) { // a gold crown ring on the tower roof, lit after dark
     const i = 2.2, rr = roofPoly(T.x0 + i, T.y0 + i, T.x1 - i, T.y1 - i, zt + .1), n = ENV.night;
     ctx.strokeStyle = n > .25 ? `rgba(255,214,120,${.6 + .4 * n})` : tone([206, 170, 90], zt); ctx.lineWidth = clamp(k * .5, 1.5, 9); ctx.beginPath(); rr.forEach((q, j) => j ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.closePath(); ctx.stroke();
@@ -2143,6 +2252,7 @@ function drawBuildingLocal(b) {
     if (cx > T.x1) drawFace(b, T, 'E', ti);
     drawRoof(b, T, ti === b.tiers.length - 1);
   }
+  if (b.portico) drawPortico(b);
 }
 
 // ---------- vehicles ----------
@@ -2292,6 +2402,10 @@ function drawProp(p) {
     case 'bin': drawBox(p.x - .28, p.y - .28, p.x + .28, p.y + .28, 0, 1.0, [50, 56, 54], [30, 32, 32]); break;
     case 'news': drawBox(p.x - .26, p.y - .22, p.x + .26, p.y + .22, 0, 1.1, (p.c = p.c || pick([[40, 60, 96], [110, 40, 40], [60, 62, 64]]))); break;
     case 'hyd': drawCyl(p.x, p.y, .14, 0, .7, [118, 42, 36]); break;
+    case 'flagpole': { const t = performance.now() / 1000, h = p.h, a = P(p.x, p.y, 0), tp = P(p.x, p.y, h); ctx.strokeStyle = tone([208, 210, 212], h); ctx.lineWidth = clamp(k * .1, .6, 2.5); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(tp[0], tp[1]); ctx.stroke();
+      const ca = Math.cos(p.ang + .5 + .2 * Math.sin(t * 1.3 + p.x)), sa = Math.sin(p.ang + .5 + .2 * Math.sin(t * 1.3 + p.x)), fl = 3.2, fw = s => .35 * Math.sin(t * 4 + s * 3 + p.y);
+      const pts = []; for (let i = 0; i <= 4; i++) { const f = i / 4 * fl; pts.push(P(p.x + ca * f - sa * fw(i), p.y + sa * f + ca * fw(i), h - .3)); } for (let i = 4; i >= 0; i--) { const f = i / 4 * fl; pts.push(P(p.x + ca * f - sa * fw(i), p.y + sa * f + ca * fw(i), h - 2.2)); }
+      fillPoly(pts, tone(p.c, h)); break; }
     case 'bollard': drawCyl(p.x, p.y, .12, 0, .9, [44, 46, 48]); break;
     case 'kiosk': {
       const x0 = p.x - p.w / 2 - .2, x1 = p.x + p.w / 2 + .2, y0 = p.y - p.d / 2, y1 = p.y + p.d / 2, n = ENV.night;
