@@ -1918,7 +1918,7 @@ function updatePlayer(dt) {
   player.moving = m > 0;
   if (!m) return;
   const run = keys.ShiftLeft || keys.ShiftRight || (pointer && pointer.far) || (STICK.on && Math.hypot(STICK.x, STICK.y) > .92);
-  const sp = INSIDE ? (run ? 3.4 : 2) : run ? 7 : 4.5;
+  const sp = INSIDE ? (run ? 3.4 : 2) : run ? 7 * (window.RUNMUL || 1) : 4.5;
   vx /= m; vy /= m;
   const nx = player.x + vx * sp * dt, ny = player.y + vy * sp * dt;
   const people = INSIDE ? INSIDE.npcs : PEDS;
@@ -3052,6 +3052,7 @@ function drawProp(p) {
     case 'tent': { const pz = p.poly, h = p.h || 4, ra = [(pz[0][0] + pz[3][0]) / 2, (pz[0][1] + pz[3][1]) / 2], rb = [(pz[1][0] + pz[2][0]) / 2, (pz[1][1] + pz[2][1]) / 2];
       const f1 = [P(pz[0][0], pz[0][1], h * .55), P(pz[1][0], pz[1][1], h * .55), P(rb[0], rb[1], h), P(ra[0], ra[1], h)], f2 = [P(pz[3][0], pz[3][1], h * .55), P(pz[2][0], pz[2][1], h * .55), P(rb[0], rb[1], h), P(ra[0], ra[1], h)];
       drawPrism(pz, pz, 0, h * .55, [236, 234, 228], tone([236, 234, 228], h * .55)); fillPoly(f1, tone([236, 236, 232], h, .95)); fillPoly(f2, tone([206, 210, 210], h, .85)); if (ENV.night > .3) beaconSoft(P(p.x, p.y, h * .4), [255, 226, 180], clamp(k * 3, 6, 60)); break; }
+    case 'parcel': if (!p.show) break; drawBox(p.x - .35, p.y - .28, p.x + .35, p.y + .28, 0, .42, [176, 138, 92], [196, 160, 112]); { const a = P(p.x - .35, p.y, .43), c = P(p.x + .35, p.y, .43); ctx.strokeStyle = tone([220, 206, 170], .43); ctx.lineWidth = clamp(k * .08, .5, 2); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(c[0], c[1]); ctx.stroke(); } break;
     case 'parasol': drawCyl(p.x, p.y, .45, .7, .76, [214, 210, 200]); break;
     case 'statue': { drawPrism(p.base, p.base, 0, 1.6, [200, 194, 182], tone([214, 208, 196], 1.6)); drawCyl(p.x, p.y, .45, 1.6, 3.4, [112, 88, 56]); drawCyl(p.x, p.y, .28, 3.4, 4, [120, 94, 60]); break; }
     case 'fence': { ctx.strokeStyle = tone([70, 74, 78], 1.2); ctx.lineWidth = clamp(k * .06, .5, 2); ctx.beginPath(); for (const z of [.15, p.h || 2.2]) p.pts.forEach((q, i) => { const a = P(q[0], q[1], z); i ? ctx.lineTo(a[0], a[1]) : ctx.moveTo(a[0], a[1]); }); for (let i = 0; i + 1 < p.pts.length; i++) { const A = p.pts[i], B = p.pts[i + 1], L = Math.hypot(B[0] - A[0], B[1] - A[1]), n = Math.max(1, Math.round(L / 1.2)); for (let j = 0; j <= n; j++) { const x = A[0] + (B[0] - A[0]) * j / n, y = A[1] + (B[1] - A[1]) * j / n, a = P(x, y, 0), c = P(x, y, p.h || 2.2); ctx.moveTo(a[0], a[1]); ctx.lineTo(c[0], c[1]); } } ctx.stroke(); break; }
@@ -6308,7 +6309,7 @@ window.GAME = (() => {
   }
   let S = null;
   // older saves predate the phone
-  const upgrade = s => { s.contacts = s.contacts || {}; s.msgs = s.msgs || []; s.plans = s.plans || []; s.tx = s.tx || []; s.stereo = s.stereo || { on: false, by: null, day: -1 }; s.fines = s.fines || []; return s; };
+  const upgrade = s => { s.contacts = s.contacts || {}; s.msgs = s.msgs || []; s.plans = s.plans || []; s.tx = s.tx || []; s.stereo = s.stereo || { on: false, by: null, day: -1 }; s.fines = s.fines || []; s.cart = s.cart || {}; s.orders = s.orders || []; s.owned = s.owned || {}; s.items = s.items || { meals: 0 }; return s; };
   const txn = (text, cents) => { S.tx.unshift({ t: S.time, text, c: cents }); if (S.tx.length > 60) S.tx.length = 60; };
 
   // ---------------- clock, needs, money, season and weather ----------------
@@ -6411,7 +6412,7 @@ window.GAME = (() => {
     const hrs = Math.min(8.5, SHIFT_END - Math.max(h, 9)), mins = Math.round((SHIFT_END - h) * 60);
     // a few minutes costs little, a lost morning costs a lot
     const latePen = late ? Math.min(45, 6 + lateMin / 8) : 0;
-    let payExtra = 0; const fin = CR.levelOf(S.player.skills.finance || 0); let score = clampv(35 + N.energy * .3 + N.mood * .15 + fin * 6 - latePen - (N.hunger > 70 ? 10 : 0) + (Math.random() - .5) * 16, 0, 100);
+    let payExtra = 0; const fin = CR.levelOf(S.player.skills.finance || 0); let score = clampv(35 + (S.owned.suit ? 6 : S.owned.shirt ? 3 : 0) + N.energy * .3 + N.mood * .15 + fin * 6 - latePen - (N.hunger > 70 ? 10 : 0) + (Math.random() - .5) * 16, 0, 100);
     const payC = Math.round(L.pay * 100 / 260 * hrs / 8.5);
     const start = S.time, sh = { perf: 0, extra: 0 };
     const events = workEvents(sh, mins);
@@ -6635,9 +6636,14 @@ window.GAME = (() => {
     if (f.id === 'sit') { sitDown(f.st); if (f.st.f && f.st.f.t === 'sofa') toast('E to watch TV, or move to get up.', 2.5); return; }
     if (f.id === 'seated') { if (seated.st.f && seated.st.f.t === 'sofa') return useRoom({ id: 'sofa' }); standUp(); return; }
     if (f.id === 'bed') return sleepPanel();
-    if (f.id === 'fridge') { if (!S.items.meals) return toast('The fridge is empty. Takeout places sell meals to take home.');
-      return menu('Fridge', `${S.items.meals} meal${S.items.meals === 1 ? '' : 's'} left.`, [{ t: 'Heat up a meal', s: '20 minutes, fills you up', fn: () => { S.items.meals--; CR.passMinutes(S, 20); need('hunger', -45); toast('Leftovers, reheated.'); closeMenu(); } }]); }
-    if (f.id === 'stove') { if (!S.items.meals) return toast('Nothing to cook with. Buy meals to take home first.'); return menu('Kitchen', 'Cooking takes longer than reheating but you feel better for it.', [{ t: 'Cook dinner', s: '45 minutes, fills you up, mood up', fn: () => { S.items.meals--; CR.passMinutes(S, 45); need('hunger', -55); need('mood', 6); toast('Not bad at all.'); closeMenu(); } }]); }
+    if (f.id === 'fridge') { const I = S.items, o = [];
+      if (I.meals) o.push({ t: 'Heat up a meal', s: `20 minutes, fills you up. ${I.meals} left`, fn: () => { I.meals--; CR.passMinutes(S, 20); need('hunger', -45); toast('Leftovers, reheated.'); closeMenu(); } });
+      if (I.snacks) o.push({ t: 'Grab a snack', s: `Takes the edge off. ${I.snacks} left`, fn: () => { I.snacks--; CR.passMinutes(S, 5); need('hunger', -15); toast('Better than nothing.', 2); drawMenuAgain(); } });
+      if (I.coffee) o.push({ t: 'Make a coffee', s: `10 minutes, energy up. ${I.coffee} cups left`, fn: () => { I.coffee--; CR.passMinutes(S, 10); need('energy', 10); toast('Fresh coffee.', 2); drawMenuAgain(); } });
+      if (I.edrink) o.push({ t: 'Energy drink', s: `A quick lift. ${I.edrink} left`, fn: () => { I.edrink--; need('energy', 16); need('mood', -2); need('health', -1); toast('Buzzing.', 2); drawMenuAgain(); } });
+      if (!o.length) return toast('The fridge is empty. Order groceries on your phone or laptop, or buy some at a market.');
+      return menu('Fridge', 'What is in there.', o); }
+    if (f.id === 'stove') { if (!S.items.meals) return toast('Nothing to cook with. Order groceries on your phone or laptop.'); return menu('Kitchen', 'Cooking takes longer than reheating but you feel better for it.', [{ t: 'Cook dinner', s: '45 minutes, fills you up, mood up', fn: () => { S.items.meals--; CR.passMinutes(S, 45); need('hunger', -55); need('mood', 6); toast('Not bad at all.'); closeMenu(); } }]); }
     if (f.id === 'sofa') { const tv = hrs => () => { closeMenu(); ffwd(hrs * 60, { label: 'Watching TV', pose: seated ? null : poseAt(12.75, 9.15, .44, 0, 1), each: m => { need('mood', 7 * m / 60); need('energy', 2 * m / 60); } }); };
       return menu('Lounge', 'Put your feet up.', [{ t: 'Watch TV for an hour', s: 'Mood up', fn: tv(1) }, { t: 'Watch a movie', s: 'Two and a half hours, mood up more', fn: tv(2.5) }].concat(seated ? [{ t: 'Get up', s: '', fn: () => { closeMenu(); standUp(); } }] : [])); }
     if (f.id === 'stereo') return stereoMenu();
@@ -6647,7 +6653,7 @@ window.GAME = (() => {
 
   // Sleep for as long as you choose, half an hour to twelve hours. Every hour asleep restores 12 energy and adds 2 hunger,
   // so seven to eight hours from tired gets you to full, and you can cut a night short to be up early.
-  const study = hrs => () => { closeMenu(); ffwd(hrs * 60, { label: 'Studying finance', pose: poseAt(10.6, 1.0, .48, 0, -1, true), each: m => { S.player.skills.finance += 45 * m / 60; need('energy', -4 * m / 60); } }); };
+  const study = hrs => () => { closeMenu(); ffwd(hrs * 60, { label: 'Studying finance', pose: poseAt(10.6, 1.0, .48, 0, -1, true), each: m => { S.player.skills.finance += 45 * m / 60 * (1 + (S.owned.lamp ? .12 : 0) + (S.owned.monitor ? .15 : 0)); need('energy', -4 * m / 60); } }); };
   function sleepPanel() {
     modalOpen = true; G.hold = true; const N = S.player.needs, P2 = $('panel'); let hrs = clampv(Math.round((100 - N.energy) / 12 * 2) / 2, 1, 9);
     { const h = gHour(); if (h >= 18 || h < 4) { const to7 = ((7 - h) + 24) % 24; hrs = clampv(Math.round(to7 * 2) / 2, .5, 12); } }
@@ -6656,7 +6662,7 @@ window.GAME = (() => {
       $('slpInfo').innerHTML = `<span>Sleep for</span><b>${v % 1 ? Math.floor(v) + ' h 30 min' : v + ' h'}</b><span>Wake at</span><b>${CR.fmtTime(t)} ${CR.fmtDate(t)}</b><span>Energy</span><b>${Math.round(N.energy)} to ${Math.round(e)}</b><span>Hunger</span><b>${Math.round(N.hunger)} to ${Math.round(Math.min(100, N.hunger + v * 2))}</b>`; };
     $('slp').oninput = show; show();
     $('slpNo').onclick = closeMenu;
-    $('slpGo').onclick = async () => { const v = +$('slp').value; closeMenu(); await ffwd(Math.round(v * 60), { label: 'Asleep', flags: { asleep: true }, pose: poseSleep, dim: true }); save('auto'); toast(`${v >= 6 ? 'Good morning.' : 'You get up.'} ${CR.fmtTime(S.time)}, ${CR.fmtDate(S.time)}. Saved.`, 4); };
+    $('slpGo').onclick = async () => { const v = +$('slp').value; closeMenu(); await ffwd(Math.round(v * 60), { label: 'Asleep', flags: { asleep: true }, pose: poseSleep, dim: true }); if (S.owned.pillow) need('energy', v * 1.5); if (S.owned.plant) need('mood', 2); save('auto'); toast(`${v >= 6 ? 'Good morning.' : 'You get up.'} ${CR.fmtTime(S.time)}, ${CR.fmtDate(S.time)}. Saved.`, 4); };
     $('modal').hidden = false; menu.keys = null; setTimeout(() => $('slp').focus(), 50);
   }
 
@@ -6766,7 +6772,7 @@ window.GAME = (() => {
   // Owned from the start. The clock stops while it is open. P opens it, Esc goes back.
   let phoneOpen = false, phoneView = ['home'], phoneData = {};
   const APPS = [['contacts', 'Contacts', '#5f8fd6', 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm-7 8c0-3.3 3.1-6 7-6s7 2.7 7 6z'], ['messages', 'Messages', '#5fb37a', 'M4 5h16v11H8l-4 4z'], ['bank', 'Bank', '#d6a347', 'M3 9l9-5 9 5v2H3zm2 3h2v6H5zm4 0h2v6H9zm4 0h2v6h-2zm4 0h2v6h-2zM3 19h18v2H3z'], ['maps', 'Maps', '#d66b5f', 'M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z'],
-    ['calendar', 'Calendar', '#c46fb0', 'M5 5h14v15H5zm0 4h14M8 3v4m8-4v4'], ['music', 'Music', '#e0874a', 'M9 18a3 3 0 1 1-2-2.8V5l12-2v11a3 3 0 1 1-2-2.8V6.3L9 7.6z'], ['notes', 'Journal', '#8a96a3', 'M6 3h12v18H6zm3 4h6m-6 4h6m-6 4h4']];
+    ['calendar', 'Calendar', '#c46fb0', 'M5 5h14v15H5zm0 4h14M8 3v4m8-4v4'], ['music', 'Music', '#e0874a', 'M9 18a3 3 0 1 1-2-2.8V5l12-2v11a3 3 0 1 1-2-2.8V6.3L9 7.6z'], ['notes', 'Journal', '#8a96a3', 'M6 3h12v18H6zm3 4h6m-6 4h6m-6 4h4'], ['shop', 'Shop', '#c7584f', 'M5 8h14l-1.5 12h-11zm3 0a4 4 0 0 1 8 0']];
   const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const relWord = r => r <= -40 ? 'Dislikes you' : r <= -10 ? 'Cool toward you' : r < 15 ? 'Acquaintance' : r < 40 ? 'Friendly' : r < 70 ? 'Good terms' : 'Close';
   const contactList = () => [{ cid: 'rob', name: 'Rob', job: 'Housemate', rel: S.rels.rob.score, rob: true }, ...Object.values(S.contacts)].map(c => c.rob ? c : Object.assign({}, c));
@@ -6815,6 +6821,18 @@ window.GAME = (() => {
         <div class="phctl"><button data-act="mprev">Back</button><button data-act="${on ? 'mstop' : 'mplay'}">${on ? 'Pause' : 'Play'}</button><button data-act="mnext">Next</button><button data-act="mshuf">Shuffle</button></div>
         ${TRACKS.map((T, i) => `<button class="phrow ${P1 && P1.src === 'phone' && P1.i === i ? 'on' : ''}" data-act="mpick:${i}"><b>${esc(T.t)}</b><span>${esc(T.a)}</span></button>`).join('')}`; }
     else if (app === 'notes') { title = 'Journal'; html = S.log.slice(-30).reverse().map(n => `<p class="phlog"><small>${CR.fmtDate(n.t)}</small>${esc(n.text)}</p>`).join(''); }
+    else if (app === 'shop' && !arg) { title = 'Shop'; const n = cartCount(), pend = S.orders.filter(o => !o.got);
+      html = `<p class="phnote">Delivered to your door in a day or two. Free standard delivery over $50.</p>${SHOPCATS.map(([k, n2, d]) => `<button class="phrow" data-go="shop:${k}"><b>${n2}</b><span>${d}</span></button>`).join('')}
+        <button class="phbtn" data-go="cart" ${n ? '' : 'disabled'}>${n ? `Cart, ${n} item${n === 1 ? '' : 's'}, ${money(cartTotal())}` : 'Your cart is empty'}</button>${pend.length ? `<button class="phbtn" data-go="orders">Deliveries on the way, ${pend.length}</button>` : ''}`; }
+    else if (app === 'shop') { const C2 = SHOPCATS.find(c => c[0] === arg); title = C2 ? C2[1] : 'Shop';
+      html = CATALOG.filter(it => it.cat === arg).map(it => { const own = it.once && S.owned[it.k], q = S.cart[it.k] || 0;
+        return `<div class="phrow" style="cursor:default"><b>${esc(it.n)} <span style="float:right">${money(it.p)}</span></b><span>${esc(it.d)}</span><div style="display:flex;gap:6px;margin-top:6px">${own ? '<span>You have this</span>' : `<button class="phbtn" style="flex:1" data-act="add:${it.k}" ${it.once && q ? 'disabled' : ''}>${q ? (it.once ? 'In your cart' : `Add another (${q} in cart)`) : 'Add to cart'}</button>${q ? `<button class="phbtn" data-act="rem:${it.k}">Remove</button>` : ''}`}</div></div>`; }).join('') + `<button class="phbtn" data-go="cart" ${cartCount() ? '' : 'disabled'}>View cart, ${money(cartTotal())}</button>`; }
+    else if (app === 'cart') { title = 'Cart'; const lines = Object.entries(S.cart).filter(([, q]) => q > 0), sub = cartTotal(), ship = sub >= 5000 ? 0 : 600;
+      html = lines.length ? lines.map(([k, q]) => { const it = CATALOG.find(c => c.k === k); return `<div class="phrow" style="cursor:default"><b>${esc(it.n)}${q > 1 ? ' × ' + q : ''} <span style="float:right">${money(it.p * q)}</span></b><div style="display:flex;gap:6px;margin-top:4px"><button class="phbtn" data-act="rem:${k}">Remove one</button></div></div>`; }).join('') +
+        `<div class="phbal"><span>Items</span><b>${money(sub)}</b><span>Standard, in 2 days</span><b>${ship ? money(ship) : 'Free'}</b><span>Express, tomorrow</span><b>${money(1200)}</b><span>Paid from</span><b>Bank ${money(S.player.bank)}</b></div>
+        <button class="phbtn" data-act="checkout:std">Order, standard delivery, ${money(sub + ship)}</button><button class="phbtn" data-act="checkout:exp">Order, express delivery, ${money(sub + 1200)}</button>` : '<p class="phnote">Your cart is empty.</p>'; }
+    else if (app === 'orders') { title = 'Deliveries'; const L = S.orders.filter(o => !o.got);
+      html = L.map(o => `<div class="phrow" style="cursor:default"><b>${o.arrived ? 'At your front door' : 'Arrives ' + dayWord(o.at) + (o.at - S.time < 1440 * 3 ? ', ' + CR.fmtTime(o.at) : '')}</b><span>${o.items.map(([k, q]) => { const it = CATALOG.find(c => c.k === k); return (q > 1 ? q + ' × ' : '') + (it ? it.n : k); }).join(', ')}</span></div>`).join('') || '<p class="phnote">Nothing on the way.</p>'; }
     else if (app === 'work') { title = 'Work email'; const J = S.player.job;
       html = `<div class="phbal"><span>${esc(EMPLOYER)}</span><b>${esc(LADDER[J.level].t)}</b><span>Shifts worked</span><b>${J.shifts}</b></div><p class="phnote">Work happens at the office from 9 am on weekdays. Messages from your manager land here.</p>`; }
     else if (app === 'study') { title = 'Study'; const f = S.player.skills.finance;
@@ -6835,6 +6853,9 @@ window.GAME = (() => {
   function phoneAct(a) { const [k, arg] = a.split(':');
     if (k === 'back') return back();
     if (k === 'study') { closeLaptop(); closePhone(); return study(+arg)(); }
+    if (k === 'add') { const it = CATALOG.find(c => c.k === arg); if (it && !(it.once && (S.cart[arg] || S.owned[arg]))) S.cart[arg] = (S.cart[arg] || 0) + 1; return refreshApps(); }
+    if (k === 'rem') { if (S.cart[arg]) S.cart[arg]--; if (!S.cart[arg]) delete S.cart[arg]; return refreshApps(); }
+    if (k === 'checkout') return checkout(arg);
     if (k === 'cash') { const c = +arg; if (S.player.bank < c) toast('Not enough in the bank.'); else { S.player.bank -= c; S.player.cash += c; toast(`${money(c)} moved to cash.`, 2); } return refreshApps(); }
     if (k === 'mplay') music.phonePlay(); if (k === 'mstop') music.phoneStop(); if (k === 'mnext') music.phoneStep(1); if (k === 'mprev') music.phoneStep(-1); if (k === 'mshuf') music.phoneShuffle(); if (k === 'mpick') music.phonePlay(+arg);
     if (k[0] === 'm') return setTimeout(refreshApps, 80);
@@ -6842,6 +6863,45 @@ window.GAME = (() => {
     if (k === 'hi') { textHi(arg); return refreshApps(); }
     if (k === 'coffee') { askCoffee(arg); return refreshApps(); }
     if (k === 'fine') { const f = S.fines[+arg]; if (f && !f.paid) { if (spend(f.fine, 'Parking fine')) { f.paid = true; toast('Fine paid.', 2); } else toast('Not enough in your account.'); } return refreshApps(); } }
+  // ---------------- shopping ----------------
+  // Ordered from the phone or the laptop and paid from the bank. Standard delivery comes in two days (free over $50), express
+  // tomorrow. The courier comes between 9 am and 6 pm and leaves the parcel at your front door; it comes in with you next time you
+  // go home, or straight away if you are in. The 24-hour markets, supermarkets and gyms sell in person.
+  const SHOPCATS = [['grocery', 'Groceries', 'Food for the fridge, coffee and snacks'], ['home', 'Home', 'Things that make the house better'], ['clothes', 'Clothes', 'Look the part at work'], ['tech', 'Tech', 'Gadgets']];
+  const CATALOG = [
+    { k: 'groceries', cat: 'grocery', n: 'A week of groceries', d: 'Seven meals to cook at home', p: 6500, give: { meals: 7 } },
+    { k: 'readymeals', cat: 'grocery', n: 'Ready meals, four pack', d: 'Heat and eat', p: 3800, give: { meals: 4 } },
+    { k: 'coffee', cat: 'grocery', n: 'Coffee beans', d: 'Ten cups at home, energy up', p: 1400, give: { coffee: 10 } },
+    { k: 'snacks', cat: 'grocery', n: 'Snack box', d: 'Five quick snacks, takes the edge off hunger', p: 900, give: { snacks: 5 } },
+    { k: 'energy', cat: 'grocery', n: 'Energy drinks, six pack', d: 'A quick lift, then a slump', p: 1200, give: { edrink: 6 } },
+    { k: 'pillow', cat: 'home', n: 'Memory foam pillow', d: 'Sleep a little deeper, more energy each night', p: 4500, once: true },
+    { k: 'lamp', cat: 'home', n: 'Good desk lamp', d: 'Study goes a little further', p: 3500, once: true },
+    { k: 'plant', cat: 'home', n: 'Pot plant for your room', d: 'A small mood lift every day', p: 2800, once: true },
+    { k: 'shirt', cat: 'clothes', n: 'Sharp work shirt', d: 'Small boost to how your shifts go', p: 5500, once: true },
+    { k: 'suit', cat: 'clothes', n: 'Tailored suit', d: 'A bigger boost at work, and people notice', p: 42000, once: true },
+    { k: 'shoes', cat: 'clothes', n: 'Running shoes', d: 'Run a little faster around the city', p: 12000, once: true },
+    { k: 'headphones', cat: 'tech', n: 'Noise-cancelling headphones', d: 'Music on the phone lifts your mood more', p: 25000, once: true },
+    { k: 'monitor', cat: 'tech', n: 'Second monitor', d: 'Study goes further at the desk', p: 18000, once: true }
+  ];
+  const cartCount = () => Object.values(S.cart).reduce((a, b) => a + b, 0), cartTotal = () => Object.entries(S.cart).reduce((a, [k, q]) => { const it = CATALOG.find(c => c.k === k); return a + (it ? it.p * q : 0); }, 0);
+  function checkout(kind) { const sub = cartTotal(); if (!sub) return; const ship = kind === 'exp' ? 1200 : sub >= 5000 ? 0 : 600, tot = sub + ship;
+    if (S.player.bank < tot) { toast('Not enough in your bank account.'); return refreshApps(); }
+    S.player.bank -= tot; txn('Online order', -tot); const day = Math.floor(S.time / 1440) + (kind === 'exp' ? 1 : 2), at = day * 1440 + Math.round(9 * 60 + Math.random() * 9 * 60);
+    S.orders.push({ id: Date.now().toString(36), items: Object.entries(S.cart), at, arrived: false, got: false }); S.cart = {};
+    toast(`Ordered. Arrives ${dayWord(at)}, between 9 am and 6 pm.`, 3.5); CR.note(S, 'Ordered online for ' + money(tot) + '.'); refreshApps(); }
+  function giveItems(list) { for (const [k, q] of list) { const it = CATALOG.find(c => c.k === k); if (!it) continue; if (it.once) S.owned[k] = true; if (it.give) for (const g in it.give) S.items[g] = (S.items[g] || 0) + it.give[g] * q; } }
+  function collectParcels() { const L = S.orders.filter(o => o.arrived && !o.got); if (!L.length) return; for (const o of L) { giveItems(o.items); o.got = true; } toast(`You bring in ${L.length === 1 ? 'a parcel' : L.length + ' parcels'} from the front step.`, 3); parcelProp(); }
+  function checkOrders() { let any = false; for (const o of S.orders) if (!o.arrived && o.at <= S.time) { o.arrived = true; any = true; }
+    if (any) { if (roomKey() === 'house') { toast('The doorbell. Your delivery is here.', 3); collectParcels(); } else { toast('Your delivery has been left at your front door.', 3.5); parcelProp(); } } }
+  let parcelP = null; function parcelProp() { if (!homeDoor) return; if (!parcelP) { parcelP = { t: 'parcel', x: homeDoor.x - homeDoor.nx * .2 + homeDoor.ny * 1.2, y: homeDoor.y - homeDoor.ny * .2 - homeDoor.nx * 1.2, show: false }; props.push(parcelP); }
+    parcelP.show = !!(S && S.orders.some(o => o.arrived && !o.got)); }
+  // the stores you walk into
+  const STORE = { conv: { name: '24 Hour Market', sub: 'Open all hours', open: () => true, mark: 1.25 }, super: { name: 'Market', sub: 'Supermarket, 7 am to 10 pm', open: h => h >= 7 && h < 22, mark: .9 }, gym: { name: 'Gym', sub: 'Open 5 am to 11 pm', open: h => h >= 5 && h < 23 } };
+  for (const st of C.STORES || []) if (!DOORAT.has(st.lot) || !DOORAT.get(st.lot).k) doorFor(st.lot, { k: 'store', sk: st.kind, name: STORE[st.kind].name, sub: STORE[st.kind].sub });
+  function storeMenu(d) { const T = STORE[d.sk], h = gHour(); if (!T.open(h)) return menu(d.name, d.sub + '. Closed right now.', []);
+    if (d.sk === 'gym') return menu(d.name, 'Day pass, $15.', [{ t: 'Work out for an hour', s: '$15, tiring now, mood and health up', fn: () => { if (!spend(1500, 'Gym day pass')) return toast('You cannot afford that.'); closeMenu(); ffwd(60, { label: 'Working out', each: m => { need('energy', -16 * m / 60); need('mood', 9 * m / 60); need('health', 4 * m / 60); need('hunger', 10 * m / 60); } }); } }]);
+    const items = CATALOG.filter(it => it.cat === 'grocery'), pr = it => Math.round(it.p * T.mark / 10) * 10;
+    menu(d.name, d.sk === 'conv' ? 'Pricier than ordering online, but right now.' : 'Cheaper than online, carry it home yourself.', items.map(it => ({ t: it.n, s: `${money(pr(it))}, ${it.d.toLowerCase()}`, fn: () => { if (!spend(pr(it), it.n)) return toast('You cannot afford that.'); giveItems([[it.k, 1]]); toast(`${it.n}. It goes home with you.`, 2); drawMenuAgain(); } }))); }
   const refreshApps = () => { if (phoneOpen) drawPhone(); if (laptopOpen) drawLaptop(); };
   // ---------------- the laptop ----------------
   // On your desk at home. A desktop of icons; each opens a window you can move, stack and close. The same apps as the phone,
@@ -6963,9 +7023,9 @@ window.GAME = (() => {
     if (player.driving) { if (Math.abs(PCAR.speed) > 1.5) return toast('Slow down to get out.', 1.5); toggleCar(); music.drive(false); parkCheck(); return; }
     if (LOOKOUT.near(player.x, player.y)) { LOOKOUT.show({ L: player.L, sync: lookoutSync, onClose: () => { G.hold = !!(modalOpen || dlgOpen || fading); } }); G.hold = true; return; }
     if (doorNow) { const d = doorNow;
-      if (d.k === 'home') { fadeTo('', '', () => goIn('house', d), 200); return; }
+      if (d.k === 'home') { fadeTo('', '', () => { goIn('house', d); collectParcels(); }, 200); return; }
       if (d.k === 'work') { fadeTo('', '', () => goIn('lobby', d), 200); return; }
-      if (d.k === 'venue') return venue(d); if (d.k === 'dealer') return dealer(d); return toast(d.name + ' opens in a later build.', 2); }
+      if (d.k === 'venue') return venue(d); if (d.k === 'dealer') return dealer(d); if (d.k === 'store') return storeMenu(d); return toast(d.name + ' opens in a later build.', 2); }
     if (Math.hypot(player.x - PCAR.x, player.y - PCAR.y) < 3.6) { toggleCar(); music.drive(true); ticketCheck(); return; }
     if (cartNow) return cartMenu(cartNow);
     if (benchNow) { sitDown(benchNow); toast('A moment off your feet.', 2); return; }
@@ -7011,7 +7071,7 @@ window.GAME = (() => {
     if (mapOpen && !G.hold) { G.hold = true; tick.mapHeld = true; } else if (!mapOpen && tick.mapHeld) { tick.mapHeld = false; G.hold = !!(modalOpen || dlgOpen || fading || phoneOpen); }
     if (!paused) runClock(dt);
     if (seated && !paused) { need('energy', dt * .004); if (seated.st.bench) need('mood', dt * .003); }
-    if ((tick.pl = (tick.pl || 0) - dt) < 0) { tick.pl = .5; checkPlans(); parkPatrol(); fineCheck(); music.level(); const st = INSIDE && INSIDE.furn.find(f => f.t === 'stereo'); if (st) st.on = !!S.stereo.on; }
+    if ((tick.pl = (tick.pl || 0) - dt) < 0) { tick.pl = .5; checkPlans(); checkOrders(); window.RUNMUL = S.owned && S.owned.shoes ? 1.12 : 1; if (S.owned && S.owned.headphones && music.phoneOn && !paused) need('mood', .02); if (parcelP) parcelP.show = S.orders.some(o => o.arrived && !o.got); else if (S.orders.some(o => o.arrived && !o.got)) parcelProp(); parkPatrol(); fineCheck(); music.level(); const st = INSIDE && INSIDE.furn.find(f => f.t === 'stereo'); if (st) st.on = !!S.stereo.on; }
     hour = gHour(); flow = 0; // the game's clock drives the street's light
     roomTick(dt);
     if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').hidden = true; }
