@@ -4451,7 +4451,7 @@ function frame(now) {
   try { frameBody(now); } catch (err) { console.error(err); }
   requestAnimationFrame(frame);
 }
-let recT = 0; const CAMOFF = [0, 0];
+let recT = 0; const CAMOFF = [0, 0]; const CHASE = { on: (() => { try { return localStorage.getItem('co_chase') !== '0'; } catch (e) { return true; } })() }; let chaseHold = 0;
 const hudEl = document.getElementById('hud');
 function frameBody(now) {
   const dt = Math.min(.05, (now - lastT) / 1000); lastT = now;
@@ -4459,6 +4459,11 @@ function frameBody(now) {
   if (!paused && !(window.GAME && GAME.hold)) {
     simT += dt;
     const rs = (keys.KeyQ ? 1 : 0) - (keys.KeyZ ? 1 : 0); if (rs) ROT += rs * dt * 1.25; if (keys.KeyN) ROT += (Math.round(ROT / TAU) * TAU - ROT) * Math.min(1, dt * 8);
+    // chase camera: while driving, the view swings round behind the car so it always points up the screen. It eases in with a
+    // little lag so steering does not spin the city, waits until you are moving, and steps aside for a few seconds whenever you
+    // turn the view yourself with Q, Z or N
+    if (rs || keys.KeyN) chaseHold = 3; else chaseHold = Math.max(0, chaseHold - dt);
+    if (CHASE.on && player.driving && !INSIDE && !chaseHold && Math.abs(PCAR.speed) > 1.2) { const want = -Math.PI / 2 - PCAR.ang; let d = ((want - ROT) % TAU + TAU * 1.5) % TAU - Math.PI; ROT += d * Math.min(1, dt * 2.4); }
     const fl = event === 'nye' && nyeArmed === 'count' ? 1 / 60 : flow;
     const nh = hour + dt * fl / 60; if (nh >= 24) gameDay++; hour = nh % 24;
     if (fadeT > 0) { const was = fadeT; fadeT -= dt; if (was > .225 && fadeT <= .225 && fadeFn) { const f = fadeFn; fadeFn = null; f(); } if (fadeT <= 0) fadeFn = null; }
@@ -5532,7 +5537,7 @@ window.GAME = (() => {
     modalOpen = true; G.hold = true; const P2 = $('panel');
     P2.innerHTML = `<h2>Paused</h2><div class="kv"><span>Date</span><b>${CR.fmtDate(S.time)} ${CR.fmtTime(S.time)}</b><span>Age</span><b>${CR.ageOn(S.time, P0.birth)}</b><span>Job</span><b>${LADDER[J.level].t}</b><span>Shifts worked</span><b>${J.shifts}</b><span>Performance</span><b>${Math.round(J.perf)}</b><span>Cash</span><b>${money(P0.cash)}</b><span>Bank</span><b>${money(P0.bank)}</b><span>Meals in the fridge</span><b>${S.items.meals || 0}</b>${sk}</div>
       <h2 style="font-size:14px">Sound</h2><div id="sndrow"><span>City sound</span><button id="bSnd">${AU.on ? 'On' : 'Off'}</button>${['master', 'amb', 'traffic', 'people', 'music'].map(kq => `<span>${{ master: 'Master', amb: 'Ambience', traffic: 'Traffic', people: 'People', music: 'Venue music' }[kq]}</span><input type="range" min="0" max="100" value="${Math.round(AU.vol[kq] * 100)}" data-v="${kq}" style="accent-color:var(--acc)">`).join('')}</div><h2 style="font-size:14px">Saves</h2><div id="slots" class="opts"></div><textarea class="io" id="io" rows="2" placeholder="Save code"></textarea><div class="row"><button id="bExp">Copy save code</button><button id="bImp">Load save code</button><button id="bNew">New game</button></div><div class="sub2" id="ioMsg"></div>
-      <div class="sub2">WASD or arrows to move, Shift to run, E to use, enter, talk or get in the car. P for your phone. R for the radio, M for the map, Q and Z to turn the view, N to face north, mouse wheel or plus and minus to zoom, Esc for this menu.</div><div class="row"><button id="bTools">Test tools</button><button id="bRes">Resume</button></div>`;
+      <div class="sub2">WASD or arrows to move, Shift to run, E to use, enter, talk or get in the car. P for your phone. R for the radio, M for the map, Q and Z to turn the view, N to face north, mouse wheel or plus and minus to zoom, Esc for this menu.</div><div class="row"><button id="bChase">Chase camera: ${CHASE.on ? 'on' : 'off'}</button><button id="bTools">Test tools</button><button id="bRes">Resume</button></div>`;
     const SL = $('slots'); for (const s of store.list()) { const r = document.createElement('div'); r.className = 'slot'; const nm = { auto: 'Auto', quick: 'Quick', slot1: 'Slot 1', slot2: 'Slot 2', slot3: 'Slot 3' }[s.slot]; r.innerHTML = `<b>${nm}</b><span>${s.empty ? 'Empty' : s.broken ? 'Damaged' : s.date}</span>`;
       const sv = document.createElement('button'); sv.textContent = 'Save'; sv.onclick = () => { save(s.slot); pauseMenu(); }; if (s.slot === 'auto') sv.disabled = true; const ld = document.createElement('button'); ld.textContent = 'Load'; ld.disabled = s.empty || !!s.broken; ld.onclick = () => { load(store.load(s.slot)); closeMenu(); toast('Loaded.'); }; r.append(sv, ld); SL.appendChild(r); }
     $('bExp').onclick = () => { capture(); const t = CR.exportText(S); $('io').value = t; try { navigator.clipboard.writeText(t).then(() => $('ioMsg').textContent = 'Copied.', () => { $('io').select(); $('ioMsg').textContent = 'Select the text and copy it.'; }); } catch (e) { $('io').select(); } };
@@ -5540,7 +5545,7 @@ window.GAME = (() => {
     $('bNew').onclick = () => { if ($('bNew').dataset.sure) { load(fresh()); closeMenu(); intro(); } else { $('bNew').dataset.sure = 1; $('bNew').textContent = 'Press again to start over'; } };
     $('bSnd').onclick = () => { if (AU.on) { auStop(); G.soundOff = true; } else { G.soundOff = false; auStart(); } $('bSnd').textContent = AU.on ? 'On' : 'Off'; };
     for (const r of P2.querySelectorAll('[data-v]')) r.oninput = () => { const kq = r.dataset.v; AU.vol[kq] = r.value / 100; if (AC && au[kq]) ramp(au[kq].gain, AU.vol[kq], .05); };
-    $('bRes').onclick = closeMenu; $('bTools').onclick = testTools; $('modal').hidden = false; menu.keys = null; }
+    $('bRes').onclick = closeMenu; $('bTools').onclick = testTools; $('bChase').onclick = () => { CHASE.on = !CHASE.on; try { localStorage.setItem('co_chase', CHASE.on ? '1' : '0'); } catch (e) { } $('bChase').textContent = 'Chase camera: ' + (CHASE.on ? 'on' : 'off'); }; $('modal').hidden = false; menu.keys = null; }
 
   // ---------------- interiors: the share house, the Northgate lobby and the Meridian floor ----------------
   const ROOM_NAME = { house: 'Home', lobby: 'Northgate tower', office: EMPLOYER + ', level 32' };

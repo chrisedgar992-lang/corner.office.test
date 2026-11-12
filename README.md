@@ -34,7 +34,7 @@ The game opens on a main menu. Continue or start a new game from there, or open 
 - P for your phone
 - On a phone or tablet, an on-screen joystick and buttons appear: Action and Run, Menu, Phone, Map, Radio and Next song along the top, and buttons to turn and zoom the view. Pinch or use the buttons to zoom the map
 - Space to skip ahead while time is running fast
-- M for the map, Q and Z to turn the view, N to face north
+- M for the map, Q and Z to turn the view, N to face north. While driving, the chase camera keeps the car pointing up the screen; switch it off in the menu
 - Mouse wheel, or plus and minus, to zoom
 - Esc for the menu, saves and sound settings
 - The backquote key, or Test tools in the menu, to set your job level, line up a work event, jump the clock and top up needs and money
