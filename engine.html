@@ -40,6 +40,7 @@ kbd{display:inline-block;min-width:16px;text-align:center;border:1px solid rgba(
 #mapkey .zb{padding:4px 10px;font-weight:600}
 #bigmap .bar2 button{margin-left:8px;font-size:11px;padding:2px 8px}
 #bigmap .bar2{color:var(--muted);font-size:12px;margin-top:8px}
+#mapzoom{position:absolute;left:14px;top:12px;display:flex;gap:6px;z-index:2}#mapzoom button{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:8px;min-width:40px;height:36px;padding:0 10px;font:600 15px system-ui,sans-serif;cursor:pointer}
 #bmx{position:absolute;right:14px;top:12px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font:inherit;cursor:pointer}
 #talk{position:fixed;inset:0;z-index:10;display:none;align-items:flex-end;justify-content:center;background:linear-gradient(to top,rgba(0,0,0,.7),rgba(0,0,0,.15) 60%,rgba(0,0,0,0));padding:0 16px 22px;box-sizing:border-box}
 #talk .card{width:min(860px,100%);display:grid;grid-template-columns:170px 1fr 170px;gap:16px;align-items:end}
@@ -124,7 +125,7 @@ kbd{display:inline-block;min-width:16px;text-align:center;border:1px solid rgba(
 <canvas id="mm" title="Open map (M)"></canvas>
 <div id="tp"></div>
 <div id="hud"></div>
-<div id="bigmap"><button id="bmx">Close map</button><canvas id="bmc"></canvas><div id="mapkey"></div><div class="bar2" id="rinfo"></div><div class="bar2">Scroll to zoom, drag to move, click to set a route. Click a type in the key to hide or show it. Red dot is your car. M or Esc closes.</div></div>
+<div id="bigmap"><button id="bmx">Close map</button><canvas id="bmc"></canvas><div id="mapkey"></div><div class="bar2" id="rinfo"></div><div class="bar2">Scroll, pinch or the buttons to zoom. Drag to move, tap to set a route. Click a type in the key to hide or show it. Red dot is your car. M or Esc closes.</div></div>
 <div id="talk"><div class="card"><div><canvas id="pcv1"></canvas><div class="plabel">You</div></div><div class="mid"><div id="tn"></div><div id="tl"></div><div id="trel"></div><div id="topts"></div></div><div><canvas id="pcv2"></canvas><div class="plabel" id="tname2"></div></div></div></div>
 <div id="lineup"><canvas id="lc"></canvas><button id="lx">Back to street</button></div>
 <canvas id="look" hidden></canvas>
@@ -1244,7 +1245,12 @@ function kerbPark(px, py) { const [, e] = kerbDist(px, py); let x = px, y = py, 
   if (e) { let bd = 1e9; for (let i = 1; i < e.pts.length; i++) { const [ax, ay] = e.pts[i - 1], [bx, by] = e.pts[i], dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy || 1, t = clamp(((px - ax) * dx + (py - ay) * dy) / l2, 0, 1), qx = ax + dx * t, qy = ay + dy * t, d = Math.hypot(qx - px, qy - py);
       if (d < bd) { bd = d; const l = Math.sqrt(l2), ux = dx / l, uy = dy / l, sgn = ((px - qx) * uy - (py - qy) * ux) > 0 ? 1 : -1;
         ang = Math.atan2(uy, ux) + (sgn > 0 ? 0 : Math.PI); x = qx + uy * sgn * (e.w - 1.3) + ux * 9 * (sgn > 0 ? 1 : -1); y = qy - ux * sgn * (e.w - 1.3) + uy * 9 * (sgn > 0 ? 1 : -1); } } }
+  // on a street with bays, take the nearest bay and move on any car already parked in it, so your car never starts inside another
+  let bb = null, bdd = 9; for (const b of BAYS) { const d = Math.hypot(b.x - x, b.y - y); if (d < bdd) { bdd = d; bb = b; } }
+  if (bb) { x = bb.x; y = bb.y; ang = bb.ang; }
+  clearParkedNear(x, y, 7.5); // and the bays either side, so there is room to pull out
   return { x, y, ang }; }
+function clearParkedNear(x, y, r) { let n = 0; for (let i = PARKED.length - 1; i >= 0; i--) { const c = PARKED[i]; if (Math.hypot(c.x - x, c.y - y) > r) continue; PARKED.splice(i, 1); if (c.bay) c.bay.car = null; const k = solids.findIndex(q => q.car === c); if (k >= 0) solids.splice(k, 1); n++; } if (n) gridSolids(); }
 const PCAR = Object.assign({ type: 'sedan', T: CARTYPES.sedan, col: [96, 30, 34], speed: 0, brake: 0, player: true }, kerbPark(player.x, player.y));
 function carCorners(c, x, y, a, pad = 0) { const ca = Math.cos(a), sa = Math.sin(a), L = c.T.L / 2 + pad, Wd = c.T.W / 2 + pad; return [[L, Wd], [L, -Wd], [-L, Wd], [-L, -Wd], [L, 0], [-L, 0], [0, Wd], [0, -Wd]].map(([l, w]) => [x + ca * l - sa * w, y + sa * l + ca * w]); }
 function carHits(x, y, a) {
@@ -2653,16 +2659,26 @@ function mapZoom(f, px, py) { const v = bigMapView(), ox = px === undefined ? v.
   MAPV.x = wx - (ox - v.w / 2) / MAPV.sc; MAPV.y = wy - (oy - v.h / 2) / MAPV.sc; mapClampView(); }
 function mapClampView() { const v = bigMapView(), hw = v.w / 2 / MAPV.sc, hh = v.h / 2 / MAPV.sc; MAPV.x = clamp(MAPV.x, Math.min(WX0 + hw, (WX0 + WX1) / 2), Math.max(WX1 - hw, (WX0 + WX1) / 2)); MAPV.y = clamp(MAPV.y, Math.min(WY0 + hh, (WY0 + WY1) / 2), Math.max(WY1 - hh, (WY0 + WY1) / 2)); }
 bmc.addEventListener('wheel', e => { e.preventDefault(); const r = bmc.getBoundingClientRect(); mapZoom(Math.exp(-e.deltaY * .0015), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
-let mapDrag = null;
-bmc.addEventListener('pointerdown', e => { mapDrag = { x: e.clientX, y: e.clientY, mx: MAPV.x, my: MAPV.y, moved: 0 }; bmc.setPointerCapture(e.pointerId); });
-bmc.addEventListener('pointermove', e => { if (!mapDrag) return; const dx = e.clientX - mapDrag.x, dy = e.clientY - mapDrag.y; mapDrag.moved = Math.max(mapDrag.moved, Math.hypot(dx, dy)); MAPV.x = mapDrag.mx - dx / MAPV.sc; MAPV.y = mapDrag.my - dy / MAPV.sc; mapClampView(); });
-bmc.addEventListener('pointerup', e => { const d = mapDrag; mapDrag = null; if (!d || d.moved > 5) return; const r = bmc.getBoundingClientRect(), v = bigMapView();
-  setRoute(MAPV.x + (e.clientX - r.left - v.w / 2) / MAPV.sc, MAPV.y + (e.clientY - r.top - v.h / 2) / MAPV.sc); });
+let mapDrag = null; const mapPts = new Map(); let pinch = null;
+// one finger or the mouse drags and taps to set a route; two fingers pinch to zoom
+bmc.addEventListener('pointerdown', e => { mapPts.set(e.pointerId, { x: e.clientX, y: e.clientY }); bmc.setPointerCapture(e.pointerId);
+  if (mapPts.size === 2) { const [a2, b2] = [...mapPts.values()]; pinch = { d: Math.hypot(a2.x - b2.x, a2.y - b2.y) || 1 }; if (mapDrag) mapDrag.moved = 99; }
+  else if (mapPts.size === 1) mapDrag = { x: e.clientX, y: e.clientY, mx: MAPV.x, my: MAPV.y, moved: 0 }; });
+bmc.addEventListener('pointermove', e => { if (!mapPts.has(e.pointerId)) return; mapPts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pinch && mapPts.size >= 2) { const [a2, b2] = [...mapPts.values()], d = Math.hypot(a2.x - b2.x, a2.y - b2.y) || 1, r = bmc.getBoundingClientRect(); mapZoom(d / pinch.d, (a2.x + b2.x) / 2 - r.left, (a2.y + b2.y) / 2 - r.top); pinch.d = d; return; }
+  if (!mapDrag) return; const dx = e.clientX - mapDrag.x, dy = e.clientY - mapDrag.y; mapDrag.moved = Math.max(mapDrag.moved, Math.hypot(dx, dy)); MAPV.x = mapDrag.mx - dx / MAPV.sc; MAPV.y = mapDrag.my - dy / MAPV.sc; mapClampView(); });
+const mapUp = e => { mapPts.delete(e.pointerId); if (mapPts.size < 2) pinch = null; if (mapPts.size) { if (mapDrag) mapDrag.moved = 99; return; } const d = mapDrag; mapDrag = null; if (!d || d.moved > 5 || e.type === 'pointercancel') return; const r = bmc.getBoundingClientRect(), v = bigMapView();
+  setRoute(MAPV.x + (e.clientX - r.left - v.w / 2) / MAPV.sc, MAPV.y + (e.clientY - r.top - v.h / 2) / MAPV.sc); };
+bmc.addEventListener('pointerup', mapUp); bmc.addEventListener('pointercancel', mapUp);
+// zoom buttons on the map itself, for touch screens and anyone without a scroll wheel
+{ const Z = document.createElement('div'); Z.id = 'mapzoom'; Z.innerHTML = '<button data-z="in" aria-label="Zoom in">+</button><button data-z="out" aria-label="Zoom out">−</button><button data-z="me">Me</button><button data-z="all">Whole city</button>';
+  document.getElementById('bigmap').appendChild(Z);
+  for (const b of Z.querySelectorAll('button')) b.onclick = e => { e.stopPropagation(); const z = b.dataset.z; if (z === 'in') mapZoom(1.6); else if (z === 'out') mapZoom(1 / 1.6); else if (z === 'all') { MAPV.sc = MAPV.fit; MAPV.x = (WX0 + WX1) / 2; MAPV.y = (WY0 + WY1) / 2; } else { const me = player.driving ? PCAR : player; MAPV.sc = Math.max(MAPV.sc, 1.4); MAPV.x = me.x; MAPV.y = me.y; mapClampView(); } }; }
 // the key doubles as a filter: click a type to hide or show it
 function buildMapKey() { const K = document.getElementById('mapkey'); if (!K) return; K.innerHTML = '';
   for (const cat in MAPCAT) { const b = document.createElement('button'); b.className = 'mk' + (MAPOFF.has(cat) ? ' off' : ''); const c = document.createElement('canvas'); c.width = c.height = 22 * DPR; c.style.width = c.style.height = '22px'; const g = c.getContext('2d'); g.scale(DPR, DPR); g.translate(11, 11); drawMapIcon(g, cat, 9.5);
     b.appendChild(c); b.appendChild(document.createTextNode(MAPCAT[cat].t)); b.onclick = () => { MAPOFF.has(cat) ? MAPOFF.delete(cat) : MAPOFF.add(cat); buildMapKey(); }; K.appendChild(b); }
-  for (const [t, f] of [['+', () => mapZoom(1.6)], ['\u2212', () => mapZoom(1 / 1.6)], ['Me', () => { MAPV.sc = Math.max(MAPV.sc, .9); MAPV.x = player.x; MAPV.y = player.y; mapClampView(); }], ['Whole city', () => { MAPV.sc = MAPV.fit; MAPV.x = (WX0 + WX1) / 2; MAPV.y = (WY0 + WY1) / 2; }]]) { const b = document.createElement('button'); b.className = 'mk zb'; b.textContent = t; b.onclick = f; K.appendChild(b); } }
+  } /* zoom buttons now sit in the top corner of the map, always in reach */
 function drawIndoorMap(g, size) {
   const I = INSIDE, sc = size / Math.max(I.w, I.h) * .8;
   g.save(); g.fillStyle = '#121418'; g.fillRect(0, 0, size, size); g.translate(size / 2, size / 2); g.rotate(-ROT); g.scale(sc, sc); g.translate(-(player.x - I.ox), -(player.y - I.oy));
@@ -4883,23 +4899,26 @@ function drawWeather(dt) {
 #tc .pad{position:absolute;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));width:170px;height:150px;pointer-events:none}
 #tc button{position:absolute;pointer-events:auto;touch-action:none;border-radius:50%;border:2px solid rgba(255,255,255,.28);background:rgba(20,22,26,.55);color:#fff;font:700 15px system-ui,sans-serif;display:flex;align-items:center;justify-content:center;padding:0}
 #tc button.on{background:rgba(214,163,71,.65)}
-#tc .bA{right:0;bottom:34px;width:76px;height:76px;font-size:22px;background:rgba(214,163,71,.5)}
+#tc .bA{right:0;bottom:34px;width:80px;height:80px;font-size:14px;background:rgba(214,163,71,.5)}
+#tc .view{position:absolute;right:calc(12px + env(safe-area-inset-right,0px));top:calc(56px + env(safe-area-inset-top,0px));display:flex;gap:6px;pointer-events:none}#tc .view button{position:static;width:38px;height:34px;border-radius:9px;font-size:16px}
+#tc .skip{left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:auto;height:46px;padding:0 22px;border-radius:12px;background:rgba(214,163,71,.6);display:none}#tc.ff .skip{display:flex}#tc.ff .stick,#tc.ff .pad,#tc.ff .view{display:none}
 #tc .bB{right:86px;bottom:0;width:62px;height:62px;font-size:13px}
-#tc .bC{right:92px;bottom:78px;width:52px;height:52px;font-size:12px}
 #tc .top{position:absolute;right:calc(12px + env(safe-area-inset-right,0px));top:calc(10px + env(safe-area-inset-top,0px));display:flex;flex-direction:row;gap:8px;pointer-events:none}
 #tc .top button{position:static;width:auto;min-width:54px;height:38px;padding:0 10px;font-size:12px;border-radius:10px}
-body.touch #ghud{transform:scale(.72);transform-origin:top left}body.touch #radio{top:calc(56px + env(safe-area-inset-top,0px))!important;transform:scale(.8);transform-origin:top right}body.touch .phgrid kbd,body.touch #prompt kbd{display:none}
+body.touch #ghud{transform:scale(.72);transform-origin:top left}body.touch #radio{top:calc(100px + env(safe-area-inset-top,0px))!important;transform:scale(.8);transform-origin:top right}body.touch .phgrid kbd,body.touch #prompt kbd{display:none}
 body.touch #useBtn,body.touch #menuBtn,body.touch #phoneBtn{display:none!important}
 body.touch #mm{width:118px!important;height:118px!important;left:calc(170px + env(safe-area-inset-left,0px))!important;right:auto!important;bottom:calc(26px + env(safe-area-inset-bottom,0px))!important}
 body.touch #prompt{bottom:calc(190px + env(safe-area-inset-bottom,0px))}
 #tc.hide{display:none}`;
   document.head.appendChild(st);
   const tc = document.createElement('div'); tc.id = 'tc';
-  tc.innerHTML = `<div class="stick"><div class="knob"></div></div><div class="pad"><button class="bA" data-k="KeyE">E</button><button class="bB" data-hold="ShiftLeft">Run</button><button class="bC" data-k="KeyT">Talk</button></div>
-    <div class="top"><button data-k="Escape">Menu</button><button data-k="KeyP">Phone</button><button data-k="KeyM">Map</button><button data-k="KeyR">Radio</button></div>`;
+  tc.innerHTML = `<div class="stick"><div class="knob"></div></div><div class="pad"><button class="bA" data-k="KeyE">Action</button><button class="bB" data-hold="ShiftLeft">Run</button></div>
+    <div class="top"><button data-k="Escape">Menu</button><button data-k="KeyP">Phone</button><button data-k="KeyM">Map</button><button data-k="KeyR">Radio</button><button data-k="KeyR" data-shift="1">Next song</button></div>
+    <div class="view"><button data-k="KeyQ" aria-label="Turn the view left">⟲</button><button data-k="KeyN">N</button><button data-k="KeyZ" aria-label="Turn the view right">⟳</button><button data-k="Equal" aria-label="Zoom in">+</button><button data-k="Minus" aria-label="Zoom out">−</button></div>
+    <button class="skip" data-k="Space">Skip ahead</button>`;
   document.body.appendChild(tc);
-  const key = (code, type = 'keydown') => dispatchEvent(new KeyboardEvent(type, { code, key: code === 'Escape' ? 'Escape' : code.replace(/^Key/, '').toLowerCase(), bubbles: true }));
-  for (const b of tc.querySelectorAll('[data-k]')) b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); key(b.dataset.k); setTimeout(() => key(b.dataset.k, 'keyup'), 60); });
+  const KEYOF = { Escape: 'Escape', Space: ' ', Equal: '=', Minus: '-' }, key = (code, type = 'keydown', shift) => dispatchEvent(new KeyboardEvent(type, { code, key: KEYOF[code] || code.replace(/^Key/, '').toLowerCase(), shiftKey: !!shift, bubbles: true }));
+  for (const b of tc.querySelectorAll('[data-k]')) b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); const sh = !!b.dataset.shift; if (sh) keys.ShiftLeft = true; key(b.dataset.k, 'keydown', sh); setTimeout(() => { key(b.dataset.k, 'keyup', sh); if (sh) keys.ShiftLeft = !!tc.querySelector('[data-hold].on'); }, 60); });
   for (const b of tc.querySelectorAll('[data-hold]')) { let on = false; b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); on = !on; b.classList.toggle('on', on); keys[b.dataset.hold] = on; }); }
   // the stick: analogue for walking, the arrow keys for the car
   const S = tc.querySelector('.stick'), K = tc.querySelector('.knob'); let id = null;
@@ -4914,6 +4933,6 @@ body.touch #prompt{bottom:calc(190px + env(safe-area-inset-bottom,0px))}
   S.addEventListener('pointerup', end); S.addEventListener('pointercancel', end);
   // out of the way while a menu, the phone, a conversation or the title screen is up
   const vis = id2 => { const el = document.getElementById(id2); return el && !el.hidden && getComputedStyle(el).display !== 'none'; };
-  setInterval(() => { const busy = document.body.classList.contains('titling') || vis('modal') || vis('phone') || vis('dlg') || vis('talk') || vis('testview') || vis('bigmap') || (typeof LOOKOUT !== 'undefined' && LOOKOUT.open); tc.classList.toggle('hide', busy); if (busy && id != null) end(); }, 150);
+  setInterval(() => { const busy = document.body.classList.contains('titling') || vis('modal') || vis('phone') || vis('dlg') || vis('talk') || vis('testview') || vis('bigmap') || (typeof LOOKOUT !== 'undefined' && LOOKOUT.open); const ff = !!(window.GAME && GAME.FF); tc.classList.toggle('ff', ff); tc.classList.toggle('hide', busy && !ff); if ((busy || ff) && id != null) end(); }, 150);
 })();
 </script></body></html>
