@@ -4914,10 +4914,14 @@ body.touch #ghud{transform:scale(.72);transform-origin:top left}body.touch #radi
 body.touch #useBtn,body.touch #menuBtn,body.touch #phoneBtn{display:none!important}
 body.touch #mm{width:118px!important;height:118px!important;left:calc(170px + env(safe-area-inset-left,0px))!important;right:auto!important;bottom:calc(26px + env(safe-area-inset-bottom,0px))!important}
 body.touch #prompt{bottom:calc(190px + env(safe-area-inset-bottom,0px))}
-#tc.hide{display:none}`;
+#tc.hide{display:none}
+#tc .drive{position:absolute;right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));width:190px;height:140px;pointer-events:none;display:none}
+#tc .drive button{width:82px;height:110px;border-radius:18px;bottom:0;font-size:15px}
+#tc .gas{right:0;background:rgba(80,160,100,.55)}#tc .brk{right:96px;background:rgba(190,70,60,.5)}
+#tc.driving .drive{display:block}#tc.driving .bB{display:none}#tc.driving .pad .bA{right:188px;bottom:0;width:64px;height:64px;font-size:12px}`;
   document.head.appendChild(st);
   const tc = document.createElement('div'); tc.id = 'tc';
-  tc.innerHTML = `<div class="stick"><div class="knob"></div></div><div class="pad"><button class="bA" data-k="KeyE">Action</button><button class="bB" data-hold="ShiftLeft">Run</button></div>
+  tc.innerHTML = `<div class="stick"><div class="knob"></div></div><div class="pad"><button class="bA" data-k="KeyE">Action</button><button class="bB" data-hold="ShiftLeft">Run</button></div><div class="drive"><button class="gas" data-press="ArrowUp">Gas</button><button class="brk" data-press="ArrowDown">Brake</button></div>
     <div class="top"><button data-k="Escape">Menu</button><button data-k="KeyP">Phone</button><button data-k="KeyM">Map</button><button data-k="KeyR">Radio</button><button data-k="KeyR" data-shift="1">Next song</button></div>
     <div class="view"><button data-k="KeyQ" aria-label="Turn the view left">⟲</button><button data-k="KeyN">N</button><button data-k="KeyZ" aria-label="Turn the view right">⟳</button><button data-k="Equal" aria-label="Zoom in">+</button><button data-k="Minus" aria-label="Zoom out">−</button></div>
     <button class="skip" data-k="Space">Skip ahead</button>`;
@@ -4925,9 +4929,13 @@ body.touch #prompt{bottom:calc(190px + env(safe-area-inset-bottom,0px))}
   const KEYOF = { Escape: 'Escape', Space: ' ', Equal: '=', Minus: '-' }, key = (code, type = 'keydown', shift) => dispatchEvent(new KeyboardEvent(type, { code, key: KEYOF[code] || code.replace(/^Key/, '').toLowerCase(), shiftKey: !!shift, bubbles: true }));
   for (const b of tc.querySelectorAll('[data-k]')) b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); const sh = !!b.dataset.shift; if (sh) keys.ShiftLeft = true; key(b.dataset.k, 'keydown', sh); setTimeout(() => { key(b.dataset.k, 'keyup', sh); if (sh) keys.ShiftLeft = !!tc.querySelector('[data-hold].on'); }, 60); });
   for (const b of tc.querySelectorAll('[data-hold]')) { let on = false; b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); on = !on; b.classList.toggle('on', on); keys[b.dataset.hold] = on; }); }
-  // the stick: analogue for walking, the arrow keys for the car
+  // gas and brake: held for as long as your thumb is on them
+  for (const b of tc.querySelectorAll('[data-press]')) { const k = b.dataset.press, on = v => { keys[k] = v; b.classList.toggle('on', v); };
+    b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); b.setPointerCapture(e.pointerId); on(true); });
+    for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(ev, () => on(false)); }
+  // the stick: analogue for walking; in the car it only steers, and gas and brake are buttons
   const S = tc.querySelector('.stick'), K = tc.querySelector('.knob'); let id = null;
-  const setKeys = (x, y) => { const d = player.driving; keys.ArrowUp = d && y < -.3; keys.ArrowDown = d && y > .3; keys.ArrowLeft = d && x < -.3; keys.ArrowRight = d && x > .3; };
+  const setKeys = (x, y) => { const d = player.driving; keys.ArrowLeft = d && x < -.25; keys.ArrowRight = d && x > .25; };
   const move = e => { const r = S.getBoundingClientRect(), cxs = r.left + r.width / 2, cys = r.top + r.height / 2, R = r.width / 2; let x = (e.clientX - cxs) / R, y = (e.clientY - cys) / R; const m = Math.hypot(x, y); if (m > 1) { x /= m; y /= m; }
     K.style.transform = `translate(${x * R * .62}px,${y * R * .62}px)`; const dead = Math.hypot(x, y) < .15; STICK.on = !dead && !player.driving; STICK.x = x; STICK.y = y; setKeys(dead ? 0 : x, dead ? 0 : y);
     // a push on the stick gets you up from a seat, like a key would
@@ -4938,6 +4946,6 @@ body.touch #prompt{bottom:calc(190px + env(safe-area-inset-bottom,0px))}
   S.addEventListener('pointerup', end); S.addEventListener('pointercancel', end);
   // out of the way while a menu, the phone, a conversation or the title screen is up
   const vis = id2 => { const el = document.getElementById(id2); return el && !el.hidden && getComputedStyle(el).display !== 'none'; };
-  setInterval(() => { const busy = document.body.classList.contains('titling') || vis('modal') || vis('phone') || vis('dlg') || vis('talk') || vis('testview') || vis('bigmap') || (typeof LOOKOUT !== 'undefined' && LOOKOUT.open); const ff = !!(window.GAME && GAME.FF); tc.classList.toggle('ff', ff); tc.classList.toggle('hide', busy && !ff); if ((busy || ff) && id != null) end(); }, 150);
+  setInterval(() => { const busy = document.body.classList.contains('titling') || vis('modal') || vis('phone') || vis('dlg') || vis('talk') || vis('testview') || vis('bigmap') || (typeof LOOKOUT !== 'undefined' && LOOKOUT.open); const ff = !!(window.GAME && GAME.FF); tc.classList.toggle('ff', ff); const drv = !!player.driving; if (tc.classList.contains('driving') !== drv) { tc.classList.toggle('driving', drv); if (!drv) keys.ArrowUp = keys.ArrowDown = false; } tc.classList.toggle('hide', busy && !ff); if ((busy || ff) && id != null) end(); }, 150);
 })();
 </script></body></html>

@@ -32,7 +32,7 @@ The game opens on a main menu. Continue or start a new game from there, or open 
 - E to use, enter, talk or get in and out of the car
 - R for the radio while driving, Shift and R to skip a song
 - P for your phone
-- On a phone or tablet, an on-screen joystick and buttons appear: Action and Run, Menu, Phone, Map, Radio and Next song along the top, and buttons to turn and zoom the view. Pinch or use the buttons to zoom the map
+- On a phone or tablet, an on-screen joystick and buttons appear: Action and Run, Menu, Phone, Map, Radio and Next song along the top, and buttons to turn and zoom the view. In the car the joystick only steers, with Gas and Brake buttons on the right. Pinch or use the buttons to zoom the map
 - Space to skip ahead while time is running fast
 - M for the map, Q and Z to turn the view, N to face north. While driving, the chase camera keeps the car pointing up the screen; switch it off in the menu
 - Mouse wheel, or plus and minus, to zoom
