@@ -1016,13 +1016,14 @@ function landmark(name, face, build) {
   const F0 = b.F, o = b.fp, cu = (o.x0 + o.x1) / 2, cv = (o.y0 + o.y1) / 2;
   const SIDES = { N: [cu, o.y0, 0, -1], S: [cu, o.y1, 0, 1], W: [o.x0, cv, -1, 0], E: [o.x1, cv, 1, 0] };
   let side = face;
+  if (side === 'water') { side = null; for (const k in SIDES) { const [u, v, nx, ny] = SIDES[k]; for (const dd of [8, 16, 26, 40]) { const q = toW(F0, u + nx * dd, v + ny * dd); if (C.isWater(q[0], q[1])) { side = k; break; } } if (side) break; } }
   if (!SIDES[side]) { let best = -1; for (const k in SIDES) { const [u, v, nx, ny] = SIDES[k], q = toW(F0, u + nx * 14, v + ny * 14), [d, e] = kerbDist(q[0], q[1]); const sc = (e && d < 12 ? ROADRANK[e.kind] || 1 : 0) + (k === 'S' ? .2 : k === 'E' ? .1 : 0); if (sc > best) { best = sc; side = k; } } }
   const [, , nx, ny] = SIDES[side], wx = F0.c * nx - F0.s * ny, wy = F0.s * nx + F0.c * ny;
   const F = { ox: F0.ox, oy: F0.oy, c: -wy, s: wx };
   let lot; { const pts = [[o.x0, o.y0], [o.x1, o.y0], [o.x1, o.y1], [o.x0, o.y1]].map(([u, v]) => { const w = toW(F0, u, v); return toL(F, w[0], w[1]); }); lot = polyBBox(pts); }
   for (let i = storefronts.length - 1; i >= 0; i--) { const f = storefronts[i]; const q = toL(F, (f.ax + f.bx) / 2, (f.ay + f.by) / 2); if (q[0] > lot.x0 - .5 && q[0] < lot.x1 + .5 && q[1] > lot.y0 - .5 && q[1] < lot.y1 + .5) storefronts.splice(i, 1); }
   for (let i = awnings.length - 1; i >= 0; i--) if (awnings[i].b === b.id) awnings.splice(i, 1);
-  b.F = F; Object.assign(b, { shop: {}, blade: null, crown: null, plant: null, cool: [], vents: [], tank: null, sky: null, ant: null, rail: false, heli: false, kit: [] });
+  b.F = F; b.st = { N: true, S: false, E: false, W: false }; Object.assign(b, { shop: {}, blade: null, crown: null, plant: null, cool: [], vents: [], tank: null, sky: null, ant: null, rail: false, heli: false, kit: [] });
   const W = (u, v) => toW(F, u, v), rect = (u0, v0, u1, v1) => [W(u0, v0), W(u1, v0), W(u1, v1), W(u0, v1)], rectV = (u0, v0, u1, v1) => [W(u0, v0), W(u0, v1), W(u1, v1), W(u1, v0)];
   const ell = (cu2, cv2, ru, rv, n = 28) => polyEllipse(cu2, cv2, ru, rv, n).map(([u, v]) => W(u, v));
   const rr = (u0, v0, u1, v1, r) => { const out = [], arc = (cu2, cv2, a0) => { for (let i = 0; i <= 6; i++) { const a = a0 + i / 6 * Math.PI / 2; out.push(W(cu2 + Math.cos(a) * r, cv2 + Math.sin(a) * r)); } }; arc(u1 - r, v1 - r, 0); arc(u0 + r, v1 - r, Math.PI / 2); arc(u0 + r, v0 + r, Math.PI); arc(u1 - r, v0 + r, Math.PI * 1.5); return out; };
@@ -1141,6 +1142,125 @@ function landmark(name, face, build) {
   hotel('Harbor Grand Hotel', 'auto', { podH: 24.75, H: 99, mat: MAT.hotelcream, pat: 'punch', tw: .78, twMax: 62, td: .78, top: { type: 'crown', h: 4.5 }, loop: 'lawn', sign: 'HARBOR GRAND', canopy: [226, 216, 192], palms: true, parasols: [-.3, -.18, .18, .3], water: true, podFront: .34, podX: .08 });
   hotel('The Wharf Hotel', 'auto', { podH: 8, H: 91, mat: MAT.wharf, pat: 'hbands', podMat: MAT.tealglass, tw: .8, twMax: 90, td: .8, sign: 'THE WHARF', canopy: [150, 166, 170], palms: true, parasols: [-.32, -.22, .22], water: true, podFront: .32, pool: (L, w, d, f) => [w * .26, (L.y0 + f) / 2, w * .1, (f - L.y0) * .3] });
   hotel('Bayview Hotel', 'auto', { podH: 10, H: 90, mat: MAT.tealglass, pat: 'spandrel', podMat: MAT.tealglass, tower: 'octo', tw: .62, td: .7, top: { type: 'pool' }, loop: 'fountain', sign: 'BAYVIEW', canopy: [128, 160, 170], podFront: .45 });
+}
+// ---------- batch 4: leisure, retail and dealers from their sheets ----------
+{
+  const LAWN = [96, 124, 82], ASPH = [92, 94, 96], PAVE = [218, 212, 198];
+  Object.assign(MAT, {
+    clubbrick: { wall: [150, 84, 66], frame: [126, 70, 56], glass: [56, 76, 84], kind: 'punch' },
+    whitepav: { wall: [240, 236, 226], frame: [244, 240, 232], glass: [70, 104, 120], kind: 'glass' },
+    aurelia: { wall: [70, 82, 80], frame: [84, 96, 94], glass: [136, 166, 170], kind: 'glass' },
+    deptcream: { wall: [232, 218, 190], frame: [214, 198, 168], glass: [64, 92, 84], kind: 'deco' },
+    malltan: { wall: [204, 168, 128], frame: [188, 152, 112], glass: [64, 88, 96], kind: 'punch' },
+    autotan: { wall: [212, 182, 140], frame: [196, 166, 124], glass: [70, 96, 100], kind: 'glass' },
+    showroom: { wall: [96, 108, 104], frame: [110, 118, 114], glass: [138, 168, 172], kind: 'glass' }
+  });
+  const pav = K => K.ground(K.rect(K.lot.x0, K.lot.y0, K.lot.x1, K.lot.y1), PAVE, { tex: 'gran', grid: 2 });
+  const box = (K, u0, v0, u1, v1, z1, col, extra) => { const q = K.W((u0 + u1) / 2, (v0 + v1) / 2); props.push(Object.assign({ t: 'box', poly: K.rect(u0, v0, u1, v1), z1, col, x: q[0], y: q[1], h: z1, rad: Math.max(u1 - u0, v1 - v0) / 2 }, extra || {})); K.solidBox(u0, v0, u1, v1); };
+  const car = (K, u, v, angL, col, type = 'sedan') => { const q = K.W(u, v), a = K.ang + angL, T = ({ sedan: { L: 4.6, W: 1.84 }, suv: { L: 4.9, W: 1.98 } })[type] || { L: 4.6, W: 1.84 }, c = { type, x: q[0], y: q[1], ang: a, a, col, v: 0, speed: 0, brake: 0, parked: true, bay: null }; PARKED.push(c); solids.push({ F: frameOf(q[0], q[1], Math.cos(a), Math.sin(a)), x0: -T.L / 2, y0: -T.W / 2, x1: T.L / 2, y1: T.W / 2, wb: { x0: q[0] - 3, y0: q[1] - 3, x1: q[0] + 3, y1: q[1] + 3 }, car: c }); };
+  const CC = [[176, 64, 60], [232, 228, 214], [62, 98, 122], [92, 108, 90], [36, 38, 42], [190, 190, 186]];
+  const lotRows = (K, u0, u1, v0, v1, rows, carsFill = .55, seed = 1) => { K.ground(K.rect(u0, v0, u1, v1), ASPH, { tex: 'gran', grid: 4 }); const rd = (v1 - v0) / rows, n = Math.floor((u1 - u0) / 2.7);
+    for (let r = 0; r < rows; r++) { const a = v0 + r * rd, b2 = a + rd; K.stalls(u0, u0 + n * 2.7, r % 2 ? b2 - 5 : a, r % 2 ? b2 : a + 5, n); for (let i = 0; i < n; i++) if (hsh(seed, r, i, 5) < carsFill) car(K, u0 + (i + .5) * 2.7, r % 2 ? b2 - 2.5 : a + 2.5, Math.PI / 2, CC[Math.floor(hsh(seed, i, r, 9) * CC.length)], hsh(seed, i, r, 3) < .3 ? 'suv' : 'sedan'); } };
+
+  // the casino tower becomes the sheet's ten-sided drum
+  { const cb = buildings.find(b => b.casino); if (cb && cb.tiers[1]) { const T = cb.tiers[1], cx = (T.x0 + T.x1) / 2, cy = (T.y0 + T.y1) / 2; cb.tiers[1] = polyTier(polyEllipse(cx, cy, (T.x1 - T.x0) / 2 * 1.08, (T.y1 - T.y0) / 2, 10, Math.PI / 10), T.zb, T.zt, T.mat); } }
+
+  landmark('Private Members Club', 'auto', K => { const L = K.lot, w = L.x1 - L.x0, d = L.y1 - L.y0;
+    const fp = { x0: L.x0 + w * .08, y0: L.y0 + d * .38, x1: L.x1 - w * .08, y1: L.y1 - 3 };
+    K.setBuilding(fp, [{ ...fp, zb: 0, zt: 24, mat: MAT.clubbrick, pat: 'punch' }], { roofC: [150, 144, 136], lit: 'resi', kit: [{ x0: -4, y0: fp.y0 + 12, x1: -1, y1: fp.y0 + 18, h: .7, c: [176, 186, 180] }, { x0: 2, y0: fp.y0 + 12, x1: 5, y1: fp.y0 + 18, h: .7, c: [176, 186, 180] }] });
+    pav(K); K.slab(fp.x0 + 1, fp.y0 - 6, fp.x1 - 1, fp.y0, 5.2, 1.4, [150, 172, 128], 'MEMBERS CLUB', { posts: false, textCol: [226, 198, 120] });
+    K.ground(K.rect(fp.x0, L.y0 + 3, fp.x0 + w * .22, fp.y0 - 8), LAWN, { stripes: 1.4 }); K.ground(K.rect(fp.x1 - w * .22, L.y0 + 3, fp.x1, fp.y0 - 8), LAWN, { stripes: 1.4 });
+    for (const u of [fp.x0 + w * .11, fp.x1 - w * .11]) { K.prop('bench', u, (L.y0 + fp.y0) / 2); K.lamp(u, L.y0 + 4); }
+    box(K, fp.x1 - w * .2, L.y0 + 4, fp.x1 - w * .2 + 3.2, L.y0 + 6.4, 2.6, [118, 140, 140], { top: [100, 112, 108], glowN: [255, 220, 170] });
+    K.bollards(L.x0 + 2, L.x1 - 2, L.y0 + 1.2, 3.4); K.glow(0, fp.y0 - 3, 12, [255, 214, 150], .45);
+  });
+
+  landmark('Yacht Club', 'water', K => { const L = K.lot, w = L.x1 - L.x0, d = L.y1 - L.y0;
+    const fp = { x0: -Math.min(w * .4, 26), y0: L.y0 + Math.min(d * .3, 12), x1: Math.min(w * .4, 26), y1: L.y0 + Math.min(d * .3, 12) + Math.min(d * .4, 12) };
+    K.setBuilding(fp, [{ ...fp, zb: 0, zt: 6, mat: MAT.whitepav, pat: 'tallbays' }], { roofC: [130, 152, 150], lit: 'resi', pitched: { h: 3, axis: 'x' } });
+    K.ground(K.rect(L.x0, L.y0, L.x1, L.y1), [220, 214, 200], { tex: 'gran', grid: 2 });
+    K.ground(K.rect(fp.x0 - 6, L.y0 + 1, fp.x1 + 6, fp.y1 + 3), [176, 142, 104], { grid: .7 }); K.ground(K.rect(fp.x0 - 4, L.y0 + 3, fp.x1 + 4, fp.y0 - 1), [170, 186, 150], {});
+    for (const u of [fp.x0 - 2, fp.x0 + 8, fp.x1 - 8, fp.x1 + 2]) { const q = K.W(u, L.y0 + 4); props.push({ t: 'parasol', x: q[0], y: q[1], c: [232, 206, 176] }); K.solidRound(u, L.y0 + 4, .5); }
+    K.flags(fp.x0 - 5, fp.x0 - 5, L.y0 + 2, 1, [[184, 84, 70]]);
+    // pontoons run out over the water with yachts moored alongside
+    for (const u of [-w * .3, 0, w * .3]) { const pts = K.rect(u - 1.2, L.y0 - 24, u + 1.2, L.y0); props.push({ t: 'box', poly: pts, z1: .5, col: [176, 142, 104], x: K.W(u, L.y0 - 12)[0], y: K.W(u, L.y0 - 12)[1], h: .5, rad: 12 }); for (const sd of [-1, 1]) { const bu = u + sd * 3.4, bv = L.y0 - 12 - sd * 4, q = K.W(bu, bv); props.push({ t: 'boat', x: q[0], y: q[1], ang: K.ang + Math.PI / 2, L: 9, h: 1.4, rad: 4.5 }); } }
+    K.lamp(fp.x0 - 5, L.y0 + 8); K.lamp(fp.x1 + 5, L.y0 + 8); K.glow(0, fp.y0 - 2, 12, [255, 214, 150], .4);
+  });
+
+  landmark('Aurelia (top restaurant)', 'auto', K => { const L = K.lot, w = L.x1 - L.x0, d = L.y1 - L.y0;
+    const fp = { x0: L.x0 + w * .1, y0: L.y0 + d * .35, x1: L.x1 - w * .1, y1: L.y1 - 1 };
+    K.setBuilding(fp, [{ ...fp, zb: 0, zt: 10.4, mat: MAT.aurelia, pat: 'tallbays' }, { x0: fp.x0 - .3, y0: fp.y0 - .3, x1: fp.x1 + .3, y1: fp.y1 + .3, zb: 10.4, zt: 13, mat: { wall: [78, 90, 88], frame: [70, 80, 78], glass: [70, 80, 78], kind: 'punch' }, pat: 'hbands' }], { roofC: [110, 124, 118], lit: 'resi', kit: [{ x0: -3, y0: fp.y0 + 3, x1: -1, y1: fp.y0 + 5, h: .5, c: [176, 186, 180] }, { x0: 1, y0: fp.y0 + 3, x1: 3, y1: fp.y0 + 5, h: .5, c: [176, 186, 180] }] });
+    pav(K); K.slab(fp.x0, fp.y0 - 2.2, fp.x1, fp.y0, 7.2, 1.3, [74, 86, 84], 'AURELIA', { posts: false, textCol: [222, 188, 112] });
+    for (const u of [fp.x0 + 1.2, fp.x1 - 1.2]) K.ground(K.rect(u - 1.2, L.y0 + 1, u + 1.2, fp.y0 - 1), LAWN, {});
+    for (const [u, v] of [[-w * .15, (L.y0 + fp.y0) / 2], [w * .05, (L.y0 + fp.y0) / 2 + 1], [w * .2, (L.y0 + fp.y0) / 2 - .6]]) { const q = K.W(u, v); props.push({ t: 'parasol', x: q[0], y: q[1], c: [214, 176, 132] }); K.solidRound(u, v, .45); }
+    props.push({ t: 'bunting', pts: [K.W(fp.x0 + 1, fp.y0 - 1), K.W(fp.x1 - 1, fp.y0 - 1)], x: K.W(0, fp.y0 - 1)[0], y: K.W(0, fp.y0 - 1)[1], lights: true });
+    K.glow(0, (L.y0 + fp.y0) / 2, 10, [255, 210, 150], .55);
+  });
+
+  landmark('Department Store & Arcade', 'auto', K => { const L = K.lot, w = L.x1 - L.x0, d = L.y1 - L.y0;
+    const fp = { x0: L.x0 + w * .06, y0: L.y0 + d * .2, x1: L.x1 - w * .06, y1: L.y1 - 2 };
+    K.setBuilding(fp, [{ ...fp, zb: 0, zt: 6.5, mat: MAT.deptcream, pat: 'tallbays' }, { ...fp, zb: 6.5, zt: 30, mat: MAT.deptcream }], { civic: { name: '' }, roofC: [164, 168, 154], lit: 'office',
+      kit: [{ x0: -w * .1, y0: fp.y0 + 1, x1: w * .1, y1: fp.y1 - 1, h: 1.6, c: [140, 176, 172], glassRoof: true }] });
+    pav(K); K.slab(fp.x0 + 3, fp.y0 - 3.5, fp.x1 - 3, fp.y0, 4.6, .9, [134, 160, 168], 'DEPARTMENT STORE / ARCADE', { posts: false, textCol: [240, 244, 246] });
+    for (const u of [-w * .38, -w * .15, w * .15, w * .38]) K.lamp(u, L.y0 + 3); K.glow(0, fp.y0 - 2, 22, [255, 220, 170], .4);
+  });
+
+  landmark('Northgate Mall', 'auto', K => { const L = K.lot, w = L.x1 - L.x0, d = L.y1 - L.y0, back = L.y0 + d * .5;
+    const A = { x0: L.x0 + w * .04, y0: back, x1: L.x0 + w * .33, y1: L.y1 - 2 }, B = { x0: L.x1 - w * .33, y0: back, x1: L.x1 - w * .04, y1: L.y1 - 2 }, At = { x0: -w * .13, y0: back + 2, x1: w * .13, y1: L.y1 - 6 };
+    const fp = { x0: A.x0, y0: back, x1: B.x1, y1: L.y1 - 2 };
+    K.setBuilding(fp, [{ x0: A.x1, y0: back + 6, x1: B.x0, y1: L.y1 - 3, zb: 0, zt: 8, mat: MAT.malltan, pat: 'punch' }, { ...A, zb: 0, zt: 16, mat: MAT.malltan, pat: 'punch' }, { ...B, zb: 0, zt: 16, mat: MAT.malltan, pat: 'punch' }, { ...At, zb: 0, zt: 15, mat: MAT.tealglass, pat: 'tallbays' }], { multi: true, roofC: [160, 146, 128], lit: 'office' });
+    pav(K); lotRows(K, L.x0 + 3, L.x1 - 3, L.y0 + 2, back - 2, 2, .5, 17);
+    for (const u of [L.x0 + 4, 0, L.x1 - 4]) { K.ground(K.rect(u - 1.6, L.y0 + 9, u + 1.6, L.y0 + 13), LAWN, {}); K.tree(u, L.y0 + 11, 2.2); }
+    K.slab(At.x0, At.y0 - 3, At.x1, At.y0, 6, 1, [72, 104, 116], 'NORTHGATE MALL', { posts: false, textCol: [240, 244, 246] });
+    { const u = L.x1 - 6, v = L.y0 + 2.5; props.push({ t: 'pylon', poly: K.rect(u - 1.6, v - .3, u + 1.6, v + .3).slice().reverse(), z1: 7, col: [72, 96, 110], text: 'NORTHGATE', x: K.W(u, v)[0], y: K.W(u, v)[1], h: 7, rad: 1.6 }); K.solidBox(u - 1.6, v - .3, u + 1.6, v + .3); }
+    for (const u of [-w * .3, 0, w * .3]) K.lamp(u, (L.y0 + back) / 2);
+  });
+
+  landmark('Westbrook Mall', 'auto', K => { const L = K.lot, w = L.x1 - L.x0, d = L.y1 - L.y0, back = L.y0 + d * .45;
+    const main = { x0: L.x0 + w * .12, y0: L.y1 - d * .2, x1: L.x1 - w * .12, y1: L.y1 - 2 }, WA = { x0: L.x0 + w * .02, y0: back, x1: L.x0 + w * .24, y1: main.y0 + 4 }, WB = { x0: L.x1 - w * .24, y0: back, x1: L.x1 - w * .02, y1: main.y0 + 4 };
+    const fp = { x0: WA.x0, y0: back, x1: WB.x1, y1: main.y1 };
+    K.setBuilding(fp, [{ ...main, zb: 0, zt: 14, mat: MAT.malltan, pat: 'tallbays' }, { ...WA, zb: 0, zt: 11, mat: MAT.whitepav, pat: 'tallbays' }, { ...WB, zb: 0, zt: 11, mat: MAT.whitepav, pat: 'tallbays' }], { multi: true, roofC: [156, 146, 130], lit: 'office' });
+    pav(K); K.ground(K.rect(WA.x1 + 3, back + 4, WB.x0 - 3, main.y0 - 2), LAWN, { stripes: 1.6 });
+    for (const u of [-w * .14, w * .14]) { K.prop('planter', u, (back + main.y0) / 2); K.shrub(u, (back + main.y0) / 2, 1.1); }
+    K.slab(WA.x1, back + 1, WA.x1 + 9, back + 9, 3.6, .5, [196, 168, 128], null); K.slab(WB.x0 - 9, back + 1, WB.x0, back + 9, 3.6, .5, [196, 168, 128], null);
+    K.slab(-12, main.y0 - 3, 12, main.y0, 5, .8, [196, 168, 128], 'WESTBROOK', { posts: false, textCol: [70, 70, 64] });
+    lotRows(K, L.x0 + 3, L.x1 - 3, L.y0 + 2, back - 3, 2, .45, 23);
+    for (const u of [L.x0 + 4, 0, L.x1 - 4]) { K.ground(K.rect(u - 1.6, L.y0 + 9, u + 1.6, L.y0 + 13), LAWN, {}); K.palm(u, L.y0 + 11, 8); }
+  });
+
+  landmark('Harbor Auto Mart', 'auto', K => { const L = K.lot, w = L.x1 - L.x0, d = L.y1 - L.y0;
+    const fp = { x0: L.x1 - w * .32, y0: L.y0 + d * .25, x1: L.x1 - 2, y1: L.y1 - 2 };
+    K.setBuilding(fp, [{ ...fp, zb: 0, zt: 7.5, mat: MAT.autotan, pat: 'tallbays' }], { roofC: [168, 150, 120], lit: 'office' });
+    K.ground(K.rect(L.x0, L.y0, L.x1, L.y1), [214, 208, 196], { tex: 'gran', grid: 3 }); K.ground(K.rect(L.x0 + 2, L.y0 + 2, fp.x0 - 2, L.y1 - 2), ASPH, { tex: 'gran', grid: 3 });
+    K.slab(fp.x0 + .5, fp.y0 - 2, fp.x1 - .5, fp.y0, 6.4, 1, [214, 186, 140], 'AUTO MART', { posts: false, textCol: [120, 80, 50] });
+    const n = Math.floor((fp.x0 - L.x0 - 6) / 3); for (const v of [L.y0 + 6, L.y0 + 6 + Math.min(10, d * .35)]) for (let i = 0; i < n; i++) car(K, L.x0 + 4 + (i + .5) * 3, v, Math.PI / 2, CC[(i + (v > L.y0 + 7 ? 2 : 0)) % CC.length], i % 3 === 2 ? 'suv' : 'sedan');
+    props.push({ t: 'bunting', pts: [K.W(L.x0 + 2, L.y0 + 2), K.W(fp.x0 - 1, L.y0 + 2), K.W(fp.x0 - 1, fp.y0)], x: K.W((L.x0 + fp.x0) / 2, L.y0 + 2)[0], y: K.W((L.x0 + fp.x0) / 2, L.y0 + 2)[1] });
+    K.flags(L.x0 + 2, fp.x0 - 1, L.y0 + 1.5, 3, [[188, 92, 74], [96, 138, 130]]);
+  });
+
+  landmark('Circuit Prestige Motors', 'auto', K => { const L = K.lot, w = L.x1 - L.x0, d = L.y1 - L.y0;
+    const fp = { x0: L.x0 + w * .05, y0: L.y0 + d * .42, x1: L.x1 - w * .05, y1: L.y1 - 1 };
+    K.setBuilding(fp, [{ ...fp, zb: 0, zt: 7.2, mat: MAT.showroom, pat: 'tallbays' }, { x0: fp.x0 - .5, y0: fp.y0 - .6, x1: fp.x1 + .5, y1: fp.y1 + .3, zb: 7.2, zt: 9, mat: { wall: [86, 96, 94], frame: [80, 90, 88], glass: [80, 90, 88], kind: 'punch' }, pat: 'hbands' }], { roofC: [120, 130, 124], lit: 'office', kit: [{ x0: -6, y0: fp.y0 + 3, x1: -3, y1: fp.y0 + 5, h: .5, c: [176, 186, 180] }, { x0: 3, y0: fp.y0 + 3, x1: 6, y1: fp.y0 + 5, h: .5, c: [176, 186, 180] }] });
+    pav(K); K.slab(fp.x0 + 1.5, fp.y0 - 3, fp.x1 - 1.5, fp.y0, 6.2, 1, [86, 96, 94], 'CIRCUIT PRESTIGE', { posts: false, textCol: [222, 188, 112] });
+    for (const [u, col] of [[-w * .27, [170, 54, 44]], [w * .27, [70, 96, 120]]]) { const v = (L.y0 + fp.y0) / 2; K.ground(K.rect(u - 3.8, v - 2.4, u + 3.8, v + 2.4), [150, 160, 158], { edge: { c: [236, 236, 230], w: .2 } }); car(K, u, v, 0, col); }
+    K.glow(0, fp.y0 - 1, 14, [230, 240, 255], .45);
+  });
+
+  // Midtown Plaza: an open square with lawn, a long oval pool, a pavilion stage, two kiosks and trees
+  { const L = C.lots.find(l => l.kind === 'mplaza'); if (L && L.ab) { const F = frameOf((L.ab.x0 + L.ab.x1) / 2, (L.ab.y0 + L.ab.y1) / 2, 1, 0), hw = (L.ab.x1 - L.ab.x0) / 2 - 1, hd = (L.ab.y1 - L.ab.y0) / 2 - 1, W = (u, v) => toW(F, u, v), R = (u0, v0, u1, v1) => [W(u0, v0), W(u1, v0), W(u1, v1), W(u0, v1)];
+      const G = { wb: rectWB(F, { x0: -hw, y0: -hd, x1: hw, y1: hd }), clip: R(-hw, -hd, hw, hd), shapes: [], glows: [] }; GROUNDS.push(G);
+      G.shapes.push({ pts: R(-hw, -hd, hw, hd), c: PAVE, tex: 'gran', grid: 2 }, { pts: R(-hw * .86, -hd * .66, hw * .86, hd * .7), c: [150, 172, 122], stripes: 2.4, edge: { c: [232, 228, 214], w: .4 } });
+      const pr = (u, v, r) => { const q = W(u, v); solids.push({ round: r, x: q[0], y: q[1], wb: { x0: q[0] - r - .1, y0: q[1] - r - .1, x1: q[0] + r + .1, y1: q[1] + r + .1 } }); };
+      const ep = polyEllipse(0, hd * .05, Math.min(hw * .22, 22), Math.min(hd * .26, 12), 32).map(([u, v]) => W(u, v)), ep2 = polyEllipse(0, hd * .05, Math.min(hw * .22, 22) + 1.6, Math.min(hd * .26, 12) + 1.6, 32).map(([u, v]) => W(u, v));
+      G.shapes.push({ pts: ep2, c: [232, 226, 210] }, { pts: ep, c: [84, 150, 160], water: true }); { const q = W(0, hd * .05); props.push({ t: 'cfount', x: q[0], y: q[1], r: 2.4 }); G.glows.push({ x: q[0], y: q[1], r: 20, c: [120, 190, 255], a: .35 }); }
+      for (let i = 0; i < 12; i++) { const a = i / 12 * TAU; pr(Math.cos(a) * (Math.min(hw * .22, 22) + .8), hd * .05 + Math.sin(a) * (Math.min(hd * .26, 12) + .8), 1.6); }
+      const bx = (u0, v0, u1, v1, z1, col, glowN) => { const q = W((u0 + u1) / 2, (v0 + v1) / 2); props.push({ t: 'box', poly: R(u0, v0, u1, v1), z1, col, glowN, x: q[0], y: q[1], h: z1, rad: Math.max(u1 - u0, v1 - v0) / 2 }); solids.push({ F, x0: u0, y0: v0, x1: u1, y1: v1, wb: rectWB(F, { x0: u0, y0: v0, x1: u1, y1: v1 }) }); };
+      bx(-hw * .14, -hd * .6, hw * .14, -hd * .48, 3.6, [156, 142, 124]); { const q = W(0, -hd * .54); props.push({ t: 'slab', poly: [W(hw * .15, -hd * .62), W(-hw * .15, -hd * .62), W(-hw * .15, -hd * .44), W(hw * .15, -hd * .44)], z: 4.4, th: .5, col: [96, 106, 104], posts: false, x: q[0], y: q[1], h: 5, rad: hw * .15 }); }
+      bx(-hw * .62, -hd * .14, -hw * .5, hd * .06, 3, [176, 102, 90], [255, 214, 160]); bx(hw * .5, -hd * .14, hw * .62, hd * .06, 3, [176, 102, 90], [255, 214, 160]);
+      for (const u of [-.78, -.5, .5, .78]) for (const v of [-.8, .82]) { const q = W(hw * u, hd * v); props.push({ t: 'tree', x: q[0], y: q[1], r: 3, seed: (u * 31 + v * 17) | 0 }); pr(hw * u, hd * v, .3); }
+      for (const u of [-.62, -.38, .38, .62]) { const q = W(hw * u, hd * .55); props.push({ t: 'bench', x: q[0], y: q[1] }); }
+      for (const u of [-.9, .9]) for (const v of [-.9, .9]) { const q = W(hw * u, hd * v); lamps.push({ x: q[0], y: q[1], ax: 0, ay: 0, cool: false, short: true }); }
+      gridSolids(); } }
 }
 // ---------- City Hall, from the concept sheet ----------
 // Two tall storeys of cream stone with pilasters, a columned portico with a pediment, a copper dome on a drum,
@@ -2429,7 +2549,7 @@ function drawRoof(b, T, top) {
   if (b.dome && top) drawDome(b, zt);
   if (b.top && top) drawTop(b, T, zt);
   if (b.casino && top) { // a gold crown ring on the tower roof, lit after dark
-    const i = 2.2, rr = roofPoly(T.x0 + i, T.y0 + i, T.x1 - i, T.y1 - i, zt + .1), n = ENV.night;
+    const i = 2.2, rr = T.poly ? (() => { const c = polyCentroid(T.poly); return polyXform(T.poly, c[0], c[1], .88).map(q => P(q[0], q[1], zt + .1)); })() : roofPoly(T.x0 + i, T.y0 + i, T.x1 - i, T.y1 - i, zt + .1), n = ENV.night;
     ctx.strokeStyle = n > .25 ? `rgba(255,214,120,${.6 + .4 * n})` : tone([206, 170, 90], zt); ctx.lineWidth = clamp(k * .5, 1.5, 9); ctx.beginPath(); rr.forEach((q, j) => j ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.closePath(); ctx.stroke();
     const c = P((T.x0 + T.x1) / 2, (T.y0 + T.y1) / 2, zt); if (n > .3) beaconSoft(c, [255, 190, 100], clamp(k * 14, 20, 260));
   }
@@ -2739,6 +2859,16 @@ function drawProp(p) {
           planeText(o, ex, ey, w, th * .8, p.text, ENV.night > .3 ? `rgba(255,236,196,${.6 + .4 * ENV.night})` : tone(p.textCol || [60, 64, 66], z), { w: 700, font: 'Georgia,serif' }); } }
       if (ENV.night > .3) { const q = P(p.x, p.y, z - .2); beaconSoft(q, [255, 220, 170], clamp(k * 3, 6, 70)); }
       break; }
+    case 'box': { drawPrism(p.poly, p.poly, p.z0 || 0, p.z1, p.col, tone(p.top || mixc(p.col, [255, 255, 255], .1), p.z1)); if (p.glowN && ENV.night > .3) beaconSoft(P(p.x, p.y, p.z1 * .6), p.glowN, clamp(k * 3, 6, 60)); break; }
+    case 'pylon': { const a = p.poly; drawPrism(a, a, 0, p.z1, p.col, tone(mixc(p.col, [255, 255, 255], .15), p.z1)); if (p.text) { const f = a[0], g = a[1], L = Math.hypot(g[0] - f[0], g[1] - f[1]), ux = (g[0] - f[0]) / L, uy = (g[1] - f[1]) / L, o = P(f[0], f[1], p.z1 - .5), ex = sub(P(f[0] + ux, f[1] + uy, p.z1 - .5), o), ey = sub(P(f[0], f[1], p.z1 - 1.5), o); planeText(o, ex, ey, L, 1.6, p.text, ENV.night > .3 ? `rgba(240,248,255,${.6 + .4 * ENV.night})` : tone([240, 240, 236], p.z1), { w: 700 }); } break; }
+    case 'bunting': { const t = performance.now() / 1000; ctx.strokeStyle = tone([90, 90, 90], 4); ctx.lineWidth = 1; for (let i = 0; i + 1 < p.pts.length; i++) { const A = p.pts[i], B = p.pts[i + 1], n = Math.max(2, Math.round(Math.hypot(B[0] - A[0], B[1] - A[1]) / .9));
+        ctx.beginPath(); for (let j = 0; j <= n; j++) { const f = j / n, sag = Math.sin(f * Math.PI) * .8, q = P(A[0] + (B[0] - A[0]) * f, A[1] + (B[1] - A[1]) * f, 4.2 - sag); j ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); } ctx.stroke();
+        for (let j = 0; j < n; j++) { const f = (j + .5) / n, sag = Math.sin(f * Math.PI) * .8, x = A[0] + (B[0] - A[0]) * f, y = A[1] + (B[1] - A[1]) * f, d = .3; fillPoly([P(x - (B[0] - A[0]) / n * .4, y - (B[1] - A[1]) / n * .4, 4.2 - sag), P(x + (B[0] - A[0]) / n * .4, y + (B[1] - A[1]) / n * .4, 4.2 - sag), P(x + Math.sin(t * 3 + j) * .08, y, 4.2 - sag - .7)], tone(j % 2 ? [176, 80, 64] : [96, 138, 130], 4)); } } break; }
+    case 'boat': { const c = Math.cos(p.ang), sn = Math.sin(p.ang), L = p.L || 9, W2 = L * .17, bob = Math.sin(performance.now() / 900 + p.x) * .08, w = (a, b2) => [p.x + c * a - sn * b2, p.y + sn * a + c * b2];
+      const hull = [w(L / 2, 0), w(L * .25, W2), w(-L / 2, W2 * .8), w(-L / 2, -W2 * .8), w(L * .25, -W2)]; drawPrism(hull, hull, .1 + bob, 1.1 + bob, [236, 236, 232], tone([214, 196, 160], 1.1));
+      const cab = [w(L * .1, W2 * .55), w(-L * .25, W2 * .55), w(-L * .25, -W2 * .55), w(L * .1, -W2 * .55)]; drawPrism(cab, cab, 1.1 + bob, 2 + bob, [226, 228, 228], tone([92, 120, 132], 2));
+      const m0 = w(L * .12, 0), a = P(m0[0], m0[1], 2 + bob), t = P(m0[0], m0[1], 11 + bob); ctx.strokeStyle = tone([210, 210, 206], 8); ctx.lineWidth = clamp(k * .08, .5, 2); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(t[0], t[1]); ctx.stroke();
+      if (ENV.night > .3) beacon(t, [255, 255, 240], 2.2); break; }
     case 'parasol': drawCyl(p.x, p.y, .45, .7, .76, [214, 210, 200]); break;
     case 'statue': { drawPrism(p.base, p.base, 0, 1.6, [200, 194, 182], tone([214, 208, 196], 1.6)); drawCyl(p.x, p.y, .45, 1.6, 3.4, [112, 88, 56]); drawCyl(p.x, p.y, .28, 3.4, 4, [120, 94, 60]); break; }
     case 'fence': { ctx.strokeStyle = tone([70, 74, 78], 1.2); ctx.lineWidth = clamp(k * .06, .5, 2); ctx.beginPath(); for (const z of [.15, p.h || 2.2]) p.pts.forEach((q, i) => { const a = P(q[0], q[1], z); i ? ctx.lineTo(a[0], a[1]) : ctx.moveTo(a[0], a[1]); }); for (let i = 0; i + 1 < p.pts.length; i++) { const A = p.pts[i], B = p.pts[i + 1], L = Math.hypot(B[0] - A[0], B[1] - A[1]), n = Math.max(1, Math.round(L / 1.2)); for (let j = 0; j <= n; j++) { const x = A[0] + (B[0] - A[0]) * j / n, y = A[1] + (B[1] - A[1]) * j / n, a = P(x, y, 0), c = P(x, y, p.h || 2.2); ctx.moveTo(a[0], a[1]); ctx.lineTo(c[0], c[1]); } } ctx.stroke(); break; }
@@ -4995,6 +5125,7 @@ function renderScene() {
     else if (p.t === 'cart') { addSmall(p.x, p.y, 1.2, 1.1, () => drawProp(p)); addOver({ x0: p.x - 1.45, x1: p.x + 1.45, y0: p.y - 1.45, y1: p.y + 1.45 }, 2.8, () => drawCartUmbrella(p), true); }
     else if (p.t === 'kiosk') addSmall(p.x, p.y, 2.6, 2, () => drawProp(p));
     else if (p.t === 'palm') { addSmall(p.x, p.y, p.h, .3, () => drawPalmTrunk(p)); const tp = palmTop(p); addOver({ x0: tp[0] - p.r, x1: tp[0] + p.r, y0: tp[1] - p.r, y1: tp[1] + p.r }, p.h + 1, () => drawPalmCrown(p), true); }
+    else if (p.t === 'bunting') addOver({ x0: Math.min(...p.pts.map(q => q[0])), x1: Math.max(...p.pts.map(q => q[0])), y0: Math.min(...p.pts.map(q => q[1])), y1: Math.max(...p.pts.map(q => q[1])) }, 4.4, () => drawProp(p), true);
     else if (p.t === 'slab') { const xs = p.poly.map(q => q[0]), ys = p.poly.map(q => q[1]); addOver({ x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) }, p.z + p.th, () => drawProp(p), true); }
     else if (p.t === 'parasol') { addSmall(p.x, p.y, .8, .6, () => drawProp(p)); addOver({ x0: p.x - 1.6, x1: p.x + 1.6, y0: p.y - 1.6, y1: p.y + 1.6 }, 2.6, () => drawParasol(p), true); }
     else if (p.t === 'ccanopy') { const xs = p.poly.map(q => q[0]), ys = p.poly.map(q => q[1]); addOver({ x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) }, 6.2, () => drawProp(p), true); }
