@@ -4685,7 +4685,7 @@ function buildLobby(ox, oy) {
 function buildOffice(ox, oy) {
   const W = 36, H = 26;
   const I = mkInterior({
-    name: 'Meridian Capital, level 32', ox, oy, w: W, h: H, wallC: [214, 212, 206], wallTop: [60, 62, 64], dayAmb: [1, .99, .97], nightAmb: [.84, .82, .78], highUp: true,
+    name: 'Apogee Bank, level 32', ox, oy, w: W, h: H, wallC: [214, 212, 206], wallTop: [60, 62, 64], dayAmb: [1, .99, .97], nightAmb: [.84, .82, .78], highUp: true,
     floors: [{ x0: 0, y0: 0, x1: W, y1: H, m: 'gcarpet' }, { x0: 13, y0: 9, x1: 23, y1: 17, m: 'dtile' }, { x0: 26, y0: 18, x1: 36, y1: 26, m: 'lino' }],
     wallsH: [[0, 0, W, [], { ext: true, win: [[.5, 35.5]] }], [H, 0, W, [], { ext: true, win: [[.5, 35.5]] }], [9, 13, 23, [[16.5, 19.5]]], [17, 13, 23, [[15, 16.5], [19.5, 21]]], [7, 0, 6], [7, 30, 36]],
     wallsV: [[0, 0, H, [], { ext: true, win: [[.5, 25.5]] }], [W, 0, H, [], { ext: true, win: [[.5, 25.5]] }], [13, 9, 17], [23, 9, 17], [6, 0, 7, [[5, 6.2]]], [30, 0, 7, [[5, 6.2]]]],
@@ -6691,7 +6691,7 @@ window.GAME = (() => {
   // the employer: a tall tower near the middle of the CBD
   const cbdC = [(C.CBDB.x0 + C.CBDB.x1) / 2, (C.CBDB.y0 + C.CBDB.y1) / 2];
   const WORK = LOTL.filter(l => l.kind === 'tower' && l.cs && (l.h || 0) > 60 && LOTB.has(l.id)).sort((a, b) => Math.hypot(a.cx - cbdC[0] - 120, a.cy - cbdC[1]) - Math.hypot(b.cx - cbdC[0] - 120, b.cy - cbdC[1]))[0];
-  const EMPLOYER = 'Meridian Capital';
+  const EMPLOYER = 'Apogee Bank';
   for (const b of buildings) if (b.crown === 'NORTHGATE') b.crown = 'MERIDIAN';
   if (WORK) LOTB.get(WORK.id)[0].crown = 'NORTHGATE';
   // the share house keeps its pitched roof whatever the street's variety pass picked for the lot
@@ -6725,8 +6725,8 @@ window.GAME = (() => {
     law: [['Associate', 120000]] };
   const NEED = [30, 55, 90, 140, 180, 240, 300], TENURE = [42, 90, 150, 240, 365, 540, 730]; // solid shifts and days in the role for each step
   const COS = [
-    { id: 'meridian', name: EMPLOYER, ind: 'Banking', lad: 'bank', area: ['core'], boss: ['Ms Calder', true], tk: 'MRC', about: 'The established bank. Old money, big deals, long hours.' },
-    { id: 'fairhaven', name: 'Fairhaven Trust', ind: 'Banking', lad: 'bank', area: ['core', 'cbd'], boss: ['Mr Okafor', false], tk: 'FHT', about: 'The rival bank, hungry to catch Meridian and quick to hire away its people.' },
+    { id: 'meridian', name: EMPLOYER, ind: 'Banking', lad: 'bank', area: ['core'], boss: ['Ms Calder', true], tk: 'APB', about: 'The established bank. Old money, big deals, long hours.' },
+    { id: 'fairhaven', name: 'Fairhaven Trust', ind: 'Banking', lad: 'bank', area: ['core', 'cbd'], boss: ['Mr Okafor', false], tk: 'FHT', about: 'The rival bank, hungry to catch Apogee and quick to hire away its people.' },
     { id: 'blackfen', name: 'Blackfen Partners', ind: 'Hedge fund', lad: 'fund', area: ['cbd', 'core'], boss: ['Ms Varga', true], about: 'A hedge fund. Pay follows your track record, and so does your seat.' },
     { id: 'thorne', name: 'Thorne and Vale', ind: 'Consulting', lad: 'consult', area: ['cbd', 'core'], boss: ['Mr Ellison', false], about: 'Consultants to every industry in the city. You learn everyone’s business.' },
     { id: 'kestrel', name: 'Kestrel Systems', ind: 'Big tech', lad: 'corp', area: ['mid', 'cbd'], boss: ['Ms Tanaka', true], tk: 'KSY', tech: true, about: 'The dependable tech giant. Finance roles now, engineering roles in a later update.' },
@@ -6762,7 +6762,7 @@ window.GAME = (() => {
   function mountHQ(S) { for (const d of HQDOORS) { d.k = 'shop'; d.sub = 'Offices'; } HQDOORS.length = 0;
     for (const c of COS) { const id = S.hq[c.id]; if (!id) continue; const d = doorFor(id, { k: 'hq', co: c.id, to: 'lobby', name: S.hq.names[c.id], sub: c.name + (c.small ? ', leased floors' : ' headquarters'), sign: S.hq.names[c.id].split(' ')[0].toUpperCase() }); if (d) HQDOORS.push(d); } }
   const empDoor = () => { const J = S.player.job, id = J && J.co && hqOf(J.co); return (id && HQDOORS.find(d => d.lot === id)) || workDoor; };
-  // the manager: Ms Calder at Meridian, someone else elsewhere
+  // the manager: Ms Calder at Apogee, someone else elsewhere
   const bossName = () => { const c = coById(S.player.job && S.player.job.co) || COS[0]; return c.boss[0]; };
   const bossMale = () => { const c = coById(S.player.job && S.player.job.co) || COS[0]; return !c.boss[1]; };
   const bossLook = () => { const co = (S.player.job && S.player.job.co) || 'meridian'; if (co === 'meridian') return BOSSL; S.bossL = S.bossL || {}; const c = coById(co);
@@ -7127,7 +7127,7 @@ window.GAME = (() => {
     for (const r of P2.querySelectorAll('[data-v]')) r.oninput = () => { const kq = r.dataset.v; AU.vol[kq] = r.value / 100; if (AC && au[kq]) ramp(au[kq].gain, AU.vol[kq], .05); };
     $('bRes').onclick = closeMenu; $('bTools').onclick = testTools; $('bChase').onclick = () => { CHASE.on = !CHASE.on; try { localStorage.setItem('co_chase', CHASE.on ? '1' : '0'); } catch (e) { } $('bChase').textContent = 'Chase camera: ' + (CHASE.on ? 'on' : 'off'); }; $('modal').hidden = false; menu.keys = null; }
 
-  // ---------------- interiors: the share house, the Northgate lobby and the Meridian floor ----------------
+  // ---------------- interiors: the share house, the Northgate lobby and the Apogee floor ----------------
   const roomName = r => r === 'house' ? 'Home' : r === 'lobby' ? towerName((S.player.job && S.player.job.co) || 'meridian') : r === 'office' ? `${empName()}, level ${floorOf((S.player.job && S.player.job.co) || 'meridian')}` : (INSIDE && INSIDE.name) || r;
   const roomKey = () => INSIDE ? Object.keys(INTERIORS).find(kq => INTERIORS[kq] === INSIDE) : null;
   const DOOR_OF = { house: () => homeDoor, lobby: () => empDoor(), office: () => empDoor() };
@@ -7198,7 +7198,7 @@ window.GAME = (() => {
     const N = S.player.needs, h = gHour();
     if (f.id === 'lift') { fadeTo('', '', () => { enterInteriorSwap(f.to); }, 250); return; }
     if (f.id === 'npc' && f.n.coll) { const nm = S.player.name || 'you'; f.n.open = f.n.metBefore ? null : f.n.sit ? ['Oh, hi. You are the new graduate, right? Welcome to the floor.', 'Hey. Settling in alright?', 'Hi. Sorry, head down on a deadline. What is up?'] : ['Hey, you are the new one, right? Welcome aboard.', 'Morning. Coffee run, want anything?']; return startTalk(f.n); }
-    if (f.id === 'npc') { const nm = f.n.name; if (nm === 'Rob') { if (robWhere() === 'robroom' || f.n.sleep) return toast('Rob is fast asleep.', 2); return talkRob(); } return say(nm, VOICE.forPerson(nm, f.n.L && f.n.L.fem ? 'f' : 'm', 30), { Jess: ({ desk: ['Hey! I am cramming for a pharmacology exam. Do not let me near the couch.', 'Do you know anything about the kidneys? No? Me neither, apparently.', 'Three more chapters. Then sleep. Then three more chapters.'], kitchen: gHour() < 12 ? ['Morning. Do not talk to me until this coffee kicks in.', 'Clinicals today. Wish me luck.'] : ['Rob burned the rice again. We are eating it anyway.', 'Long day on the wards. I could eat this whole pot.'], couch: ['One episode. Then back to study. Probably.', 'Do not tell my study group I am on the couch.'] }[jessWhere()] || ['Hey!']).sort(() => Math.random() - .5)[0], Grace: 'Good morning. Meridian is on thirty two, the lifts are just behind me.', Tom: 'Lanyard on you? Go on through.' }[nm] || 'Hi there.', [{ text: 'See you later', effects: { need: { mood: 1 } } }], f.n.L); }
+    if (f.id === 'npc') { const nm = f.n.name; if (nm === 'Rob') { if (robWhere() === 'robroom' || f.n.sleep) return toast('Rob is fast asleep.', 2); return talkRob(); } return say(nm, VOICE.forPerson(nm, f.n.L && f.n.L.fem ? 'f' : 'm', 30), { Jess: ({ desk: ['Hey! I am cramming for a pharmacology exam. Do not let me near the couch.', 'Do you know anything about the kidneys? No? Me neither, apparently.', 'Three more chapters. Then sleep. Then three more chapters.'], kitchen: gHour() < 12 ? ['Morning. Do not talk to me until this coffee kicks in.', 'Clinicals today. Wish me luck.'] : ['Rob burned the rice again. We are eating it anyway.', 'Long day on the wards. I could eat this whole pot.'], couch: ['One episode. Then back to study. Probably.', 'Do not tell my study group I am on the couch.'] }[jessWhere()] || ['Hey!']).sort(() => Math.random() - .5)[0], Grace: 'Good morning. Apogee is on thirty two, the lifts are just behind me.', Tom: 'Lanyard on you? Go on through.' }[nm] || 'Hi there.', [{ text: 'See you later', effects: { need: { mood: 1 } } }], f.n.L); }
     if (f.id === 'svc') return useSvc(f.f);
     if (f.id === 'work') return atWork(f.f); if (f.id === 'coffee') return menu('Office kitchen', 'Free coffee, one of the good things about the job.', [{ t: 'Make a coffee', s: 'Free, energy up', fn: () => { CR.passMinutes(S, 10); need('energy', 10); toast('Strong and bitter.'); closeMenu(); } }]);
     if (f.id === 'sit') { sitDown(f.st); if (f.st.f && f.st.f.t === 'sofa') toast('E to watch TV, or move to get up.', 2.5); return; }
@@ -7350,7 +7350,7 @@ window.GAME = (() => {
   // fixed rate set from the central bank rate. Tips from people who work in finance are inside information.
   // Prices are kept as daily bars (open, high, low, close) for a year and 15-minute bars for the last five sessions.
   const CO = [ // [symbol, name, sector, start price in cents, daily volatility %, dividend yield %]
-    ['HBF', 'Harbor Federal', 'Banks', 4200, 1.3, 4.2], ['FHT', 'Fairhaven Trust', 'Banks', 6100, 1.1, 4.8], ['CLC', 'Calloway Capital', 'Banks', 2850, 1.6, 2.5], ['SRB', 'Silverbank Investment', 'Banks', 3100, 1.8, 3.2], ['MRC', 'Meridian Capital', 'Banks', 8500, 1.2, 3.8],
+    ['HBF', 'Harbor Federal', 'Banks', 4200, 1.3, 4.2], ['FHT', 'Fairhaven Trust', 'Banks', 6100, 1.1, 4.8], ['CLC', 'Calloway Capital', 'Banks', 2850, 1.6, 2.5], ['SRB', 'Silverbank Investment', 'Banks', 3100, 1.8, 3.2], ['APB', 'Apogee Bank', 'Banks', 8500, 1.2, 3.8],
     ['NSI', 'Northshore Insurance', 'Insurance', 5400, 1.1, 4.0], ['GRA', 'Granite Assurance', 'Insurance', 3800, 1.3, 3.4],
     ['KSY', 'Kestrel Systems', 'Tech', 11800, 2.4, 0], ['BWS', 'Brightwater Software', 'Tech', 7400, 2.2, .4], ['ORD', 'Orion Devices', 'Tech', 15600, 2.0, 1.0], ['CVN', 'Corvid Networks', 'Tech', 3200, 2.8, 0],
     ['QNT', 'Quantix Chips', 'Tech', 8900, 2.6, .3], ['CLD', 'Cloudpeak Systems', 'Tech', 4300, 2.9, 0], ['PYL', 'Paylane', 'Tech', 900, 4.0, 0],
@@ -7414,6 +7414,12 @@ window.GAME = (() => {
   function initMarket(S) { S.mkt = { px: {}, open: {}, hist: {}, d: {}, q: {}, cur: {}, base: {}, t: S.time, day: -1, stories: [], earn: [], pend: [], fizz: [] }; migrateMarket(S); return S.mkt; }
   // also brings older saves up to date: fills in the new companies, a year of daily bars, the fund and the account fields
   function migrateMarket(S) { const M = S.mkt, d0 = Math.floor(S.time / 1440), r = rngFor(77);
+    // the bank was renamed from Meridian Capital (MRC) to Apogee Bank (APB): carry old saves across
+    for (const k of ['d', 'q', 'cur', 'base', 'open', 'hist', 'px']) if (M[k] && M[k].MRC != null && M[k].APB == null) { M[k].APB = M[k].MRC; delete M[k].MRC; }
+    if (S.player && S.player.job && S.player.job.employer === 'Meridian Capital') S.player.job.employer = 'Apogee Bank';
+    if (S.port && S.port.MRC && !S.port.APB) { S.port.APB = S.port.MRC; delete S.port.MRC; }
+    for (const m of S.mail || []) for (const f of ['subj', 'text']) if (m[f]) m[f] = m[f].replace(/Meridian Capital/g, 'Apogee Bank').replace(/Meridian/g, 'Apogee');
+    for (const t of S.tx || []) if (t.text) t.text = t.text.replace(/Meridian Capital/g, 'Apogee Bank');
     for (const k of ['d', 'q', 'cur', 'base', 'open', 'hist', 'px']) M[k] = M[k] || {}; M.extra = M.extra || []; M.alerts = M.alerts || []; M.divs = M.divs || []; if (M.rate == null) M.rate = 4.25;
     if (M.ipoNext == null) M.ipoNext = d0 + 6 + Math.floor(r() * 10); if (M.fundDiv == null) M.fundDiv = d0 + 20 + Math.floor(r() * 60);
     const prevDays = []; for (let d = d0 - 1; prevDays.length < 5; d--) if (tradingDay(d)) prevDays.unshift(d);
@@ -8193,7 +8199,7 @@ window.GAME = (() => {
     const N = S.player.needs; if (!paused && N.energy < 8 && !tick.warned) { tick.warned = true; toast('You are exhausted. Find your bed or a coffee.', 5); } if (N.energy > 20) tick.warned = false;
   }
   function intro() { const t0 = performance.now(); const go = () => { if (!window.PORTRAITS_READY && performance.now() - t0 < 8000) return setTimeout(go, 100); introSay(); }; setTimeout(go, 600); }
-  function introSay() { setTimeout(() => say('Rob', VOICES.rob, 'Welcome home, roomie! Your room is the big one at the back, past the kitchen. Big first day at Meridian tomorrow, huh?', [{ text: 'Nine o clock sharp. Wish me luck.', effects: { rel: { rob: 3 } }, reply: 'You will smash it. Get an early night tonight, I will keep the music down. Probably.' }], robLook(), 'happy'), 0); }
+  function introSay() { setTimeout(() => say('Rob', VOICES.rob, 'Welcome home, roomie! Your room is the big one at the back, past the kitchen. Big first day at Apogee tomorrow, huh?', [{ text: 'Nine o clock sharp. Wish me luck.', effects: { rel: { rob: 3 } }, reply: 'You will smash it. Get an early night tonight, I will keep the music down. Probably.' }], robLook(), 'happy'), 0); }
 
   // ---------------- start ----------------
   const G = { hold: false, key, tick, say, get S() { return S; }, music, HOME, WORK, homeDoor, workDoor, save, load, interact, roomKey, openPhone, closePhone, openLaptop, closeLaptop, startGame, ffwd, get FF() { return FF; }, get phoneOpen() { return phoneOpen; }, use: f => useRoom(f), get busy() { return !!(modalOpen || dlgOpen || FF || fading); } };
