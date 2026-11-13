@@ -1070,6 +1070,18 @@ function landmarkB(b, face, build) {
   };
   build(K); gridSolids(); return b;
 }
+// ---- whole-block sites: the revised sheets fill the entire block, so the grounds are clipped to the block outline and the
+// extra buildings stand on it as buildings of their own. Each sheet's plan is mapped from its pixels to the site frame.
+const siteKit = (K, px) => { const b = K.b, lot = C.lots.find(l => (LOTB.get(l.id) || []).includes(b)), blkW = lot.block;
+  K.G.clip = blkW; const xs = blkW.map(q => q[0]), ys = blkW.map(q => q[1]); K.G.wb = { x0: Math.min(...xs) - 2, y0: Math.min(...ys) - 2, x1: Math.max(...xs) + 2, y1: Math.max(...ys) + 2 };
+  const R = (a, b2, c, d) => { const p = px(a, b2), q = px(c, d); return { x0: Math.min(p[0], q[0]), x1: Math.max(p[0], q[0]), y0: Math.min(p[1], q[1]), y1: Math.max(p[1], q[1]) }; };
+  const poly = pts => pts.map(([x, y]) => px(x, y)), W2 = pts => pts.map(([u, v]) => K.W(u, v)), rr = mulberry(strHash(b.name));
+  const extra = (fp, tiers, o = {}) => { const nb = newBuilding(null, K.F, fp, Math.max(...tiers.map(t => t.zt)), 'inner', { mat: 'concrete', shops: null, lit: o.lit || 'office', streetSides: { N: false, S: false, E: false, W: false } }, rr);
+    nb.tiers = tiers; nb.H = Math.max(...tiers.map(t => t.zt)); nb.multi = tiers.length > 1; if (nb.H < 16) Object.assign(nb, { plant: null, tank: null, vents: [], cool: [], sky: null, ant: null, crown: null, kit: [] }); Object.assign(nb, o); LOTB.get(lot.id).push(nb); return nb; };
+  const at = (x, y) => px(x, y), tree = (x, y, r = 2.6) => { const q = px(x, y); K.tree(q[0], q[1], r); };
+  const stalls = (a, b2, c, d, n) => { const r = R(a, b2, c, d); K.stalls(r.x0, r.x1, r.y0, r.y1, n); };
+  return { lot, blkW, R, poly, W2, extra, at, tree, stalls, rr }; };
+const PAVE2 = [226, 220, 204], DRIVE2 = [104, 106, 110];
 // ---------- batch 3: civic buildings and hotels from their sheets ----------
 {
   Object.assign(MAT, {
@@ -1127,18 +1139,6 @@ function landmarkB(b, face, build) {
     K.glow(0, fp.y0 - 4, 22, [255, 214, 160], .5);
   });
 
-  // ---- whole-block sites: the revised sheets fill the entire block, so the grounds are clipped to the block outline and the
-  // extra buildings stand on it as buildings of their own. Each sheet's plan is mapped from its pixels to the site frame.
-  const siteKit = (K, px) => { const b = K.b, lot = C.lots.find(l => (LOTB.get(l.id) || []).includes(b)), blkW = lot.block;
-    K.G.clip = blkW; const xs = blkW.map(q => q[0]), ys = blkW.map(q => q[1]); K.G.wb = { x0: Math.min(...xs) - 2, y0: Math.min(...ys) - 2, x1: Math.max(...xs) + 2, y1: Math.max(...ys) + 2 };
-    const R = (a, b2, c, d) => { const p = px(a, b2), q = px(c, d); return { x0: Math.min(p[0], q[0]), x1: Math.max(p[0], q[0]), y0: Math.min(p[1], q[1]), y1: Math.max(p[1], q[1]) }; };
-    const poly = pts => pts.map(([x, y]) => px(x, y)), W2 = pts => pts.map(([u, v]) => K.W(u, v)), rr = mulberry(strHash(b.name));
-    const extra = (fp, tiers, o = {}) => { const nb = newBuilding(null, K.F, fp, Math.max(...tiers.map(t => t.zt)), 'inner', { mat: 'concrete', shops: null, lit: o.lit || 'office', streetSides: { N: false, S: false, E: false, W: false } }, rr);
-      nb.tiers = tiers; nb.H = Math.max(...tiers.map(t => t.zt)); nb.multi = tiers.length > 1; Object.assign(nb, o); LOTB.get(lot.id).push(nb); return nb; };
-    const at = (x, y) => px(x, y), tree = (x, y, r = 2.6) => { const q = px(x, y); K.tree(q[0], q[1], r); };
-    const stalls = (a, b2, c, d, n) => { const r = R(a, b2, c, d); K.stalls(r.x0, r.x1, r.y0, r.y1, n); };
-    return { lot, blkW, R, poly, W2, extra, at, tree, stalls, rr }; };
-  const PAVE2 = [226, 220, 204], DRIVE2 = [104, 106, 110];
   // City General Hospital, revised sheet 01: a campus over the whole block. Main hospital with the helipad on the main avenue,
   // blue glass wing behind it, emergency with a covered ambulance bay off the side street, medical offices and a loading yard
   // at the back, a parking garage and staff lot on the east side, a visitor loop with a planted island, and a healing garden.
@@ -1195,9 +1195,57 @@ function landmarkB(b, face, build) {
     for (const u of [-w * .38, w * .38]) K.lamp(u, L.y0 + 2.5); K.glow(0, front - 3, 16, [255, 214, 160], .5);
   });
   hotel('Grand Hotel', 'auto', { podH: 28.8, H: 180, mat: MAT.hotelcream, pat: 'punch', tw: .34, td: .78, tdMax: 36, top: { type: 'crown', h: 6 }, loop: 'lawn', sign: 'GRAND HOTEL', canopy: [226, 216, 192], flags: true, garden: true, podFront: .4 });
-  hotel('Harbor Grand Hotel', 'auto', { podH: 24.75, H: 99, mat: MAT.hotelcream, pat: 'punch', tw: .78, twMax: 62, td: .78, top: { type: 'crown', h: 4.5 }, loop: 'lawn', sign: 'HARBOR GRAND', canopy: [226, 216, 192], palms: true, parasols: [-.3, -.18, .18, .3], water: true, podFront: .34, podX: .08 });
+  // Harbor Grand Hotel, revised sheet 03: a stone podium with the setback cream tower looking over the harbor, a pool deck on the
+  // podium, the ballroom wing behind, a porte-cochere with a drop-off loop onto the front arterial, a harbor terrace for dining,
+  // the valet ramp and loading off the back street, and palms right round the block.
+  landmark('Harbor Grand Hotel', 'auto', K => { const X = siteKit(K, (px, py) => [50 - (px - 111) / 5.93, 38 - (py - 198) / 5.93]), { R, poly, W2, extra, at } = X;
+    K.ground(X.blkW, LAWN, { edge: { c: PAVE2, w: 5 } });
+    const G2 = (pts, c, o) => K.ground(W2(poly(pts)), c, o || { tex: 'gran', grid: 1 });
+    G2([[222, 626], [262, 626], [290, 576], [345, 570], [530, 570], [585, 626], [622, 626], [596, 548], [530, 540], [345, 540], [288, 546], [248, 578]], DRIVE2); // drop-off loop
+    G2([[355, 238], [390, 241], [396, 312], [456, 312], [456, 342], [388, 342], [360, 330]], DRIVE2); // valet ramp off the back street
+    G2([[704, 286], [760, 289], [786, 330], [772, 368], [704, 342]], DRIVE2); // loading
+    G2([[650, 524], [752, 524], [752, 606], [650, 606]], [222, 204, 170]); // harbor terrace
+    for (const [x, y] of [[668, 545], [700, 545], [732, 545], [668, 585], [700, 585], [732, 585]]) { const q = K.W(...at(x, y)); props.push({ t: 'parasol', x: q[0], y: q[1], c: [236, 228, 208] }); }
+    G2([[150, 520], [188, 536], [194, 572], [266, 580], [266, 590], [184, 582], [178, 545], [146, 530]], PAVE2, {});
+    { const r = R(456, 312, 540, 342); props.push({ t: 'box', poly: K.rect(r.x0, r.y0, r.x1, r.y1), z1: .2, col: [70, 76, 80], x: K.W((r.x0 + r.x1) / 2, r.y0)[0], y: K.W((r.x0 + r.x1) / 2, r.y0)[1], h: .3, rad: 8 }); }
+    // podium and tower; the pool deck and the ballroom are buildings of their own beside it
+    const pod = R(342, 330, 707, 538), tw = R(342, 364, 584, 505);
+    K.setBuilding(pod, [{ ...pod, zb: 0, zt: 20, mat: MAT.stone, pat: 'punch' }, { ...tw, zb: 0, zt: 99, mat: MAT.hotelcream, pat: 'punch' }], { multi: true, roofC: [170, 160, 140], lit: 'hotel', top: { type: 'crown', h: 4.5 }, name: 'Harbor Grand Hotel' });
+    const pl = R(191, 330, 342, 538); extra(pl, [{ ...pl, zb: 0, zt: 20, mat: MAT.stone, pat: 'punch' }], { roofC: [190, 182, 166], lit: 'hotel', top: { type: 'pool' } });
+    const bw = R(142, 263, 357, 330); extra(bw, [{ ...bw, zb: 0, zt: 12, mat: MAT.hotelcream, pat: 'tallbays' }], { roofC: [160, 152, 136], lit: 'hotel', name: 'Ballroom' });
+    const ld = R(663, 318, 770, 366); extra(ld, [{ ...ld, zb: 0, zt: 6, mat: MAT.concrete }], { roofC: [130, 126, 120], lit: 'none' });
+    { const r = R(345, 505, 477, 568); K.slab(r.x0, r.y0, r.x1, r.y1, 5.2, .9, [226, 216, 192], 'HARBOR GRAND', { textCol: [92, 70, 40] }); }
+    for (const [x, y] of [[152, 228], [220, 236], [290, 248], [445, 268], [522, 282], [603, 292], [782, 313], [835, 385], [808, 438], [782, 490], [750, 568], [713, 598], [657, 598], [563, 601], [510, 601], [140, 298], [142, 362], [145, 428], [150, 487], [158, 545], [170, 595]]) { const q = at(x, y); K.palm(q[0], q[1], 9); }
+    for (const [x, y] of [[300, 600], [420, 600], [560, 600], [680, 500]]) { const q = at(x, y); K.lamp(q[0], q[1]); }
+    { const q = at(411, 560); K.glow(q[0], q[1], 16, [255, 214, 150], .5); } { const q = at(700, 565); K.glow(q[0], q[1], 12, [255, 200, 140], .4); }
+  });
   hotel('The Wharf Hotel', 'auto', { podH: 8, H: 91, mat: MAT.wharf, pat: 'hbands', podMat: MAT.tealglass, tw: .8, twMax: 90, td: .8, sign: 'THE WHARF', canopy: [150, 166, 170], palms: true, parasols: [-.32, -.22, .22], water: true, podFront: .32, pool: (L, w, d, f) => [w * .26, (L.y0 + f) / 2, w * .1, (f - L.y0) * .3] });
-  hotel('Bayview Hotel', 'auto', { podH: 10, H: 90, mat: MAT.tealglass, pat: 'spandrel', podMat: MAT.tealglass, tower: 'octo', tw: .62, td: .7, top: { type: 'pool' }, loop: 'fountain', sign: 'BAYVIEW', canopy: [128, 160, 170], podFront: .45 });
+  // Bayview Hotel, revised sheet 04: the octagonal glass tower on a low podium near the front street with an entrance court and
+  // fountain; up the long wedge toward the harbor come the spa wing, a fitness pavilion, the pool deck, the event lawn and a
+  // harbor-view restaurant at the tip, with a landscaped walk the length of it and a parking structure off the side street.
+  landmark('Bayview Hotel', 'auto', K => { const X = siteKit(K, (px, py) => [47.8 - (px - 329) / 4.35, 99.5 - (py - 95) / 4.35]), { R, poly, W2, extra, at } = X;
+    K.ground(X.blkW, LAWN, { edge: { c: PAVE2, w: 5 } });
+    const G2 = (pts, c, o) => K.ground(W2(poly(pts)), c, o || { tex: 'gran', grid: 1 });
+    G2([[428, 648], [566, 648], [566, 706], [546, 748], [450, 738], [430, 702]], DRIVE2); // entrance court
+    { const c = at(498, 694); K.ground(K.ell(c[0], c[1], 9, 7), LAWN, { stripes: 1.4 }); K.circ(c[0], c[1], 4.4, PAVE2); K.circ(c[0], c[1], 3.4, [92, 150, 170]); const q = K.W(c[0], c[1]); props.push({ t: 'cfount', x: q[0], y: q[1], r: 2 }); K.solidRound(c[0], c[1], 3.4); }
+    for (const [[x1, y1], [x2, y2]] of [[[405, 508], [410, 440]], [[410, 440], [470, 332]], [[470, 332], [560, 262]], [[560, 262], [604, 238]]]) K.G.shapes.push({ line: [K.W(...at(x1, y1)), K.W(...at(x2, y2))], c: PAVE2, w: 2.6 });
+    { const c = at(490, 398); K.ground(K.ell(c[0], c[1], 13.3, 9.6), [118, 150, 98], { stripes: 1.4 }); } // event lawn
+    G2([[487, 275], [648, 275], [648, 345], [487, 345]], [214, 200, 172]); G2([[506, 294], [609, 294], [609, 330], [506, 330]], [92, 166, 186]); // pool deck
+    for (const [x, y] of [[497, 285], [497, 338], [618, 338], [640, 262]]) { const q = K.W(...at(x, y)); props.push({ t: 'parasol', x: q[0], y: q[1], c: [236, 236, 228] }); }
+    { const r = R(609, 295, 645, 318); props.push({ t: 'box', poly: K.rect(r.x0, r.y0, r.x1, r.y1), z1: 2.6, col: [176, 150, 120], x: K.W((r.x0 + r.x1) / 2, r.y0)[0], y: K.W((r.x0 + r.x1) / 2, r.y0)[1], h: 2.6, rad: 5 }); }
+    for (const [x, y] of [[642, 160], [666, 158]]) { const q = K.W(...at(x, y)); props.push({ t: 'parasol', x: q[0], y: q[1], c: [232, 206, 176] }); }
+    // the tower on its podium, and the low buildings up the wedge
+    const pod = R(403, 513, 648, 645), oct = poly([[475, 530], [553, 530], [593, 555], [593, 603], [553, 628], [475, 628], [442, 603], [442, 555]]);
+    K.setBuilding(pod, [{ ...pod, zb: 0, zt: 8, mat: MAT.tealglass, pat: 'spandrel' }, polyTier(oct, 0, 94, MAT.tealglass, { pat: 'spandrel' })], { multi: true, roofC: [120, 140, 146], lit: 'hotel', top: { type: 'garden' }, name: 'Bayview Hotel' });
+    const pk = R(564, 643, 672, 707); extra(pk, [{ ...pk, zb: 0, zt: 12, mat: MAT.concrete, pat: 'hbands' }], { roofC: [112, 114, 116], name: 'Parking structure' });
+    const spa = R(459, 415, 631, 501); extra(spa, [{ ...spa, zb: 0, zt: 8, mat: MAT.hotelcream, pat: 'tallbays' }], { roofC: [150, 128, 110], lit: 'hotel', name: 'Spa' });
+    const fit = R(527, 352, 664, 413); extra(fit, [{ ...fit, zb: 0, zt: 6, mat: MAT.tealglass, pat: 'tallbays' }], { roofC: [140, 160, 160], lit: 'hotel' });
+    const rest = R(593, 182, 688, 239); extra(rest, [{ ...rest, zb: 0, zt: 7, mat: MAT.tealglass, pat: 'tallbays' }], { roofC: [140, 156, 156], lit: 'hotel', name: 'Harbor-view restaurant' });
+    { const r = R(455, 640, 548, 652); K.slab(r.x0, r.y0, r.x1, r.y1, 4.2, .8, [128, 160, 170], 'BAYVIEW', { textCol: [240, 244, 246] }); }
+    for (const [x, y] of [[370, 413], [405, 492], [398, 628], [378, 693], [552, 746], [600, 783], [640, 728], [650, 515], [650, 450], [655, 378], [653, 313], [660, 255], [661, 140], [601, 200], [545, 262], [493, 305], [417, 350], [400, 563]]) { const q = at(x, y); K.palm(q[0], q[1], 9); }
+    for (const [x, y] of [[440, 690], [560, 690], [420, 470], [500, 360]]) { const q = at(x, y); K.lamp(q[0], q[1]); }
+    { const q = at(498, 660); K.glow(q[0], q[1], 14, [180, 220, 255], .45); } { const q = at(640, 210); K.glow(q[0], q[1], 10, [255, 210, 150], .4); }
+  });
 }
 // ---------- batch 4: leisure, retail and dealers from their sheets ----------
 {
@@ -1231,16 +1279,32 @@ function landmarkB(b, face, build) {
     K.bollards(L.x0 + 2, L.x1 - 2, L.y0 + 1.2, 3.4); K.glow(0, fp.y0 - 3, 12, [255, 214, 150], .45);
   });
 
-  landmark('Yacht Club', 'water', K => { const L = K.lot, w = L.x1 - L.x0, d = L.y1 - L.y0;
-    const fp = { x0: -Math.min(w * .4, 26), y0: L.y0 + Math.min(d * .3, 12), x1: Math.min(w * .4, 26), y1: L.y0 + Math.min(d * .3, 12) + Math.min(d * .4, 12) };
-    K.setBuilding(fp, [{ ...fp, zb: 0, zt: 6, mat: MAT.whitepav, pat: 'tallbays' }], { roofC: [130, 152, 150], lit: 'resi', pitched: { h: 3, axis: 'x' } });
-    K.ground(K.rect(L.x0, L.y0, L.x1, L.y1), [220, 214, 200], { tex: 'gran', grid: 2 });
-    K.ground(K.rect(fp.x0 - 6, L.y0 + 1, fp.x1 + 6, fp.y1 + 3), [176, 142, 104], { grid: .7 }); K.ground(K.rect(fp.x0 - 4, L.y0 + 3, fp.x1 + 4, fp.y0 - 1), [170, 186, 150], {});
-    for (const u of [fp.x0 - 2, fp.x0 + 8, fp.x1 - 8, fp.x1 + 2]) { const q = K.W(u, L.y0 + 4); props.push({ t: 'parasol', x: q[0], y: q[1], c: [232, 206, 176] }); K.solidRound(u, L.y0 + 4, .5); }
-    K.flags(fp.x0 - 5, fp.x0 - 5, L.y0 + 2, 1, [[184, 84, 70]]);
-    // pontoons run out over the water with yachts moored alongside
-    for (const u of [-w * .3, 0, w * .3]) { const pts = K.rect(u - 1.2, L.y0 - 24, u + 1.2, L.y0); props.push({ t: 'box', poly: pts, z1: .5, col: [176, 142, 104], x: K.W(u, L.y0 - 12)[0], y: K.W(u, L.y0 - 12)[1], h: .5, rad: 12 }); for (const sd of [-1, 1]) { const bu = u + sd * 3.4, bv = L.y0 - 12 - sd * 4, q = K.W(bu, bv); props.push({ t: 'boat', x: q[0], y: q[1], ang: K.ang + Math.PI / 2, L: 9, h: 1.4, rad: 4.5 }); } }
-    K.lamp(fp.x0 - 5, L.y0 + 8); K.lamp(fp.x1 + 5, L.y0 + 8); K.glow(0, fp.y0 - 2, 12, [255, 214, 150], .4);
+  // Yacht Club, revised sheet 02: the clubhouse with its wraparound deck faces the harbor across the arterial road; behind it the
+  // members' pool, an event lawn, the sailing school, gated parking off the local street, and a boat yard with racks and dinghies.
+  landmark('Yacht Club', 'water', K => { const X = siteKit(K, (px, py) => [67.7 - (px - 111) / 5.94, 61.8 - (py - 187) / 5.94]), { R, poly, W2, extra, at, tree, stalls } = X;
+    K.ground(X.blkW, LAWN, { edge: { c: PAVE2, w: 5 } });
+    const G2 = (pts, c, o) => K.ground(W2(poly(pts)), c, o || { tex: 'gran', grid: 1 });
+    G2([[198, 462], [250, 455], [377, 455], [377, 500], [640, 540], [640, 556], [377, 530], [250, 532], [205, 498]], DRIVE2); // gated parking and the service road to the boat yard
+    stalls(255, 461, 370, 481, 7); stalls(255, 513, 370, 531, 7);
+    G2([[515, 500], [632, 500], [632, 540], [515, 540]], [176, 170, 156]); // boat yard
+    for (let k = 0; k < 4; k++) { const q = K.W(...at(518 + k * 25, 523)); props.push({ t: 'boat', x: q[0], y: q[1], ang: K.ang, L: 5, h: 1, rad: 2.6 }); }
+    { const r = R(507, 502, 604, 509); props.push({ t: 'box', poly: K.rect(r.x0, r.y0, r.x1, r.y1), z1: 2.6, col: [120, 124, 128], x: K.W((r.x0 + r.x1) / 2, r.y0)[0], y: K.W((r.x0 + r.x1) / 2, r.y0)[1], h: 2.6, rad: 9 }); }
+    G2([[322, 374], [447, 374], [447, 443], [322, 443]], [214, 200, 172]); G2([[344, 388], [424, 388], [424, 430], [344, 430]], [92, 166, 186]); // pool and sun deck
+    for (const [x, y] of [[335, 395], [335, 420], [436, 395], [436, 420]]) { const q = K.W(...at(x, y)); props.push({ t: 'parasol', x: q[0], y: q[1], c: [236, 236, 228] }); }
+    { const c = at(392, 316); K.ground(K.ell(c[0], c[1], 8.6, 4.8), [118, 150, 98], { stripes: 1.4 }); G2([[362, 302], [422, 302], [422, 330], [362, 330]], [222, 216, 200]); } // event lawn and marquee pad
+    G2([[384, 345], [396, 345], [424, 556], [412, 556]], PAVE2, {}); // path from the clubhouse up to the lawn
+    // clubhouse on its deck, and the sailing school
+    G2([[249, 556], [637, 556], [637, 650], [249, 650]], [176, 142, 104], { grid: .7 });
+    const cl = R(268, 565, 442, 636), cr = R(442, 565, 616, 636), fp = { x0: Math.min(cl.x0, cr.x0), y0: Math.min(cl.y0, cr.y0), x1: Math.max(cl.x1, cr.x1), y1: Math.max(cl.y1, cr.y1) };
+    K.setBuilding(fp, [{ ...cl, zb: 0, zt: 8, mat: MAT.whitepav, pat: 'tallbays' }, { ...cr, zb: 0, zt: 8, mat: MAT.whitepav, pat: 'tallbays' }], { multi: true, roofC: [130, 152, 150], lit: 'resi', name: 'Yacht Club' });
+    const sc = R(203, 518, 377, 565); extra(sc, [{ ...sc, zb: 0, zt: 6, mat: MAT.whitepav, pat: 'punch' }], { roofC: [140, 156, 154], lit: 'resi', name: 'Sailing school' });
+    for (let x = 290; x <= 585; x += 49) { const q = K.W(...at(x, 644)); props.push({ t: 'parasol', x: q[0], y: q[1], c: [232, 206, 176] }); }
+    { const q = at(255, 646); K.flags(q[0], q[0], q[1], 1, [[184, 84, 70]]); }
+    for (const [x, y] of [[349, 218], [322, 264], [291, 330], [268, 386], [243, 440], [215, 597], [186, 620], [147, 636], [430, 287], [487, 323], [450, 370], [510, 450], [626, 485], [692, 618], [744, 622], [800, 633], [850, 648]]) tree(x, y, 2.4);
+    for (const [x, y] of [[230, 505], [470, 520], [300, 600], [580, 600]]) { const q = at(x, y); K.lamp(q[0], q[1]); }
+    { const q = at(442, 600); K.glow(q[0], q[1], 16, [255, 214, 150], .45); }
+    // the marina: pontoons from the harbor wall out over the water, yachts moored alongside
+    for (const u of [-30, -10, 10, 30]) { let vw = null; for (let v = -18; v > -140; v -= .5) if (C.isWater(...K.W(u, v)) && C.isWater(...K.W(u, v - 3))) { vw = v + 1.5; break; } if (vw == null) continue; const pts = K.rect(u - 1.2, vw - 26, u + 1.2, vw + 1); props.push({ t: 'box', poly: pts, z1: .5, col: [176, 142, 104], x: K.W(u, vw - 12)[0], y: K.W(u, vw - 12)[1], h: .5, rad: 14 }); for (const sd of [-1, 1]) { const q = K.W(u + sd * 3.4, vw - 13 - sd * 5); props.push({ t: 'boat', x: q[0], y: q[1], ang: K.ang + Math.PI / 2, L: 9, h: 1.4, rad: 4.5 }); } }
   });
 
   landmark('Aurelia (top restaurant)', 'auto', K => { const L = K.lot, w = L.x1 - L.x0, d = L.y1 - L.y0;
@@ -1294,12 +1358,33 @@ function landmarkB(b, face, build) {
     K.flags(L.x0 + 2, fp.x0 - 1, L.y0 + 1.5, 3, [[188, 92, 74], [96, 138, 130]]);
   });
 
-  landmark('Circuit Prestige Motors', 'auto', K => { const L = K.lot, w = L.x1 - L.x0, d = L.y1 - L.y0;
-    const fp = { x0: L.x0 + w * .05, y0: L.y0 + d * .42, x1: L.x1 - w * .05, y1: L.y1 - 1 };
-    K.setBuilding(fp, [{ ...fp, zb: 0, zt: 7.2, mat: MAT.showroom, pat: 'tallbays' }, { x0: fp.x0 - .5, y0: fp.y0 - .6, x1: fp.x1 + .5, y1: fp.y1 + .3, zb: 7.2, zt: 9, mat: { wall: [86, 96, 94], frame: [80, 90, 88], glass: [80, 90, 88], kind: 'punch' }, pat: 'hbands' }], { roofC: [120, 130, 124], lit: 'office', kit: [{ x0: -6, y0: fp.y0 + 3, x1: -3, y1: fp.y0 + 5, h: .5, c: [176, 186, 180] }, { x0: 3, y0: fp.y0 + 3, x1: 6, y1: fp.y0 + 5, h: .5, c: [176, 186, 180] }] });
-    pav(K); K.slab(fp.x0 + 1.5, fp.y0 - 3, fp.x1 - 1.5, fp.y0, 6.2, 1, [86, 96, 94], 'CIRCUIT PRESTIGE', { posts: false, textCol: [222, 188, 112] });
-    for (const [u, col] of [[-w * .27, [170, 54, 44]], [w * .27, [70, 96, 120]]]) { const v = (L.y0 + fp.y0) / 2; K.ground(K.rect(u - 3.8, v - 2.4, u + 3.8, v + 2.4), [150, 160, 158], { edge: { c: [236, 236, 230], w: .2 } }); car(K, u, v, 0, col); }
-    K.glow(0, fp.y0 - 1, 14, [230, 240, 255], .45);
+  landmark('Circuit Prestige Motors', 'auto', K => { const X = siteKit(K, (px, py) => [53.5 - (px - 111) / 5.905, 26.6 - (py - 176) / 5.905]), { R, poly, W2, extra, at, stalls } = X;
+    K.ground(X.blkW, LAWN, { edge: { c: PAVE2, w: 4 } });
+    const G2 = (pts, c, o) => K.ground(W2(poly(pts)), c, o || { tex: 'gran', grid: 2 });
+    G2([[236, 306], [884, 300], [888, 342], [236, 344]], DRIVE2); // service drive across the block
+    G2([[232, 318], [254, 318], [254, 494], [232, 494]], DRIVE2); G2([[768, 300], [806, 300], [810, 472], [770, 474]], DRIVE2); // two drives to the front street
+    G2([[668, 384], [840, 384], [842, 460], [668, 460]], DRIVE2); G2([[572, 198], [818, 198], [818, 296], [572, 296]], DRIVE2); // customer lot, stock yard and staff bays
+    G2([[256, 430], [668, 430], [668, 444], [256, 444]], PAVE2); // forecourt walk
+    stalls(686, 396, 830, 420, 8); stalls(686, 424, 830, 450, 8); stalls(574, 272, 700, 294, 7);
+    for (let i = 0; i < 8; i++) for (const [py, o] of [[408, 0], [437, 1]]) if (hsh(5, i, o, 7) < .6) { const c = at(695 + i * 18, py); car(K, c[0], c[1], Math.PI / 2, CC[Math.floor(hsh(5, i, o, 3) * CC.length)], hsh(i, o, 2, 4) < .3 ? 'suv' : 'sedan'); }
+    for (let i = 0; i < 7; i++) if (hsh(7, i, 1, 2) < .7) { const c = at(583 + i * 18, 283); car(K, c[0], c[1], Math.PI / 2, CC[Math.floor(hsh(7, i, 2, 3) * CC.length)]); }
+    // screened stock yard, cars in tight rows behind the fence
+    for (let i = 0; i < 6; i++) for (const py of [207, 235]) { const c = at(616 + i * 38, py); car(K, c[0], c[1], 0, CC[Math.floor(hsh(9, i, py, 3) * CC.length)], i % 3 === 1 ? 'suv' : 'sedan'); }
+    { const pts = [[572, 188], [840, 188], [852, 262], [780, 264]].map(([x, y]) => K.W(...at(x, y))), q = pts[0]; props.push({ t: 'fence', pts, x: q[0], y: q[1], h: 2.4, rad: 30 }); }
+    // the buildings
+    const sh = R(244, 324, 528, 428);
+    K.setBuilding(sh, [{ ...sh, zb: 0, zt: 10, mat: MAT.showroom, pat: 'tallbays' }], { roofC: [120, 130, 124], lit: 'office', name: 'Circuit Prestige Motors', plant: null, tank: null, vents: [], cool: [], sky: null, ant: null, crown: null });
+    K.slab(sh.x0 + 6, sh.y0 - 1.1, sh.x1 - 6, sh.y0 - .2, 9.2, 1, [86, 96, 94], 'CIRCUIT PRESTIGE', { posts: false, textCol: [222, 188, 112] });
+    { const r = R(366, 428, 406, 438); box(K, r.x0, r.y0, r.x1, r.y1, .2, [170, 54, 44]); }
+    const ws = R(203, 199, 573, 298); extra(ws, [{ ...ws, zb: 0, zt: 7.5, mat: MAT.concrete, pat: 'hbands' }], { roofC: [150, 152, 150], name: 'Service workshop' });
+    const rc = R(392, 286, 506, 310); extra(rc, [{ ...rc, zb: 0, zt: 4.6, mat: MAT.showroom, pat: 'tallbays' }], { roofC: [96, 104, 102], name: 'Service reception' });
+    const db = R(548, 338, 680, 406); extra(db, [{ ...db, zb: 0, zt: 6, mat: MAT.showroom, pat: 'tallbays' }], { roofC: [112, 120, 116], name: 'Delivery bay' });
+    // display plinths along the front, each with a car on show
+    for (const [a, b2, col] of [[270, 330, [170, 54, 44]], [355, 413, [232, 228, 214]], [441, 500, [36, 38, 42]], [524, 582, [62, 98, 122]], [588, 647, [190, 190, 186]]]) { const r = R(a, 448, b2, 472); K.ground(K.rect(r.x0, r.y0, r.x1, r.y1), [150, 160, 158], { edge: { c: [232, 234, 230], w: .3 } }); car(K, (r.x0 + r.x1) / 2, (r.y0 + r.y1) / 2, 0, col); }
+    // corner sign pylon
+    { const c = at(150, 470), u = c[0], v = c[1]; props.push({ t: 'pylon', poly: K.rect(u - 1.6, v - .3, u + 1.6, v + .3).slice().reverse(), z1: 8, col: [86, 96, 94], text: 'CIRCUIT', x: K.W(u, v)[0], y: K.W(u, v)[1], h: 8, rad: 1.6 }); K.solidBox(u - 1.6, v - .3, u + 1.6, v + .3); }
+    for (const [x, y] of [[137, 203], [197, 191], [267, 191], [546, 189], [146, 268], [152, 327], [157, 393], [180, 440], [203, 478], [268, 478], [327, 478], [416, 475], [498, 474], [578, 470], [665, 465], [832, 456], [868, 446], [866, 387], [848, 285]]) X.tree(x, y);
+    K.glow(...at(386, 440), 14, [230, 240, 255], .45);
   });
 
   // Midtown Plaza: an open square with lawn, a long oval pool, a pavilion stage, two kiosks and trees
@@ -1351,7 +1436,28 @@ function landmarkB(b, face, build) {
     for (const u of [-.9, .9]) { const q = W(hw * u, hd * .9); lamps.push({ x: q[0], y: q[1], ax: 0, ay: 0, cool: false, short: true }); }
     gridSolids(); } }
   // neighborhood centers: brick with a long fascia and sign, a small plaza with benches, bike racks and a playground
+  // the Neighborhood Center that stands alone on its block, revised sheet 05: a small community campus. The library and center on
+  // the front street with a covered plaza, a multipurpose hall and gym behind, a playground with shade sails, a basketball half
+  // court, raised garden beds, and a parking lot with bike racks off the side street. The other five keep their first design.
+  const ncSite = K => { const X = siteKit(K, (px, py) => [34 - (px - 111) / 11.82, 34 - (py - 139) / 11.82]), { R, poly, W2, extra, at } = X, BRICK = { wall: [170, 104, 86], frame: [158, 96, 80], glass: [64, 88, 96], kind: 'punch' };
+    K.ground(X.blkW, LAWN, { edge: { c: PAVE2, w: 4 } });
+    const G2 = (pts, c, o) => K.ground(W2(poly(pts)), c, o || { tex: 'gran', grid: 1 });
+    G2([[729, 470], [885, 470], [885, 531], [915, 531], [915, 571], [885, 571], [885, 621], [729, 621]], DRIVE2); { const r = R(745, 477, 858, 509); K.stalls(r.x0, r.x1, r.y0, r.y1, 6); } { const r = R(745, 577, 858, 609); K.stalls(r.x0, r.x1, r.y0, r.y1, 6); }
+    for (const x of [718, 730, 742, 754]) { const q = at(x, 594); K.prop('bollard', q[0], q[1]); }
+    G2([[150, 400], [298, 400], [298, 468], [150, 468]], [206, 160, 120], {}); for (const x of [200, 252]) { const c = at(x, 432), q = K.W(c[0], c[1]); props.push({ t: 'tent', poly: K.rect(c[0] - 2.6, c[1] - 2.2, c[0] + 2.6, c[1] + 2.2), x: q[0], y: q[1], h: 3.4, rad: 3 }); }
+    G2([[554, 181], [732, 181], [732, 360], [554, 360]], [226, 226, 220], {}); G2([[566, 193], [720, 193], [720, 349], [566, 349]], [104, 144, 132], {}); { const c = at(643, 243); K.G.shapes.push({ circ: [...K.W(c[0], c[1]), 2.4], c: [236, 236, 230], ring: .15 }); }
+    for (const [x, y] of [[571, 427], [616, 427], [661, 427], [571, 468], [616, 468], [661, 468]]) { const r = R(x, y, x + 31, y + 19); props.push({ t: 'box', poly: K.rect(r.x0, r.y0, r.x1, r.y1), z1: .5, col: [120, 96, 70], top: [96, 128, 78], x: K.W((r.x0 + r.x1) / 2, r.y0)[0], y: K.W((r.x0 + r.x1) / 2, r.y0)[1], h: .5, rad: 2 }); }
+    for (const pts of [[[510, 255], [528, 255], [528, 470], [510, 470]], [[520, 255], [556, 255], [556, 272], [520, 272]], [[566, 575], [637, 575], [722, 538], [728, 552], [640, 590], [566, 590]], [[246, 650], [268, 650], [268, 706], [246, 706]], [[441, 650], [495, 638], [470, 665], [441, 670]]]) G2(pts, PAVE2, {});
+    const lib = R(152, 466, 566, 639);
+    K.setBuilding(lib, [{ ...lib, zb: 0, zt: 7, mat: BRICK, pat: 'tallbays' }], { roofC: [150, 136, 120], lit: 'office', name: 'Neighborhood Center' });
+    const hall = R(146, 194, 520, 395); extra(hall, [{ ...hall, zb: 0, zt: 8, mat: BRICK, pat: 'punch' }], { roofC: [146, 132, 118], name: 'Community hall' });
+    { const r = R(254, 632, 441, 677); K.slab(r.x0, r.y0, r.x1, r.y1, 3.2, .5, [204, 172, 132], 'NEIGHBORHOOD CENTER', { posts: true, textCol: [110, 70, 50] }); }
+    for (const x of [274, 378, 430]) { const q = at(x, 688); K.prop('bench', q[0], q[1]); }
+    for (const x of [144, 227, 309, 396, 494, 591, 698, 825]) { const q = at(x, 174); K.tree(q[0], q[1], 2.2); } for (const y of [262, 345, 435, 523, 614]) { const q = at(134, y); K.tree(q[0], q[1], 2.2); }
+    for (const y of [230, 313, 389, 451, 650]) { const q = at(880, y); K.tree(q[0], q[1], 2.2); } for (const x of [175, 497, 595, 668, 749, 830]) { const q = at(x, 678); K.tree(q[0], q[1], 2.2); }
+    for (const [x, y] of [[200, 690], [480, 690], [800, 540]]) { const q = at(x, y); K.lamp(q[0], q[1]); } };
   for (const nb of buildings.filter(b => b.name === 'Neighborhood Center')) landmarkB(nb, 'auto', K => { const L = K.lot, w = L.x1 - L.x0, d = L.y1 - L.y0;
+    { const lt = C.lots.find(l => (LOTB.get(l.id) || []).includes(K.b)); if (lt) return ncSite(K); } // every Neighborhood Center stands alone on an identical 68 by 48 block
     const fp = { x0: L.x0 + w * .05, y0: L.y0 + d * .4, x1: L.x1 - w * .05, y1: L.y1 - 1 };
     K.setBuilding(fp, [{ ...fp, zb: 0, zt: 6.2, mat: { wall: [170, 104, 86], frame: [158, 96, 80], glass: [64, 88, 96], kind: 'punch' }, pat: 'tallbays' }], { roofC: [150, 144, 136], lit: 'office', kit: [{ x0: -10, y0: fp.y0 + 2, x1: -6, y1: fp.y0 + 4, h: .5, c: [176, 186, 180] }, { x0: 6, y0: fp.y0 + 2, x1: 10, y1: fp.y0 + 4, h: .5, c: [176, 186, 180] }] });
     K.ground(K.rect(L.x0, L.y0, L.x1, L.y1), PAVE, { tex: 'gran', grid: 2 }); K.slab(fp.x0 + 2, fp.y0 - 2, fp.x1 - 2, fp.y0, 5.2, .8, [204, 172, 132], 'NEIGHBORHOOD CENTER', { posts: false, textCol: [110, 70, 50] });
