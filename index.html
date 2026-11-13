@@ -1169,6 +1169,7 @@ const PAVE2 = [226, 220, 204], DRIVE2 = [104, 106, 110];
     { const r = R(370, 558, 472, 604); K.slab(r.x0, r.y0, r.x1, r.y1, 4.4, .9, [128, 160, 170], 'CITY GENERAL', { textCol: [240, 244, 246] }); }
     { const r = R(151, 380, 246, 428); K.slab(r.x0, r.y0, r.x1, r.y1, 4.2, .8, [236, 234, 226], 'EMERGENCY', { textCol: [176, 40, 40] }); }
     K.b.entrance = K.W(...at(421, 622)); // where you are discharged
+    { const p = K.W(...at(421, 566)), q = K.W(...at(414.3, 584.8)), L = Math.hypot(q[0] - p[0], q[1] - p[1]); K.b.frontDoor = { x: p[0], y: p[1], nx: (q[0] - p[0]) / L, ny: (q[1] - p[1]) / L }; } // the main doors under the canopy
     for (const [x, y] of [[153, 133], [222, 127], [292, 121], [364, 115], [436, 108], [536, 98], [615, 91], [133, 220], [126, 287], [118, 353], [110, 495], [161, 565], [244, 596], [318, 624], [389, 650], [547, 708], [626, 741], [684, 782], [658, 226], [658, 291], [705, 375], [771, 435], [828, 499], [882, 572], [913, 707], [920, 815], [700, 578], [694, 647], [658, 690]]) tree(x, y);
     for (const [x, y] of [[230, 525], [330, 570], [430, 615], [500, 660], [180, 430], [780, 690], [880, 760]]) { const q = at(x, y); K.lamp(q[0], q[1]); }
     { const q = at(421, 600); K.glow(q[0], q[1], 14, [220, 236, 255], .45); } { const q = at(200, 420); K.glow(q[0], q[1], 10, [255, 210, 200], .35); }
@@ -1541,6 +1542,7 @@ const PAVE2 = [226, 220, 204], DRIVE2 = [104, 106, 110];
   }
   // the great hall: the largest campus building, with a steep gable and its name over the door
   { const cs = buildings.filter(b => kindOf(b) === 'campus').sort((a, c) => (c.fp.x1 - c.fp.x0) * (c.fp.y1 - c.fp.y0) - (a.fp.x1 - a.fp.x0) * (a.fp.y1 - a.fp.y0)); const gh = cs[0];
+    if (cs[1]) cs[1].name = 'College Library';
     if (gh) { const w = gh.fp.x1 - gh.fp.x0, d = gh.fp.y1 - gh.fp.y0; gh.name = 'Great Hall'; gh.tiers = [{ ...gh.fp, zb: 0, zt: Math.max(gh.H, 18), mat: MAT.vbrick, pat: 'tallbays' }]; gh.H = Math.max(gh.H, 18); gh.pitched = { h: Math.min(10, Math.min(w, d) * .3), axis: w >= d ? 'x' : 'y' }; gh.roofC = [134, 140, 136]; clearRoof(gh); gh.kit = [];
       const F = gh.F, c = toW(F, 0, gh.fp.y0 - 2), poly = [toW(F, 8, gh.fp.y0 - 4), toW(F, -8, gh.fp.y0 - 4), toW(F, -8, gh.fp.y0), toW(F, 8, gh.fp.y0)]; props.push({ t: 'slab', poly, z: 5, th: 1, col: [150, 158, 150], text: 'GREAT HALL', textCol: [236, 230, 210], posts: false, x: c[0], y: c[1], h: 6, rad: 8 }); } }
   // stores for the shopping update: 24-hour markets in town (never near the estates), supermarkets and gyms in the suburbs
@@ -4876,7 +4878,7 @@ function renderInterior() {
     const r = { x0: I.ox + f.x - w / 2, y0: I.oy + f.y - d / 2, x1: I.ox + f.x + w / 2, y1: I.oy + f.y + d / 2 };
     const g = { ...f, x: I.ox + f.x, y: I.oy + f.y };
     if (S.h > 1.4 || f.t === 'glasswall') bigs.push({ r, d: distRect(r), draw: () => drawFurn(g), box: bigBox(r, S.h) });
-    else smalls.push({ x: g.x, y: g.y - (f.t === 'chair' || f.t === 'officechair' ? .12 : f.t === 'rug' ? 50 : 0), hgt: S.h, rad: Math.max(w, d) / 2, draw: () => drawFurn(g) });
+    else smalls.push({ x: g.x, y: g.y - (f.t === 'chair' || f.t === 'officechair' ? .12 : f.t === 'rug' || S.h < .15 ? 50 : 0), hgt: S.h, rad: Math.max(w, d) / 2, draw: () => drawFurn(g) });
   }
   if ((event === 'december' || event === 'nye') && I.xtree) { const T = { x: I.ox + I.xtree[0], y: I.oy + I.xtree[1], sc: I.xtree[2] }; bigs.push({ r: { x0: T.x - 1, y0: T.y - 1, x1: T.x + 1, y1: T.y + 1 }, d: Math.hypot(T.x - cx, T.y - cy), draw: () => drawXmasTree(T), box: bigBox({ x0: T.x - 2, y0: T.y - 2, x1: T.x + 2, y1: T.y + 2 }, 14 * T.sc) }); }
   if (event === 'halloween' && I.pumpkins) for (const [px, py] of I.pumpkins) { const pk = { x: I.ox + px, y: I.oy + py, s: 1, seed: px * 10 | 0 }; smalls.push({ x: pk.x, y: pk.y, hgt: .4, rad: .3, draw: () => drawPumpkin(pk) }); }
@@ -4944,6 +4946,267 @@ function insidePrompt() {
   for (const e of INSIDE.exits) if (e.to !== 'street' && Math.hypot(player.x - INSIDE.ox - e.x, player.y - INSIDE.oy - e.y) < e.r + .6) return { lift: true, name: e.label, to: e.to };
   return null;
 }
+// ================= venue interiors from the concept sheets =================
+// Each sheet's furnished floor plan, measured on its 1 m grid, front (street) wall at the bottom.
+// Every venue of a type shares its room; the room takes the venue's name when you walk in.
+Object.assign(MATS, { rubber: [74, 78, 82], mint: [196, 212, 204], plum: [104, 94, 118], cream: [222, 214, 192], latte: [214, 190, 150], walnut: [168, 136, 104], slate: [146, 150, 150], sand: [222, 218, 200], rose: [184, 166, 156] });
+const _drawFloor0 = drawFloor;
+drawFloor = function (I, f) {
+  if (f.m === 'dance') { // a lit checkerboard that cycles with the beat
+    const x0 = I.ox + f.x0, y0 = I.oy + f.y0, t = Math.floor(simT * 2.2);
+    for (let i = 0; i < Math.round(f.x1 - f.x0); i++) for (let j = 0; j < Math.round(f.y1 - f.y0); j++) { const on = (i + j + t) % 3 === 0 && (i * 7 + j * 3 + t) % 2 === 0;
+      ctx.fillStyle = on ? ['rgba(196,120,220,.95)', 'rgba(110,170,240,.95)', 'rgba(240,120,170,.95)'][(i + t) % 3] : (i + j) % 2 ? tone([74, 62, 96], 0) : tone([92, 78, 116], 0); ctx.fillRect(x0 + i + .03, y0 + j + .03, .94, .94); }
+    return; }
+  if (f.like) { const keep = MATS[f.like]; MATS[f.like] = MATS[f.m]; _drawFloor0(I, { ...f, m: f.like }); MATS[f.like] = keep; return; }
+  _drawFloor0(I, f);
+};
+// ---------- fittings ----------
+const PROD = [[198, 82, 64], [222, 182, 74], [72, 122, 170], [92, 150, 96], [232, 228, 216], [160, 94, 142], [226, 130, 60]];
+const BOOKC = [[120, 52, 46], [52, 84, 70], [62, 70, 108], [150, 120, 70], [96, 60, 44], [140, 140, 128]];
+const WINEC = [[96, 24, 36], [70, 90, 50], [120, 30, 40], [180, 160, 100], [60, 20, 30]];
+const hcol = (a, i, j) => a[Math.floor(hsh(i, j, 7, 3) * a.length)];
+const VFURN = {
+  blk: { size: f => [f.w || 1, f.d || 1], h: 1.2, draw: f => fbox(f, 0, 0, f.w || 1, f.d || 1, f.z0 || 0, f.h || 1, f.col || [120, 120, 120], f.top, f.al) },
+  tall: { size: f => [f.w || 1, f.d || 1], h: 2.4, draw: f => fbox(f, 0, 0, f.w || 1, f.d || 1, f.z0 || 0, f.h || 2.2, f.col || [120, 120, 120], f.top, f.al) },
+  flat: { size: f => [f.w || 1, f.d || 1], h: .02, solid: false, draw: f => fbox(f, 0, 0, f.w || 1, f.d || 1, 0, f.h || .02, f.col || [120, 120, 120], f.top) },
+  stage: { size: f => [f.w || 3, f.d || 2], h: .05, solid: false, draw: f => fbox(f, 0, 0, f.w || 3, f.d || 2, 0, .06, f.col || [70, 60, 56], f.top) },
+  stool: { size: () => [.42, .42], h: .78, solid: false, draw: f => { drawCyl(f.x, f.y, .05, 0, .72, [60, 60, 64]); drawCyl(f.x, f.y, .19, .7, .78, f.col || [150, 80, 70]); } },
+  counter2: { size: f => [f.w || 3, f.d || .7], h: 1.1, draw: (f, n) => { const w = f.w || 3, d = f.d || .7, h = f.h || 1.05; fbox(f, 0, 0, w, d, 0, h - .05, f.col || [120, 80, 60]); fbox(f, 0, 0, w + .06, d + .06, h - .05, h, f.top || [60, 46, 40], f.top || [80, 62, 52]);
+    for (const u of f.taps || []) { fbox(f, u, 0, .12, .1, h, h + .32, [190, 180, 150]); }
+    if (f.reg != null) { fbox(f, f.reg, 0, .4, .32, h, h + .26, [40, 42, 46], [70, 140, 120]); }
+    if (f.espresso != null) { fbox(f, f.espresso, 0, .7, .45, h, h + .45, [190, 192, 196], [120, 122, 126]); if (n > .2) beaconSoft(P(f.x, f.y, h + .5), [255, 220, 170], k * .2 + 2); }
+    if (f.cake) for (let i = 0; i < f.cake; i++) fbox(f, -w / 2 + .5 + i * .55, 0, .4, .4, h, h + .2, [210 - i * 12, 160, 120]); } },
+  backbar: { size: f => [f.w || 4, f.d || .45], h: 2.3, draw: (f, n) => { const w = f.w || 4, d = f.d || .45, pal = f.wine ? WINEC : f.books ? BOOKC : PROD; fbox(f, 0, 0, w, d, 0, .9, f.col || [80, 58, 46]); fbox(f, 0, 0, w, d, 2.15, 2.25, f.col || [80, 58, 46]);
+    const step = .3, nn = Math.floor(w / step); for (const z of [1.05, 1.6]) for (let i = 0; i < nn; i++) fbox(f, -w / 2 + (i + .5) * step, 0, step * .55, d * .5, z, z + (f.books ? .38 : .34), hcol(pal, i, z * 10), null, f.books ? null : .9);
+    if (n > .2 && !f.books) for (let i = 0; i < w; i += 2.5) beaconSoft(P(f.x + (f.rot ? 0 : -w / 2 + i + 1), f.y + (f.rot ? -w / 2 + i + 1 : 0), 2.1), [255, 200, 140], k * .3 + 2); } },
+  gondola: { size: f => [f.w || 1.1, f.d || 8], h: 1.7, draw: f => { const w = f.w || 1.1, d = f.d || 8, pal = f.books ? BOOKC : PROD; fbox(f, 0, 0, w, d, 0, .12, [90, 96, 100]); fbox(f, 0, 0, .08, d, .12, f.hh || 1.6, [150, 156, 160]);
+    const nn = Math.max(1, Math.round(d / (f.books ? .5 : .6))), sl = d / nn; for (const s of [-1, 1]) for (let j = 0; j < 3; j++) { const z = .2 + j * .46; for (let i = 0; i < nn; i++) fbox(f, s * w / 4, -d / 2 + (i + .5) * sl, w / 2 - .1, sl - .06, z, z + .34, hcol(pal, i * 2 + (s > 0), j)); } } },
+  chiller: { size: f => [f.w || 2, f.d || .75], h: 2.1, draw: (f, n) => { const w = f.w || 2, d = f.d || .75; fbox(f, 0, 0, w, d, 0, 2.05, [216, 220, 222], [200, 204, 206]); const nn = Math.max(1, Math.round(w / .5));
+    for (let j = 0; j < 4; j++) for (let i = 0; i < nn; i++) fbox(f, -w / 2 + (i + .5) * w / nn, -d * .1, w / nn - .06, d * .55, .25 + j * .44, .55 + j * .44, hcol(PROD, i, j)); fbox(f, 0, -d / 2 + .02, w, .04, .1, 1.95, [170, 210, 230], null, .28); } },
+  chest: { size: f => [f.w || 2.4, f.d || .8], h: .95, draw: f => { const w = f.w || 2.4, d = f.d || .8; fbox(f, 0, 0, w, d, 0, .82, [214, 218, 222]); fbox(f, 0, 0, w - .1, d - .1, .82, .9, [150, 200, 222], null, .5); for (let i = 0; i < 5; i++) fbox(f, -w / 2 + .3 + i * (w - .6) / 4, 0, .3, d * .6, .6, .8, hcol(PROD, i, 9)); } },
+  pooltable: { size: () => [2.7, 1.5], h: .85, draw: f => { fbox(f, 0, 0, 2.7, 1.5, .1, .8, [96, 62, 40]); fbox(f, 0, 0, 2.4, 1.22, .8, .84, [52, 124, 84]); for (const sx of [-1, 1]) for (const sy of [-1, 1]) fbox(f, sx * 1.2, sy * .6, .14, .14, 0, .1, [60, 40, 28]); fbox(f, .5, .1, .06, .06, .84, .9, [240, 240, 230]); fbox(f, -.6, -.2, .06, .06, .84, .9, [200, 40, 40]); } },
+  dartboard: { size: () => [.12, .5], h: 1.0, solid: false, draw: f => { fbox(f, 0, 0, .06, .46, 1.5, 1.96, [40, 40, 40]); fbox(f, .02, 0, .04, .26, 1.6, 1.86, [190, 60, 50]); fbox(f, .03, 0, .04, .08, 1.69, 1.77, [230, 220, 190]); } },
+  piano: { size: () => [1.5, 1.05], h: 1.05, draw: f => { fbox(f, 0, 0, 1.5, 1.0, .25, 1.0, [22, 22, 24], [40, 40, 44]); fbox(f, 0, -.42, 1.4, .18, .68, .74, [236, 236, 230]); for (const sx of [-.6, .6]) fbox(f, sx, 0, .08, .08, 0, .25, [20, 20, 22]); } },
+  oven: { size: f => [f.w || 2.6, f.d || .9], h: 1.6, draw: (f, n) => { const w = f.w || 2.6, d = f.d || .9; fbox(f, 0, 0, w, d, 0, 1.55, [60, 58, 56], [44, 42, 40]); for (const sx of [-w / 4, w / 4]) { fbox(f, sx, d / 2 - .01, w / 3, .02, .6, 1.05, [230, 120, 50]); beaconSoft(P(f.x + (f.rot ? 0 : sx), f.y + (f.rot ? sx : d / 2), .8), [255, 150, 70], k * .25 + 2); } } },
+  display: { size: f => [f.w || 2.4, f.d || .8], h: 1.25, draw: f => { const w = f.w || 2.4, d = f.d || .8; fbox(f, 0, 0, w, d, 0, .9, f.col || [178, 102, 86]); for (let i = 0; i < 3; i++) drawCyl(f.x + (f.rot ? 0 : -w / 3 + i * w / 3), f.y + (f.rot ? -w / 3 + i * w / 3 : 0), .26, .9, .94, [214, 150, 90]); fbox(f, 0, 0, w, d, .9, 1.22, [180, 214, 222], null, .22); } },
+  djdesk: { size: f => [f.w || 2.4, .8], h: 1.05, draw: (f, n) => { const w = f.w || 2.4; fbox(f, 0, 0, w, .8, 0, 1.0, [30, 30, 36], [50, 50, 58]); for (const sx of [-w / 3, w / 3]) drawCyl(f.x + sx, f.y, .18, 1.0, 1.03, [20, 20, 22]); beaconSoft(P(f.x, f.y, 1.1), [180, 120, 255], k * .4 + 3); } },
+  treadmill: { size: () => [.85, 1.8], h: 1.35, draw: f => { fbox(f, 0, .1, .8, 1.6, 0, .22, [40, 42, 46], [70, 72, 76]); for (const sx of [-.36, .36]) fbox(f, sx, -.7, .06, .08, .22, 1.25, [80, 84, 90]); fbox(f, 0, -.72, .8, .16, 1.1, 1.3, [50, 54, 60], [90, 160, 200]); } },
+  bike: { size: () => [.6, 1.2], h: 1.1, draw: f => { fbox(f, 0, 0, .5, 1.1, 0, .1, [50, 52, 56]); fbox(f, 0, .3, .1, .1, .1, .9, [70, 72, 78]); fbox(f, 0, .3, .26, .32, .9, .98, [24, 24, 26]); fbox(f, 0, -.35, .1, .1, .1, 1.05, [70, 72, 78]); fbox(f, 0, -.35, .5, .08, 1.0, 1.06, [40, 40, 44]); } },
+  machine: { size: () => [.9, 1.4], h: 2.2, draw: f => { fbox(f, 0, 0, .9, 1.4, 0, .1, [56, 58, 62]); for (const sx of [-.38, .38]) fbox(f, sx, -.55, .1, .1, .1, 2.1, [96, 100, 106]); fbox(f, 0, -.55, .86, .12, 2.0, 2.1, [96, 100, 106]); fbox(f, 0, -.5, .3, .2, .3, 1.2, [36, 36, 40]); fbox(f, 0, .3, .5, .7, .4, .5, [36, 36, 40]); fbox(f, 0, .55, .5, .1, .5, 1.2, [36, 36, 40]); } },
+  wbench: { size: () => [.55, 1.3], h: .5, draw: f => { fbox(f, 0, 0, .3, 1.2, .38, .48, [30, 30, 34]); fbox(f, 0, 0, .12, 1.0, 0, .38, [90, 92, 96]); } },
+  rack: { size: f => [f.w || .6, f.d || 6], h: .95, draw: f => { const w = f.w || .6, d = f.d || 6; fbox(f, 0, 0, w, d, 0, .1, [60, 62, 66]); fbox(f, 0, 0, w, d, .55, .6, [80, 82, 86]); for (let i = 0; i < d / .5; i++) for (const z of [.6, .9]) drawCyl(f.x + (f.rot ? -d / 2 + (i + .5) * .5 : 0), f.y + (f.rot ? 0 : -d / 2 + (i + .5) * .5), .1, z - .02, z + .08, [30, 30, 32]); } },
+  lockers: { size: f => [f.w || 4, .5], h: 2.0, draw: f => { const w = f.w || 4, nn = Math.round(w / .45); fbox(f, 0, 0, w, .5, 0, 1.95, f.col || [96, 128, 150]); for (let i = 1; i < nn; i++) fbox(f, -w / 2 + i * w / nn, -.25, .02, .01, .05, 1.9, [60, 80, 96]); } },
+  checkout: { size: () => [.8, 2.2], h: 1.3, draw: f => { fbox(f, 0, 0, .8, 2.2, 0, .86, [150, 156, 160]); fbox(f, 0, .3, .5, 1.4, .86, .9, [40, 40, 44]); fbox(f, 0, -.8, .4, .3, .9, 1.2, [36, 38, 42], [80, 160, 140]); fbox(f, .25, -1.0, .06, .06, .9, 2.0, [90, 94, 98]); fbox(f, .25, -1.0, .3, .2, 1.85, 2.0, [220, 70, 60]); } },
+  kiosk: { size: () => [.7, .75], h: 1.45, draw: f => { fbox(f, 0, 0, .7, .7, 0, .9, [190, 196, 200]); fbox(f, 0, -.1, .56, .1, .9, 1.4, [30, 32, 36], [90, 170, 150]); } },
+  carts: { size: f => [f.w || 4, f.d || 1], h: 1.0, draw: f => { const w = f.w || 4; for (let i = 0; i < w / .32; i++) fbox(f, -w / 2 + .16 + i * .32, 0, .3, .9, .1, .95, [170, 176, 182], [140, 146, 150]); } },
+  hbed: { size: () => [1.0, 2.15], h: .9, draw: f => { fbox(f, 0, 0, 1.0, 2.1, .1, .5, [200, 204, 206]); fbox(f, 0, -1.0, .96, .08, .5, .95, [150, 160, 166]); fbox(f, 0, .1, .94, 1.8, .5, .62, f.col || [150, 178, 120]); fbox(f, 0, -.78, .7, .36, .5, .66, [240, 240, 236]); for (const sx of [-.42, .42]) for (const sy of [-.95, .95]) fbox(f, sx, sy, .08, .08, 0, .1, [60, 62, 66]); } },
+  curtain: { size: f => [f.w || .06, f.d || 2.8], h: 2.2, solid: false, draw: f => { fbox(f, 0, 0, f.w || .06, f.d || 2.8, .2, 2.1, f.col || [150, 186, 168], null, .55); } },
+  vending: { size: () => [.85, .75], h: 1.85, draw: (f, n) => { fbox(f, 0, 0, .85, .75, 0, 1.85, [196, 60, 54]); fbox(f, -.1, -.38, .55, .02, .4, 1.7, [190, 220, 230], null, .5); if (n > .2) beaconSoft(P(f.x, f.y, 1.3), [220, 240, 255], k * .2 + 2); } },
+  carrel: { size: () => [1.0, .7], h: 1.25, draw: f => { fbox(f, 0, 0, 1.0, .7, .7, .75, [150, 116, 80]); for (const sx of [-.48, .48]) fbox(f, sx, 0, .04, .7, 0, 1.2, [120, 92, 64]); fbox(f, 0, .33, 1.0, .04, .75, 1.2, [120, 92, 64]); fbox(f, .25, .15, .12, .12, .75, 1.05, [220, 196, 140]); } },
+  car: { size: () => [1.9, 4.6], h: 1.45, draw: f => { const c = f.col || [160, 60, 50], z0 = f.z0 || 0; for (const sx of [-.82, .82]) for (const sy of [-1.45, 1.45]) fbox(f, sx, sy, .26, .66, z0, z0 + .62, [24, 24, 26]); fbox(f, 0, 0, 1.86, 4.5, z0 + .28, z0 + .86, c, mulc(c, 1.08)); fbox(f, 0, .2, 1.6, 2.1, z0 + .86, z0 + 1.34, [70, 90, 104], mulc(c, 1.1)); fbox(f, 0, -2.24, 1.5, .04, z0 + .55, z0 + .72, [236, 236, 220]); } },
+  turntable: { size: f => [(f.r || 2.8) * 2, (f.r || 2.8) * 2], h: .12, solid: false, draw: f => { drawCyl(f.x, f.y, f.r || 2.8, 0, .12, [120, 140, 136]); drawCyl(f.x, f.y, (f.r || 2.8) - .15, .12, .13, [182, 196, 190]); } },
+  hrail: { size: f => [f.w || 4, .12], h: 1.0, draw: f => { const w = f.w || 4; fbox(f, 0, 0, w, .08, .95, 1.02, [176, 150, 90]); for (let i = 0; i <= w / 1.2; i++) fbox(f, -w / 2 + i * 1.2, 0, .05, .05, 0, .95, [176, 150, 90]); } },
+};
+for (const [t, S] of Object.entries(VFURN)) FURN[t] = S;
+// drawFurn knows the house and office pieces; anything new draws itself
+const _drawFurn0 = drawFurn;
+drawFurn = function (f) { const S = FURN[f.t]; if (S && S.draw) return S.draw(f, INSIDE ? INSIDE.dark : 0, f.col); return _drawFurn0(f); };
+
+// ---------- seats, patrons and staff ----------
+const rotv2 = (ox, oy, r) => r === 1 ? [-oy, ox] : r === 2 ? [-ox, -oy] : r === 3 ? [oy, -ox] : [ox, oy];
+function seatsOfF(f) { const at = (ox, oy, z) => { const [a, b] = rotv2(ox, oy, f.rot || 0), [hx, hy] = rotv2(0, -1, f.rot || 0); return { x: f.x + a, y: f.y + b, z, hx, hy }; };
+  if (f.t === 'chair') return [at(0, 0, .47)]; if (f.t === 'armchair') return [at(0, 0, .44)]; if (f.t === 'officechair') return [at(0, 0, .52)];
+  if (f.t === 'stool') { const [hx, hy] = f.face || [0, -1]; return [{ x: f.x, y: f.y, z: .74, hx, hy }]; }
+  if (f.t === 'sofa') { const w = f.w || 2.1; return [-w / 3, 0, w / 3].map(u => at(u, 0, .44)); }
+  if (f.t === 'bench2') { const w = f.w || 1.8, nn = Math.max(1, Math.floor(w / .65)), [hx, hy] = f.face || [0, -1], odd = f.rot === 1 || f.rot === 3; const out = []; for (let i = 0; i < nn; i++) { const u = -w / 2 + (i + .5) * w / nn; out.push({ x: f.x + (odd ? 0 : u), y: f.y + (odd ? u : 0), z: .46, hx, hy }); } return out; }
+  return []; }
+const STAFFC = { cafe: [60, 92, 72], bar: [36, 36, 40], lounge: [40, 32, 44], rest: [240, 238, 232], slice: [190, 60, 44], club: [24, 24, 28], gym: [40, 110, 150], market: [70, 130, 80], conv: [200, 60, 50], hospital: [96, 150, 180], hall: [60, 50, 40], library: [110, 90, 70], dealer: [34, 38, 46] };
+function staff(I, key, x, y, hx, hy, job) { const p = roomNPC(I, null, key === 'rest' || key === 'dealer' ? 'suit' : 'casual', { top: STAFFC[key] || [60, 60, 64] }, null, job || null, { fixedAt: [x, y, hx, hy] }); p.staff = true; I.npcs.push(p); return p; }
+// people at the tables: one for most seats, each shown only when the room is busy enough for them
+function patrons(I, frac, kinds) { const Q = mulberry(strHash(I.name)); for (const f of I.furn) for (const s of seatsOfF(f)) { if (Q() > frac) continue; const p = roomNPC(I, null, kinds[Math.floor(Q() * kinds.length)], {}, null, null, { sit: { x: s.x, y: s.y, z: s.z, hx: s.hx, hy: s.hy } }); p.patron = true; p.busy = Q(); I.npcs.push(p); } }
+function browsers(I, n, pts, kinds, seed) { const Q = mulberry(seed); for (let i = 0; i < n; i++) { const route = []; for (let j = 0; j < 4; j++) route.push(pts[Math.floor(Q() * pts.length)]); const p = roomNPC(I, null, kinds[Math.floor(Q() * kinds.length)], {}, route, null); p.patron = true; p.busy = Q(); I.npcs.push(p); } }
+// a room on the sheet's grid: street wall at the bottom with the door gap and two shopfront windows
+function vroom(name, ox, w, h, o) {
+  const [d0, d1] = o.door, win = o.frontWin === false ? undefined : [[.5, d0 - .4], [d1 + .4, w - .5]];
+  const lights = []; for (let x = (w % 4) / 2 + 2; x < w; x += 4) for (let y = 2; y < h; y += 4) lights.push({ x, y });
+  return mkInterior({ name, ox, oy: 0, w, h, wallH: o.wh || 3.2, wallC: o.wallC || [206, 200, 188], wallTop: o.wallTop || [70, 66, 62], dayAmb: o.dayAmb || [1, .97, .92], nightAmb: o.nightAmb || [.7, .62, .54],
+    floors: o.floors || [{ x0: 0, y0: 0, x1: w, y1: h, m: o.floor || 'oak' }],
+    wallsH: [[0, 0, w, o.gN || [], { ext: true, win: o.winN }], [h, 0, w, [[d0, d1]], { ext: true, win }], ...(o.wH || [])],
+    wallsV: [[0, 0, h, o.gW || [], { ext: true, win: o.winW }], [w, 0, h, o.gE || [], { ext: true, win: o.winE }], ...(o.wV || [])],
+    lights: o.lights || lights, exits: [{ x: (d0 + d1) / 2, y: h + .3, r: .9, to: 'street' }] });
+}
+const svcF = (I, t, x, y, o, svc, sk) => { const f = F(I, t, x, y, o); f.svc = svc; f.sk = sk || 'venue'; return f; };
+const pair2 = (I, x, y, dx, col, t = 'chair') => { F(I, t, x - dx, y, { rot: 1, col }); F(I, t, x + dx, y, { rot: 3, col }); };
+const four = (I, x, y, dy, sx, col) => { for (const s of [-sx, sx]) { F(I, 'chair', x + s, y - dy, { rot: 2, col }); F(I, 'chair', x + s, y + dy, { rot: 0, col }); } };
+const CASUAL = ['casual', 'casual', 'coat', 'suit'], NIGHT = ['casual', 'casual', 'coat'], SMART = ['suit', 'coat', 'casual'];
+
+// 01 Copper Kettle Cafe, 14 x 10
+function buildCafe(ox) { const I = vroom('Cafe', ox, 14, 10, { door: [6.2, 7.8], wh: 3.4, floors: [{ x0: 0, y0: 0, x1: 14, y1: 10, m: 'latte', like: 'oak' }, { x0: 0, y0: 0, x1: 6, y1: 2.45, m: 'sand', like: 'tile' }, { x0: 11.3, y0: .9, x1: 14, y1: 7.8, m: 'sand', like: 'tile' }],
+    wH: [[2.45, 0, 6, [[2.27, 3.36], [4.47, 5.9]]]], wV: [[3.9, 0, 2.45], [6.0, 0, 2.45]], wallC: [214, 202, 182] });
+  F(I, 'blk', 1.8, .48, { w: 3.3, d: .62, h: .92, col: [190, 190, 186], top: [150, 152, 154] }); F(I, 'fridge', .45, 1.6, { rot: 1 }); F(I, 'toilet', 5.16, .5); F(I, 'basin', 5.64, 2.0, { rot: 2 });
+  for (const x of [1.54, 4.07]) for (const y of [3.5, 5.42, 7.35]) { F(I, 'table', x, y, { w: .7, d: .65, col: [196, 160, 120] }); pair2(I, x, y, .62, [70, 74, 72]); }
+  F(I, 'table', 8.58, 3.79, { w: 2.76, d: .9, col: [196, 160, 120] }); for (const x of [7.66, 8.58, 9.48]) { F(I, 'stool', x, 3.0, { face: [0, 1], col: [80, 84, 82] }); F(I, 'stool', x, 4.6, { face: [0, -1], col: [80, 84, 82] }); }
+  F(I, 'blk', 3.18, 9.64, { w: 4.16, d: .45, h: 1.0, col: [196, 160, 120] }); for (const x of [1.63, 2.65, 3.67, 4.68]) F(I, 'stool', x, 9.15, { face: [0, 1], col: [80, 84, 82] });
+  svcF(I, 'counter2', 11.6, 4.97, { rot: 1, w: 6.4, d: .8, col: [196, 160, 120], top: [70, 60, 54], reg: 1.4, cake: 3 }, 'Order at the counter');
+  F(I, 'counter2', 13.53, 4.43, { rot: 1, w: 6.6, d: .65, col: [214, 214, 208], top: [120, 122, 126], espresso: 0 });
+  for (const [x, y] of [[.9, 9.5], [5.5, 9.5], [7.1, 1.0], [9.9, 1.2], [10.2, 9.5]]) F(I, 'plant', x, y);
+  staff(I, 'cafe', 12.5, 3.6, -1, 0, 'Barista.'); staff(I, 'cafe', 12.5, 6.3, -1, 0, 'Barista.');
+  patrons(I, .7, CASUAL); return I; }
+// 02 the pub, 18 x 12: bar and taps, booths, high tables, pool and darts
+function buildBar(ox) { const I = vroom('Bar', ox, 18, 12, { door: [6.0, 8.0], wh: 3.6, floor: 'walnut', wallC: [150, 120, 96], nightAmb: [.62, .5, .4], floors: [{ x0: 0, y0: 0, x1: 18, y1: 12, m: 'walnut', like: 'wood' }, { x0: 15.65, y0: 0, x1: 18, y1: 2.85, m: 'tile' }],
+    wH: [[2.85, 15.65, 18, [[15.7, 16.8]]]], wV: [[15.65, 0, 2.85]] });
+  F(I, 'backbar', 8.6, .3, { w: 11.4, d: .45 }); F(I, 'blk', 1.32, .28, { w: 1.75, d: .5, h: 1.1, col: [110, 112, 114], top: [80, 80, 82] });
+  svcF(I, 'counter2', 8.6, 2.94, { w: 11.5, d: .84, col: [110, 70, 46], top: [60, 40, 30], taps: [-2.6, 1.4, 3.4], reg: -4.6 }, 'Order at the bar');
+  for (const x of [3.42, 4.56, 5.7, 6.84, 7.98, 9.1, 10.26, 11.4, 12.5, 13.67]) F(I, 'stool', x, 3.86, { face: [0, -1], col: [150, 80, 70] });
+  for (const y of [4.7, 6.5, 8.27, 10.05]) { F(I, 'sofa', .76, y, { w: 1.3, rot: 1, col: [150, 76, 70] }); F(I, 'table', 1.92, y, { w: .9, d: .65, col: [100, 90, 80] }); }
+  for (const [x, y] of [[5.47, 6.4], [8.49, 6.4], [5.47, 8.83], [8.49, 8.83]]) { F(I, 'blk', x, y, { w: .8, d: .7, h: 1.05, col: [110, 100, 92], top: [80, 70, 62] }); F(I, 'stool', x, y - .72, { face: [0, 1], col: [160, 170, 130] }); F(I, 'stool', x, y + .72, { face: [0, -1], col: [160, 170, 130] }); }
+  svcF(I, 'pooltable', 13.05, 7.93, {}, 'Play a game of pool', 'pool'); svcF(I, 'dartboard', .12, 2.8, { rot: 1 }, 'Throw some darts', 'darts');
+  F(I, 'toilet', 17.0, .5); F(I, 'basin', 17.2, 2.2, { rot: 3 });
+  staff(I, 'bar', 6.2, 1.9, 0, 1, 'Bartender.'); staff(I, 'bar', 11.5, 1.9, 0, 1, 'Bartender.');
+  patrons(I, .75, NIGHT); browsers(I, 3, [[13.05, 9.2], [11.6, 7.9], [10.4, 4.6], [3.5, 5.6], [7.0, 10.6]], NIGHT, 21); return I; }
+// 03 the cocktail and wine lounge, 16 x 11: curved bar, wine wall, piano stage, velvet seating
+function buildLounge(ox) { const I = vroom('Lounge', ox, 16, 11, { door: [7.0, 9.0], wh: 3.8, wallC: [120, 92, 100], wallTop: [50, 40, 46], nightAmb: [.58, .46, .46], floors: [{ x0: 0, y0: 0, x1: 16, y1: 11, m: 'rose', like: 'oak' }, { x0: 4.06, y0: .98, x1: 11.96, y1: 3.99, m: 'plum', like: 'carpet' }, { x0: 13.4, y0: 0, x1: 16, y1: 2.41, m: 'tile' }],
+    wH: [[2.41, 13.4, 16, [[13.4, 14.5]]]], wV: [[13.4, 0, 2.41], [6.07, 9.13, 11], [9.9, 9.13, 11]] });
+  F(I, 'backbar', 8.0, .28, { w: 8.0, d: .5, wine: true, col: [60, 36, 40] }); F(I, 'blk', 13.12, 2.85, { w: .16, d: 1.83, h: 2.2, col: [100, 80, 84] });
+  const arc = []; for (let i = 0; i < 13; i++) { const t = i / 12, x = 4.85 + t * 5.95, y = 2.1 + .8 * (1 - (2 * t - 1) ** 2); arc.push([x, y]); }
+  arc.forEach(([x, y], i) => { const f = F(I, 'counter2', x, y, { w: .5, d: .72, h: 1.08, col: [226, 214, 196], top: [120, 96, 70] }); if (i === 6) { f.svc = 'Order at the bar'; f.sk = 'venue'; } });
+  for (const [x, y] of [[4.95, 3.31], [5.78, 3.64], [6.61, 3.87], [7.42, 3.99], [8.23, 3.97], [9.06, 3.87], [9.86, 3.62], [10.69, 3.27]]) F(I, 'stool', x, y + .1, { face: [0, -1], col: [160, 90, 90] });
+  F(I, 'stage', 1.94, 1.82, { w: 3.42, d: 2.6, col: [90, 96, 92] }); svcF(I, 'piano', 2.1, 1.55, {}, 'Listen to the pianist', 'listen'); F(I, 'blk', 2.1, 2.3, { w: .8, d: .3, h: .5, col: [30, 30, 32] });
+  for (const [x, w] of [[2.6, 2.0], [7.9, 2.0], [13.06, 1.9]]) { F(I, 'sofa', x, 6.5, { w, rot: 2, col: [150, 70, 76] }); F(I, 'table', x, 7.45, { w: .9, d: .6, col: [150, 156, 150] }); F(I, 'sofa', x, 8.4, { w, rot: 0, col: [150, 70, 76] }); }
+  F(I, 'toilet', 15.4, .5); F(I, 'basin', 15.6, 2.0, { rot: 3 });
+  staff(I, 'lounge', 7.85, 1.3, 0, 1, 'Bartender.'); { const p = roomNPC(I, null, 'suit', { top: [24, 24, 28] }, null, 'Pianist.', { sit: { x: 2.1, y: 2.3, z: .5, hx: 0, hy: -1 } }); p.staff = true; p.pianist = true; I.npcs.push(p); }
+  patrons(I, .7, SMART); return I; }
+// 04 The Larder, 20 x 14: host stand, window two-tops, eight four-tops, banquette, kitchen pass and prep kitchen
+function buildRestaurant(ox) { const I = vroom('Restaurant', ox, 20, 14, { door: [8.7, 11.3], wh: 3.6, wallC: [222, 210, 186], floors: [{ x0: 0, y0: 0, x1: 20, y1: 14, m: 'latte', like: 'oak' }, { x0: 0, y0: 0, x1: 5.1, y1: 2.84, m: 'tile' }, { x0: 5.1, y0: 0, x1: 20, y1: 3.2, m: 'slate', like: 'tile' }],
+    wH: [[2.84, 0, 5.09, [[.23, 1.37], [2.71, 3.88]]]], wV: [[2.58, 0, 2.84], [5.09, 0, 2.84]] });
+  F(I, 'blk', 11.8, .42, { w: 9.3, d: .62, h: .92, col: [150, 156, 160], top: [190, 194, 196] }); F(I, 'blk', 12.43, 1.39, { w: 4.34, d: .65, h: .92, col: [150, 156, 160], top: [190, 194, 196] });
+  svcF(I, 'counter2', 11.8, 2.73, { w: 9.3, d: .75, h: 1.12, col: [140, 126, 112], top: [190, 186, 176] }, 'Ask about a table');
+  F(I, 'toilet', 1.6, .5); F(I, 'toilet', 4.2, .5); F(I, 'basin', .5, 1.6, { rot: 1 }); F(I, 'basin', 3.0, 1.6, { rot: 1 });
+  for (const x of [3.23, 7.36, 12.02, 16.36]) { for (const y of [5.26, 8.11]) { F(I, 'table', x, y, { w: 1.3, d: .75, col: [140, 126, 112] }); four(I, x, y, .78, .33, [150, 170, 130]); }
+    F(I, 'table', x, 10.93, { w: .78, d: .74, col: [140, 126, 112] }); F(I, 'chair', x, 10.26, { rot: 2, col: [150, 170, 130] }); F(I, 'chair', x, 11.6, { rot: 0, col: [150, 170, 130] }); }
+  F(I, 'sofa', .52, 7.03, { w: 6.4, rot: 1, col: [150, 170, 130] });
+  F(I, 'blk', 7.96, 12.67, { w: .7, d: .5, h: 1.15, col: [80, 82, 84], top: [140, 126, 112] });
+  staff(I, 'rest', 7.96, 12.0, 0, 1, 'Host.'); staff(I, 'rest', 10.0, 1.9, 0, 1, 'Chef.'); staff(I, 'rest', 14.0, 1.9, 0, 1, 'Chef.');
+  I.npcs.push(Object.assign(roomNPC(I, null, 'casual', { top: [240, 238, 232] }, [[8.9, 3.6], [5.3, 6.6], [14.1, 6.6], [10, 9.6], [8.9, 3.6]], 'Server.'), { staff: true }));
+  patrons(I, .6, SMART); return I; }
+// 05 Late Night Slice, 9 x 7: ovens, prep, slice display and register, ledge with stools, waiting bench
+function buildSlice(ox) { const I = vroom('Takeout', ox, 9, 7, { door: [3.5, 5.5], wh: 3.2, wallC: [222, 214, 190], floors: [{ x0: 0, y0: 0, x1: 9, y1: 7, m: 'cream', like: 'tile' }] });
+  F(I, 'oven', 2.4, .78, { w: 2.8, d: .86 }); F(I, 'blk', 6.56, .78, { w: 2.55, d: .76, h: .92, col: [150, 156, 160], top: [196, 198, 200] });
+  svcF(I, 'display', 3.16, 2.88, { w: 2.8, d: .83, col: [178, 102, 86] }, 'Order a slice'); F(I, 'counter2', 6.9, 2.88, { w: 3.5, d: .83, col: [178, 102, 86], top: [70, 50, 44], reg: .64 }); F(I, 'blk', 1.3, 2.88, { w: .55, d: .83, h: 1.05, col: [178, 102, 86], top: [70, 50, 44] });
+  F(I, 'blk', .27, 4.88, { w: .47, d: 3.1, h: 1.05, col: [158, 146, 128] }); for (const y of [3.66, 4.48, 5.31, 6.12]) F(I, 'stool', .86, y, { face: [-1, 0], col: [178, 102, 86] });
+  F(I, 'bench2', 7.82, 5.9, { w: 1.82, face: [0, -1] });
+  staff(I, 'slice', 3.2, 2.0, 0, 1, 'Pizza maker.'); staff(I, 'slice', 7.5, 2.0, 0, 1, 'On the register.');
+  patrons(I, .8, NIGHT); return I; }
+// 06 Pulse, 24 x 18, 6 m ceiling: dance floor, DJ riser, two bars, VIP booths, coat check
+function buildClub(ox) { const I = vroom('Club', ox, 24, 18, { door: [10.67, 13.3], frontWin: false, wh: 6, wallC: [60, 56, 70], wallTop: [30, 28, 36], dayAmb: [.5, .44, .56], nightAmb: [.42, .36, .5], gN: [[7.55, 9.03]],
+    floors: [{ x0: 0, y0: 0, x1: 24, y1: 18, m: 'plum', like: 'tile' }, { x0: 7.58, y0: 4.98, x1: 16.42, y1: 12.59, m: 'dance' }, { x0: 0, y0: 0, x1: 6, y1: 3.9, m: 'tile' }],
+    wH: [[3.9, 0, 6, [[.4, 1.55], [3.3, 4.4]]]], wV: [[3.12, 0, 3.9], [6.0, 0, 3.9], [10.39, 15.68, 18], [13.6, 15.68, 18]], lights: [{ x: 4, y: 9 }, { x: 20, y: 9 }, { x: 12, y: 15 }, { x: 19.5, y: 3.5 }] });
+  F(I, 'stage', 11.99, 3.79, { w: 6.03, d: 2.38, col: [50, 52, 56] }); F(I, 'djdesk', 12.0, 3.7, { w: 2.5 });
+  svcF(I, 'counter2', 2.3, 9.71, { rot: 1, w: 5.44, d: .9, col: [40, 36, 50], top: [150, 100, 180], taps: [-1.5, 1.5] }, 'Order at the bar'); F(I, 'counter2', 21.7, 9.71, { rot: 1, w: 5.44, d: .9, col: [40, 36, 50], top: [150, 100, 180], taps: [-1.5, 1.5] }).svc = 'Order at the bar';
+  I.furn[I.furn.length - 1].sk = 'venue';
+  for (const y of [1.48, 3.46, 5.47]) { F(I, 'sofa', 19.55, y - .4, { w: 2.5, rot: 2, col: [160, 80, 90] }); F(I, 'table', 19.55, y + .5, { w: .9, d: .5, col: [80, 84, 90] }); }
+  F(I, 'hrail', 17.54, 3.6, { rot: 1, w: 5.2 });
+  F(I, 'counter2', 15.66, 16.85, { w: 2.7, d: .7, col: [80, 84, 90], top: [40, 40, 44] });
+  F(I, 'toilet', 1.5, .5); F(I, 'toilet', 4.6, .5);
+  staff(I, 'club', 1.3, 9.0, 1, 0, 'Bartender.'); staff(I, 'club', 22.7, 10.4, -1, 0, 'Bartender.'); { const p = staff(I, 'club', 12.0, 3.0, 0, 1, 'DJ.'); p.dj = true; } staff(I, 'club', 15.6, 17.5, 0, -1, 'Coat check.');
+  { const p = staff(I, 'club', 12.2, 15.2, 0, 1, 'Door staff.'); p.L.top = [20, 20, 22]; }
+  patrons(I, .8, NIGHT);
+  const dance = []; for (let i = 0; i < 8; i++) for (let j = 0; j < 6; j++) dance.push([8.4 + i, 5.6 + j * 1.2]);
+  const Q = mulberry(66); for (let i = 0; i < 26; i++) { const c = dance[Math.floor(Q() * dance.length)]; const p = roomNPC(I, null, NIGHT[i % 3], {}, null, null, { fixedAt: [c[0] + Q() * .4, c[1] + Q() * .4, ...(a => [Math.cos(a), Math.sin(a)])(Q() * 6.283)] }); p.patron = true; p.busy = Q(); p.dancer = true; I.npcs.push(p); }
+  browsers(I, 6, [[3.6, 8], [20.4, 11], [12, 14], [9, 13.2], [15, 13.2], [5, 13]], NIGHT, 67); return I; }
+// 07 Gym, 26 x 18: reception and turnstiles, cardio row, machines, free weights, mats, two locker rooms
+function buildGym(ox) { const I = vroom('Gym', ox, 26, 18, { door: [11.7, 14.3], wh: 4.5, wallC: [190, 196, 198], wallTop: [70, 74, 78], floors: [{ x0: 0, y0: 0, x1: 26, y1: 18, m: 'rubber' }, { x0: 0, y0: 0, x1: 6.42, y1: 4, m: 'tile' }, { x0: 19.57, y0: 0, x1: 26, y1: 4, m: 'tile' }, { x0: 9.5, y0: 12.8, x1: 16.5, y1: 18, m: 'slate', like: 'tile' }],
+    wH: [[4, 0, 6.42, [[.33, 1.44]]], [4, 19.57, 26, [[19.7, 20.8]]]], wV: [[6.42, 0, 4], [19.57, 0, 4]] });
+  F(I, 'lockers', 3.0, .45, { w: 5.0 }); F(I, 'bench2', 3.2, 2.43, { w: 3.1 }); F(I, 'lockers', 22.6, .45, { w: 5.0, col: [170, 120, 140] }); F(I, 'bench2', 22.55, 2.43, { w: 3.1 });
+  F(I, 'rack', .32, 9.0, { w: .55, d: 7.6 }); for (const y of [6.7, 9.07, 11.47]) F(I, 'wbench', 2.05, y);
+  for (const x of [5.99, 9.0, 12.0, 15.0]) for (const y of [6.87, 10.2]) F(I, 'machine', x, y);
+  for (const x of [20.57, 22.27, 23.98]) for (const y of [7.73, 10.2]) svcF(I, 'flat', x, y, { w: .8, d: 1.75, col: [100, 150, 150] }, 'Stretch for a while', 'stretch');
+  svcF(I, 'counter2', 12.0, 13.78, { w: 3.0, d: .7, col: [150, 160, 164], top: [60, 64, 70], reg: .9 }, 'Talk to reception', 'store');
+  for (const x of [15.0, 16.5]) F(I, 'blk', x, 13.6, { w: .15, d: .9, h: 1.0, col: [150, 154, 160] });
+  for (const x of [2.94, 5.52, 8.09, 10.63, 15.79, 18.33]) svcF(I, 'treadmill', x, 16.27, {}, 'Work out', 'store'); for (const x of [21.04, 23.04, 25.05]) svcF(I, 'bike', x, 16.37, {}, 'Work out', 'store');
+  staff(I, 'gym', 12.0, 13.1, 0, 1, 'Front desk.');
+  const gymPts = [[3.0, 8], [7.5, 8.5], [10.5, 8.5], [13.5, 8.5], [21.5, 9], [4, 14.5], [17, 14.5], [7.5, 11.6]]; browsers(I, 10, gymPts, ['casual'], 77);
+  for (const n of I.npcs) if (n.patron) n.L.top = [[60, 60, 64], [140, 40, 50], [40, 80, 140], [230, 230, 226]][n.uid % 4];
+  return I; }
+// 08 Market, 34 x 24: produce, six aisles, chilled and frozen, bakery and deli, four checkouts, self-checkout, cart bay
+function buildMarket(ox) { const I = vroom('Market', ox, 34, 24, { door: [13.7, 16.35], wh: 4.2, wallC: [214, 214, 206], floors: [{ x0: 0, y0: 0, x1: 34, y1: 24, m: 'cream', like: 'lino' }, { x0: 26, y0: 0, x1: 34, y1: 2.9, m: 'conc' }],
+    wH: [[2.9, 26, 34, [[26.0, 27.2]]]], wV: [[26.0, 0, 2.9]] });
+  F(I, 'gondola', 29.8, .8, { rot: 1, w: .7, d: 6.2 });
+  for (const x of [2.53, 6.12, 9.75, 13.37, 17.0, 20.59, 24.2]) F(I, 'chest', x, 3.83, { w: 2.7, d: .74 });
+  for (const x of [3.15, 7.17, 11.15, 15.17, 19.19, 23.2]) F(I, 'gondola', x, 10.36, { w: 1.14, d: 10.5 });
+  F(I, 'chiller', 30.95, 6.28, { w: 4.9, d: 1.1 }); svcF(I, 'display', 31.67, 8.6, { w: 3.54, d: .92, col: [150, 126, 104] }, 'Shop for groceries', 'store');
+  for (const x of [2.75, 6.16, 9.57]) F(I, 'blk', x, 18.6, { w: 2.4, d: 1.58, h: .85, col: [110, 130, 80], top: [150, 170, 90] });
+  for (const x of [19.5, 21.8, 24.13, 26.44]) svcF(I, 'checkout', x, 19.78, {}, 'Shop for groceries', 'store');
+  for (const y of [17.9, 19.7, 21.55]) svcF(I, 'kiosk', 30.64, y, {}, 'Self checkout', 'store');
+  F(I, 'carts', 11.47, 22.75, { w: 4.3, d: 1.1 });
+  for (const x of [19.5, 21.8, 24.13, 26.44]) staff(I, 'market', x + .7, 19.4, -1, 0, 'Checkout.'); staff(I, 'market', 31.6, 9.5, 0, -1, 'Deli counter.');
+  const pts = []; for (const x of [1.4, 5.2, 9.2, 13.2, 17.2, 21.2, 25.2]) for (const y of [6.5, 10, 14]) pts.push([x, y]); pts.push([4, 16.6], [8, 16.6], [29, 10], [16, 17]);
+  browsers(I, 14, pts, CASUAL, 88); return I; }
+// 09 24 Hour Market, 14 x 10: drinks fridges, three short aisles, coffee and hot food, register, magazines and snacks
+function buildConv(ox) { const I = vroom('24 Hour Market', ox, 14, 10, { door: [6.0, 8.0], wh: 3.2, wallC: [214, 216, 210], floors: [{ x0: 0, y0: 0, x1: 14, y1: 10, m: 'sand', like: 'lino' }, { x0: 11.06, y0: 0, x1: 14, y1: 2.45, m: 'conc' }],
+    wH: [[2.45, 11.06, 14, [[11.1, 12.3]]]], wV: [[11.06, 0, 2.45]] });
+  for (const x of [1.18, 3.21, 5.25, 7.26, 9.3]) F(I, 'chiller', x, .43, { w: 1.84, d: .7 }); F(I, 'gondola', 12.4, .6, { rot: 1, w: .46, d: 2.1 });
+  for (const x of [3.14, 6.1, 9.04]) F(I, 'gondola', x, 4.49, { w: .9, d: 3.96 });
+  svcF(I, 'counter2', 13.38, 5.67, { rot: 1, w: 2.2, d: .64, col: [190, 70, 60], top: [70, 60, 56], espresso: -.5 }, 'Grab a coffee and something hot', 'store');
+  svcF(I, 'counter2', 11.0, 8.79, { w: 2.87, d: 1.15, col: [150, 160, 164], top: [70, 74, 80], reg: -.8 }, 'Pay at the register', 'store');
+  F(I, 'gondola', 3.3, 9.45, { rot: 1, w: .57, d: 3.85, hh: 1.2 });
+  staff(I, 'conv', 11.0, 9.6, 0, -1, 'Night clerk.');
+  browsers(I, 4, [[1.6, 2.2], [4.6, 3.4], [7.6, 5.4], [10.5, 3.2], [12.4, 6.4], [2.4, 7.4]], CASUAL, 99); return I; }
+// 10 City General Hospital, 34 x 22: waiting, triage, six curtained bays, nurses' station, four-bed ward, vending, restrooms, lifts
+function buildHospital(ox) { const I = vroom('City General Hospital', ox, 34, 22, { door: [15.7, 18.3], wh: 3.4, wallC: [226, 230, 226], wallTop: [120, 130, 128], dayAmb: [1, 1, 1], nightAmb: [.86, .88, .88], floors: [{ x0: 0, y0: 0, x1: 34, y1: 22, m: 'mint', like: 'lino' }, { x0: 23.25, y0: 0, x1: 34, y1: 11.8, m: 'sand', like: 'lino' }],
+    wH: [[11.8, 23.25, 34, [[23.25, 24.4]]], [17.7, 29.1, 30.86], [17.7, 32.1, 33.87]], wV: [[23.25, 0, 11.8, [], { ext: false }], [29.1, 17.7, 20.8], [30.86, 17.7, 20.8], [32.1, 17.7, 20.8]], winE: [[1, 11]] });
+  for (const x of [15.08, 18.1]) F(I, 'lift', x + 1.0, .3, {});
+  for (const [cx2, x0, x1] of [[2.45, .61, 4.24], [6.6, 4.81, 8.39], [10.75, 8.96, 12.54]]) for (const [cy2, y0, y1] of [[3.32, 1.57, 5.73], [8.77, 7.09, 11.2]]) {
+    F(I, 'hbed', cx2, cy2, { col: [150, 178, 120] }); F(I, 'curtain', x0, (y0 + y1) / 2, { d: y1 - y0 }); F(I, 'curtain', x1, (y0 + y1) / 2, { d: y1 - y0 }); F(I, 'chair', cx2 + 1.0, cy2 + .4, { rot: 3, col: [120, 140, 150] }); }
+  svcF(I, 'counter2', 17.4, 10.6, { w: 5.15, d: 1.8, col: [120, 160, 140], top: [214, 218, 214] }, 'Talk to the nurses', 'nurse');
+  svcF(I, 'counter2', 13.18, 16.08, { w: 4.85, d: .83, col: [160, 170, 166], top: [214, 218, 214], reg: 1.2 }, 'Reception and triage', 'triage');
+  for (const x of [2.53, 3.63, 4.72, 5.86, 6.95]) for (const y of [14.96, 16.5, 17.98, 19.5]) F(I, 'chair', x, y, { rot: 0, col: [110, 130, 146] });
+  for (const [x, y] of [[25.13, 3.19], [30.42, 3.19], [25.13, 8.75], [30.42, 8.75]]) { F(I, 'hbed', x, y, { col: [140, 170, 190] }); F(I, 'bedside', x + .9, y - .7, {}); }
+  F(I, 'vending', 23.7, 21.2, {}); F(I, 'vending', 24.7, 21.2, {}); F(I, 'toilet', 30.0, 18.2); F(I, 'toilet', 33.0, 18.2);
+  staff(I, 'hospital', 13.2, 15.4, 0, 1, 'Triage nurse.'); staff(I, 'hospital', 16.0, 9.5, 0, 1, 'Nurse.'); staff(I, 'hospital', 18.8, 9.5, 0, 1, 'Nurse.');
+  I.npcs.push(Object.assign(roomNPC(I, null, 'casual', { top: [96, 150, 180] }, [[6.6, 6.3], [10.75, 6.3], [17.4, 12.5], [24.0, 12.3], [27.8, 6.0], [2.45, 6.3]], 'Nurse.'), { staff: true }));
+  I.npcs.push(Object.assign(roomNPC(I, null, 'coat', { top: [236, 236, 232] }, [[17.4, 8.4], [6.6, 6.3], [27.8, 6.0], [16.1, 2.0, 1]], 'Doctor.'), { staff: true }));
+  // patients asleep in some of the bays and ward beds
+  const Q = mulberry(1010); for (const [x, y] of [[2.45, 3.32], [10.75, 3.32], [6.6, 8.77], [25.13, 3.19], [30.42, 8.75]]) { if (Q() < .2) continue; const p = roomNPC(I, null, 'casual', { top: [170, 196, 210] }, null, null, { sit: { x, y: y - .5, z: .55, hx: 0, hy: 1 } }); p.sleep = { x: ox + x, y: y - .7, fx: 0, fy: 1, z: .58, col: [150, 178, 120] }; p.patient = true; I.npcs.push(p); }
+  patrons(I, .55, ['casual', 'coat', 'casual', 'suit']); for (const n of I.npcs) if (n.sit && n.sit.y > 14) n.wait = true;
+  I.wardBed = [30.42, 3.19]; return I; }
+// 11 College Great Hall, 30 x 20: four long tables with benches, dais and high table, arched windows
+function buildHall(ox) { const I = vroom('Great Hall', ox, 30, 20, { door: [13.73, 16.3], wh: 7, wallC: [150, 104, 92], wallTop: [70, 50, 44], gE: [[3.95, 5.57]], winW: [[3, 6], [8, 11], [13, 16]], winE: [[7, 10], [12, 15], [16.5, 18.5]], floors: [{ x0: 0, y0: 0, x1: 30, y1: 20, m: 'walnut', like: 'oak' }] });
+  F(I, 'stage', 15.0, 2.1, { w: 21.9, d: 3.3, col: [120, 90, 66] }); F(I, 'table', 15.0, 1.78, { w: 13.8, d: 1.0, col: [110, 76, 50] }); for (const x of [9.99, 12.0, 14.0, 16.0, 18.0, 20.0]) F(I, 'chair', x, .9, { rot: 2, col: [120, 60, 50] });
+  for (const x of [4.94, 11.69, 18.32, 25.03]) { F(I, 'table', x, 11.03, { w: 1.16, d: 11.76, col: [150, 112, 70] }); F(I, 'bench2', x - .98, 11.03, { rot: 1, w: 11.6, face: [1, 0] }); F(I, 'bench2', x + .98, 11.03, { rot: 1, w: 11.6, face: [-1, 0] }); }
+  F(I, 'blk', 29.85, 4.76, { w: .1, d: 1.6, h: 2.4, col: [90, 60, 40] });
+  svcF(I, 'blk', 2.2, 18.6, { w: 2.4, d: .7, h: .95, col: [110, 76, 50], top: [150, 112, 70] }, 'Grab something from the servery', 'hall');
+  staff(I, 'hall', 2.2, 19.3, 0, -1, 'Kitchen staff.');
+  patrons(I, .45, ['casual', 'casual', 'coat']); return I; }
+// 12 College Library, 24 x 16: help desk, security gates, study tables, book stacks, quiet carrels, glass group room, mezzanine shelves
+function buildLibrary(ox) { const I = vroom('College Library', ox, 24, 16, { door: [10.67, 13.3], wh: 4.5, wallC: [214, 200, 176], floors: [{ x0: 0, y0: 0, x1: 24, y1: 16, m: 'latte', like: 'oak' }, { x0: 20.35, y0: 0, x1: 24, y1: 3.28, m: 'gcarpet' }], winE: [[4, 12]],
+    wH: [[3.28, 21.68, 24]], wV: [[20.35, 0, 3.4]] });
+  F(I, 'backbar', 10.3, .55, { w: 20.1, d: .9, books: true, col: [120, 90, 64] }); F(I, 'hrail', 10.3, 1.2, { w: 20.1 });
+  for (const x of [3.74, 7.18, 10.58, 14.0, 17.45]) F(I, 'gondola', x, 4.6, { w: .93, d: 5.67, books: true, hh: 1.9 });
+  F(I, 'glasswall', 22.9, 3.28, { w: 2.3, d: .06 }); F(I, 'mtable', 22.2, 1.58, { w: 2.0, d: .85 }); for (const x of [21.68, 22.67]) { F(I, 'chair', x, .9, { rot: 2 }); F(I, 'chair', x, 2.3, { rot: 0 }); }
+  for (const y of [3.26, 5.15, 7.07, 9.0, 10.9]) { svcF(I, 'carrel', 23.4, y, { rot: 3 }, 'Study at a quiet carrel', 'study'); }
+  for (const x of [4.55, 10.0, 15.4]) { svcF(I, 'table', x, 11.03, { w: 3.78, d: 1.15, col: [150, 112, 70] }, 'Study at a table', 'study'); for (const u of [-1.26, 0, 1.26]) { F(I, 'chair', x + u, 10.14, { rot: 2, col: [150, 170, 130] }); F(I, 'chair', x + u, 11.88, { rot: 0, col: [150, 170, 130] }); } }
+  for (const x of [10.42, 13.45]) F(I, 'blk', x, 13.93, { w: .18, d: .95, h: 1.1, col: [150, 156, 160] });
+  svcF(I, 'counter2', 16.62, 14.5, { w: 3.3, d: .96, col: [150, 112, 70], top: [70, 60, 50], reg: .8 }, 'Ask at the help desk', 'help');
+  staff(I, 'library', 16.62, 13.75, 0, 1, 'Librarian.');
+  patrons(I, .55, ['casual', 'casual', 'coat']); browsers(I, 4, [[5.5, 4], [9, 6], [12.4, 3], [16, 6.5], [19, 4.4], [8, 8.4]], ['casual'], 112); return I; }
+// 13 Circuit Prestige Motors showroom, 30 x 18: turntable, four display cars, sales desk, lounge and coffee bar, two glass offices
+function buildDealer(ox) { const I = vroom('Circuit Prestige Motors', ox, 30, 18, { door: [13.73, 16.3], wh: 6, wallC: [214, 216, 214], wallTop: [70, 74, 76], gE: [[1.58, 4.94]], winE: [[6, 17]], winW: [[6, 17]], floors: [{ x0: 0, y0: 0, x1: 30, y1: 18, m: 'stone' }],
+    wV: [[8.1, 0, 4], [13.15, 0, 4], [18.2, 0, 4]] });
+  F(I, 'glasswall', 11.24, 3.92, { w: 3.8, d: .06 }); F(I, 'glasswall', 16.3, 3.92, { w: 3.8, d: .06 }); F(I, 'glasswall', 29.9, 3.26, { w: .06, d: 3.36 });
+  for (const x of [10.1, 15.2]) { F(I, 'desk', x, 1.16, { w: 2.1, monitor: true }); F(I, 'officechair', x, 1.75, { rot: 2 }); F(I, 'chair', x - .4, .45, { rot: 0 }); }
+  F(I, 'counter2', 1.93, .64, { w: 3.46, d: .62, col: [120, 124, 128], top: [60, 62, 66], espresso: .8 }); F(I, 'sofa', 4.65, 2.3, { w: 3.0, rot: 2, col: [110, 116, 120] }); F(I, 'table', 4.65, 3.4, { w: 1.1, d: .6, col: [190, 190, 186] }); F(I, 'sofa', 4.65, 4.5, { w: 3.0, rot: 0, col: [110, 116, 120] });
+  F(I, 'turntable', 15.0, 9.5, { r: 2.78 }); svcF(I, 'car', 15.0, 9.5, { col: [168, 68, 56], z0: .13 }, 'Look over the car', 'dealer');
+  for (const [x, y, c] of [[9.33, 6.99, [226, 220, 204]], [4.63, 12.93, [110, 146, 160]], [23.64, 7.18, [74, 96, 98]], [25.72, 13.32, [190, 152, 104]]]) svcF(I, 'car', x, y, { col: c }, 'Look over the car', 'dealer');
+  svcF(I, 'counter2', 19.6, 3.24, { w: 2.4, d: 1.15, col: [60, 64, 70], top: [200, 200, 196], reg: 0 }, 'Talk to sales', 'dealer');
+  for (const [x, y] of [[.7, 17.2], [29.3, 17.2], [7.6, .6], [21, .6]]) F(I, 'plant', x, y);
+  staff(I, 'dealer', 19.6, 2.4, 0, 1, 'Sales consultant.'); staff(I, 'dealer', 15.2, 2.1, 0, -1, 'Sales manager.');
+  browsers(I, 4, [[12, 7], [7, 10], [19, 12], [21, 9], [11, 14], [17, 14.5]], SMART, 131); return I; }
+
+const VBUILD = { cafe: buildCafe, bar: buildBar, lounge: buildLounge, rest: buildRestaurant, slice: buildSlice, club: buildClub, gym: buildGym, market: buildMarket, conv: buildConv, hospital: buildHospital, hall: buildHall, library: buildLibrary, dealer: buildDealer };
+const VORDER = Object.keys(VBUILD);
+const _interiorFor0 = interiorFor;
+interiorFor = function (key) { if (VBUILD[key]) { if (!INTERIORS[key]) INTERIORS[key] = VBUILD[key](24000 + VORDER.indexOf(key) * 1000); return INTERIORS[key]; } return _interiorFor0(key); };
 // ================= sound =================
 // Everything here is synthesised in the browser with Web Audio: no sound files yet.
 // Layers: district background beds crossfaded by where you stand, positioned sounds for nearby cars,
@@ -6864,7 +7127,7 @@ window.GAME = (() => {
     $('bRes').onclick = closeMenu; $('bTools').onclick = testTools; $('bChase').onclick = () => { CHASE.on = !CHASE.on; try { localStorage.setItem('co_chase', CHASE.on ? '1' : '0'); } catch (e) { } $('bChase').textContent = 'Chase camera: ' + (CHASE.on ? 'on' : 'off'); }; $('modal').hidden = false; menu.keys = null; }
 
   // ---------------- interiors: the share house, the Northgate lobby and the Meridian floor ----------------
-  const roomName = r => r === 'house' ? 'Home' : r === 'lobby' ? towerName((S.player.job && S.player.job.co) || 'meridian') : r === 'office' ? `${empName()}, level ${floorOf((S.player.job && S.player.job.co) || 'meridian')}` : r;
+  const roomName = r => r === 'house' ? 'Home' : r === 'lobby' ? towerName((S.player.job && S.player.job.co) || 'meridian') : r === 'office' ? `${empName()}, level ${floorOf((S.player.job && S.player.job.co) || 'meridian')}` : (INSIDE && INSIDE.name) || r;
   const roomKey = () => INSIDE ? Object.keys(INTERIORS).find(kq => INTERIORS[kq] === INSIDE) : null;
   const DOOR_OF = { house: () => homeDoor, lobby: () => empDoor(), office: () => empDoor() };
   function goIn(key, door, lx, ly) { music.stop(); setTimeout(() => music.refresh(), 0); enterInterior(key, 'street', door); if (lx != null) { player.x = INSIDE.ox + lx; player.y = INSIDE.oy + ly; cx = player.x; cy = player.y; } placeRob(true); }
@@ -6899,7 +7162,8 @@ window.GAME = (() => {
   const rotv = (ox, oy, r) => r === 1 ? [-oy, ox] : r === 2 ? [-ox, -oy] : r === 3 ? [oy, -ox] : [ox, oy];
   function seatsOf(f) { const at = (ox, oy, z) => { const [a, b] = rotv(ox, oy, f.rot || 0), [hx, hy] = rotv(0, -1, f.rot || 0); return { x: f.x + a, y: f.y + b, z, hx, hy, f }; };
     if (f.t === 'chair') return [at(0, 0, .47)]; if (f.t === 'officechair') return [at(0, 0, .52)]; if (f.t === 'armchair') return [at(0, 0, .44)];
-    if (f.t === 'sofa') { const w = f.w || 2.1; return [-w / 3, 0, w / 3].map(u => at(u, 0, .44)); } return []; }
+    if (f.t === 'sofa') { const w = f.w || 2.1; return [-w / 3, 0, w / 3].map(u => at(u, 0, .44)); }
+    if (f.t === 'stool' || f.t === 'bench2') return seatsOfF(f).map(s2 => Object.assign(s2, { f })); return []; }
   function nearSeat() { const I = INSIDE; let best = null, bd = 1.25;
     for (const f of I.furn) for (const st of seatsOf(f)) { const x = I.ox + st.x, y = I.oy + st.y, d = Math.hypot(x - player.x, y - player.y); if (d >= bd) continue;
       if (I.npcs.some(n => n.sit && !n.hidden && Math.hypot(n.sit.x - x, n.sit.y - y) < .45)) continue; bd = d; best = Object.assign({}, st, { x, y }); } return best; }
@@ -6916,9 +7180,9 @@ window.GAME = (() => {
   function roomTick(dt) {
     const room = roomKey();
     if (wasRoom !== room) music.refresh();
-    if (wasRoom && !room) toast(wasRoom === 'house' ? 'Out the front of the share house.' : 'Back on the street outside Northgate tower.', 2.5); // walked out through the street door
+    if (wasRoom && !room) { if (BUSY[wasRoom]) music.stop(); toast(wasRoom === 'house' ? 'Out the front of the share house.' : BUSY[wasRoom] ? 'Back out on the street.' : `Back on the street outside ${towerName((S.player.job && S.player.job.co) || 'meridian')}.`, 2.5); } // walked out through the street door
     wasRoom = room; if (!room) return;
-    if ((roomTick.r = (roomTick.r || 0) - dt) < 0) { roomTick.r = 2; placeRob(); if (room === 'house') robStereo(); }
+    if ((roomTick.r = (roomTick.r || 0) - dt) < 0) { roomTick.r = 2; crowd(); placeRob(); if (room === 'house') robStereo(); }
     near = null; const n = nearNPC(roomKey() === 'office' ? 1.1 : 1.8);
     if (room === 'house') { const f = nearFurn(f => MYBED(f) || MYDESK(f) || ['fridge', 'stove', 'shower', 'tvunit', 'stereo'].includes(f.t), 1.1);
       const st2 = !n && !f ? nearSeat() : null;
@@ -6926,6 +7190,7 @@ window.GAME = (() => {
       else if (n) near = { id: 'npc', n, act: 'Talk to ' + n.name }; else if (f) { const id = MYBED(f) ? 'bed' : MYDESK(f) ? 'desk' : f.t === 'tvunit' ? 'sofa' : f.t; near = { id, act: { bed: 'Your bed', desk: 'Your laptop', fridge: 'Fridge', stove: 'Cook', sofa: 'Watch TV', shower: 'Shower', stereo: 'Stereo' }[id] }; } else if (st2) near = { id: 'sit', st: st2, act: st2.f.t === 'sofa' ? 'Sit on the couch' : 'Sit down' }; }
     else { const lift = nearLift(); if (seated) near = { id: 'seated', act: 'Stand up' }; else if (lift) near = { id: 'lift', to: lift.to, act: lift.label }; else if (n) near = { id: 'npc', n, act: 'Talk to ' + n.name };
       else if (room === 'office') { const f = nearFurn(f => f.t === 'workdesk' || f.t === 'fridge' || f.t === 'counter', 1.0); if (f) near = f.t === 'workdesk' ? { id: 'work', f, act: 'Sit down at a desk and work' } : { id: 'coffee', act: 'Office kitchen' }; }
+      else if (BUSY[room]) { const f = nearFurn(g => !!g.svc, 1.1); if (f) near = { id: 'svc', f, act: f.svc }; }
       if (!near) { const st2 = nearSeat(); if (st2 && st2.f.t !== 'officechair') near = { id: 'sit', st: st2, act: 'Sit down' }; } }
   }
   async function useRoom(f) {
@@ -6933,6 +7198,7 @@ window.GAME = (() => {
     if (f.id === 'lift') { fadeTo('', '', () => { enterInteriorSwap(f.to); }, 250); return; }
     if (f.id === 'npc' && f.n.coll) { const nm = S.player.name || 'you'; f.n.open = f.n.metBefore ? null : f.n.sit ? ['Oh, hi. You are the new graduate, right? Welcome to the floor.', 'Hey. Settling in alright?', 'Hi. Sorry, head down on a deadline. What is up?'] : ['Hey, you are the new one, right? Welcome aboard.', 'Morning. Coffee run, want anything?']; return startTalk(f.n); }
     if (f.id === 'npc') { const nm = f.n.name; if (nm === 'Rob') { if (robWhere() === 'robroom' || f.n.sleep) return toast('Rob is fast asleep.', 2); return talkRob(); } return say(nm, VOICE.forPerson(nm, f.n.L && f.n.L.fem ? 'f' : 'm', 30), { Jess: ({ desk: ['Hey! I am cramming for a pharmacology exam. Do not let me near the couch.', 'Do you know anything about the kidneys? No? Me neither, apparently.', 'Three more chapters. Then sleep. Then three more chapters.'], kitchen: gHour() < 12 ? ['Morning. Do not talk to me until this coffee kicks in.', 'Clinicals today. Wish me luck.'] : ['Rob burned the rice again. We are eating it anyway.', 'Long day on the wards. I could eat this whole pot.'], couch: ['One episode. Then back to study. Probably.', 'Do not tell my study group I am on the couch.'] }[jessWhere()] || ['Hey!']).sort(() => Math.random() - .5)[0], Grace: 'Good morning. Meridian is on thirty two, the lifts are just behind me.', Tom: 'Lanyard on you? Go on through.' }[nm] || 'Hi there.', [{ text: 'See you later', effects: { need: { mood: 1 } } }], f.n.L); }
+    if (f.id === 'svc') return useSvc(f.f);
     if (f.id === 'work') return atWork(f.f); if (f.id === 'coffee') return menu('Office kitchen', 'Free coffee, one of the good things about the job.', [{ t: 'Make a coffee', s: 'Free, energy up', fn: () => { CR.passMinutes(S, 10); need('energy', 10); toast('Strong and bitter.'); closeMenu(); } }]);
     if (f.id === 'sit') { sitDown(f.st); if (f.st.f && f.st.f.t === 'sofa') toast('E to watch TV, or move to get up.', 2.5); return; }
     if (f.id === 'seated') { if (seated.st.f && seated.st.f.t === 'sofa') return useRoom({ id: 'sofa' }); standUp(); return; }
@@ -7360,8 +7626,8 @@ window.GAME = (() => {
   const contactList = () => [{ cid: 'rob', name: 'Rob', job: 'Housemate', rel: S.rels.rob.score, rob: true }, ...Object.values(S.contacts)].map(c => c.rob ? c : Object.assign({}, c));
   const unread = () => S.msgs.filter(m => !m.me && !m.read).length + (S.mail || []).filter(m => !m.read).length;
   // too long without food: you collapse, lose the afternoon and get a bill
-  async function faint() { const N = S.player.needs; N.health = 45; N.hunger = 35; N.energy = Math.max(N.energy, 40); await fadeTo('You collapse', 'You wake up at City General Hospital', () => { const t0 = S.time; CR.passMinutes(S, 240); dailyThings(t0, S.time); toHospital(); }, 1400);
-    S.player.bank -= 45000; txn('Urgent care bill', -45000); need('mood', -15); CR.note(S, 'Collapsed from hunger. Urgent care, $450.'); toast('Low blood sugar, the doctor says. Eat properly. The visit cost $450 after insurance. Your car is where you left it.', 6); }
+  async function faint() { const N = S.player.needs; N.health = 45; N.hunger = 35; N.energy = Math.max(N.energy, 40); await fadeTo('You collapse', 'You wake up at City General Hospital', () => { const t0 = S.time; CR.passMinutes(S, 240); dailyThings(t0, S.time); wakeInWard(); }, 1400);
+    S.player.bank -= 45000; txn('Urgent care bill', -45000); need('mood', -15); CR.note(S, 'Collapsed from hunger. Urgent care, $450.'); toast('You come round in the ward. Low blood sugar, the doctor says. Eat properly. The visit cost $450 after insurance. Your car is where you left it.', 6); }
   // you are discharged at the hospital's front entrance; the car stays where you left it. When the hospital gets an inside, you wake up in a ward instead.
   // the spot is the main block's front doors, by the drop-off canopy
   function toHospital() { const b = buildings.find(q => q.name === 'City General Hospital'); if (!b) return; if (seated) standUp(); if (player.driving) toggleCar(); if (INSIDE) leaveInterior();
@@ -7383,7 +7649,7 @@ window.GAME = (() => {
     const wd = J.co && DOORS.find(d => d.k === 'hq' && d.co === J.co); if (wd) out.push({ key: doorKey(wd), name: 'Work', sub: wd.name, x: wd.x, y: wd.y });
     for (const a of S.apps || []) if (a.status === 'interview' && a.at > S.time) { const d = DOORS.find(q => q.k === 'hq' && q.co === a.co); if (d) out.push({ key: doorKey(d), name: 'Interview, ' + coById(a.co).name, sub: d.name + ', ' + CR.fmtTime(a.at), x: d.x, y: d.y }); }
     { const b = buildings.find(q => q.name === 'City General Hospital'); if (b && b.entrance) out.push({ key: 'hosp', name: 'City General Hospital', sub: 'Main entrance', x: b.entrance[0], y: b.entrance[1] }); }
-    const seen = new Set(out.map(o => o.key)), rest = DOORS.filter(d => ['venue', 'store', 'dealer', 'hq'].includes(d.k) && !seen.has(doorKey(d))).map(d => ({ key: doorKey(d), name: d.name, sub: d.sub || '', x: d.x, y: d.y, dist: Math.hypot(d.x - player.x, d.y - player.y) }));
+    const seen = new Set(out.map(o => o.key)), rest = DOORS.filter(d => ['venue', 'store', 'dealer', 'hq', 'place'].includes(d.k) && !seen.has(doorKey(d))).map(d => ({ key: doorKey(d), name: d.name, sub: d.sub || '', x: d.x, y: d.y, dist: Math.hypot(d.x - player.x, d.y - player.y) }));
     rest.sort((a, b) => a.name.localeCompare(b.name)); return out.concat(rest); };
   const findDest = key => taxiDests().find(d => d.key === key);
   function orderTaxi(key) { const d = findDest(key); if (!d) return; if (S.taxi) return toast('You already have a cab on the way.', 2.5);
@@ -7635,6 +7901,46 @@ window.GAME = (() => {
   // the stores you walk into
   const STORE = { conv: { name: '24 Hour Market', sub: 'Open all hours', open: () => true, mark: 1.25 }, super: { name: 'Market', sub: 'Supermarket, 7 am to 10 pm', open: h => h >= 7 && h < 22, mark: .9 }, gym: { name: 'Gym', sub: 'Open 5 am to 11 pm', open: h => h >= 5 && h < 23 } };
   for (const st of C.STORES || []) if (!DOORAT.has(st.lot) || !DOORAT.get(st.lot).k) doorFor(st.lot, { k: 'store', sk: st.kind, name: STORE[st.kind].name, sub: STORE[st.kind].sub });
+  // places with an inside but no menu at the door: the hospital's main doors, and the college's great hall and library
+  const placeDoor = (b, o) => { if (!b) return null; let d; if (b.frontDoor) d = { ...b.frontDoor }; else if (o.front) { const F2 = b.F, fp = b.fp, p = toW(F2, 0, fp.y0 - .9), q = toW(F2, 0, fp.y0 - 1.9); d = { x: p[0], y: p[1], nx: q[0] - p[0], ny: q[1] - p[1] }; }
+    else { const s2 = ['N', 'S', 'E', 'W'].find(q => b.st && b.st[q]) || 'S', f = faceW(b, b.tiers[0], s2), wx = (f.ax + f.bx) / 2, wy = (f.ay + f.by) / 2; d = { x: wx + f.nx * .9, y: wy + f.ny * .9, nx: f.nx, ny: f.ny }; }
+    delete o.front; Object.assign(d, { b, side: 'S', sign: '' }, o); b.door = d; DOORS.push(d); return d; };
+  const hospDoor = placeDoor(buildings.find(b => b.name === 'City General Hospital'), { k: 'place', to: 'hospital', name: 'City General Hospital', sub: 'Main entrance, open 24 hours' });
+  placeDoor(buildings.find(b => b.name === 'Great Hall'), { k: 'place', to: 'hall', name: 'Great Hall', sub: 'College dining hall', front: true });
+  placeDoor(buildings.find(b => b.name === 'College Library'), { k: 'place', to: 'library', name: 'College Library', sub: 'Open 7 am to 11 pm' });
+  // which inside a door leads to, whether it is open, and how busy it is at this hour
+  const intKey = d => d.k === 'venue' ? ({ cafe: 'cafe', bar: 'bar', lounge: 'lounge', restaurant: 'rest', takeout: 'slice', club: 'club' })[d.vk] : d.k === 'store' ? ({ gym: 'gym', super: 'market', conv: 'conv' })[d.sk] : d.k === 'dealer' ? 'dealer' : d.k === 'place' ? d.to : null;
+  const placeOpen = d => { const h = gHour(), vk = d.vk; if (d.k === 'venue') return vk === 'club' ? (h >= 21 || h < 3) : vk === 'cafe' ? (h >= 6 && h < 17) : (vk === 'bar' || vk === 'lounge') ? (h >= 11 || h < 1) : (h >= 11 && h < 23);
+    if (d.k === 'store') return STORE[d.sk].open(h); if (d.k === 'dealer') return h >= 9 && h < 19; if (d.to === 'library') return h >= 7 && h < 23; if (d.to === 'hall') return h >= 7 && h < 21; return true; };
+  const BUSY = { cafe: h => h >= 7 && h < 10 ? .85 : h >= 12 && h < 14 ? .7 : .4, bar: h => h >= 17 || h < 1 ? .85 : .3, lounge: h => h >= 19 || h < 1 ? .8 : .35, rest: h => h >= 12 && h < 14 ? .7 : h >= 18 && h < 22 ? .9 : .25,
+    slice: h => h >= 21 || h < 3 ? .85 : h >= 11 && h < 14 ? .65 : .3, club: h => h >= 22 || h < 2 ? .95 : .45, gym: h => h >= 6 && h < 9 ? .75 : h >= 17 && h < 20 ? .85 : .35, market: h => h >= 17 && h < 19 ? .85 : h >= 10 && h < 17 ? .6 : .3,
+    conv: h => h >= 7 && h < 22 ? .55 : .2, hospital: () => .65, hall: h => (h >= 7.5 && h < 9) || (h >= 12 && h < 14) || (h >= 18 && h < 20) ? .8 : .15, library: h => h >= 9 && h < 22 ? .6 : .2, dealer: h => h >= 10 && h < 17 ? .55 : .3 };
+  function crowd() { const I = INSIDE, room = roomKey(); if (!I || !BUSY[room]) return; const b = BUSY[room](gHour());
+    for (const n of I.npcs) { if (!n.patron || (talk && talk.p === n)) continue; const want = n.busy > b; if (n.pts && !n.pts0) n.pts0 = n.pts;
+      if (want && !n.hidden) { n.hidden = true; if (n.pts0) { n.pts = null; n.route = []; } } else if (!want && n.hidden) { n.hidden = false; if (n.pts0) { n.pts = n.pts0; n.route = []; n.idle = Math.random() * 3; } } } }
+  function enterPlace(d) { const key = intKey(d); if (!key) return false;
+    if (!placeOpen(d)) { if (d.k === 'venue') venue(d); else if (d.k === 'store') storeMenu(d); else toast(`${d.name} is closed right now.`, 2.5); return true; }
+    fadeTo('', '', () => { goIn(key, d); INSIDE.name = d.name; crowd(); }, 200).then(() => { if (d.k === 'venue') { music.venue(d.vk); const due = planHere(d); if (due) meetup(due, d); } }); return true; }
+  // the service points inside: counters, the bar, the pool table, the triage desk, the carrels
+  function useSvc(f) { const d = savedOut && savedOut.door, N = S.player.needs; if (!d) return;
+    if (f.sk === 'venue') return venue(d); if (f.sk === 'store') return storeMenu(d); if (f.sk === 'dealer') return dealer(d);
+    if (f.sk === 'pool') return menu('Pool table', 'Coins on the rail, winner stays on.', [{ t: 'Play a game', s: '$2, half an hour, mood up', fn: buy(200, 30, { need: { mood: 8 } }, 'You sink the black. Just.') }]);
+    if (f.sk === 'darts') return menu('Dartboard', 'The chalkboard says 501.', [{ t: 'Throw a few rounds', s: 'Free, 20 minutes', fn: buy(0, 20, { need: { mood: 4 } }, 'Two tons and a bounce-out.') }]);
+    if (f.sk === 'listen') return menu('Piano', 'Standards, played low.', [{ t: 'Sit and listen for a while', s: 'Free, half an hour, mood up', fn: buy(0, 30, [{ need: { mood: 7 } }, { need: { energy: 2 } }], 'The pianist plays something slow and you forget the day.') }]);
+    if (f.sk === 'stretch') return menu('Stretching mats', 'Foam rollers and a mirror.', [{ t: 'Stretch it out', s: 'Free, 20 minutes, mood up', fn: buy(0, 20, [{ need: { mood: 4 } }, { need: { energy: -2 } }], 'Loosened up.') }]);
+    if (f.sk === 'hall') return menu('Servery', 'Trays, steam and a long queue.', [{ t: 'A hot plate', s: '$9, fills you up', fn: buy(900, 25, { need: { hunger: -40 } }, 'Roast, potatoes and too much gravy.') }, { t: 'Tea and a muffin', s: '$4', fn: buy(400, 10, [{ need: { hunger: -10 } }, { need: { energy: 4 } }], 'Tea and a muffin.') }]);
+    if (f.sk === 'nurse') return toast('The nurses are flat out. Reception and triage can help you.', 3);
+    if (f.sk === 'help') return toast('The librarian points you to the carrels by the east windows. Quietest seats in the building.', 3.5);
+    if (f.sk === 'triage') { const hl = N.health == null ? 100 : N.health;
+      return menu('Reception and triage', hl >= 90 ? 'The triage nurse looks you over. You are fine.' : `The triage nurse looks you over. Health ${Math.round(hl)} of 100.`, hl >= 90 ? [{ t: 'Nothing wrong with you', s: 'Come back if that changes', off: true }] : [{ t: 'See a doctor', s: '$150 after insurance, about two hours, health back to full', fn: () => { if (!spend(15000, 'Hospital visit')) return toast('You cannot cover the bill.'); const t0 = S.time; CR.passMinutes(S, 120); dailyThings(t0, S.time); N.health = 100; closeMenu(); toast('Bloods, a drip and a lecture about eating properly. You feel human again.', 4); } }]); }
+    if (f.sk === 'study') { const I = INSIDE; let st = null, bd = 9; for (const g of I.furn) { if (g.t !== 'chair' && g.t !== 'carrel') continue; const s2 = g.t === 'carrel' ? { x: g.x - .55, y: g.y, z: .48, hx: 1, hy: 0 } : seatsOf(g)[0]; const dd = Math.hypot(I.ox + s2.x - player.x, I.oy + s2.y - player.y); if (dd < bd && !I.npcs.some(n => n.sit && !n.hidden && Math.hypot(n.sit.x - I.ox - s2.x, n.sit.y - I.oy - s2.y) < .4)) { bd = dd; st = s2; } }
+      if (!st) return toast('Every seat nearby is taken.', 2);
+      const go = hrs => () => { closeMenu(); ffwd(hrs * 60, { label: 'Studying at the library', pose: poseAt(st.x, st.y, st.z, st.hx, st.hy, true), each: m => { S.player.skills.finance += 45 * m / 60 * 1.15; need('energy', -3.5 * m / 60); } }); };
+      return menu('Study', 'Quiet, warm and nobody asking you for anything. Study goes about 15% further here than at home.', [1, 2, 3].map(h => ({ t: `Study for ${h} hour${h > 1 ? 's' : ''}`, s: 'Finance skill up, energy down', fn: go(h) }))); } }
+  // you come round in the hospital's ward, by the window bed
+  function wakeInWard() { if (!hospDoor) return toHospital(); if (seated) standUp(); if (player.driving) toggleCar(); if (INSIDE) leaveInterior(); goIn('hospital', hospDoor); INSIDE.name = hospDoor.name; crowd();
+    const [bx, by] = INSIDE.wardBed; player.x = INSIDE.ox + bx - 1.0; player.y = INSIDE.oy + by + .3; player.hx = 1; player.hy = 0; cx = player.x; cy = player.y; }
+
   function storeMenu(d) { const T = STORE[d.sk], h = gHour(); if (!T.open(h)) return menu(d.name, d.sub + '. Closed right now.', []);
     if (d.sk === 'gym') return menu(d.name, 'Day pass, $15.', [{ t: 'Work out for an hour', s: '$15, tiring now, mood and health up', fn: () => { if (!spend(1500, 'Gym day pass')) return toast('You cannot afford that.'); closeMenu(); ffwd(60, { label: 'Working out', each: m => { need('energy', -16 * m / 60); need('mood', 9 * m / 60); need('health', 4 * m / 60); need('hunger', 10 * m / 60); } }); } }]);
     const items = CATALOG.filter(it => it.cat === 'grocery'), pr = it => Math.round(it.p * T.mark / 10) * 10;
@@ -7768,7 +8074,7 @@ window.GAME = (() => {
     if (doorNow) { const d = doorNow;
       if (d.k === 'home') { fadeTo('', '', () => { goIn('house', d); collectParcels(); }, 200).then(robDropsBy); return; }
       if (d.k === 'work' || d.k === 'hq') return hqDoor(d);
-      if (d.k === 'venue') return venue(d); if (d.k === 'dealer') return dealer(d); if (d.k === 'store') return storeMenu(d); return toast(d.name + ' opens in a later build.', 2); }
+      if (enterPlace(d)) return; if (d.k === 'venue') return venue(d); if (d.k === 'dealer') return dealer(d); if (d.k === 'store') return storeMenu(d); return toast(d.name + ' opens in a later build.', 2); }
     if (Math.hypot(player.x - PCAR.x, player.y - PCAR.y) < 3.6) { toggleCar(); music.drive(true); ticketCheck(); return; }
     if (paperNow) { if (!spend(200, 'Newspaper')) return toast('You cannot afford it.'); stepMarket(S, S.time); return openPhone('news'); }
     if (cartNow) return cartMenu(cartNow);
