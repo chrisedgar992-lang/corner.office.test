@@ -1127,17 +1127,51 @@ function landmarkB(b, face, build) {
     K.glow(0, fp.y0 - 4, 22, [255, 214, 160], .5);
   });
 
-  landmark('City General Hospital', 'auto', K => { const L = K.lot, w = L.x1 - L.x0, d = L.y1 - L.y0;
-    const main = { x0: L.x0 + w * .3, y0: L.y0 + d * .36, x1: L.x1 - 2, y1: L.y1 - 2 }, wing = { x0: L.x0 + 2, y0: L.y0 + d * .3, x1: main.x0, y1: L.y1 - d * .22 };
-    const fp = { x0: wing.x0, y0: wing.y0, x1: main.x1, y1: main.y1 };
-    K.setBuilding(fp, [{ ...wing, zb: 0, zt: 22, mat: MAT.tealglass, pat: 'fins' }, { ...main, zb: 0, zt: 34, mat: MAT.hosp, pat: 'hbands' }], { multi: true, roofC: [150, 162, 158], lit: 'office', top: { type: 'helipad' }, name: 'City General Hospital' });
-    K.ground(K.rect(L.x0, L.y0, L.x1, L.y1), [220, 216, 206], { tex: 'gran', grid: 2 });
-    const cu = (L.x0 + L.x1) / 2 - w * .04, cv = (L.y0 + main.y0) / 2; dropLoop(K, cu, cv, w * .3, (main.y0 - L.y0) * .42, 5.5);
-    K.slab(cu - w * .16, main.y0 - 5, cu + w * .16, main.y0, 4.4, .9, [128, 160, 170], 'CITY GENERAL', { textCol: [240, 244, 246] });
-    K.slab(wing.x0 + 1, wing.y0 - 3, wing.x1 - 2, wing.y0, 3.6, .7, [236, 234, 226], 'EMERGENCY', { textCol: [176, 40, 40] });
-    K.ground(K.rect(L.x0 + 2, L.y0 + 2, L.x0 + w * .2, wing.y0 - 2), LAWN, { stripes: 1.6 }); K.tree(L.x0 + w * .1, (L.y0 + wing.y0) / 2, 2.4); K.prop('bench', L.x0 + w * .15, (L.y0 + wing.y0) / 2 + 2);
-    K.ground(K.rect(L.x1 - w * .22, L.y0 + 2, L.x1 - 2, main.y0 - 2), [104, 106, 108], {}); K.stalls(L.x1 - w * .22, L.x1 - 2, L.y0 + 2, main.y0 - 2, 4);
-    K.lamp(cu - w * .3, L.y0 + 3); K.lamp(cu + w * .3, L.y0 + 3); K.glow(cu, main.y0 - 2, 14, [220, 236, 255], .4);
+  // ---- whole-block sites: the revised sheets fill the entire block, so the grounds are clipped to the block outline and the
+  // extra buildings stand on it as buildings of their own. Each sheet's plan is mapped from its pixels to the site frame.
+  const siteKit = (K, px) => { const b = K.b, lot = C.lots.find(l => (LOTB.get(l.id) || []).includes(b)), blkW = lot.block;
+    K.G.clip = blkW; const xs = blkW.map(q => q[0]), ys = blkW.map(q => q[1]); K.G.wb = { x0: Math.min(...xs) - 2, y0: Math.min(...ys) - 2, x1: Math.max(...xs) + 2, y1: Math.max(...ys) + 2 };
+    const R = (a, b2, c, d) => { const p = px(a, b2), q = px(c, d); return { x0: Math.min(p[0], q[0]), x1: Math.max(p[0], q[0]), y0: Math.min(p[1], q[1]), y1: Math.max(p[1], q[1]) }; };
+    const poly = pts => pts.map(([x, y]) => px(x, y)), W2 = pts => pts.map(([u, v]) => K.W(u, v)), rr = mulberry(strHash(b.name));
+    const extra = (fp, tiers, o = {}) => { const nb = newBuilding(null, K.F, fp, Math.max(...tiers.map(t => t.zt)), 'inner', { mat: 'concrete', shops: null, lit: o.lit || 'office', streetSides: { N: false, S: false, E: false, W: false } }, rr);
+      nb.tiers = tiers; nb.H = Math.max(...tiers.map(t => t.zt)); nb.multi = tiers.length > 1; Object.assign(nb, o); LOTB.get(lot.id).push(nb); return nb; };
+    const at = (x, y) => px(x, y), tree = (x, y, r = 2.6) => { const q = px(x, y); K.tree(q[0], q[1], r); };
+    const stalls = (a, b2, c, d, n) => { const r = R(a, b2, c, d); K.stalls(r.x0, r.x1, r.y0, r.y1, n); };
+    return { lot, blkW, R, poly, W2, extra, at, tree, stalls, rr }; };
+  const PAVE2 = [226, 220, 204], DRIVE2 = [104, 106, 110];
+  // City General Hospital, revised sheet 01: a campus over the whole block. Main hospital with the helipad on the main avenue,
+  // blue glass wing behind it, emergency with a covered ambulance bay off the side street, medical offices and a loading yard
+  // at the back, a parking garage and staff lot on the east side, a visitor loop with a planted island, and a healing garden.
+  landmark('City General Hospital', 'auto', K => { const X = siteKit(K, (px, py) => [82.5 - (px - 84) / 5.047, 62.9 - (py - 71) / 5.03]), { R, poly, W2, extra, at, tree, stalls } = X;
+    K.ground(X.blkW, LAWN, { edge: { c: PAVE2, w: 6 } });
+    const G2 = (pts, c, o) => K.ground(W2(poly(pts)), c, o || { tex: 'gran', grid: 1 });
+    G2([[488, 95], [678, 95], [678, 192], [488, 192]], DRIVE2); // service yard off the back street
+    G2([[93, 410], [242, 410], [242, 449], [92, 449]], DRIVE2); // ambulance road from the side street
+    G2([[170, 534], [245, 510], [505, 640], [505, 706], [468, 699], [198, 592]], DRIVE2); // visitor loop off the main avenue
+    G2([[257, 546], [455, 628], [448, 646], [247, 563]], LAWN, { stripes: 1.6 });
+    G2([[700, 688], [925, 688], [925, 852], [760, 852], [718, 770]], DRIVE2); // staff parking
+    G2([[875, 630], [942, 630], [942, 668], [875, 668]], DRIVE2); // garage ramp to the east street
+    stalls(712, 682, 812, 700, 8); stalls(755, 724, 865, 742, 8); stalls(758, 812, 905, 832, 10);
+    // footpaths
+    G2([[346, 300], [372, 300], [372, 470], [346, 470]], PAVE2, {}); G2([[136, 270], [380, 270], [380, 286], [136, 286]], PAVE2, {}); G2([[560, 600], [580, 600], [585, 700], [560, 700]], PAVE2, {});
+    // healing garden: a ring path round a pond with a fountain
+    { const c = at(595, 662); K.circ(c[0], c[1], 8, PAVE2); K.circ(c[0], c[1], 6.6, LAWN); K.circ(c[0], c[1], 4.6, [92, 150, 170]); const q = K.W(c[0], c[1]); props.push({ t: 'cfount', x: q[0], y: q[1], r: 2.4 }); K.solidRound(c[0], c[1], 4.6);
+      for (const [dx, dy] of [[-9, 0], [9, 0], [0, 9]]) K.prop('bench', c[0] + dx, c[1] + dy); }
+    // the main hospital (with the helipad) and its blue glass wing
+    const main = poly([[241, 386], [617, 386], [692, 470], [668, 650], [232, 494]]);
+    K.setBuilding(polyBBox(main), [polyTier(main, 0, 34, MAT.hosp, { pat: 'hbands' })], { roofC: [150, 162, 158], lit: 'office', top: { type: 'helipad' }, name: 'City General Hospital' });
+    const wing = R(397, 254, 659, 386); extra(wing, [{ ...wing, zb: 0, zt: 26, mat: MAT.tealglass, pat: 'fins' }], { roofC: [140, 154, 152] });
+    const em = R(135, 281, 346, 380); extra(em, [{ ...em, zb: 0, zt: 14, mat: MAT.hosp, pat: 'hbands' }], { roofC: [148, 158, 154], name: 'Emergency' });
+    const med = R(233, 131, 481, 270); extra(med, [{ ...med, zb: 0, zt: 20, mat: MAT.hosp, pat: 'punch' }], { roofC: [152, 158, 152], name: 'Medical offices' });
+    const ld = R(495, 150, 639, 229); extra(ld, [{ ...ld, zb: 0, zt: 8, mat: MAT.concrete }], { roofC: [130, 132, 130] });
+    const gar = R(698, 553, 877, 680); extra(gar, [{ ...gar, zb: 0, zt: 14, mat: MAT.concrete, pat: 'hbands' }], { roofC: [112, 114, 116], name: 'Parking garage' });
+    // canopies and signs
+    { const r = R(370, 558, 472, 604); K.slab(r.x0, r.y0, r.x1, r.y1, 4.4, .9, [128, 160, 170], 'CITY GENERAL', { textCol: [240, 244, 246] }); }
+    { const r = R(151, 380, 246, 428); K.slab(r.x0, r.y0, r.x1, r.y1, 4.2, .8, [236, 234, 226], 'EMERGENCY', { textCol: [176, 40, 40] }); }
+    K.b.entrance = K.W(...at(421, 622)); // where you are discharged
+    for (const [x, y] of [[153, 133], [222, 127], [292, 121], [364, 115], [436, 108], [536, 98], [615, 91], [133, 220], [126, 287], [118, 353], [110, 495], [161, 565], [244, 596], [318, 624], [389, 650], [547, 708], [626, 741], [684, 782], [658, 226], [658, 291], [705, 375], [771, 435], [828, 499], [882, 572], [913, 707], [920, 815], [700, 578], [694, 647], [658, 690]]) tree(x, y);
+    for (const [x, y] of [[230, 525], [330, 570], [430, 615], [500, 660], [180, 430], [780, 690], [880, 760]]) { const q = at(x, y); K.lamp(q[0], q[1]); }
+    { const q = at(421, 600); K.glow(q[0], q[1], 14, [220, 236, 255], .45); } { const q = at(200, 420); K.glow(q[0], q[1], 10, [255, 210, 200], .35); }
   });
 
   const hotel = (name, face, cfg) => landmark(name, face, K => { const L = K.lot, w = L.x1 - L.x0, d = L.y1 - L.y0;
@@ -7225,7 +7259,7 @@ window.GAME = (() => {
   // you are discharged at the hospital's front entrance; the car stays where you left it. When the hospital gets an inside, you wake up in a ward instead.
   // the spot is the main block's front doors, by the drop-off canopy
   function toHospital() { const b = buildings.find(q => q.name === 'City General Hospital'); if (!b) return; if (seated) standUp(); if (player.driving) toggleCar(); if (INSIDE) leaveInterior();
-    const o = b.fp, d = (o.y1 - o.y0 + 2) / .7, w = (o.x1 - o.x0 + 4) / .98, [x, y] = toW(b.F, o.x0 - 2 + w * .62, o.y0 + d * .06 - 1.2); player.x = x; player.y = y; cx = x; cy = y; }
+    const [x, y] = b.entrance || toW(b.F, (b.fp.x0 + b.fp.x1) / 2, b.fp.y0 - 4); player.x = x; player.y = y; cx = x; cy = y; }
   // colleagues keep their names, faces and how well you know them in the save, so the office is the same people every day
   const COLLROLE = ['Analyst', 'Senior Analyst', 'Associate', 'Analyst', 'Vice President', 'Graduate Analyst', 'Compliance Officer', 'Associate', 'Office Manager', 'Trader', 'Senior Analyst', 'Portfolio Manager', 'Executive Assistant', 'Analyst'];
   const collSnap = n => ({ rank: n.rank, name: n.name, job: n.job, jobLine: n.jobLine, L: JSON.parse(JSON.stringify(n.L)), rel: n.rel, trait: n.trait, fan: n.fan, fin: n.fin, metBefore: !!n.metBefore, knownJob: !!n.knownJob, traitKnown: n.traitKnown, hobby: n.hobby, team: n.team, from: n.from, weekend: n.weekend, topics: n.topics, gain: n.gain, cid: n.cid || null });
