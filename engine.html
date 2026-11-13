@@ -4682,7 +4682,7 @@ const AU = { on: false, vol: { master: .8, amb: .8, traffic: .8, people: .8, mus
 let AC = null;
 const au = {};
 const clamp01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
-const ramp = (param, v, tc = .08) => { if (param) param.setTargetAtTime(v, AC.currentTime, tc); };
+const ramp = (param, v, tc = .08) => { if (param && Number.isFinite(v)) param.setTargetAtTime(v, AC.currentTime, tc); };
 
 function noiseBuf(kind, secs = 4) {
   const n = Math.floor(AC.sampleRate * secs), b = AC.createBuffer(1, n, AC.sampleRate), d = b.getChannelData(0);

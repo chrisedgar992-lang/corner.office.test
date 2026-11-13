@@ -4813,7 +4813,7 @@ const AU = { on: false, vol: { master: .8, amb: .8, traffic: .8, people: .8, mus
 let AC = null;
 const au = {};
 const clamp01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
-const ramp = (param, v, tc = .08) => { if (param) param.setTargetAtTime(v, AC.currentTime, tc); };
+const ramp = (param, v, tc = .08) => { if (param && Number.isFinite(v)) param.setTargetAtTime(v, AC.currentTime, tc); };
 
 function noiseBuf(kind, secs = 4) {
   const n = Math.floor(AC.sampleRate * secs), b = AC.createBuffer(1, n, AC.sampleRate), d = b.getChannelData(0);
@@ -6308,8 +6308,129 @@ window.GAME = (() => {
   const doorNear = (x, y, r = 1.8) => { let best = null, bd = r; for (const d of DOORS) { const dd = Math.hypot(d.x - x, d.y - y); if (dd < bd) { bd = dd; best = d; } } return best; };
 
   // ---------------- the game state ----------------
-  const LADDER = [{ t: 'Graduate Analyst', pay: 62000 }, { t: 'Analyst', pay: 74000 }, { t: 'Senior Analyst', pay: 92000 }, { t: 'Associate', pay: 118000 }, { t: 'Vice President', pay: 165000 }];
-  const NEED_SHIFTS = [30, 55, 90, 140]; // solid shifts for each step: about six weeks to Analyst, years to Vice President
+  // ---------------- companies and careers ----------------
+  // Ten major companies, each with an HQ tower that is assigned per playthrough, plus smaller firms on leased floors that
+  // promote faster but count for less. Every company runs one of four ladders. Promotion comes from effort: solid shifts,
+  // a minimum time in the role, finance skill, day to day performance, and a senior colleague in your corner helps. Nonstop
+  // work builds stress, which ends in burnout. Missing shifts or poor work brings warnings and then the sack. Jobs are found
+  // on the Jobs app: apply, interview at the company's tower, take or turn down the offer, and resign or switch at any time.
+  const LADDERS = {
+    bank: [['Graduate Analyst', 62000], ['Analyst', 74000], ['Senior Analyst', 92000], ['Associate', 118000], ['Vice President', 165000], ['Director', 240000], ['Managing Director', 420000], ['Chief Executive', 1500000]],
+    fund: [['Junior Analyst', 70000], ['Analyst', 90000], ['Senior Analyst', 120000], ['Portfolio Manager', 210000], ['Partner', 450000], ['Chief Investment Officer', 1200000]],
+    consult: [['Business Analyst', 68000], ['Consultant', 85000], ['Senior Consultant', 105000], ['Engagement Manager', 140000], ['Principal', 200000], ['Partner', 380000], ['Managing Partner', 900000]],
+    corp: [['Financial Analyst', 60000], ['Senior Financial Analyst', 75000], ['Finance Manager', 98000], ['Director of Finance', 140000], ['Vice President, Finance', 190000], ['Chief Financial Officer', 320000], ['Chief Executive', 900000]],
+    law: [['Associate', 120000]] };
+  const NEED = [30, 55, 90, 140, 180, 240, 300], TENURE = [42, 90, 150, 240, 365, 540, 730]; // solid shifts and days in the role for each step
+  const COS = [
+    { id: 'meridian', name: EMPLOYER, ind: 'Banking', lad: 'bank', area: ['core'], boss: ['Ms Calder', true], tk: 'MRC', about: 'The established bank. Old money, big deals, long hours.' },
+    { id: 'fairhaven', name: 'Fairhaven Trust', ind: 'Banking', lad: 'bank', area: ['core', 'cbd'], boss: ['Mr Okafor', false], tk: 'FHT', about: 'The rival bank, hungry to catch Meridian and quick to hire away its people.' },
+    { id: 'blackfen', name: 'Blackfen Partners', ind: 'Hedge fund', lad: 'fund', area: ['cbd', 'core'], boss: ['Ms Varga', true], about: 'A hedge fund. Pay follows your track record, and so does your seat.' },
+    { id: 'thorne', name: 'Thorne and Vale', ind: 'Consulting', lad: 'consult', area: ['cbd', 'core'], boss: ['Mr Ellison', false], about: 'Consultants to every industry in the city. You learn everyone’s business.' },
+    { id: 'kestrel', name: 'Kestrel Systems', ind: 'Big tech', lad: 'corp', area: ['mid', 'cbd'], boss: ['Ms Tanaka', true], tk: 'KSY', tech: true, about: 'The dependable tech giant. Finance roles now, engineering roles in a later update.' },
+    { id: 'paylane', name: 'Paylane', ind: 'Tech upstart', lad: 'corp', area: ['mid', 'cbd'], boss: ['Mr Duarte', false], tk: 'PYL', tech: true, about: 'A fast growing payments upstart. Quick promotions, real risk.' },
+    { id: 'oakmont', name: 'Oakmont Mining', ind: 'Mining', lad: 'corp', area: ['cbd', 'hside', 'core'], boss: ['Mr Brandt', false], tk: 'OKM', about: 'Commodity cycles and big bets on new mines.' },
+    { id: 'eastgate', name: 'Eastgate Developments', ind: 'Property', lad: 'corp', area: ['cbd', 'mid'], boss: ['Ms Moreau', true], tk: 'EST', about: 'Builds the city, one council approval at a time.' },
+    { id: 'whitlock', name: 'Whitlock and Hale', ind: 'Law', lad: 'law', area: ['core', 'cbd'], boss: ['Ms Ashby', true], locked: 'Legal roles need a law degree, which comes in a later update.', about: 'A top law firm. Billable hours and a long road to partner.' },
+    { id: 'marlowe', name: 'Marlowe Media', ind: 'Media', lad: 'corp', area: ['mid', 'cbd'], boss: ['Mr Quinlan', false], tk: 'MRM', about: 'Newspapers, television and the campaigns that shape every other company’s reputation.' },
+    { id: 'harborfed', name: 'Harbor Federal', ind: 'Regional bank', lad: 'bank', small: true, boss: ['Mr Pratt', false], tk: 'HBF', about: 'A regional bank on a few leased floors. Faster steps, smaller name.' },
+    { id: 'calloway', name: 'Calloway Capital', ind: 'Boutique bank', lad: 'bank', small: true, boss: ['Ms Lindqvist', true], tk: 'CLC', about: 'A boutique investment bank. Small team, more responsibility early.' },
+    { id: 'brindle', name: 'Brindle Advisory', ind: 'Consulting', lad: 'consult', small: true, boss: ['Mr Haddad', false], about: 'A small consultancy that works for mid-size firms.' },
+    { id: 'ashcroft', name: 'Ashcroft Industries', ind: 'Industrial', lad: 'corp', small: true, boss: ['Ms Kowalski', true], tk: 'ACI', about: 'An industrial company with a lean finance team.' }];
+  const coById = id => COS.find(c => c.id === id);
+  const SMALLF = { pay: .88, need: .65, ten: .7 };
+  const ladderFor = co => { const c = coById(co) || COS[0], sm = c.small ? SMALLF.pay : 1; return LADDERS[c.lad].map(([t, pay]) => ({ t, pay: Math.round(pay * sm / 100) * 100 })); };
+  const LAD = () => ladderFor((S.player.job && (S.player.job.co || S.player.job.lastCo)) || 'meridian');
+  const needFor = (J, lv = J.level) => { const c = coById(J.co) || COS[0]; return Math.round(NEED[Math.min(lv, NEED.length - 1)] * (c.small ? SMALLF.need : 1)); };
+  const tenureFor = (J, lv = J.level) => { const c = coById(J.co) || COS[0]; return Math.round(TENURE[Math.min(lv, TENURE.length - 1)] * (c.small ? SMALLF.ten : 1)); };
+  const empName = () => { const J = S.player.job, c = J && coById(J.co); return c ? c.name : 'Unemployed'; };
+  const hqOf = co => S.hq && S.hq[co];
+  const towerName = co => (S.hq && S.hq.names && S.hq.names[co]) || 'the tower';
+  const floorOf = co => co === 'meridian' ? 32 : 10 + (hash(co) % 38);
+  const TOWERN = ['Atlas', 'Beacon', 'Crown', 'Liberty', 'Summit', 'Union', 'Exchange', 'Pinnacle', 'Granite', 'Sterling', 'Commerce', 'Harbor Point', 'Park Avenue', 'Lexington'];
+  // HQ towers: each major takes a tall tower in its preferred districts, the smaller firms lease floors in others. Chosen once per save.
+  function assignHQ(S) { if (S.hq && S.hq.v === 2) return mountHQ(S); const rnd = rngFor(S.hqSeed || (S.hqSeed = Math.floor(Math.random() * 1e9))), used = new Set([WORK && WORK.id, HOME && HOME.id]);
+    const towers = LOTL.filter(l => l.kind === 'tower' && l.cs && LOTB.has(l.id) && !used.has(l.id)), HQ = { v: 2, names: {} };
+    if (WORK) { HQ.meridian = WORK.id; HQ.names.meridian = 'Northgate tower'; }
+    let tn = 0; const nameFor = id => { const b = LOTB.get(id)[0]; return b && b.name && !/tower$/i.test(b.name) ? b.name : (b && b.name) || TOWERN[tn++ % TOWERN.length] + ' Tower'; };
+    for (const c of COS) { if (HQ[c.id]) continue; const tall = c.small ? 25 : 60, pool = towers.filter(l => !used.has(l.id) && (l.h || 0) > tall), pref = pool.filter(l => (c.area || []).includes(C.districtAt(l.cx, l.cy)));
+      const pick = (pref.length ? pref : pool)[Math.floor(rnd() * (pref.length || pool.length))]; if (!pick) continue; used.add(pick.id); HQ[c.id] = pick.id; HQ.names[c.id] = nameFor(pick.id); }
+    S.hq = HQ; mountHQ(S); }
+  const HQDOORS = [];
+  function mountHQ(S) { for (const d of HQDOORS) { d.k = 'shop'; d.sub = 'Offices'; } HQDOORS.length = 0;
+    for (const c of COS) { const id = S.hq[c.id]; if (!id) continue; const d = doorFor(id, { k: 'hq', co: c.id, to: 'lobby', name: S.hq.names[c.id], sub: c.name + (c.small ? ', leased floors' : ' headquarters'), sign: S.hq.names[c.id].split(' ')[0].toUpperCase() }); if (d) HQDOORS.push(d); } }
+  const empDoor = () => { const J = S.player.job, id = J && J.co && hqOf(J.co); return (id && HQDOORS.find(d => d.lot === id)) || workDoor; };
+  // the manager: Ms Calder at Meridian, someone else elsewhere
+  const bossName = () => { const c = coById(S.player.job && S.player.job.co) || COS[0]; return c.boss[0]; };
+  const bossMale = () => { const c = coById(S.player.job && S.player.job.co) || COS[0]; return !c.boss[1]; };
+  const bossLook = () => { const co = (S.player.job && S.player.job.co) || 'meridian'; if (co === 'meridian') return BOSSL; S.bossL = S.bossL || {}; const c = coById(co);
+    return S.bossL[co] || (S.bossL[co] = Object.assign(randomLook('suit'), { fem: !!c.boss[1], h: c.boss[1] ? .95 : 1, seed: hash(co) % 99999 })); };
+  const bossify = (s, who) => { if (!s || typeof s !== 'string') return s; let o = s.replace(/Ms Calder/g, bossName()); if (bossMale() && (who === 'boss' || who === 'At work')) o = o.replace(/\bShe\b/g, 'He').replace(/\bshe\b/g, 'he').replace(/Ask her\b/g, 'Ask him'); return o; };
+  const BOSSW = () => bossName() + ', your manager';
+  // promotion: everything the next step needs, and who senior is on your side
+  const seniorFriend = () => Object.entries(S.coll || {}).some(([k, c]) => collCoOf(k) === S.player.job.co && (c.rank || 0) >= S.player.job.level + 2 && (c.rel || 0) >= 30);
+  function promoGaps(J) { const L = LAD(), gaps = []; if (J.level >= L.length - 1) return null; const fr = seniorFriend(), need = Math.round(needFor(J) * (fr ? .75 : 1)), days = Math.floor(S.time / 1440) - (J.roleSince || 0), ten = tenureFor(J), fin = CR.levelOf(S.player.skills.finance || 0), pmin = J.level >= L.length - 3 ? 78 : 68;
+    if (J.shiftsAt < need) gaps.push(`about ${Math.ceil(need - J.shiftsAt)} more solid shifts`); if (days < ten) gaps.push(`another ${ten - days} days in the role`); if (J.perf < pmin) gaps.push('better day to day performance'); if (fin < J.level + 2) gaps.push('stronger finance skills');
+    return { gaps, fr }; }
+  // job listings refresh every Monday: one or two openings at some companies, pitched around what you could do
+  const bestLevel = J => Math.max(J.best || 0, J.co ? J.level - (coById(J.co).small ? 1 : 0) : 0);
+  function refreshJobs(force) { const d = Math.floor(S.time / 1440), wk = Math.floor((d + 3) / 7); if (!force && S.jobsWk === wk) return; S.jobsWk = wk; const r = rngFor(wk * 131 + 7), J = S.player.job, top = bestLevel(J) + 1;
+    S.jobs = (S.jobs || []).filter(j => j.closes > d && S.apps.some(a => a.job === j.id));
+    for (const c of COS) { if (c.id === J.co && !r()) continue; const n = c.locked ? (r() < .3 ? 1 : 0) : r() < .55 ? 1 : r() < .75 ? 2 : 0;
+      for (let i = 0; i < n; i++) { const L = ladderFor(c.id), lv = c.locked ? 0 : Math.max(0, Math.min(L.length - 2, top - Math.floor(r() * 3))); if (S.jobs.some(q => q.co === c.id && q.level === lv)) continue; S.jobs.push({ id: 'j' + wk + c.id + i, co: c.id, level: lv, posted: d, closes: d + 14 }); } } }
+  const jobFit = j => { const c = coById(j.co), J = S.player.job, fin = CR.levelOf(S.player.skills.finance || 0), exp = bestLevel(J) + (J.co && coById(J.co).small && !c.small ? -1 : 0), d = Math.floor(S.time / 1440);
+    let p = .7 + Math.min(2, fin - (j.level + 2)) * .12 - Math.max(0, j.level - 1 - exp) * .35 + ((J.perf || 60) - 60) / 120 - (J.firedAt != null && d - J.firedAt < 60 ? .3 : 0) - (c.small ? -.1 : 0); return clampv(p, .05, .95); };
+  function applyJob(id) { const j = (S.jobs || []).find(q => q.id === id); if (!j) return; if (S.apps.some(a => a.co === j.co && ['sent', 'interview', 'offer'].includes(a.status))) return toast('You already have an application in with them.', 3);
+    S.apps.unshift({ id: 'a' + Date.now().toString(36), job: j.id, co: j.co, level: j.level, t: S.time, status: 'sent', reply: S.time + 1440 * (1 + Math.floor(Math.random() * 3)) + Math.round(Math.random() * 400) }); toast(`Application sent to ${coById(j.co).name}. They usually reply within a few days.`, 3.5); }
+  // replies arrive by email; an interview is booked before or after work on the next weekday
+  function checkApps() { if (!S.apps) return; const d = Math.floor(S.time / 1440);
+    for (const a of S.apps) { const c = coById(a.co), L = ladderFor(a.co)[a.level];
+      if (a.status === 'sent' && S.time >= a.reply) { if (Math.random() < jobFit(a)) { let dd = d + 1; while (!tradingDay(dd)) dd++; a.at = dd * 1440 + (Math.random() < .5 ? 480 : 1065); a.status = 'interview';
+          workMail(`${c.name}: interview`, `Thanks for applying for ${L.t}. Could you come in ${dayWord(a.at)} at ${CR.fmtTime(a.at)}? We are in ${towerName(a.co)}.`); toast(`${c.name} wants to interview you, ${dayWord(a.at)} at ${CR.fmtTime(a.at)}.`, 5); }
+        else { a.status = 'rejected'; workMail(`${c.name}: your application`, `Thank you for applying for ${L.t}. We have decided not to take your application further.`); } }
+      if (a.status === 'interview' && S.time > a.at + 30) { a.status = 'missed'; workMail(`${c.name}: missed interview`, 'We expected you this morning and did not hear from you. We will not be taking your application further.'); }
+      if (a.status === 'interview' && !a.warned && a.at - S.time < 75 && a.at > S.time) { a.warned = true; toast(`Interview at ${c.name} at ${CR.fmtTime(a.at)}, in ${towerName(a.co)}.`, 5); }
+      if (a.status === 'offer' && S.time > a.until) { a.status = 'lapsed'; workMail(`${c.name}: offer withdrawn`, 'We did not hear back, so the offer has lapsed.'); } } }
+  const salary = c => '$' + Math.round(c / 100).toLocaleString('en-US');
+  const workMail = (subj, text) => { S.mail = S.mail || []; S.mail.unshift({ t: S.time, subj, text, read: false }); if (S.mail.length > 40) S.mail.length = 40; CR.note(S, subj + '.'); phoneBadge(); };
+  // the interview: three questions, one about the job itself. Skill, the answers and how you turn up decide it.
+  const IQ = {
+    gen: [['Why do you want to work here?', [['Talk about what the firm is doing and where it is heading', 12], ['Say the pay is better than where you are', -6], ['Say you want to learn from the best people', 6]]],
+      ['Tell me about a time something went wrong.', [['Own the mistake and say what you changed', 12], ['Blame a colleague who has since left', -10], ['Say nothing has really gone wrong', -4]]],
+      ['Where do you see yourself in five years?', [['Leading a team here', 8], ['Running my own business', 0], ['Honestly, not sure yet', -2]]],
+      ['What is your biggest weakness?', [['I take on too much, and I am learning to delegate', 6], ['I do not really have one', -8], ['Public speaking, so I volunteer for it', 10]]]],
+    bank: ['Walk me through how you would value a company.', 'Cash flows, a discount rate and a terminal value, checked against comparable deals'],
+    fund: ['Pitch me a stock.', 'A listed company, the numbers, the catalyst and what would prove you wrong'],
+    consult: ['How many coffees does this city sell in a day?', 'Break it down by people, habits and outlets, then sanity check it'],
+    corp: ['How would you cut costs by ten percent without hurting sales?', 'Rank spending by return, cut the bottom, protect what customers see'] };
+  async function interview(a, door) { const c = coById(a.co), L = ladderFor(a.co)[a.level], fin = CR.levelOf(S.player.skills.finance || 0), N = S.player.needs, late = Math.max(0, S.time - a.at); let sc = 40;
+    await fadeTo('Interview', `${c.name}, ${towerName(a.co)}`, null, 700);
+    const qs = IQ.gen.slice().sort(() => Math.random() - .5).slice(0, 2), tq = IQ[c.lad] || IQ.corp, interviewer = c.boss[0];
+    for (const [q, ch] of qs) { const r = await say(interviewer, 'none', q, ch.map(([t, v]) => ({ text: t, then: () => { sc += v; } }))); }
+    const good = fin >= a.level + 2; await say(interviewer, 'none', tq[0], [{ text: tq[1], then: () => { sc += good ? 14 : 4; } }, { text: 'Admit you would need to look into it', then: () => { sc += 2; } }]);
+    sc += fin * 2 + (S.owned.suit ? 6 : S.owned.shirt ? 3 : 0) + (N.mood - 50) * .1 - (N.energy < 30 ? 6 : 0) - Math.min(20, late * .8) + (Math.random() - .5) * 12;
+    a.status = 'done'; CR.passMinutes(S, 45);
+    if (sc >= 60) { a.status = 'offer'; a.until = S.time + 3 * 1440; await say(interviewer, 'none', `We would like to offer you the role of ${L.t}, at ${salary(L.pay * 100)} a year. Have a think and let us know within three days.`, [{ text: 'Thank you. I will be in touch.' }]); workMail(`${c.name}: offer`, `Offer for ${L.t} at ${salary(L.pay * 100)} a year. Reply within three days in the Jobs app.`); }
+    else { await say(interviewer, 'none', 'Thanks for coming in. We will be in touch.', [{ text: 'Thank you for your time.' }]); a.status = 'rejected'; workMail(`${c.name}: your interview`, 'Thank you for coming in. On this occasion we have chosen another candidate.'); } }
+  // switching: accept an offer and you start at the new place on the next weekday after two days' notice
+  function acceptOffer(id) { const a = S.apps.find(q => q.id === id); if (!a || a.status !== 'offer') return; const J = S.player.job, c = coById(a.co), L = ladderFor(a.co)[a.level]; let d = Math.floor(S.time / 1440) + 3; while (!tradingDay(d)) d++;
+    if (J.co) CR.note(S, `Handed in notice at ${empName()}.`); J.best = bestLevel(J); a.status = 'accepted';
+    Object.assign(J, { co: a.co, employer: c.name, level: a.level, perf: 60, shiftsAt: 0, since: d, roleSince: d, lastShiftDay: d - 1, miss: 0, warns: [], startDay: d, lastCo: a.co, firedAt: J.firedAt });
+    for (const o of S.apps) if (o !== a && ['sent', 'interview', 'offer'].includes(o.status)) o.status = 'withdrawn';
+    workMail(`${c.name}: welcome`, `Welcome aboard as ${L.t}. Your first day is ${CR.fmtDate(d * 1440)} at 9:00 in ${towerName(a.co)}.`); toast(`You accepted ${c.name}'s offer. You start ${CR.fmtDate(d * 1440)} at 9:00 in ${towerName(a.co)}.`, 6); }
+  function resign() { const J = S.player.job; if (!J.co) return; CR.note(S, `Resigned from ${empName()}.`); J.best = bestLevel(J); J.lastCo = J.co; J.co = null; J.employer = null; toast('You resigned. Look for your next role on the Jobs app.', 5); }
+  async function fired(why) { const J = S.player.job; if (!J.co) return; const nm = empName(), bn = bossName(); J.best = Math.max(0, bestLevel(J) - 1); J.lastCo = J.co; J.co = null; J.employer = null; J.firedAt = Math.floor(S.time / 1440); J.warns = [];
+    workMail(`${nm}: termination`, `${why} Your employment ends today. Your final pay will be processed as normal.`); need('mood', -25); CR.note(S, `Let go from ${nm}. ${why}`);
+    if (!FF && !modalOpen && !dlgOpen) await say(bn, 'none', `${why} I am sorry, but we are letting you go, effective today.`, [{ text: 'I understand.' }]); else toast(`You have been let go from ${nm}.`, 6); }
+  function warn(why) { const J = S.player.job, d = Math.floor(S.time / 1440); J.warns = (J.warns || []).filter(w => d - w.d < 90);
+    if (J.warns.length) return fired(why + ' This follows an earlier warning.'); J.warns.push({ d, why }); workMail(`${empName()}: formal warning`, `${why} This is a formal warning. Another within ninety days and we will let you go.`); toast(`Formal warning from ${bossName()}.`, 5); }
+  // each weekday: a shift missed without leave counts against you; two in a row is a warning, four is the sack. Rest lowers stress.
+  function hrDay(d) { const J = S.player.job; if (!J || !J.co) return; const prev = d - 1;
+    if (tradingDay(prev) && prev >= (J.startDay || 0) && !(J.leaveUntil > prev) && J.lastShiftDay < prev) { J.miss = (J.miss || 0) + 1; if (J.miss === 2) warn('You have missed two days without telling anyone.'); else if (J.miss >= 4) fired('You stopped turning up for work.'); }
+    else if (J.lastShiftDay === prev) J.miss = 0;
+    if (J.lastShiftDay !== prev) J.burn = Math.max(0, (J.burn || 0) - 8); }
+  // stress from long days, weekend work and grinding on when exhausted; at 100 you burn out and lose three days
+  function addStress(J, sh, N) { J.burn = clampv((J.burn || 0) + 2 + (sh.extra ? 6 : 0) + (N.mood < 35 ? 3 : 0) + (N.energy < 25 ? 2 : 0), 0, 100);
+    if (J.burn >= 100) { J.burn = 35; J.perf = Math.max(0, J.perf - 10); need('mood', -20); let d = Math.floor(S.time / 1440) + 1; J.leaveUntil = d + 4; workMail('Doctor’s note', 'Burnout. Three days off, signed off by your doctor. Your manager has been told.'); toast('You have burned out. Three days off doctor’s orders, and your performance takes a hit.', 6); } }
   // US income tax for a single filer, taken out of each day's pay: federal brackets after the standard deduction, Social Security
   // and Medicare, and a flat 5% for the state. About 20% on a graduate salary, more as you climb.
   const FEDB = [[12400, .10], [50400, .12], [105700, .22], [201775, .24], [256225, .32], [640600, .35], [Infinity, .37]];
@@ -6318,7 +6439,7 @@ window.GAME = (() => {
     const S = CR.newGame({ name: 'Alex', mode: 'main', start: CR.fromParts(2026, 7, 5, 10, 0), birth: { y: 2004, mo: 3, d: 9 } });
     S.mode = 'main'; S.player.cash = 12000; S.player.bank = 240000; S.player.needs = { energy: 82, mood: 68, hunger: 30, health: 90 };
     S.player.skills = { finance: 120 }; S.player.home = HOME && HOME.id; S.player.car = 'Dobbin';
-    S.player.job = { employer: EMPLOYER, level: 0, perf: 60, shifts: 0, shiftsAt: 0, lastShiftDay: -1 };
+    { const d1 = Math.floor(S.time / 1440) + 1; S.player.job = { co: 'meridian', lastCo: 'meridian', employer: EMPLOYER, level: 0, perf: 60, shifts: 0, shiftsAt: 0, lastShiftDay: -1, since: d1, roleSince: d1, startDay: d1, miss: 0, warns: [], burn: 0, best: 0 }; }
     S.items = { meals: 3 }; S.rels.rob = { score: 30, met: true, flags: {} };
     S.contacts = {}; S.msgs = []; S.plans = []; S.tx = []; S.stereo = { on: false, by: null, day: -1 };
     CR.note(S, 'Moved into the share house with Rob. First day at ' + EMPLOYER + ' is tomorrow at 9:00.');
@@ -6326,7 +6447,8 @@ window.GAME = (() => {
   }
   let S = null;
   // older saves predate the phone
-  const upgrade = s => { s.contacts = s.contacts || {}; s.msgs = s.msgs || []; s.plans = s.plans || []; s.tx = s.tx || []; s.stereo = s.stereo || { on: false, by: null, day: -1 }; s.fines = s.fines || []; s.cart = s.cart || {}; s.orders = s.orders || []; s.owned = s.owned || {}; s.items = s.items || { meals: 0 }; s.port = s.port || {}; if (!s.mkt && s.time != null) initMarket(s); else if (s.mkt) migrateMarket(s); return s; };
+  const upgrade = s => { s.contacts = s.contacts || {}; s.msgs = s.msgs || []; s.plans = s.plans || []; s.tx = s.tx || []; s.stereo = s.stereo || { on: false, by: null, day: -1 }; s.fines = s.fines || []; s.cart = s.cart || {}; s.orders = s.orders || []; s.owned = s.owned || {}; s.items = s.items || { meals: 0 }; s.port = s.port || {}; if (s.player && s.player.job && !('co' in s.player.job)) { const d = Math.floor(s.time / 1440); Object.assign(s.player.job, { co: 'meridian', lastCo: 'meridian', since: d - Math.round((s.player.job.shifts || 0) * 1.4), roleSince: d - Math.round((s.player.job.shiftsAt || 0) * 1.4), startDay: 0, miss: 0, warns: [], burn: 0, best: s.player.job.level || 0 }); } s.apps = s.apps || []; s.jobs = s.jobs || []; s.mail = s.mail || [];
+    if (!s.mkt && s.time != null) initMarket(s); else if (s.mkt) migrateMarket(s); return s; };
   const txn = (text, cents) => { S.tx.unshift({ t: S.time, text, c: cents }); if (S.tx.length > 60) S.tx.length = 60; };
 
   // ---------------- clock, needs, money, season and weather ----------------
@@ -6334,7 +6456,7 @@ window.GAME = (() => {
   function runClock(dt) { carry += dt; const m = Math.floor(carry); if (m < 1) return; carry -= m; const before = S.time; CR.passMinutes(S, m); dailyThings(before, S.time); }
   // things that happen when a day turns over: rent on Sunday night, the day's weather
   function dailyThings(t0, t1) { const d0 = Math.floor(t0 / 1440), d1 = Math.floor(t1 / 1440);
-    for (let d = d0 + 1; d <= d1; d++) { const p = CR.parts(d * 1440); if (p.d === 1) { const bills = [['Power, your half', 4800], ['Internet, your half', 3500], ['Phone plan', 4500], ['Car insurance', 11800]]; for (const [w, c] of bills) { S.player.bank -= c; txn(w, -c); } CR.note(S, 'Monthly bills paid: ' + money(bills.reduce((a, b) => a + b[1], 0)) + '.'); toast('Monthly bills: power, internet, phone and car insurance, ' + money(bills.reduce((a, b) => a + b[1], 0)) + '.', 4); }
+    for (let d = d0 + 1; d <= d1; d++) { const p = CR.parts(d * 1440); hrDay(d); if (p.d === 1) { const bills = [['Power, your half', 4800], ['Internet, your half', 3500], ['Phone plan', 4500], ['Car insurance', 11800]]; for (const [w, c] of bills) { S.player.bank -= c; txn(w, -c); } CR.note(S, 'Monthly bills paid: ' + money(bills.reduce((a, b) => a + b[1], 0)) + '.'); toast('Monthly bills: power, internet, phone and car insurance, ' + money(bills.reduce((a, b) => a + b[1], 0)) + '.', 4); }
       if (p.dow === 1 && (S.km || 0) > .5) { const f = Math.round(S.km * 9); S.km = 0; S.player.bank -= f; txn('Gas for the week', -f); }
       if (p.dow === 1) { const rent = 26000; S.player.bank -= rent; txn('Rent, share house', -rent); CR.note(S, 'Rent paid: ' + money(rent) + ' for the week.'); toast('Weekly rent of ' + money(rent) + ' paid from your bank account.'); } }
     if (d1 > d0) skyForDay(); }
@@ -6350,14 +6472,14 @@ window.GAME = (() => {
   const isWeekday = () => { const d = CR.parts(S.time).dow; return d >= 1 && d <= 5; };
 
   // ---------------- screen bits ----------------
-  let toastT = 0; function toast(t, secs = 4) { const e = $('toast'); e.textContent = t; e.hidden = false; toastT = secs; }
+  let toastT = 0; function toast(t, secs = 4) { const e = $('toast'); if (S && S.player.job && typeof t === 'string') t = t.replace(/Ms Calder/g, bossName()); e.textContent = t; e.hidden = false; toastT = secs; }
   let fading = false;
   const fadeTo = (label, sub, fn, holdMs = 900) => new Promise(res => { const f = $('fade'); f.innerHTML = ''; f.classList.add('on'); fading = true; G.hold = true; setTimeout(() => { if (fn) fn(); f.innerHTML = (label || '') + (sub ? `<small>${sub}</small>` : ''); setTimeout(() => { f.classList.remove('on'); setTimeout(() => { fading = false; G.hold = !!(modalOpen || dlgOpen); res(); }, 600); }, holdMs); }, 650); });
   function drawHud() {
-    const p = CR.parts(S.time), P0 = S.player, N = P0.needs, J = P0.job, L = J && LADDER[J.level];
+    const p = CR.parts(S.time), P0 = S.player, N = P0.needs, J = P0.job, L = J && LAD()[J.level];
     const bar = (n, v, c) => `<div class="need">${n}<i><b style="width:${Math.round(v)}%;background:${c || (v < 25 ? 'var(--bad)' : v < 50 ? 'var(--warn)' : 'var(--good)')}"></b></i></div>`;
-    const room = roomKey(), where = room ? ROOM_NAME[room] : (DNAME[districtAt(player.x, player.y)] || '');
-    let jobLine = ''; if (L) { const h = gHour(); jobLine = `${L.t}, ${J.employer}`; if (isWeekday() && h < 9.25 && J.lastShiftDay !== Math.floor(S.time / 1440)) jobLine += ` <span style="color:var(--acc)">· shift at 9:00</span>`; }
+    const room = roomKey(), where = room ? roomName(room) : (DNAME[districtAt(player.x, player.y)] || '');
+    let jobLine = ''; if (L) { const h = gHour(); jobLine = J.co ? `${L.t}, ${empName()}` : 'Unemployed'; if (J.co && isWeekday() && h < 9.25 && J.lastShiftDay !== Math.floor(S.time / 1440) && Math.floor(S.time / 1440) >= (J.startDay || 0) && !(J.leaveUntil > Math.floor(S.time / 1440))) jobLine += ` <span style="color:var(--acc)">· shift at 9:00</span>`; }
     const wx = { clear: 'Clear', rain: 'Rain', snow: 'Snow', fog: 'Fog' }[weather];
     $('ghud').innerHTML = `<div class="t"><span class="clock">${String(p.h).padStart(2, '0')}:${String(p.mi).padStart(2, '0')}</span><span class="date">${CR.fmtDate(S.time)}</span></div>
       <div class="t"><span class="money">${money(P0.cash)}</span><span class="date">Bank ${money(P0.bank)}</span></div>${bar('Energy', N.energy)}${bar('Fed', 100 - N.hunger)}${bar('Mood', N.mood)}${N.health != null && N.health < 85 ? bar('Health', N.health) : ''}
@@ -6367,7 +6489,8 @@ window.GAME = (() => {
   // ---------------- conversations ----------------
   let dlgOpen = false;
   const VOICES = { rob: VOICE.make({ pitch: 118, rate: 7.4, mute: .5, bright: .65, wobble: .1 }), boss: VOICE.make({ pitch: 98, rate: 6, mute: .55, bright: .45, wobble: .05, vol: 1.1 }) };
-  function say(who, voice, text, choices, look, expr) { look = look || (who.startsWith('Ms Calder') ? BOSSL : who === 'Rob' ? robLook() : null); return new Promise(res => {
+  function say(who, voice, text, choices, look, expr) { if (S && S.player.job) { const tag = who.startsWith('Ms Calder') || who.startsWith(bossName()) ? 'boss' : who; if (tag === 'boss' && !look) look = bossLook(); who = bossify(who, tag); text = bossify(text, tag); if (choices) choices = choices.map(c => Object.assign({}, c, { text: bossify(c.text, tag), reply: bossify(c.reply, tag) })); }
+    look = look || (who === 'Rob' ? robLook() : null); return new Promise(res => {
     dlgOpen = true; G.hold = true; const D = $('dlg'); D.hidden = false; D.innerHTML = `<div class="body">${look ? '<canvas class="pt"></canvas>' : ''}<div class="txt"><div class="who"></div><div class="line"></div><div class="ch"></div></div></div>`; D.querySelector('.who').textContent = who;
     if (look) { const pc = D.querySelector('.pt'), drawIt = () => drawPortrait(pc, look, expr || 'neutral', true); pc.redraw = drawIt; drawIt(); }
     const line = D.querySelector('.line'); VOICE.stop(); const dur = voice === 'none' ? text.length * .03 : VOICE.say(text, voice); let i = 0; const step = Math.max(14, dur * 1000 / Math.max(1, text.length)); clearInterval(say.t);
@@ -6418,16 +6541,18 @@ window.GAME = (() => {
     const taken = q => I.npcs.some(n => n.sit && !n.hidden && Math.hypot(n.sit.x - I.ox - q[0], n.sit.y - I.oy - q[1]) < .45);
     if (f0 && !taken(seatOf(f0))) return seatOf(f0); let best = null, bd = 1e9; for (const f of I.furn) if (f.t === 'workdesk') { const q = seatOf(f); if (taken(q)) continue; const d = Math.hypot(I.ox + q[0] - player.x, I.oy + q[1] - player.y); if (d < bd) { bd = d; best = q; } } return best; }
   function atWork(desk) {
-    const J = S.player.job, L = LADDER[J.level], h = gHour(), today = Math.floor(S.time / 1440), opts = [], day = Math.round(L.pay * 100 / 260);
-    if (isWeekday() && h >= 7 && h < LAST_START && J.lastShiftDay !== today) {
+    const J = S.player.job, L = LAD()[J.level], h = gHour(), today = Math.floor(S.time / 1440), opts = [], day = Math.round(L.pay * 100 / 260);
+    if (today < (J.startDay || 0)) opts.push({ t: `You start on ${CR.fmtDate(J.startDay * 1440)}`, s: 'Come back then at 9:00', off: true });
+    else if (J.leaveUntil > today) opts.push({ t: `You are signed off until ${CR.fmtDate(J.leaveUntil * 1440)}`, s: 'Doctor\u2019s orders', off: true });
+    else if (isWeekday() && h >= 7 && h < LAST_START && J.lastShiftDay !== today) {
       const late = h > LATE_AFTER, hrs = Math.min(8.5, SHIFT_END - Math.max(h, 9)), pay = Math.round(day * hrs / 8.5), lm = Math.round((h - 9) * 60);
       opts.push({ t: late ? `Start your shift, ${lm} minutes late` : 'Start your shift', s: late ? `${hrs.toFixed(1)} hours to 5:30, ${money(pay)}, and it counts against you` : `Until 5:30, ${money(day)} for the day`, fn: () => shift(desk) });
     } else if (J.lastShiftDay === today) opts.push({ t: 'You have already worked today', s: 'Come back tomorrow at 9:00', off: true });
     else opts.push({ t: !isWeekday() ? 'The office is closed on weekends' : h < 7 ? 'The office opens at 7:00' : 'Too late to start a shift today', s: 'Shifts run 9:00 to 5:30 on weekdays. You can start up to 3:00 pm, late', off: true });
     opts.push({ t: 'Ask about a promotion', s: 'See how you are tracking', fn: () => promoTalk() });
-    menu(EMPLOYER, `${L.t}. Salary ${money(L.pay * 100)} a year. Performance ${Math.round(J.perf)} of 100.`, opts);
+    menu(empName(), `${L.t}. Salary ${money(L.pay * 100)} a year. Performance ${Math.round(J.perf)} of 100.`, opts);
   }
-  async function shift(desk) { closeMenu(); const seat = deskSeat(desk); const J = S.player.job, L = LADDER[J.level], N = S.player.needs, h = gHour(), lateMin = Math.max(0, (h - 9) * 60), late = h > LATE_AFTER;
+  async function shift(desk) { closeMenu(); const seat = deskSeat(desk); const J = S.player.job, L = LAD()[J.level], N = S.player.needs, h = gHour(), lateMin = Math.max(0, (h - 9) * 60), late = h > LATE_AFTER;
     const hrs = Math.min(8.5, SHIFT_END - Math.max(h, 9)), mins = Math.round((SHIFT_END - h) * 60);
     // a few minutes costs little, a lost morning costs a lot
     const latePen = late ? Math.min(45, 6 + lateMin / 8) : 0;
@@ -6435,14 +6560,16 @@ window.GAME = (() => {
     const payC = Math.round(L.pay * 100 / 260 * hrs / 8.5);
     const start = S.time, sh = { perf: 0, extra: 0 };
     const events = workEvents(sh, mins), lunchAt = Math.round((12.5 - h) * 60); if (lunchAt > 10 && lunchAt < mins - 30) events.push({ at: lunchAt, run: () => lunchBreak(sh) });
-    await ffwd(mins, { label: 'Working at ' + EMPLOYER, flags: { work: true }, pose: seat && poseAt(seat[0], seat[1], .52, seat[2], seat[3], true), events });
+    await ffwd(mins, { label: 'Working at ' + empName(), flags: { work: true }, pose: seat && poseAt(seat[0], seat[1], .52, seat[2], seat[3], true), events });
     score = clampv(score + sh.perf, 0, 100); if (sh.extra) payExtra = Math.round(L.pay * 100 / 260 * sh.extra / 60 / 8.5);
     const gross = payC + payExtra, net = Math.round(gross * (1 - taxRate(L.pay)));
-    { S.player.bank += net; txn(`${EMPLOYER}, pay for the day${payExtra ? ' with overtime' : ''}, ${money(gross)} before tax`, net); J.perf = J.perf * .8 + score * .2; J.shifts++; J.shiftsAt += hrs >= 6 ? 1 : .5; J.lastShiftDay = Math.floor(start / 1440);
+    { S.player.bank += net; txn(`${empName()}, pay for the day${payExtra ? ' with overtime' : ''}, ${money(gross)} before tax`, net); J.perf = J.perf * .8 + score * .2; J.shifts++; J.shiftsAt += hrs >= 6 ? 1 : .5; J.lastShiftDay = Math.floor(start / 1440);
       S.player.skills.finance = (S.player.skills.finance || 0) + Math.round((28 + score / 6) * hrs / 8.5); need('mood', score > 65 ? 3 : score < 40 ? -6 : -2);
       CR.note(S, `Worked a shift${late ? `, ${Math.round(lateMin)} minutes late` : ''}, ${money(net)} paid in after tax, performance ${Math.round(J.perf)}.`); }
     toast(`${score >= 70 ? 'A strong day.' : score >= 45 ? 'An ordinary day.' : 'A rough day.'} Shift done. ${money(net)} paid to your bank after tax. Performance now ${Math.round(J.perf)}.`);
-    if (J.level < LADDER.length - 1 && J.shiftsAt >= NEED_SHIFTS[J.level] && J.perf >= 68 && CR.levelOf(S.player.skills.finance) >= J.level + 2) await promote();
+    addStress(J, sh, N); J.miss = 0; if (J.perf < 30) warn('Your work has slipped well below what we need.');
+    const pgx = J.co && promoGaps(J);
+    if (pgx && !pgx.gaps.length) await promote();
     else if (lateMin > 30) await say('Ms Calder, your manager', VOICES.boss, lateMin > 150 ? 'Half the day gone. If this happens again we will be having a very different conversation.' : 'You were late. I need you here at nine, ready to go.', [{ text: 'It will not happen again', effects: { need: { mood: -3 } } }], BOSSL);
     else if (score < 35) await say('Ms Calder, your manager', VOICES.boss, 'Today was not your best work. Tighten it up.', [{ text: 'Understood', effects: { need: { mood: -3 } } }], BOSSL);
     save('auto');
@@ -6512,27 +6639,32 @@ window.GAME = (() => {
   let forceEvent = null; // set from the test tools: an event id, or 'any'
   function workEvents(sh, mins) { const J = S.player.job, today = Math.floor(S.time / 1440), forced = forceEvent; forceEvent = null;
     if (!forced) { if (J.lastEventDay != null && today - J.lastEventDay < 1) return []; if (Math.random() > .3) return []; }
-    const fits = e => J.level >= e.lv[0] && J.level <= e.lv[1];
+    const lv4 = Math.min(J.level, 4), fits = e => lv4 >= e.lv[0] && lv4 <= e.lv[1];
     const pool = forced && forced !== 'any' ? WORK_EVENTS.filter(e => e.id === forced) : WORK_EVENTS.filter(e => fits(e) && (forced || !(S.seen['work:' + e.id] && S.time - S.seen['work:' + e.id] < 1440 * 30))); if (!pool.length) return [];
     const e = pool[Math.floor(Math.random() * pool.length)], at = Math.round(mins * (.25 + Math.random() * .5));
     return [{ at, run: async () => { if (e.when && !e.when() && !forced) return; S.seen['work:' + e.id] = S.time; J.lastEventDay = today; const boss = e.who === 'boss';
-      const ch = await say(boss ? 'Ms Calder, your manager' : 'At work', boss ? VOICES.boss : 'none', e.text(), e.ch.map(([text, fx]) => ({ text, then: () => fx(sh) })), boss ? BOSSL : null);
-      const pick = e.ch.find(c => c[0] === ch.text); if (pick && pick[2]) await say('At work', 'none', pick[2]); CR.note(S, 'At work: ' + ch.text + '.'); } }]; }
+      const ch = await say(boss ? 'Ms Calder, your manager' : 'At work', boss ? VOICES.boss : 'none', e.text(), e.ch.map(([text, fx]) => ({ text, then: () => fx(sh) })), boss ? bossLook() : null);
+      const pick = e.ch.find(c => bossify(c[0], boss ? 'boss' : 'At work') === ch.text); if (pick && pick[2]) await say('At work', 'none', pick[2]); CR.note(S, 'At work: ' + ch.text + '.'); } }]; }
   // lunch: bring it from home, buy it downstairs, eat with someone from the office, or keep working
   async function lunchBreak(sh) { const I = S.items, N = S.player.needs, ch = [];
     if (I.meals) ch.push({ text: `Heat up a meal you brought from home (${I.meals} left)`, then: () => { I.meals--; need('hunger', -40); need('mood', 2); } });
     ch.push({ text: 'Food court downstairs, $14', then: () => { if (spend(1400, 'Lunch, food court')) { need('hunger', -45); need('mood', 3); } else toast('Not enough money. You go without.', 3); } });
-    const pals = Object.values(S.coll || {}), pal = pals.length ? pals[Math.floor(Math.random() * pals.length)] : null;
+    const pals = Object.entries(S.coll || {}).filter(([k]) => collCoOf(k) === S.player.job.co).map(([, c]) => c), pal = pals.length ? pals[Math.floor(Math.random() * pals.length)] : null;
     if (pal) ch.push({ text: `Lunch with ${pal.name.split(' ')[0]} from the office, $18`, then: () => { if (!spend(1800, 'Lunch with ' + pal.name.split(' ')[0])) return toast('Not enough money. You go without.', 3); need('hunger', -45); need('mood', 6); pal.rel = clampv((pal.rel || 0) + 4, -100, 100); pal.metBefore = true; if (pal.cid && S.contacts[pal.cid]) S.contacts[pal.cid].rel = pal.rel; for (const n of (INSIDE && INSIDE.npcs) || []) if (n.coll && n.name === pal.name) n.rel = pal.rel; toast(`Lunch with ${pal.name.split(' ')[0]}, ${pal.job.split(',')[0].toLowerCase()}. You get on well.`, 3.5); } });
     ch.push({ text: 'Work through lunch', then: () => { sh.perf += 2; need('mood', -3); } });
     await say('Lunch break', 'none', N.hunger > 60 ? 'Half past twelve and your stomach has been complaining for an hour.' : 'Half past twelve. The office empties out for lunch.', ch); }
-  async function promote() { const J = S.player.job; J.level++; J.shiftsAt = 0; const L = LADDER[J.level];
+  async function promote() { const J = S.player.job; J.level++; J.shiftsAt = 0; J.roleSince = Math.floor(S.time / 1440); J.best = Math.max(J.best || 0, bestLevel(J)); const L = LAD()[J.level];
     await say('Ms Calder, your manager', VOICES.boss, `Got a minute? The partners have noticed your work. We are making you ${L.t}, effective Monday.`, [{ text: 'Thank you. I will not let you down.', effects: [{ need: { mood: 15 } }, { rep: { general: 3 } }] }]);
     CR.note(S, `Promoted to ${L.t} at ${money(L.pay * 100)} a year.`); toast(`Promoted to ${L.t}. New salary ${money(L.pay * 100)} a year.`, 6); }
-  function promoTalk() { closeMenu(); const J = S.player.job; if (J.level >= LADDER.length - 1) return say('Ms Calder, your manager', VOICES.boss, 'You are where you need to be. Keep it up.');
-    const need2 = NEED_SHIFTS[J.level], fin = CR.levelOf(S.player.skills.finance || 0), bits = [];
-    if (J.shiftsAt < need2) bits.push(`about ${need2 - J.shiftsAt} more solid shifts`); if (J.perf < 68) bits.push('better day to day performance'); if (fin < J.level + 2) bits.push('stronger finance skills');
-    return say('Ms Calder, your manager', VOICES.boss, bits.length ? `To get to ${LADDER[J.level + 1].t} I need to see ${bits.join(', and ')}.` : 'You are on track. Keep doing what you are doing.'); }
+  function hqDoor(d) { const J = S.player.job, c = coById(d.co) || COS[0], iv = (S.apps || []).find(a => a.co === c.id && a.status === 'interview');
+    if (iv && S.time >= iv.at - 25 && S.time <= iv.at + 30) return interview(iv, d);
+    if (J.co === c.id) { fadeTo('', '', () => goIn('lobby', d), 200); return; }
+    const o = [{ t: 'Ask about open roles', s: 'Opens the Jobs app', fn: () => { closeMenu(); openPhone('jobs'); } }];
+    if (iv) o.unshift({ t: `Your interview is ${dayWord(iv.at)} at ${CR.fmtTime(iv.at)}`, s: 'Come back up to twenty minutes before', off: true });
+    menu(d.name, `${c.name} is on level ${floorOf(c.id)}. Reception asks if you have an appointment.`, o); }
+  function promoTalk() { closeMenu(); const J = S.player.job, pg = promoGaps(J); if (!pg) return say('Ms Calder, your manager', VOICES.boss, 'You are where you need to be. Keep it up.');
+    const bits = pg.gaps, tip = pg.fr ? '' : ' And it never hurts to have someone senior in your corner.';
+    return say('Ms Calder, your manager', VOICES.boss, (bits.length ? `To get to ${LAD()[J.level + 1].t} I need to see ${bits.join(', and ')}.` : 'You are on track. Keep doing what you are doing.') + tip); }
 
   // ---------------- venues ----------------
   const STRANGER = ['Busy one tonight, huh?', 'You work around here? You have that office look.', 'I keep telling myself I will quit my job and open a food truck.', 'Have you tried the place two doors down? Overrated, if you ask me.', 'Big game this weekend. You following it?', 'This city never sleeps. I wish I could.'];
@@ -6545,7 +6677,7 @@ window.GAME = (() => {
   window.isContact = p => !!(S && p.cid && S.contacts[p.cid]);
   window.onTalkTurn = () => { if (S) CR.passMinutes(S, 2); };
   window.onTalkContact = p => { if (!S) return; p.cid = p.cid || 'c' + (p.uid || 0) + '-' + Date.now().toString(36); S.contacts[p.cid] = snapshot(p); S.msgs.unshift({ cid: p.cid, me: false, t: S.time, text: `Hey, it's ${p.name.split(' ')[0]}. Good to meet you.` }); phoneBadge(); };
-  window.onTalkEnd = p => { if (!S) return; if (p.coll && S.coll) S.coll[p.uid] = collSnap(p); if (p.cid && S.contacts[p.cid]) S.contacts[p.cid] = snapshot(p); if (p.venueSp) { const sp = p.venueSp; setTimeout(() => { if (!talk && !modalOpen) venue(sp); }, 50); } };
+  window.onTalkEnd = p => { if (!S) return; if (p.coll && S.coll) S.coll[p.collKey != null ? p.collKey : p.uid] = collSnap(p); if (p.cid && S.contacts[p.cid]) S.contacts[p.cid] = snapshot(p); if (p.venueSp) { const sp = p.venueSp; setTimeout(() => { if (!talk && !modalOpen) venue(sp); }, 50); } };
   function buy(cost, mins, fx, msg) { return () => { if (!spend(cost, msg.replace(/\.$/, ''))) { toast('You cannot afford that.'); return; } const t0 = S.time; CR.passMinutes(S, mins); dailyThings(t0, S.time); CR.apply(fx, S); toast(msg); drawMenuAgain(); }; }
   function venue(sp) { const due = planHere(sp); if (due) return meetup(due, sp); const h = gHour(), vk = sp.vk; let open = true; if (vk === 'club') open = h >= 21 || h < 3; else if (vk === 'cafe') open = h >= 6 && h < 17; else if (vk === 'bar' || vk === 'lounge') open = h >= 11 || h < 1; else open = h >= 11 && h < 23;
     if (!open) return menu(sp.name, sp.sub + '. Closed right now.', [{ t: 'Opening hours', s: { club: '9pm to 3am', cafe: '6am to 5pm', bar: '11am to 1am', lounge: '11am to 1am' }[vk] || '11am to 11pm', off: true }]);
@@ -6579,7 +6711,7 @@ window.GAME = (() => {
   function pauseSound(on) { if (on && !soundPaused) { soundPaused = true; try { if (AC && AU.on) AC.suspend(); } catch (e) { } music.hush(true); } else if (!on && soundPaused) { soundPaused = false; try { if (AC && AU.on) AC.resume(); } catch (e) { } music.hush(false); } }
   function pauseMenu() { pauseSound(true); const P0 = S.player, J = P0.job, sk = Object.entries(P0.skills).map(([kq, v]) => `<span>${kq[0].toUpperCase() + kq.slice(1)}</span><b>level ${CR.levelOf(v)}</b>`).join('');
     modalOpen = true; G.hold = true; const P2 = $('panel');
-    P2.innerHTML = `<h2>Paused</h2><div class="kv"><span>Date</span><b>${CR.fmtDate(S.time)} ${CR.fmtTime(S.time)}</b><span>Age</span><b>${CR.ageOn(S.time, P0.birth)}</b><span>Job</span><b>${LADDER[J.level].t}</b><span>Shifts worked</span><b>${J.shifts}</b><span>Performance</span><b>${Math.round(J.perf)}</b><span>Cash</span><b>${money(P0.cash)}</b><span>Bank</span><b>${money(P0.bank)}</b><span>Meals in the fridge</span><b>${S.items.meals || 0}</b>${sk}</div>
+    P2.innerHTML = `<h2>Paused</h2><div class="kv"><span>Date</span><b>${CR.fmtDate(S.time)} ${CR.fmtTime(S.time)}</b><span>Age</span><b>${CR.ageOn(S.time, P0.birth)}</b><span>Job</span><b>${J.co ? LAD()[J.level].t + ', ' + empName() : 'Unemployed'}</b><span>Shifts worked</span><b>${J.shifts}</b><span>Performance</span><b>${Math.round(J.perf)}</b><span>Cash</span><b>${money(P0.cash)}</b><span>Bank</span><b>${money(P0.bank)}</b><span>Meals in the fridge</span><b>${S.items.meals || 0}</b>${sk}</div>
       <h2 style="font-size:14px">Sound</h2><div id="sndrow"><span>City sound</span><button id="bSnd">${AU.on ? 'On' : 'Off'}</button>${['master', 'amb', 'traffic', 'people', 'music'].map(kq => `<span>${{ master: 'Master', amb: 'Ambience', traffic: 'Traffic', people: 'People', music: 'Venue music' }[kq]}</span><input type="range" min="0" max="100" value="${Math.round(AU.vol[kq] * 100)}" data-v="${kq}" style="accent-color:var(--acc)">`).join('')}</div><h2 style="font-size:14px">Saves</h2><div id="slots" class="opts"></div><textarea class="io" id="io" rows="2" placeholder="Save code"></textarea><div class="row"><button id="bExp">Copy save code</button><button id="bImp">Load save code</button><button id="bNew">New game</button></div><div class="sub2" id="ioMsg"></div>
       <div class="sub2">WASD or arrows to move, Shift to run, E to use, enter, talk or get in the car. P for your phone. R for the radio, M for the map, Q and Z to turn the view, N to face north, mouse wheel or plus and minus to zoom, Esc for this menu.</div><div class="row"><button id="bChase">Chase camera: ${CHASE.on ? 'on' : 'off'}</button><button id="bTools">Test tools</button><button id="bRes">Resume</button></div>`;
     const SL = $('slots'); for (const s of store.list()) { const r = document.createElement('div'); r.className = 'slot'; const nm = { auto: 'Auto', quick: 'Quick', slot1: 'Slot 1', slot2: 'Slot 2', slot3: 'Slot 3' }[s.slot]; r.innerHTML = `<b>${nm}</b><span>${s.empty ? 'Empty' : s.broken ? 'Damaged' : s.date}</span>`;
@@ -6592,9 +6724,9 @@ window.GAME = (() => {
     $('bRes').onclick = closeMenu; $('bTools').onclick = testTools; $('bChase').onclick = () => { CHASE.on = !CHASE.on; try { localStorage.setItem('co_chase', CHASE.on ? '1' : '0'); } catch (e) { } $('bChase').textContent = 'Chase camera: ' + (CHASE.on ? 'on' : 'off'); }; $('modal').hidden = false; menu.keys = null; }
 
   // ---------------- interiors: the share house, the Northgate lobby and the Meridian floor ----------------
-  const ROOM_NAME = { house: 'Home', lobby: 'Northgate tower', office: EMPLOYER + ', level 32' };
+  const roomName = r => r === 'house' ? 'Home' : r === 'lobby' ? towerName((S.player.job && S.player.job.co) || 'meridian') : r === 'office' ? `${empName()}, level ${floorOf((S.player.job && S.player.job.co) || 'meridian')}` : r;
   const roomKey = () => INSIDE ? Object.keys(INTERIORS).find(kq => INTERIORS[kq] === INSIDE) : null;
-  const DOOR_OF = { house: () => homeDoor, lobby: () => workDoor, office: () => workDoor };
+  const DOOR_OF = { house: () => homeDoor, lobby: () => empDoor(), office: () => empDoor() };
   function goIn(key, door, lx, ly) { music.stop(); setTimeout(() => music.refresh(), 0); enterInterior(key, 'street', door); if (lx != null) { player.x = INSIDE.ox + lx; player.y = INSIDE.oy + ly; cx = player.x; cy = player.y; } placeRob(true); }
   // Rob keeps a routine: in bed overnight, out at work on weekdays, on the sofa in the evening, around the kitchen otherwise
   // Rob is between jobs: he sleeps in, lives on the couch, and goes out on Friday and Saturday nights
@@ -6799,7 +6931,7 @@ window.GAME = (() => {
     S.plans = S.plans.filter(pl => !pl.done || S.time - pl.t < 1440 * 3); }
 
   // ---------------- news and the market ----------------
-  // The Harbor City Exchange. Fifty companies make up the HCX 50 index, an index fund tracks it, and new companies list through
+  // The Harbor City Exchange. Every company in CO makes up the HCX index (named for how many there are), an index fund tracks it, and new companies list through
   // IPOs now and then (they trade but are not in the index). Trading 9:30 am to 4 pm on weekdays. Each morning at six the day's
   // stories are written: company news, results, sector moves and city events. Each story carries a move for the stocks it
   // touches, but the market does not read the paper perfectly: the real move is the story's size times a random factor, now and
@@ -6811,10 +6943,10 @@ window.GAME = (() => {
   // fixed rate set from the central bank rate. Tips from people who work in finance are inside information.
   // Prices are kept as daily bars (open, high, low, close) for a year and 15-minute bars for the last five sessions.
   const CO = [ // [symbol, name, sector, start price in cents, daily volatility %, dividend yield %]
-    ['HBF', 'Harbor Federal', 'Banks', 4200, 1.3, 4.2], ['FHT', 'Fairhaven Trust', 'Banks', 6100, 1.1, 4.8], ['CLC', 'Calloway Capital', 'Banks', 2850, 1.6, 2.5], ['SRB', 'Silverbank Investment', 'Banks', 3100, 1.8, 3.2],
+    ['HBF', 'Harbor Federal', 'Banks', 4200, 1.3, 4.2], ['FHT', 'Fairhaven Trust', 'Banks', 6100, 1.1, 4.8], ['CLC', 'Calloway Capital', 'Banks', 2850, 1.6, 2.5], ['SRB', 'Silverbank Investment', 'Banks', 3100, 1.8, 3.2], ['MRC', 'Meridian Capital', 'Banks', 8500, 1.2, 3.8],
     ['NSI', 'Northshore Insurance', 'Insurance', 5400, 1.1, 4.0], ['GRA', 'Granite Assurance', 'Insurance', 3800, 1.3, 3.4],
     ['KSY', 'Kestrel Systems', 'Tech', 11800, 2.4, 0], ['BWS', 'Brightwater Software', 'Tech', 7400, 2.2, .4], ['ORD', 'Orion Devices', 'Tech', 15600, 2.0, 1.0], ['CVN', 'Corvid Networks', 'Tech', 3200, 2.8, 0],
-    ['QNT', 'Quantix Chips', 'Tech', 8900, 2.6, .3], ['CLD', 'Cloudpeak Systems', 'Tech', 4300, 2.9, 0], ['PYL', 'Paylane', 'Tech', 2700, 2.7, 0],
+    ['QNT', 'Quantix Chips', 'Tech', 8900, 2.6, .3], ['CLD', 'Cloudpeak Systems', 'Tech', 4300, 2.9, 0], ['PYL', 'Paylane', 'Tech', 900, 4.0, 0],
     ['BLE', 'Bayline Energy', 'Energy', 5200, 1.7, 3.5], ['RDO', 'Redfern Oil', 'Energy', 3900, 2.0, 5.0], ['SMS', 'Summit Solar', 'Energy', 2100, 3.0, 0],
     ['HCP', 'Harbor City Power', 'Utilities', 2900, .8, 5.5], ['CWW', 'Clearwater Water', 'Utilities', 2200, .7, 4.9], ['VRS', 'Veridian Gas', 'Utilities', 1800, 1.0, 5.8],
     ['HLS', 'Hollis Stores', 'Retail', 3400, 1.4, 2.8], ['WBB', 'Westbrook Brands', 'Retail', 5800, 1.3, 2.2], ['PTF', 'Pantry Foods', 'Retail', 2600, 1.0, 3.6], ['GRN', 'Greenfield Grocers', 'Retail', 1600, .9, 3.8], ['MOD', 'Modista Fashion', 'Retail', 1300, 2.4, 1.0],
@@ -6886,6 +7018,7 @@ window.GAME = (() => {
       M.hist[sym] = cl; M.d[sym] = barsFrom(cl, c[4], rr); if (M.px[sym] == null) { M.px[sym] = cl[cl.length - 1]; M.open[sym] = M.px[sym]; }
       const db = M.d[sym]; M.q[sym] = [].concat(...prevDays.map((d, i) => sessionBars(db[db.length - 5 + i], d, rr))); }
     if (fresh) { for (const c of CO) M.base[c[0]] = M.hist[c[0]][0]; M.v2 = 1; }
+    for (const c of CO) if (M.base[c[0]] == null) M.base[c[0]] = M.hist[c[0]][M.hist[c[0]].length - (M.hist[CO[0][0]].length)] || M.hist[c[0]][0];
     // the fund is worth a tenth of a dollar per index point, so 1,000 points is $100 a unit
     if (!M.d[FUNDSYM]) { const n = M.hist[CO[0][0]].length, ix = (k, i) => 1000 * CO.reduce((a, c) => a + M.d[c[0]][i][k] / M.base[c[0]], 0) / CO.length * 10;
       M.d[FUNDSYM] = []; for (let i = 0; i < n; i++) { const o = ix(0, i), c = ix(3, i); M.d[FUNDSYM].push([Math.round(o), Math.round(Math.max(o, c) * 1.002), Math.round(Math.min(o, c) * .998), Math.round(c)]); }
@@ -6941,8 +7074,8 @@ window.GAME = (() => {
     S.tipLog = S.tipLog.filter(x => !x.done || x.day > d - 30);
     const X = S.sec; if (X && d === X.letter) { X.decide = d + 7; alertM(S, `A letter from the Securities Commission. It is looking into your trades in ${X.sym} before the company's results and wants your phone records.`); }
     else if (X && X.decide && d >= X.decide) { const fine = X.profit + Math.max(250000, X.profit), J = S.player.job; S.player.bank -= fine; txn('Securities Commission penalty', -fine); S.secCount++;
-      if (J) { J.perf = Math.max(0, J.perf - 30); J.shiftsAt = 0; } S.sec = null;
-      alertM(S, `The Securities Commission found you traded on inside information. You paid ${money(fine)}: the ${money(X.profit)} profit and a penalty. ${EMPLOYER} has put a formal warning on your file.`); }
+      if (J && J.co) { J.perf = Math.max(0, J.perf - 30); J.shiftsAt = 0; setTimeout(() => warn('The Securities Commission found you traded on inside information.'), 3000); } S.sec = null;
+      alertM(S, `The Securities Commission found you traded on inside information. You paid ${money(fine)}: the ${money(X.profit)} profit and a penalty. ${empName()} has been told.`); }
     for (const st of out) { if (st.fizz) M.fizz.push(st.fizz); st.day = d; st.real = st.eff.map(([k, p]) => [k, p * (r() < .12 ? -.6 : .4 + r() * 1.1)]); }
     M.stories = M.stories.filter(s => s.day >= d - 6).concat(out.sort((a, b) => a.t - b.t)); scheduleEarnings(S, d); }
   const touches = (k, c) => k === 'all' || k === c[0] || k === c[2];
@@ -7081,11 +7214,11 @@ window.GAME = (() => {
   // Owned from the start. The clock stops while it is open. P opens it, Esc goes back.
   let phoneOpen = false, phoneView = ['home'], phoneData = {};
   const APPS = [['contacts', 'Contacts', '#5f8fd6', 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm-7 8c0-3.3 3.1-6 7-6s7 2.7 7 6z'], ['messages', 'Messages', '#5fb37a', 'M4 5h16v11H8l-4 4z'], ['bank', 'Bank', '#d6a347', 'M3 9l9-5 9 5v2H3zm2 3h2v6H5zm4 0h2v6H9zm4 0h2v6h-2zm4 0h2v6h-2zM3 19h18v2H3z'], ['maps', 'Maps', '#d66b5f', 'M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z'],
-    ['calendar', 'Calendar', '#c46fb0', 'M5 5h14v15H5zm0 4h14M8 3v4m8-4v4'], ['music', 'Music', '#e0874a', 'M9 18a3 3 0 1 1-2-2.8V5l12-2v11a3 3 0 1 1-2-2.8V6.3L9 7.6z'], ['notes', 'Journal', '#8a96a3', 'M6 3h12v18H6zm3 4h6m-6 4h6m-6 4h4'], ['shop', 'Shop', '#c7584f', 'M5 8h14l-1.5 12h-11zm3 0a4 4 0 0 1 8 0'], ['news', 'News', '#5a6f86', 'M4 5h13v14H6a2 2 0 0 1-2-2zm13 4h3v8a2 2 0 0 1-2 2M7 9h7M7 12h7M7 15h4'], ['trade', 'Trading', '#3f9a8a', 'M4 18l5-6 4 3 7-9M15 6h5v5']];
+    ['calendar', 'Calendar', '#c46fb0', 'M5 5h14v15H5zm0 4h14M8 3v4m8-4v4'], ['jobs', 'Jobs', '#b98a3e', 'M4 8h16v11H4zm5 0V5h6v3M4 13h16'], ['work', 'Work', '#4f7fa8', 'M3 6h18v12H3zm0 0l9 7 9-7'], ['music', 'Music', '#e0874a', 'M9 18a3 3 0 1 1-2-2.8V5l12-2v11a3 3 0 1 1-2-2.8V6.3L9 7.6z'], ['notes', 'Journal', '#8a96a3', 'M6 3h12v18H6zm3 4h6m-6 4h6m-6 4h4'], ['shop', 'Shop', '#c7584f', 'M5 8h14l-1.5 12h-11zm3 0a4 4 0 0 1 8 0'], ['news', 'News', '#5a6f86', 'M4 5h13v14H6a2 2 0 0 1-2-2zm13 4h3v8a2 2 0 0 1-2 2M7 9h7M7 12h7M7 15h4'], ['trade', 'Trading', '#3f9a8a', 'M4 18l5-6 4 3 7-9M15 6h5v5']];
   const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const relWord = r => r <= -40 ? 'Dislikes you' : r <= -10 ? 'Cool toward you' : r < 15 ? 'Acquaintance' : r < 40 ? 'Friendly' : r < 70 ? 'Good terms' : 'Close';
   const contactList = () => [{ cid: 'rob', name: 'Rob', job: 'Housemate', rel: S.rels.rob.score, rob: true }, ...Object.values(S.contacts)].map(c => c.rob ? c : Object.assign({}, c));
-  const unread = () => S.msgs.filter(m => !m.me && !m.read).length;
+  const unread = () => S.msgs.filter(m => !m.me && !m.read).length + (S.mail || []).filter(m => !m.read).length;
   // too long without food: you collapse, lose the afternoon and get a bill
   async function faint() { const N = S.player.needs; N.health = 45; N.hunger = 35; N.energy = Math.max(N.energy, 40); await fadeTo('You collapse', 'You wake up at City General Hospital', () => { const t0 = S.time; CR.passMinutes(S, 240); dailyThings(t0, S.time); toHospital(); }, 1400);
     S.player.bank -= 45000; txn('Urgent care bill', -45000); need('mood', -15); CR.note(S, 'Collapsed from hunger. Urgent care, $450.'); toast('Low blood sugar, the doctor says. Eat properly. The visit cost $450 after insurance. Your car is where you left it.', 6); }
@@ -7095,14 +7228,17 @@ window.GAME = (() => {
     const o = b.fp, d = (o.y1 - o.y0 + 2) / .7, w = (o.x1 - o.x0 + 4) / .98, [x, y] = toW(b.F, o.x0 - 2 + w * .62, o.y0 + d * .06 - 1.2); player.x = x; player.y = y; cx = x; cy = y; }
   // colleagues keep their names, faces and how well you know them in the save, so the office is the same people every day
   const COLLROLE = ['Analyst', 'Senior Analyst', 'Associate', 'Analyst', 'Vice President', 'Graduate Analyst', 'Compliance Officer', 'Associate', 'Office Manager', 'Trader', 'Senior Analyst', 'Portfolio Manager', 'Executive Assistant', 'Analyst'];
-  const collSnap = n => ({ name: n.name, job: n.job, jobLine: n.jobLine, L: JSON.parse(JSON.stringify(n.L)), rel: n.rel, trait: n.trait, fan: n.fan, fin: n.fin, metBefore: !!n.metBefore, knownJob: !!n.knownJob, traitKnown: n.traitKnown, hobby: n.hobby, team: n.team, from: n.from, weekend: n.weekend, topics: n.topics, gain: n.gain, cid: n.cid || null });
-  function syncColleagues() { const I = INSIDE; if (!I || I.collSync === S) return; I.collSync = S; S.coll = S.coll || {};
-    for (const n of I.npcs) if (n.coll) { const sv = S.coll[n.uid];
+  const collSnap = n => ({ rank: n.rank, name: n.name, job: n.job, jobLine: n.jobLine, L: JSON.parse(JSON.stringify(n.L)), rel: n.rel, trait: n.trait, fan: n.fan, fin: n.fin, metBefore: !!n.metBefore, knownJob: !!n.knownJob, traitKnown: n.traitKnown, hobby: n.hobby, team: n.team, from: n.from, weekend: n.weekend, topics: n.topics, gain: n.gain, cid: n.cid || null });
+  const collKey = n => { const co = S.player.job.co || 'meridian'; return co === 'meridian' ? n.uid : co + ':' + n.uid; };
+  const collCoOf = k => /^\d+$/.test(String(k)) ? 'meridian' : String(k).split(':')[0];
+  function syncColleagues() { const I = INSIDE, co = S.player.job.co || 'meridian'; if (!I || (I.collSync === S && I.collCo === co)) return; I.collSync = S; I.collCo = co; S.coll = S.coll || {};
+    const lad = ladderFor(co), roles = lad.slice(0, Math.max(1, Math.min(6, lad.length - 1))).map((r, i) => [r.t, i]).concat([['Office Manager', -1], ['Executive Assistant', -1], ['Compliance Officer', -1]]), cn = coById(co).name;
+    for (const n of I.npcs) if (n.coll) { const key = collKey(n), sv = S.coll[key]; n.collKey = key;
       if (sv) { Object.assign(n, JSON.parse(JSON.stringify(sv))); if (sv.cid && S.contacts[sv.cid]) n.rel = S.contacts[sv.cid].rel; continue; }
-      const role = COLLROLE[(n.uid - 70000) % COLLROLE.length]; Object.assign(n, { name: null, metBefore: false, cid: null, topics: undefined, knownJob: false, traitKnown: false });
-      n.job = role + ', ' + EMPLOYER; ensureNPC(n); n.job = role + ', ' + EMPLOYER;
-      const taken = new Set(Object.values(S.coll).map(c => c.name).concat(['Rob', 'Jess', 'Tom', 'Grace'])), uid = n.uid; for (let k = 1; k < 30 && (taken.has(n.name) || taken.has(n.name.split(' ')[0]) || [...taken].some(t => t.split(' ')[1] === n.name.split(' ')[1])); k++) { n.name = null; n.uid = uid + k * 1000; ensureNPC(n); n.job = role + ', ' + EMPLOYER; } n.uid = uid; n.fin = true; n.rel = Math.max(n.rel, 4);
-      n.jobLine = `I am ${/^[AEIOU]/.test(role) ? 'an' : 'a'} ${role.toLowerCase()} here. ${role === 'Office Manager' || role === 'Executive Assistant' ? 'I keep this floor running, basically.' : 'Long hours, decent coffee.'}`; S.coll[n.uid] = collSnap(n); } }
+      const [role, rank] = roles[(n.uid - 70000) % roles.length], uid = n.uid, off = co === 'meridian' ? 0 : (hash(co) % 5000) * 3; if (co !== 'meridian') n.L = randomLook(n.L.kind || 'suit');
+      Object.assign(n, { name: null, metBefore: false, cid: null, topics: undefined, knownJob: false, traitKnown: false, rank }); n.uid = uid + off; n.job = role + ', ' + cn; ensureNPC(n); n.job = role + ', ' + cn;
+      const taken = new Set(Object.entries(S.coll).filter(([k]) => collCoOf(k) === co).map(([, c]) => c.name).concat(['Rob', 'Jess', 'Tom', 'Grace'])); for (let k = 1; k < 30 && (taken.has(n.name) || taken.has(n.name.split(' ')[0]) || [...taken].some(t => t.split(' ')[1] === n.name.split(' ')[1])); k++) { n.name = null; n.uid = uid + off + k * 1000; ensureNPC(n); n.job = role + ', ' + cn; } n.uid = uid;
+      n.fin = true; n.rel = Math.max(n.rel, 4); n.jobLine = `I am ${/^[AEIOU]/.test(role) ? 'an' : 'a'} ${role.toLowerCase()} here. ${role === 'Office Manager' || role === 'Executive Assistant' ? 'I keep this floor running, basically.' : 'Long hours, decent coffee.'}`; S.coll[key] = collSnap(n); } }
   // people get in touch too: now and then someone you know well suggests meeting up, and Rob comes over for a chat
   function socialPing() { const d = Math.floor(S.time / 1440), h = gHour(); if (S.pingDay === d || h < 12 || h > 20) return; S.pingDay = d; if (Math.random() > .4) return;
     const cs = Object.values(S.contacts).filter(c => (c.rel || 0) >= 15 && S.time - (c.last || 0) > 3 * 1440 && !S.plans.some(pl => !pl.done && pl.cid === c.cid)); if (!cs.length) return;
@@ -7144,7 +7280,8 @@ window.GAME = (() => {
       html = `<div class="phbal"><span>Checking</span><b>${money(P0.bank)}</b><span>Cash in your wallet</span><b>${money(P0.cash)}</b></div><p class="phnote">Cash comes out at your laptop for now. ATMs come in a later build.</p>${(S.fines || []).filter(f => !f.paid).map((f, i) => `<div class="phbal" style="border-color:var(--bad)"><span>Parking fine, ${esc(f.why)}</span><b>${money(f.fine)}</b><span>${f.late ? 'Overdue, doubled' : 'Due ' + CR.fmtDate(f.due)}</span><b><button class="phbtn" data-act="fine:${S.fines.indexOf(f)}">Pay</button></b></div>`).join('')}<div class="phtx">${S.tx.slice(0, 18).map(x => `<p><span>${esc(x.text)}<small>${CR.fmtDate(x.t)}</small></span><b class="${x.c > 0 ? 'in' : ''}">${x.c > 0 ? '+' : ''}${money(x.c)}</b></p>`).join('') || '<p><span>No transactions yet</span></p>'}</div>`; }
     else if (app === 'calendar') { title = 'Calendar'; const out = [], J = S.player.job, d0 = Math.floor(S.time / 1440);
       for (let d = d0; d < d0 + 7; d++) { const pp = CR.parts(d * 1440 + 720), items = [];
-        if (pp.dow >= 1 && pp.dow <= 5) items.push(['9:00 am', `Work at ${EMPLOYER}${J.lastShiftDay === d ? ', done' : ''}`]);
+        if (J.co && pp.dow >= 1 && pp.dow <= 5 && d >= (J.startDay || 0) && !(J.leaveUntil > d)) items.push(['9:00 am', `Work at ${empName()}${J.lastShiftDay === d ? ', done' : ''}`]);
+        for (const a of S.apps || []) if (a.status === 'interview' && Math.floor(a.at / 1440) === d) items.push([CR.fmtTime(a.at), `Interview at ${coById(a.co).name}, ${towerName(a.co)}`]);
         if (pp.dow === 4 && S.flags && S.flags.poker_night) items.push(['8:00 pm', 'Poker night at home']);
         if (pp.dow === 0) items.push(['Midnight', `Rent, ${money(26000)}`]);
         for (const pl of S.plans) if (!pl.done && Math.floor(pl.t / 1440) === d) { const c = S.contacts[pl.cid]; items.push([CR.fmtTime(pl.t), `Coffee with ${c ? c.name.split(' ')[0] : 'someone'} at ${pl.place}`]); }
@@ -7212,8 +7349,20 @@ window.GAME = (() => {
         + `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${!h || h.q > 0 ? btn('buy', 'Buy') : ''}${h && h.q > 0 ? btn('sell', 'Sell') + btn('sell', 'Sell all', true) : ''}${!h && A.margin ? btn('short', 'Short') : ''}${h && h.q < 0 ? btn('cover', 'Cover') + btn('cover', 'Cover all', true) : ''}</div>`
         + (!A.margin && !h ? '<p class="phnote" style="margin:0">Open a margin account to sell short.</p>' : '')
         + M.stories.filter(st => st.t <= S.time && st.eff.some(([k]) => touches(k, c))).slice(-4).reverse().map(st => `<p class="phlog"><small>${dayWord(st.t)}</small>${esc(st.head)}</p>`).join(''); }
-    else if (app === 'work') { title = 'Work email'; const J = S.player.job;
-      html = `<div class="phbal"><span>${esc(EMPLOYER)}</span><b>${esc(LADDER[J.level].t)}</b><span>Shifts worked</span><b>${J.shifts}</b></div><p class="phnote">Work happens at the office from 9 am on weekdays. Messages from your manager land here.</p>`; }
+    else if (app === 'work') { title = 'Work'; const J = S.player.job, d = Math.floor(S.time / 1440), mail = S.mail || [];
+      if (J.co) { const L = LAD(), pg = promoGaps(J), w = (J.warns || []).filter(x => d - x.d < 90);
+        html = `<div class="phbal"><span>${esc(empName())}</span><b>${esc(L[J.level].t)}</b><span>Salary</span><b>${salary(L[J.level].pay * 100)} a year</b><span>Performance</span><b>${Math.round(J.perf)} of 100</b><span>Stress</span><b style="color:${(J.burn || 0) > 70 ? 'var(--bad,#d66b5f)' : 'inherit'}">${Math.round(J.burn || 0)} of 100</b><span>In the role</span><b>${Math.max(0, d - (J.roleSince || d))} days</b>${w.length ? `<span>Warnings</span><b style="color:var(--bad,#d66b5f)">${w.length}, until ${CR.fmtDate((w[0].d + 90) * 1440)}</b>` : ''}</div>`
+          + `<p class="phnote" style="margin:0">${pg ? (pg.gaps.length ? 'For ' + esc(L[J.level + 1].t) + ': ' + esc(pg.gaps.join(', ')) + '.' : 'You are ready for promotion. It comes at the end of a good shift.') + (pg.fr ? ' Someone senior is in your corner.' : '') : 'You are at the top of this ladder.'}</p>`
+          + (S.resignAsk === d ? '<button class="phbtn" data-act="resign:2" style="border-color:var(--bad,#d66b5f)">Yes, resign today</button><button class="phbtn" data-act="resign:0">Keep the job</button>' : '<button class="phbtn" data-act="resign:1">Resign</button>'); }
+      else html = `<div class="phbal"><span>Status</span><b>Unemployed</b><span>Best role so far</span><b>${esc(ladderFor(J.lastCo || 'meridian')[Math.min(J.best || 0, ladderFor(J.lastCo || 'meridian').length - 1)].t)}</b></div><button class="phbtn" data-go="jobs">Find a job</button>`;
+      html += '<p class="phsec">Inbox</p>' + (mail.map(m => `<div class="phrow" style="cursor:default"><span>${dayWord(m.t)}, ${CR.fmtTime(m.t)}</span><b>${esc(m.subj)}</b><span style="white-space:normal">${esc(m.text)}</span></div>`).join('') || '<p class="phnote">No email yet.</p>');
+      for (const m of mail) m.read = true; setTimeout(phoneBadge, 0); }
+    else if (app === 'jobs' && !arg) { title = 'Jobs'; refreshJobs(); const d = Math.floor(S.time / 1440), live = (S.apps || []).filter(a => !['withdrawn'].includes(a.status) && S.time - a.t < 30 * 1440).slice(0, 8);
+      const st = a => ({ sent: 'Applied, waiting to hear', interview: `Interview ${dayWord(a.at)} at ${CR.fmtTime(a.at)}, ${towerName(a.co)}`, offer: `Offer, reply by ${dayWord(a.until)}`, rejected: 'Not this time', missed: 'Missed the interview', lapsed: 'Offer lapsed', accepted: 'Accepted', declined: 'Declined', done: 'Interviewed' }[a.status] || a.status);
+      html = (live.length ? '<p class="phsec">Your applications</p>' + live.map(a => { const c = coById(a.co), L = ladderFor(a.co)[a.level]; return `<div class="phrow" style="cursor:default"><b>${esc(L.t)}, ${esc(c.name)}</b><span style="white-space:normal">${esc(st(a))}</span>${a.status === 'offer' ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px"><button class="phbtn" data-act="offer:${a.id}.yes">Accept, ${salary(L.pay * 100)}</button><button class="phbtn" data-act="offer:${a.id}.no">Decline</button></div>` : ''}</div>`; }).join('') : '')
+        + '<p class="phsec">Openings this week</p>' + ((S.jobs || []).filter(j => j.closes > d).sort((a, b) => (coById(a.co).locked ? 1 : 0) - (coById(b.co).locked ? 1 : 0) || jobFit(b) - jobFit(a)).map(j => { const c = coById(j.co), L = ladderFor(j.co)[j.level], f = jobFit(j), mine = S.player.job.co === j.co, sent = (S.apps || []).some(a => a.job === j.id);
+          return `<div class="phrow" style="cursor:default"><b>${esc(c.locked ? 'Legal roles' : L.t)} <span style="float:right">${c.locked ? '' : salary(L.pay * 100)}</span></b><span>${esc(c.name)}, ${esc(c.ind)}${c.small ? ', smaller firm' : ''} · ${esc(towerName(j.co))}</span><span style="white-space:normal">${esc(c.locked || (c.about + (j.level ? ` Wants finance level ${j.level + 2} and experience at ${ladderFor(j.co)[j.level - 1].t} or above.` : ` Wants finance level 2.`)))}</span>${c.locked || mine ? '' : sent ? '<span>Applied</span>' : `<div style="display:flex;gap:8px;align-items:center;margin-top:6px"><button class="phbtn" data-act="apply:${j.id}">Apply</button><span>${f > .65 ? 'Good chance' : f > .35 ? 'Worth a try' : 'Long shot'}</span></div>`}</div>`; }).join('') || '<p class="phnote">Nothing this week. New roles are posted on Mondays.</p>')
+        + '<p class="phnote">Interviews are at the company’s tower, before or after work. Look smart and arrive on time.</p>'; }
     else if (app === 'study') { title = 'Study'; const f = S.player.skills.finance;
       html = `<div class="phbal"><span>Finance skill</span><b>${Math.floor(f)}</b></div><button class="phbtn" data-act="study:1">Study finance for an hour</button><button class="phbtn" data-act="study:3">Study for three hours, a proper session</button><p class="phnote">Studying is a little tiring. The clock runs on while you work.</p>`; }
     else if (app === 'cash') { title = 'Withdraw cash'; const P0 = S.player;
@@ -7247,6 +7396,9 @@ window.GAME = (() => {
     if (k === 'tdbrk') { const td = S.tds.find(x => x.id === +arg); if (td) { S.tds = S.tds.filter(x => x !== td); S.player.bank += td.amt; txn('Term deposit broken early, no interest', td.amt); toast(`${money(td.amt)} back in your bank, no interest.`, 3); } return refreshApps(); }
     if (k === 'marg') { if (arg === 'on') { S.acct.margin = true; toast('Margin account open. You can now borrow against your shares and sell short.', 3.5); } else if (!S.acct.loan && !Object.values(S.port).some(h => h.q < 0)) { S.acct.margin = false; toast('Margin account closed.', 2.5); } return refreshApps(); }
     if (k === 'repay') { const a = Math.min(dollars(OF.rep) || 0, S.acct.loan, Math.max(0, S.player.bank)); if (!(a > 0)) return toast('Enter an amount you have in the bank.', 2.5); S.player.bank -= a; S.acct.loan -= a; txn('Margin loan repaid', -a); OF.rep = ''; toast(`Repaid ${money(a)}.`, 2.5); return refreshApps(); }
+    if (k === 'apply') { applyJob(arg); return refreshApps(); }
+    if (k === 'offer') { const [id, yn] = arg.split('.'), a = S.apps.find(q => q.id === id); if (a && yn === 'yes') acceptOffer(id); else if (a) { a.status = 'declined'; toast('Offer declined.', 2.5); } return refreshApps(); }
+    if (k === 'resign') { if (arg === '1') S.resignAsk = Math.floor(S.time / 1440); else { S.resignAsk = -1; if (arg === '2') resign(); } return refreshApps(); }
     if (k === 'ipo') { const I = S.mkt.ipo, amt = dollars(OF.ipoamt); if (!I || Math.floor(S.time / 1440) > I.close) return toast('Applications have closed.', 2.5); if (!(amt >= 50000)) return toast('The minimum is $500.', 2.5); if (S.player.bank < amt) return toast('Not enough in your bank account.', 2.5);
       S.player.bank -= amt; I.app += amt; txn(`IPO application, ${I.sym}`, -amt); OF.ipoamt = ''; toast(`Applied for ${money(amt)} of ${I.name}.`, 3); return refreshApps(); }
     if (k === 'tip') { askTip(arg); return refreshApps(); }
@@ -7301,7 +7453,7 @@ window.GAME = (() => {
   // On your desk at home. A desktop of icons; each opens a window you can move, stack and close. The same apps as the phone,
   // plus study, cash and work email. The clock stops while it is open, as with the phone.
   let laptopOpen = false, wins = [], winZ = 1, winSeq = 0;
-  const LAPAPPS = [...APPS.filter(a => a[0] !== 'maps'), ['work', 'Work email', '#4f7fa8', 'M3 6h18v12H3zm0 0l9 7 9-7'], ['study', 'Study', '#7a6fc4', 'M3 7l9-4 9 4-9 4zm4 2v5c0 1.5 2.5 3 5 3s5-1.5 5-3V9'], ['cash', 'Withdraw cash', '#4f9a7a', 'M3 7h18v10H3zm9 2.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z']];
+  const LAPAPPS = [...APPS.filter(a => a[0] !== 'maps'), ['study', 'Study', '#7a6fc4', 'M3 7l9-4 9 4-9 4zm4 2v5c0 1.5 2.5 3 5 3s5-1.5 5-3V9'], ['cash', 'Withdraw cash', '#4f9a7a', 'M3 7h18v10H3zm9 2.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z']];
   function openLaptop() { if (FF || fading) return; laptopOpen = true; G.hold = true; $('laptop').hidden = false; if (!wins.length) openWin('home'); else drawLaptop(); }
   function closeLaptop() { if (!laptopOpen) return; laptopOpen = false; $('laptop').hidden = true; G.hold = !!(modalOpen || dlgOpen || fading || FF || phoneOpen); phoneBadge(); }
   function openWin(app) { if (app === 'home') { drawLaptop(); return; } const ex = wins.find(w => w.stack[0] === app); if (ex) { ex.z = ++winZ; drawLaptop(); return; }
@@ -7383,13 +7535,13 @@ window.GAME = (() => {
   function testTools() { modalOpen = true; G.hold = true; const J = S.player.job, P2 = $('panel');
     const evs = WORK_EVENTS.map(e => `<button data-ev="${e.id}" class="${forceEvent === e.id ? 'on' : ''}" title="${esc(e.text().slice(0, 140))}">${esc(e.id)} <small>${e.lv[0] === e.lv[1] ? LVNAME[e.lv[0]] : LVNAME[e.lv[0]] + ' to ' + LVNAME[e.lv[1]]}</small></button>`).join('');
     P2.innerHTML = `<h2>Test tools</h2><p class="sub2">Changes apply to this save. Hover an event to read it.</p>
-      <h2 style="font-size:14px">Job level</h2><div class="row tt">${LADDER.map((L, i) => `<button data-lv="${i}" class="${J.level === i ? 'on' : ''}">${L.t}</button>`).join('')}</div>
+      <h2 style="font-size:14px">Job level</h2><div class="row tt">${LAD().map((L, i) => `<button data-lv="${i}" class="${J.level === i ? 'on' : ''}">${L.t}</button>`).join('')}</div>
       <h2 style="font-size:14px">Next shift's event</h2><p class="sub2">${forceEvent ? 'Lined up: ' + esc(forceEvent) + '. Start a shift to see it.' : 'None lined up. Pick one, or any event for your level.'}</p><div class="row tt"><button data-ev="any" class="${forceEvent === 'any' ? 'on' : ''}">Any for my level</button>${evs}</div>
       <h2 style="font-size:14px">Clock, needs and money</h2><div class="row tt"><button id="ttWork">Next weekday 8:55, at the office door</button><button id="ttFull">Full energy, fed, good mood</button><button id="ttCash">Add $1,000</button><button id="ttFin">Finance skill up a level</button><button id="ttPerf">Performance 80</button></div>
       <div class="row"><button id="ttBack">Done</button></div>`;
-    for (const b of P2.querySelectorAll('[data-lv]')) b.onclick = () => { J.level = +b.dataset.lv; J.shiftsAt = 0; toast('You are now ' + LADDER[J.level].t + '.', 2); testTools(); };
+    for (const b of P2.querySelectorAll('[data-lv]')) b.onclick = () => { J.level = +b.dataset.lv; J.shiftsAt = 0; toast('You are now ' + LAD()[J.level].t + '.', 2); testTools(); };
     for (const b of P2.querySelectorAll('[data-ev]')) b.onclick = () => { forceEvent = forceEvent === b.dataset.ev ? null : b.dataset.ev; testTools(); };
-    $('ttWork').onclick = () => { let d = Math.floor(S.time / 1440) + 1; while ([0, 6].includes(CR.parts(d * 1440).dow)) d++; S.time = d * 1440 + 8 * 60 + 55; skyForDay(); closeMenu(); if (INSIDE) leaveInterior(); player.driving = false; player.x = workDoor.x + workDoor.nx * 1.5; player.y = workDoor.y + workDoor.ny * 1.5; cx = player.x; cy = player.y; toast('Next weekday, 8:55, outside Northgate tower.', 3); };
+    $('ttWork').onclick = () => { let d = Math.floor(S.time / 1440) + 1; while ([0, 6].includes(CR.parts(d * 1440).dow)) d++; S.time = d * 1440 + 8 * 60 + 55; skyForDay(); closeMenu(); if (INSIDE) leaveInterior(); player.driving = false; const wd = empDoor(); player.x = wd.x + wd.nx * 1.5; player.y = wd.y + wd.ny * 1.5; cx = player.x; cy = player.y; toast('Next weekday, 8:55, outside ' + wd.name + '.', 3); };
     $('ttFull').onclick = () => { Object.assign(S.player.needs, { energy: 100, hunger: 10, mood: 80 }); testTools(); };
     $('ttCash').onclick = () => { S.player.bank += 100000; testTools(); };
     $('ttFin').onclick = () => { const lv = CR.levelOf(S.player.skills.finance || 0); let v = S.player.skills.finance || 0; while (CR.levelOf(v) <= lv) v += 25; S.player.skills.finance = v; toast('Finance level ' + CR.levelOf(v) + '.', 2); testTools(); };
@@ -7423,7 +7575,7 @@ window.GAME = (() => {
     if (LOOKOUT.near(player.x, player.y)) { LOOKOUT.show({ L: player.L, sync: lookoutSync, onClose: () => { G.hold = !!(modalOpen || dlgOpen || fading); } }); G.hold = true; return; }
     if (doorNow) { const d = doorNow;
       if (d.k === 'home') { fadeTo('', '', () => { goIn('house', d); collectParcels(); }, 200).then(robDropsBy); return; }
-      if (d.k === 'work') { fadeTo('', '', () => goIn('lobby', d), 200); return; }
+      if (d.k === 'work' || d.k === 'hq') return hqDoor(d);
       if (d.k === 'venue') return venue(d); if (d.k === 'dealer') return dealer(d); if (d.k === 'store') return storeMenu(d); return toast(d.name + ' opens in a later build.', 2); }
     if (Math.hypot(player.x - PCAR.x, player.y - PCAR.y) < 3.6) { toggleCar(); music.drive(true); ticketCheck(); return; }
     if (paperNow) { if (!spend(200, 'Newspaper')) return toast('You cannot afford it.'); stepMarket(S, S.time); return openPhone('news'); }
@@ -7471,7 +7623,7 @@ window.GAME = (() => {
     if (mapOpen && !G.hold) { G.hold = true; tick.mapHeld = true; } else if (!mapOpen && tick.mapHeld) { tick.mapHeld = false; G.hold = !!(modalOpen || dlgOpen || fading || phoneOpen); }
     if (!paused) runClock(dt);
     if (seated && !paused) { need('energy', dt * .004); if (seated.st.bench) need('mood', dt * .003); }
-    if ((tick.pl = (tick.pl || 0) - dt) < 0) { tick.pl = .5; socialPing(); checkPlans(); checkOrders(); if (S.mkt) stepMarket(S, S.time); window.RUNMUL = S.owned && S.owned.shoes ? 1.12 : 1; if (S.owned && S.owned.headphones && music.phoneOn && !paused) need('mood', .02); if (parcelP) parcelP.show = S.orders.some(o => o.arrived && !o.got); else if (S.orders.some(o => o.arrived && !o.got)) parcelProp(); parkPatrol(); fineCheck(); music.level(); const st = INSIDE && INSIDE.furn.find(f => f.t === 'stereo'); if (st) st.on = !!S.stereo.on; }
+    if ((tick.pl = (tick.pl || 0) - dt) < 0) { tick.pl = .5; if (tick.hqFor !== S) { tick.hqFor = S; assignHQ(S); } refreshJobs(); checkApps(); socialPing(); checkPlans(); checkOrders(); if (S.mkt) stepMarket(S, S.time); window.RUNMUL = S.owned && S.owned.shoes ? 1.12 : 1; if (S.owned && S.owned.headphones && music.phoneOn && !paused) need('mood', .02); if (parcelP) parcelP.show = S.orders.some(o => o.arrived && !o.got); else if (S.orders.some(o => o.arrived && !o.got)) parcelProp(); parkPatrol(); fineCheck(); music.level(); const st = INSIDE && INSIDE.furn.find(f => f.t === 'stereo'); if (st) st.on = !!S.stereo.on; }
     hour = gHour(); flow = 0; // the game's clock drives the street's light
     roomTick(dt);
     if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').hidden = true; }
@@ -7481,7 +7633,7 @@ window.GAME = (() => {
         else if (seated) t = '<kbd>E</kbd>Stand up';
         else { doorNow = doorNear(player.x, player.y);
           if (LOOKOUT.near(player.x, player.y)) t = '<kbd>E</kbd>Take in the view <span style="color:var(--muted)">The Ranges lookout</span>';
-          else if (doorNow) t = `<kbd>E</kbd>${doorNow.k === 'home' ? 'Go inside' : doorNow.k === 'work' ? 'Enter ' + doorNow.name : doorNow.k === 'shop' ? doorNow.name : 'Visit ' + doorNow.name} <span style="color:var(--muted)">${doorNow.sub || ''}</span>`;
+          else if (doorNow) t = `<kbd>E</kbd>${doorNow.k === 'home' ? 'Go inside' : doorNow.k === 'work' || doorNow.k === 'hq' ? 'Enter ' + doorNow.name + (doorNow.co ? ` <span style="color:var(--muted)">${coById(doorNow.co).name}</span>` : '') : doorNow.k === 'shop' ? doorNow.name : 'Visit ' + doorNow.name} <span style="color:var(--muted)">${doorNow.sub || ''}</span>`;
           else if (Math.hypot(player.x - PCAR.x, player.y - PCAR.y) < 3.6) t = '<kbd>E</kbd>Get in your car';
           else if ((paperNow = paperNear(player.x, player.y))) t = '<kbd>E</kbd>Buy today\'s paper <span style="color:var(--muted)">$2</span>';
           else if ((cartNow = cartNear(player.x, player.y))) t = `<kbd>E</kbd>${CARTNAME[cartNow.name] || 'Food cart'} <span style="color:var(--muted)">cheap food</span>`;
