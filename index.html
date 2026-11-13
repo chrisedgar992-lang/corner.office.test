@@ -7354,7 +7354,7 @@ window.GAME = (() => {
   // Owned from the start. The clock stops while it is open. P opens it, Esc goes back.
   let phoneOpen = false, phoneView = ['home'], phoneData = {};
   const APPS = [['contacts', 'Contacts', '#5f8fd6', 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm-7 8c0-3.3 3.1-6 7-6s7 2.7 7 6z'], ['messages', 'Messages', '#5fb37a', 'M4 5h16v11H8l-4 4z'], ['bank', 'Bank', '#d6a347', 'M3 9l9-5 9 5v2H3zm2 3h2v6H5zm4 0h2v6H9zm4 0h2v6h-2zm4 0h2v6h-2zM3 19h18v2H3z'], ['maps', 'Maps', '#d66b5f', 'M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z'],
-    ['calendar', 'Calendar', '#c46fb0', 'M5 5h14v15H5zm0 4h14M8 3v4m8-4v4'], ['jobs', 'Jobs', '#b98a3e', 'M4 8h16v11H4zm5 0V5h6v3M4 13h16'], ['work', 'Work', '#4f7fa8', 'M3 6h18v12H3zm0 0l9 7 9-7'], ['music', 'Music', '#e0874a', 'M9 18a3 3 0 1 1-2-2.8V5l12-2v11a3 3 0 1 1-2-2.8V6.3L9 7.6z'], ['notes', 'Journal', '#8a96a3', 'M6 3h12v18H6zm3 4h6m-6 4h6m-6 4h4'], ['shop', 'Shop', '#c7584f', 'M5 8h14l-1.5 12h-11zm3 0a4 4 0 0 1 8 0'], ['news', 'News', '#5a6f86', 'M4 5h13v14H6a2 2 0 0 1-2-2zm13 4h3v8a2 2 0 0 1-2 2M7 9h7M7 12h7M7 15h4'], ['trade', 'Trading', '#3f9a8a', 'M4 18l5-6 4 3 7-9M15 6h5v5']];
+    ['calendar', 'Calendar', '#c46fb0', 'M5 5h14v15H5zm0 4h14M8 3v4m8-4v4'], ['jobs', 'Jobs', '#b98a3e', 'M4 8h16v11H4zm5 0V5h6v3M4 13h16'], ['work', 'Work', '#4f7fa8', 'M3 6h18v12H3zm0 0l9 7 9-7'], ['music', 'Music', '#e0874a', 'M9 18a3 3 0 1 1-2-2.8V5l12-2v11a3 3 0 1 1-2-2.8V6.3L9 7.6z'], ['notes', 'Journal', '#8a96a3', 'M6 3h12v18H6zm3 4h6m-6 4h6m-6 4h4'], ['shop', 'Shop', '#c7584f', 'M5 8h14l-1.5 12h-11zm3 0a4 4 0 0 1 8 0'], ['news', 'News', '#5a6f86', 'M4 5h13v14H6a2 2 0 0 1-2-2zm13 4h3v8a2 2 0 0 1-2 2M7 9h7M7 12h7M7 15h4'], ['trade', 'Trading', '#3f9a8a', 'M4 18l5-6 4 3 7-9M15 6h5v5'], ['taxi', 'Taxi', '#c9a23a', 'M5 11l2-5h10l2 5M4 11h16v6H4zm2 6v2m12-2v2M7 14h1m8 0h1M10 4h4']];
   const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const relWord = r => r <= -40 ? 'Dislikes you' : r <= -10 ? 'Cool toward you' : r < 15 ? 'Acquaintance' : r < 40 ? 'Friendly' : r < 70 ? 'Good terms' : 'Close';
   const contactList = () => [{ cid: 'rob', name: 'Rob', job: 'Housemate', rel: S.rels.rob.score, rob: true }, ...Object.values(S.contacts)].map(c => c.rob ? c : Object.assign({}, c));
@@ -7366,6 +7366,49 @@ window.GAME = (() => {
   // the spot is the main block's front doors, by the drop-off canopy
   function toHospital() { const b = buildings.find(q => q.name === 'City General Hospital'); if (!b) return; if (seated) standUp(); if (player.driving) toggleCar(); if (INSIDE) leaveInterior();
     const [x, y] = b.entrance || toW(b.F, (b.fp.x0 + b.fp.x1) / 2, b.fp.y0 - 4); player.x = x; player.y = y; cx = x; cy = y; }
+  // ---------- taxis: order from the phone, the cab pulls up at the kerb beside you, get in and the ride passes in a fade ----------
+  // fares in cents. A $3 flag fall, $2.20 a km and 40c a minute, plus $1 at night (8 pm to 6 am)
+  const TAXI = { flag: 300, km: 220, min: 40, night: 100, noshow: 500 };
+  const TX = { car: null, solid: null };
+  const nightNow = () => { const h = CR.parts(S.time).h; return h >= 20 || h < 6; };
+  const taxiEst = (x, y) => { const km = Math.hypot(x - player.x, y - player.y) * 1.3 / 1000, mins = Math.max(3, Math.round(km / 22 * 60 + 2)); return { km, mins, fare: Math.round(TAXI.flag + km * TAXI.km + mins * TAXI.min + (nightNow() ? TAXI.night : 0)) }; };
+  // a point on the kerb of the nearest road: on the road (side > 0) for the cab, or on the footpath (side < 0) to drop you
+  function kerbSpot(x, y, side) { const [, e] = kerbDist(x, y); if (!e) return null; let best = null, bd = 1e18;
+    for (let i = 1; i < e.pts.length; i++) { const [ax, ay] = e.pts[i - 1], [bx, by] = e.pts[i], dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy || 1, t = Math.max(.08, Math.min(.92, ((x - ax) * dx + (y - ay) * dy) / l2)), qx = ax + dx * t, qy = ay + dy * t, d = (qx - x) ** 2 + (qy - y) ** 2;
+      if (d < bd) { bd = d; const L = Math.sqrt(l2), nx = -dy / L, ny = dx / L, sg = (x - qx) * nx + (y - qy) * ny >= 0 ? 1 : -1, off = side > 0 ? e.w - 1.4 : e.w + 2; best = { x: qx + nx * sg * off, y: qy + ny * sg * off, ang: Math.atan2(dy, dx) }; } }
+    return best; }
+  const taxiDests = () => { const out = [], J = S.player.job;
+    if (typeof ROUTE !== 'undefined' && ROUTE) out.push({ key: 'pin', name: 'Your map pin', sub: DNAME[districtAt(ROUTE.dest[0], ROUTE.dest[1])] || '', x: ROUTE.dest[0], y: ROUTE.dest[1] });
+    if (homeDoor) out.push({ key: doorKey(homeDoor), name: 'Home', sub: homeDoor.sub, x: homeDoor.x, y: homeDoor.y });
+    const wd = J.co && DOORS.find(d => d.k === 'hq' && d.co === J.co); if (wd) out.push({ key: doorKey(wd), name: 'Work', sub: wd.name, x: wd.x, y: wd.y });
+    for (const a of S.apps || []) if (a.status === 'interview' && a.at > S.time) { const d = DOORS.find(q => q.k === 'hq' && q.co === a.co); if (d) out.push({ key: doorKey(d), name: 'Interview, ' + coById(a.co).name, sub: d.name + ', ' + CR.fmtTime(a.at), x: d.x, y: d.y }); }
+    { const b = buildings.find(q => q.name === 'City General Hospital'); if (b && b.entrance) out.push({ key: 'hosp', name: 'City General Hospital', sub: 'Main entrance', x: b.entrance[0], y: b.entrance[1] }); }
+    const seen = new Set(out.map(o => o.key)), rest = DOORS.filter(d => ['venue', 'store', 'dealer', 'hq'].includes(d.k) && !seen.has(doorKey(d))).map(d => ({ key: doorKey(d), name: d.name, sub: d.sub || '', x: d.x, y: d.y, dist: Math.hypot(d.x - player.x, d.y - player.y) }));
+    rest.sort((a, b) => a.name.localeCompare(b.name)); return out.concat(rest); };
+  const findDest = key => taxiDests().find(d => d.key === key);
+  function orderTaxi(key) { const d = findDest(key); if (!d) return; if (S.taxi) return toast('You already have a cab on the way.', 2.5);
+    const est = taxiEst(d.x, d.y); if (S.player.cash + S.player.bank < est.fare) return toast('You cannot cover the fare.', 2.5);
+    const wait = 3 + Math.floor(Math.random() * 5) + (nightNow() ? 3 : 0);
+    S.taxi = { to: { key: d.key, name: d.name, x: d.x, y: d.y }, eta: S.time + wait, state: 'coming' }; toast(`Cab booked to ${d.name}. About ${wait} min away.`, 3); }
+  function dropTaxiCar() { if (TX.car) { const i = PARKED.indexOf(TX.car); if (i >= 0) PARKED.splice(i, 1); } if (TX.solid) { const i = solids.indexOf(TX.solid); if (i >= 0) solids.splice(i, 1); gridSolids(); } TX.car = TX.solid = null; }
+  function cancelTaxi(fee) { dropTaxiCar(); if (fee && S.taxi && S.taxi.state === 'here') { spend(TAXI.noshow, 'Taxi no-show fee'); } S.taxi = null; }
+  function spawnTaxi() { const k = kerbSpot(player.x, player.y, 1); if (!k) return false; const c = { type: 'taxi', x: k.x, y: k.y, ang: k.ang, a: k.ang, col: [178, 148, 52], v: 0, speed: 0, brake: 0, parked: true, bay: null };
+    PARKED.push(c); TX.car = c; TX.solid = { F: frameOf(k.x, k.y, Math.cos(k.ang), Math.sin(k.ang)), x0: -2.35, y0: -.92, x1: 2.35, y1: .92, wb: { x0: k.x - 3, y0: k.y - 3, x1: k.x + 3, y1: k.y + 3 }, car: c }; solids.push(TX.solid); gridSolids(); return true; }
+  // checked twice a second: the cab turns up when it is due, waits ten minutes, then leaves and charges the no-show fee
+  function taxiTick() { const T = S.taxi; if (!T) { if (TX.car) dropTaxiCar(); return; }
+    if (T.state === 'coming' && S.time >= T.eta) { if (INSIDE || player.driving) { if (!T.told) { T.told = true; toast(INSIDE ? 'Your cab is here. Head outside.' : 'Your cab is here. Park and get out to meet it.', 4); } return; }
+      if (spawnTaxi()) { T.state = 'here'; T.since = S.time; toast('Your cab is at the kerb.', 3); } return; }
+    if (T.state === 'here') { if (!TX.car && !INSIDE && !player.driving) spawnTaxi();
+      if (S.time - T.since > 10 || (TX.car && Math.hypot(player.x - TX.car.x, player.y - TX.car.y) > 250)) { cancelTaxi(true); toast(`The cab left without you. ${money(TAXI.noshow)} no-show fee.`, 4); } } }
+  const taxiNear = () => TX.car && S.taxi && S.taxi.state === 'here' && Math.hypot(player.x - TX.car.x, player.y - TX.car.y) < 3.8;
+  function rideTaxi() { const T = S.taxi, d = T.to; let len = Math.hypot(d.x - player.x, d.y - player.y) * 1.3;
+    try { const pts = findPath(nearNode(player.x, player.y), nearNode(d.x, d.y)); let L = 0; for (let i = 1; i < pts.length; i++) L += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); if (L > 0) len = L; } catch (e) {}
+    const km = len / 1000, mins = Math.max(3, Math.round(km / 22 * 60 + 2)), fare = Math.round(TAXI.flag + km * TAXI.km + mins * TAXI.min + (nightNow() ? TAXI.night : 0));
+    fadeTo(`Taxi to ${esc(d.name)}`, `${mins} min, ${km.toFixed(1)} km`, () => { const t0 = S.time; CR.passMinutes(S, mins); dailyThings(t0, S.time); dropTaxiCar();
+      const door = d.key !== 'pin' && d.key !== 'hosp' && DOORS.find(q => doorKey(q) === d.key), spot = door ? { x: door.x + (door.nx || 0) * 1.6, y: door.y + (door.ny || 0) * 1.6 } : d.key === 'hosp' ? { x: d.x, y: d.y } : (kerbSpot(d.x, d.y, -1) || { x: d.x, y: d.y });
+      player.x = spot.x; player.y = spot.y; cx = spot.x; cy = spot.y; if (d.key === 'pin') ROUTE = null; S.taxi = null;
+      if (!spend(fare, `Taxi to ${d.name}`)) { S.player.bank -= fare; txn(`Taxi to ${d.name}`, -fare); } }, 1300).then(() => toast(`${money(fare)} on your card. Your car is where you left it.`, 3.5)); }
+
   // colleagues keep their names, faces and how well you know them in the save, so the office is the same people every day
   const COLLROLE = ['Analyst', 'Senior Analyst', 'Associate', 'Analyst', 'Vice President', 'Graduate Analyst', 'Compliance Officer', 'Associate', 'Office Manager', 'Trader', 'Senior Analyst', 'Portfolio Manager', 'Executive Assistant', 'Analyst'];
   const collSnap = n => ({ rank: n.rank, name: n.name, job: n.job, jobLine: n.jobLine, L: JSON.parse(JSON.stringify(n.L)), rel: n.rel, trait: n.trait, fan: n.fan, fin: n.fin, metBefore: !!n.metBefore, knownJob: !!n.knownJob, traitKnown: n.traitKnown, hobby: n.hobby, team: n.team, from: n.from, weekend: n.weekend, topics: n.topics, gain: n.gain, cid: n.cid || null });
@@ -7416,6 +7459,12 @@ window.GAME = (() => {
       for (const m of S.msgs) { if (seen.has(m.cid)) continue; seen.add(m.cid); const c = contactList().find(q => q.cid === m.cid); if (!c) continue; const n = S.msgs.filter(q => q.cid === m.cid && !q.me && !q.read).length;
         rows.push(`<button class="phrow" data-go="contacts:${m.cid}"><b>${esc(c.name)}${n ? ` <em class="dot">${n}</em>` : ''}</b><span>${m.me ? 'You: ' : ''}${esc(m.text)}</span></button>`); }
       html = rows.join('') || '<p class="phnote">No messages yet.</p>'; }
+    else if (app === 'taxi') { title = 'Taxi'; const T = S.taxi;
+      if (T) { const st = T.state === 'here' ? 'Your cab is waiting at the kerb. Walk up to it to get in.' : `On its way, about ${Math.max(1, T.eta - S.time)} min.`;
+        html = `<div class="phbal"><span>Booked to</span><b>${esc(T.to.name)}</b><span>${st}</span><b></b></div><button class="phbtn" data-act="taxicancel">${T.state === 'here' ? `Cancel, ${money(TAXI.noshow)} fee` : 'Cancel booking'}</button>`; }
+      else if (arg) { const d = findDest(arg); if (!d) html = '<p class="phnote">That place is not on the list any more.</p>'; else { const e = taxiEst(d.x, d.y);
+        html = `<div class="phbal"><span>To</span><b>${esc(d.name)}</b><span>About ${e.km.toFixed(1)} km, ${e.mins} min ride</span><b>${money(e.fare)}</b></div><p class="phnote">Estimate. The meter decides. $3 flag fall, $2.20 a km, 40c a minute${nightNow() ? ', $1 night surcharge' : ''}. Paid from your wallet, then your card.</p><button class="phbtn" data-act="taxiorder:${d.key}">Book a cab</button>`; } }
+      else html = '<p class="phnote">Where to? A cab comes to the kerb beside you.</p>' + taxiDests().map(d => `<button class="phrow" data-go="taxi:${d.key}"><b>${esc(d.name)}</b><span>${esc(d.sub)}${d.dist != null ? ' · ' + (d.dist / 1000).toFixed(1) + ' km' : ''}</span></button>`).join(''); }
     else if (app === 'bank') { title = 'Bank'; const P0 = S.player;
       html = `<div class="phbal"><span>Checking</span><b>${money(P0.bank)}</b><span>Cash in your wallet</span><b>${money(P0.cash)}</b></div><p class="phnote">Cash comes out at your laptop for now. ATMs come in a later build.</p>${(S.fines || []).filter(f => !f.paid).map((f, i) => `<div class="phbal" style="border-color:var(--bad)"><span>Parking fine, ${esc(f.why)}</span><b>${money(f.fine)}</b><span>${f.late ? 'Overdue, doubled' : 'Due ' + CR.fmtDate(f.due)}</span><b><button class="phbtn" data-act="fine:${S.fines.indexOf(f)}">Pay</button></b></div>`).join('')}<div class="phtx">${S.tx.slice(0, 18).map(x => `<p><span>${esc(x.text)}<small>${CR.fmtDate(x.t)}</small></span><b class="${x.c > 0 ? 'in' : ''}">${x.c > 0 ? '+' : ''}${money(x.c)}</b></p>`).join('') || '<p><span>No transactions yet</span></p>'}</div>`; }
     else if (app === 'calendar') { title = 'Calendar'; const out = [], J = S.player.job, d0 = Math.floor(S.time / 1440);
@@ -7545,6 +7594,8 @@ window.GAME = (() => {
     if (k === 'cash') { const c = +arg; if (S.player.bank < c) toast('Not enough in the bank.'); else { S.player.bank -= c; S.player.cash += c; toast(`${money(c)} moved to cash.`, 2); } return refreshApps(); }
     if (k === 'mplay') music.phonePlay(); if (k === 'mstop') music.phoneStop(); if (k === 'mnext') music.phoneStep(1); if (k === 'mprev') music.phoneStep(-1); if (k === 'mshuf') music.phoneShuffle(); if (k === 'mpick') music.phonePlay(+arg);
     if (k[0] === 'm') return setTimeout(refreshApps, 80);
+    if (k === 'taxiorder') { orderTaxi(arg); phoneView = ['home', 'taxi']; return refreshApps(); }
+    if (k === 'taxicancel') { const here = S.taxi && S.taxi.state === 'here'; cancelTaxi(here); toast(here ? `Cancelled. ${money(TAXI.noshow)} fee.` : 'Booking cancelled.', 2.5); return refreshApps(); }
     if (k === 'route') { const d = DOORS.find(q => doorKey(q) === arg); closePhone(); closeLaptop(); if (d) { setRoute(d.x, d.y); toggleMap(true); } return; }
     if (k === 'hi') { textHi(arg); return refreshApps(); }
     if (k === 'coffee') { askCoffee(arg); return refreshApps(); }
@@ -7593,7 +7644,7 @@ window.GAME = (() => {
   // On your desk at home. A desktop of icons; each opens a window you can move, stack and close. The same apps as the phone,
   // plus study, cash and work email. The clock stops while it is open, as with the phone.
   let laptopOpen = false, wins = [], winZ = 1, winSeq = 0;
-  const LAPAPPS = [...APPS.filter(a => a[0] !== 'maps'), ['study', 'Study', '#7a6fc4', 'M3 7l9-4 9 4-9 4zm4 2v5c0 1.5 2.5 3 5 3s5-1.5 5-3V9'], ['cash', 'Withdraw cash', '#4f9a7a', 'M3 7h18v10H3zm9 2.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z']];
+  const LAPAPPS = [...APPS.filter(a => a[0] !== 'maps' && a[0] !== 'taxi'), ['study', 'Study', '#7a6fc4', 'M3 7l9-4 9 4-9 4zm4 2v5c0 1.5 2.5 3 5 3s5-1.5 5-3V9'], ['cash', 'Withdraw cash', '#4f9a7a', 'M3 7h18v10H3zm9 2.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z']];
   function openLaptop() { if (FF || fading) return; laptopOpen = true; G.hold = true; $('laptop').hidden = false; if (!wins.length) openWin('home'); else drawLaptop(); }
   function closeLaptop() { if (!laptopOpen) return; laptopOpen = false; $('laptop').hidden = true; G.hold = !!(modalOpen || dlgOpen || fading || FF || phoneOpen); phoneBadge(); }
   function openWin(app) { if (app === 'home') { drawLaptop(); return; } const ex = wins.find(w => w.stack[0] === app); if (ex) { ex.z = ++winZ; drawLaptop(); return; }
@@ -7713,6 +7764,7 @@ window.GAME = (() => {
     if (INSIDE) { if (near) useRoom(near); return; }
     if (player.driving) { if (Math.abs(PCAR.speed) > 1.5) return toast('Slow down to get out.', 1.5); toggleCar(); music.drive(false); parkCheck(); return; }
     if (LOOKOUT.near(player.x, player.y)) { LOOKOUT.show({ L: player.L, sync: lookoutSync, onClose: () => { G.hold = !!(modalOpen || dlgOpen || fading); } }); G.hold = true; return; }
+    if (taxiNear()) return rideTaxi();
     if (doorNow) { const d = doorNow;
       if (d.k === 'home') { fadeTo('', '', () => { goIn('house', d); collectParcels(); }, 200).then(robDropsBy); return; }
       if (d.k === 'work' || d.k === 'hq') return hqDoor(d);
@@ -7763,7 +7815,7 @@ window.GAME = (() => {
     if (mapOpen && !G.hold) { G.hold = true; tick.mapHeld = true; } else if (!mapOpen && tick.mapHeld) { tick.mapHeld = false; G.hold = !!(modalOpen || dlgOpen || fading || phoneOpen); }
     if (!paused) runClock(dt);
     if (seated && !paused) { need('energy', dt * .004); if (seated.st.bench) need('mood', dt * .003); }
-    if ((tick.pl = (tick.pl || 0) - dt) < 0) { tick.pl = .5; if (tick.hqFor !== S) { tick.hqFor = S; assignHQ(S); } refreshJobs(); checkApps(); socialPing(); checkPlans(); checkOrders(); if (S.mkt) stepMarket(S, S.time); window.RUNMUL = S.owned && S.owned.shoes ? 1.12 : 1; if (S.owned && S.owned.headphones && music.phoneOn && !paused) need('mood', .02); if (parcelP) parcelP.show = S.orders.some(o => o.arrived && !o.got); else if (S.orders.some(o => o.arrived && !o.got)) parcelProp(); parkPatrol(); fineCheck(); music.level(); const st = INSIDE && INSIDE.furn.find(f => f.t === 'stereo'); if (st) st.on = !!S.stereo.on; }
+    if ((tick.pl = (tick.pl || 0) - dt) < 0) { tick.pl = .5; if (tick.hqFor !== S) { tick.hqFor = S; assignHQ(S); } refreshJobs(); checkApps(); socialPing(); checkPlans(); checkOrders(); taxiTick(); if (S.mkt) stepMarket(S, S.time); window.RUNMUL = S.owned && S.owned.shoes ? 1.12 : 1; if (S.owned && S.owned.headphones && music.phoneOn && !paused) need('mood', .02); if (parcelP) parcelP.show = S.orders.some(o => o.arrived && !o.got); else if (S.orders.some(o => o.arrived && !o.got)) parcelProp(); parkPatrol(); fineCheck(); music.level(); const st = INSIDE && INSIDE.furn.find(f => f.t === 'stereo'); if (st) st.on = !!S.stereo.on; }
     hour = gHour(); flow = 0; // the game's clock drives the street's light
     roomTick(dt);
     if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').hidden = true; }
@@ -7773,6 +7825,7 @@ window.GAME = (() => {
         else if (seated) t = '<kbd>E</kbd>Stand up';
         else { doorNow = doorNear(player.x, player.y);
           if (LOOKOUT.near(player.x, player.y)) t = '<kbd>E</kbd>Take in the view <span style="color:var(--muted)">The Ranges lookout</span>';
+          else if (taxiNear()) t = `<kbd>E</kbd>Get in the cab <span style="color:var(--muted)">to ${esc(S.taxi.to.name)}</span>`;
           else if (doorNow) t = `<kbd>E</kbd>${doorNow.k === 'home' ? 'Go inside' : doorNow.k === 'work' || doorNow.k === 'hq' ? 'Enter ' + doorNow.name + (doorNow.co ? ` <span style="color:var(--muted)">${coById(doorNow.co).name}</span>` : '') : doorNow.k === 'shop' ? doorNow.name : 'Visit ' + doorNow.name} <span style="color:var(--muted)">${doorNow.sub || ''}</span>`;
           else if (Math.hypot(player.x - PCAR.x, player.y - PCAR.y) < 3.6) t = '<kbd>E</kbd>Get in your car';
           else if ((paperNow = paperNear(player.x, player.y))) t = '<kbd>E</kbd>Buy today\'s paper <span style="color:var(--muted)">$2</span>';
