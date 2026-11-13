@@ -6984,15 +6984,17 @@ window.GAME = (() => {
   // dollar amount to shares: buying and shorting leave room for the brokerage, selling and covering are capped at what you hold
   const sharesFor = (sym, side, amt, px) => { const h = S.port[sym] || { q: 0 }; if (amt === 'all') return side === 'sell' ? Math.max(0, h.q) : side === 'cover' ? Math.max(0, -h.q) : 0;
     if (side === 'buy' || side === 'short') return Math.max(0, Math.floor((amt - FEE) / px)); return Math.min(side === 'sell' ? Math.max(0, h.q) : Math.max(0, -h.q), Math.floor(amt / px)); };
-  function marketOrder(sym, side, amt) { if (!mktOpen()) return toast(`The market is closed. It opens ${dayWord(nextOpen())} at 9:30 am.`, 3); const px = Math.round(S.mkt.px[sym]), q = sharesFor(sym, side, amt, px);
+  function marketOrder(sym, side, amt) { if (!mktOpen()) { const px = Math.round(S.mkt.px[sym]); if (amt !== 'all' && sharesFor(sym, side, amt, px) < 1) return toast('That amount does not cover one share plus brokerage.', 3); if (amt === 'all' && !sharesFor(sym, side, 'all', px)) return toast('You have nothing to ' + side + '.', 3);
+      S.mord.push({ id: (S.mordN = (S.mordN || 0) + 1), sym, side, type: 'open', amt, all: amt === 'all', q: 0, px: 0, t: S.time }); return toast(`The market is closed. Your order to ${side} ${amt === 'all' ? 'all' : money(amt) + ' of'} ${sym} will fill when it opens ${dayWord(nextOpen())} at 9:30 am.`, 4); }
+    const px = Math.round(S.mkt.px[sym]), q = sharesFor(sym, side, amt, px);
     if (q < 1) return toast(side === 'buy' || side === 'short' ? 'That amount does not cover one share plus brokerage.' : 'That is less than one share.', 3); const res = exec(sym, side, q, px); toast(res, 3); }
   // limit: buy (or cover) at the price or lower, sell (or short) at it or higher. Stop: triggers once the price passes it.
   function placeOrder(sym, side, type, trig, amt) { if (!(trig > 0)) return toast('Enter a price for the order.', 3); const q = amt === 'all' ? 0 : sharesFor(sym, side, amt, trig);
     if (amt !== 'all' && q < 1) return toast('That amount does not cover one share at that price.', 3); if (amt === 'all' && !sharesFor(sym, side, 'all', trig)) return toast('You have nothing to ' + side + '.', 3);
     S.mord.push({ id: (S.mordN = (S.mordN || 0) + 1), sym, side, type, px: trig, q, all: amt === 'all', t: S.time }); toast(`${type === 'limit' ? 'Limit' : 'Stop'} order placed: ${side} ${amt === 'all' ? 'all' : q} ${sym} at ${money(trig)}.`, 3); }
-  const orderHit = (o, p) => { const up = o.side === 'buy' || o.side === 'cover'; return o.type === 'limit' ? (up ? p <= o.px : p >= o.px) : (up ? p >= o.px : p <= o.px); };
+  const orderHit = (o, p) => { if (o.type === 'open') return true; const up = o.side === 'buy' || o.side === 'cover'; return o.type === 'limit' ? (up ? p <= o.px : p >= o.px) : (up ? p >= o.px : p <= o.px); };
   function fillOrders(S) { if (!S.mord.length) return; for (const o of S.mord.slice()) { const p = S.mkt.px[o.sym]; if (p == null || !orderHit(o, p)) continue;
-      S.mord = S.mord.filter(x => x !== o); const q = o.all ? sharesFor(o.sym, o.side, 'all', p) : o.q, res = q ? exec(o.sym, o.side, q, Math.round(p), (o.type === 'limit' ? 'limit' : 'stop') + ' order') : 'Nothing left to trade.';
+      S.mord = S.mord.filter(x => x !== o); const q = o.all ? sharesFor(o.sym, o.side, 'all', p) : o.type === 'open' ? sharesFor(o.sym, o.side, o.amt, Math.round(p)) : o.q, res = q ? exec(o.sym, o.side, q, Math.round(p), o.type === 'open' ? 'at the open' : (o.type === 'limit' ? 'limit' : 'stop') + ' order') : 'Not enough for one share at the opening price.';
       alertM(S, /^(Bought|Sold|Covered)/.test(res) ? `Order filled. ${res}` : `Your ${o.type} order to ${o.side} ${o.sym} was cancelled. ${res}`); } }
   // margin: equity must stay above 30% of the shares held long and short. Below it you get a day, then the broker sells.
   function marginCheck(S, d) { const A = S.acct, [L, Sh] = posVals(), g = L + Sh, E = equity();
@@ -7038,6 +7040,7 @@ window.GAME = (() => {
     if (h.q > 0) { const q = sharesFor(sym, 'sell', amt, trig); if (q) out.push(`Sell ${q} shares for ${money(q * trig - FEE)} after brokerage.`); }
     if (h.q < 0) { const q = sharesFor(sym, 'cover', amt, trig); if (q) out.push(`Cover ${q} shares for ${money(q * trig + FEE)} with brokerage.`); }
     else if (S.acct.margin && h.q === 0) { const q = sharesFor(sym, 'short', amt, trig); if (q) out.push(`Or short ${q}.`); }
+    if (OF.type === 'mkt' && !mktOpen()) out.push(`The market is closed, so this fills at the opening price ${dayWord(nextOpen())}. The share count is worked out then.`);
     if (OF.type === 'limit') out.push('A limit order waits until the price reaches yours or better.'); if (OF.type === 'stop') out.push('A stop order triggers once the price passes yours, then fills at the market.');
     return out.join(' '); }
   function bindForms(root) { for (const el of root.querySelectorAll('[data-of]')) el.oninput = () => { OF[el.dataset.of] = el.value; for (const pv of root.querySelectorAll('[data-ofprev]')) pv.textContent = previewText(pv.dataset.ofprev); }; }
@@ -7131,7 +7134,7 @@ window.GAME = (() => {
         + (M.extra.length ? '<p class="phsec">New listings</p>' + M.extra.map(row).join('') : '')
         + `<p class="phnote">Brokerage ${money(FEE)} a trade, paid from your bank account. The ${IXN} index is the ${CO.length} companies above. New listings trade but are not in the index.</p>`; }
     else if (app === 'trade' && arg[0] === '_') { const M = S.mkt, A = S.acct, d = Math.floor(S.time / 1440);
-      if (arg === '_orders') { title = 'Orders'; html = (S.mord.map(o => `<div class="phrow" style="cursor:default"><b>${o.type === 'limit' ? 'Limit' : 'Stop'}: ${o.side} ${o.all ? 'all' : o.q} ${o.sym} at ${money(o.px)}</b><span>Now ${money(Math.round(M.px[o.sym]))} · placed ${dayWord(o.t)}</span><button class="phbtn" data-act="ocan:${o.id}">Cancel</button></div>`).join('') || '<p class="phnote">No open orders. Place limit and stop orders from a stock page. They stay open until they fill or you cancel them.</p>')
+      if (arg === '_orders') { title = 'Orders'; html = (S.mord.map(o => `<div class="phrow" style="cursor:default"><b>${o.type === 'open' ? `At the open: ${o.side} ${o.all ? 'all' : money(o.amt) + ' of'} ${o.sym}` : `${o.type === 'limit' ? 'Limit' : 'Stop'}: ${o.side} ${o.all ? 'all' : o.q} ${o.sym} at ${money(o.px)}`}</b><span>Now ${money(Math.round(M.px[o.sym]))} · placed ${dayWord(o.t)}</span><button class="phbtn" data-act="ocan:${o.id}">Cancel</button></div>`).join('') || '<p class="phnote">No open orders. Place limit and stop orders from a stock page. They stay open until they fill or you cancel them.</p>')
         + '<p class="phsec">Activity</p>' + (M.alerts.slice(0, 12).map(a => `<p class="phlog"><small>${dayWord(a.t)}, ${CR.fmtTime(a.t)}</small>${esc(a.text)}</p>`).join('') || '<p class="phnote">Nothing yet.</p>'); }
       else if (arg === '_td') { title = 'Term deposits'; html = `<div class="phbal"><span>Central bank rate</span><b>${M.rate.toFixed(2)}%</b>${[3, 6, 12].map(m => `<span>${m} months</span><b>${tdRate(m).toFixed(2)}% a year</b>`).join('')}</div>` + ofIn('tdamt', 'Amount, $ (minimum $500)')
         + `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">${[3, 6, 12].map(m => `<button class="phbtn" data-act="td:${m}">Lock ${m} months</button>`).join('')}</div><p class="phnote" style="margin:0">The rate is fixed for the term. You get your money back with the interest at the end. Breaking early returns your money with no interest.</p>`
@@ -7441,7 +7444,7 @@ window.GAME = (() => {
   function introSay() { setTimeout(() => say('Rob', VOICES.rob, 'Welcome home, roomie! Your room is the big one at the back, past the kitchen. Big first day at Meridian tomorrow, huh?', [{ text: 'Nine o clock sharp. Wish me luck.', effects: { rel: { rob: 3 } }, reply: 'You will smash it. Get an early night tonight, I will keep the music down. Probably.' }], robLook(), 'happy'), 0); }
 
   // ---------------- start ----------------
-  const G = { hold: false, key, tick, say, get S() { return S; }, music, HOME, WORK, homeDoor, workDoor, save, load, interact, roomKey, openPhone, closePhone, openLaptop, closeLaptop, startGame, ffwd, get FF() { return FF; }, get phoneOpen() { return phoneOpen; } };
+  const G = { hold: false, key, tick, say, get S() { return S; }, music, HOME, WORK, homeDoor, workDoor, save, load, interact, roomKey, openPhone, closePhone, openLaptop, closeLaptop, startGame, ffwd, get FF() { return FF; }, get phoneOpen() { return phoneOpen; }, use: f => useRoom(f), get busy() { return !!(modalOpen || dlgOpen || FF || fading); } };
   setTimeout(showTitle, 0);
   return G;
 })();
