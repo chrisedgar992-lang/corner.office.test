@@ -160,6 +160,9 @@ textarea.io{width:100%;background:var(--btn);color:var(--text);border:1px solid 
 .phcard{display:grid;grid-template-columns:84px 1fr;gap:12px;align-items:center}.phcard div{display:flex;flex-direction:column;gap:2px}.phcard span{color:var(--muted);font-size:12.5px}
 .phpt{width:84px;height:100px;border-radius:10px;border:1px solid var(--line)}
 .phfacts{margin:4px 0;padding-left:18px;color:var(--muted);font-size:12.5px}
+.phseg{display:flex;gap:4px}.phseg button{flex:1;background:var(--btn);border:1px solid var(--line);border-radius:8px;padding:5px 0;color:var(--muted);font:inherit;font-size:12px;cursor:pointer}.phseg button.on{border-color:var(--acc);color:var(--text)}
+.phin{width:100%;box-sizing:border-box;background:var(--btn);border:1px solid var(--line);border-radius:10px;padding:9px 11px;color:var(--text);font:inherit}.phin:focus{outline:none;border-color:var(--acc)}
+.phsec{margin:6px 0 0;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .phbtn{background:var(--btn);border:1px solid var(--line);border-radius:10px;padding:9px;color:var(--text);font:inherit;cursor:pointer}.phbtn:disabled{opacity:.5;cursor:default}
 .phthread{display:flex;flex-direction:column;gap:5px;margin-top:6px}.phthread p{margin:0;background:#22262c;border-radius:12px;padding:7px 10px;max-width:80%;font-size:13px}.phthread p.me{align-self:flex-end;background:#3a5f8f}
 .phbal{display:grid;grid-template-columns:1fr auto;gap:6px 10px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:12px}.phbal span{color:var(--muted)}.phbal b{font:600 15px var(--num);text-align:right}
@@ -6311,7 +6314,7 @@ window.GAME = (() => {
   }
   let S = null;
   // older saves predate the phone
-  const upgrade = s => { s.contacts = s.contacts || {}; s.msgs = s.msgs || []; s.plans = s.plans || []; s.tx = s.tx || []; s.stereo = s.stereo || { on: false, by: null, day: -1 }; s.fines = s.fines || []; s.cart = s.cart || {}; s.orders = s.orders || []; s.owned = s.owned || {}; s.items = s.items || { meals: 0 }; s.port = s.port || {}; if (!s.mkt && s.time != null) initMarket(s); return s; };
+  const upgrade = s => { s.contacts = s.contacts || {}; s.msgs = s.msgs || []; s.plans = s.plans || []; s.tx = s.tx || []; s.stereo = s.stereo || { on: false, by: null, day: -1 }; s.fines = s.fines || []; s.cart = s.cart || {}; s.orders = s.orders || []; s.owned = s.owned || {}; s.items = s.items || { meals: 0 }; s.port = s.port || {}; if (!s.mkt && s.time != null) initMarket(s); else if (s.mkt) migrateMarket(s); return s; };
   const txn = (text, cents) => { S.tx.unshift({ t: S.time, text, c: cents }); if (S.tx.length > 60) S.tx.length = 60; };
 
   // ---------------- clock, needs, money, season and weather ----------------
@@ -6647,7 +6650,7 @@ window.GAME = (() => {
       return menu('Fridge', 'What is in there.', o); }
     if (f.id === 'stove') { if (!S.items.meals) return toast('Nothing to cook with. Order groceries on your phone or laptop.'); return menu('Kitchen', 'Cooking takes longer than reheating but you feel better for it.', [{ t: 'Cook dinner', s: '45 minutes, fills you up, mood up', fn: () => { S.items.meals--; CR.passMinutes(S, 45); need('hunger', -55); need('mood', 6); toast('Not bad at all.'); closeMenu(); } }]); }
     if (f.id === 'sofa') { const tv = hrs => () => { closeMenu(); ffwd(hrs * 60, { label: 'Watching TV', pose: seated ? null : poseAt(12.75, 9.15, .44, 0, 1), each: m => { need('mood', 7 * m / 60); need('energy', 2 * m / 60); } }); };
-      const tvNews = () => { closeMenu(); stepMarket(S, S.time); const L = S.mkt.stories.filter(st => st.t <= S.time).sort((a, b) => b.t - a.t).slice(0, 4), ix = indexOf(S.mkt); CR.passMinutes(S, 30); return menu('Channel 4 News', (mktOpen(S.time) ? 'The HCX 25 is at ' : 'The HCX 25 last closed at ') + ix.toFixed(1) + '.', L.map(st => ({ t: st.head, s: st.body, off: true }))); };
+      const tvNews = () => { closeMenu(); stepMarket(S, S.time); const L = S.mkt.stories.filter(st => st.t <= S.time).sort((a, b) => b.t - a.t).slice(0, 4), ix = indexOf(S.mkt); CR.passMinutes(S, 30); return menu('Channel 4 News', (mktOpen() ? `The ${IXN} is at ` : `The ${IXN} last closed at `) + ix.toFixed(1) + '.', L.map(st => ({ t: st.head, s: st.body, off: true }))); };
       return menu('Lounge', 'Put your feet up.', [{ t: 'Watch TV for an hour', s: 'Mood up', fn: tv(1) }, { t: 'Watch a movie', s: 'Two and a half hours, mood up more', fn: tv(2.5) }, { t: 'Watch the news', s: 'Half an hour, the day\'s stories and the market', fn: tvNews }].concat(seated ? [{ t: 'Get up', s: '', fn: () => { closeMenu(); standUp(); } }] : [])); }
     if (f.id === 'stereo') return stereoMenu();
     if (f.id === 'shower') return menu('Shower', 'A hot shower.', [{ t: 'Take a shower', s: '15 minutes, mood up a little', fn: () => { closeMenu(); CR.passMinutes(S, 15); need('mood', 4); need('energy', 3); toast('Much better.'); } }]);
@@ -6772,29 +6775,47 @@ window.GAME = (() => {
     S.plans = S.plans.filter(pl => !pl.done || S.time - pl.t < 1440 * 3); }
 
   // ---------------- news and the market ----------------
-  // The Harbor City Exchange: 25 listed companies and the HCX 25 index. Trading 9:30 am to 4 pm on weekdays. Each morning at six
-  // the day's stories are written: company news, earnings, sector moves and city events. Each story carries a move for the
-  // stocks it touches, but the market does not read the paper perfectly: the real move is the story's size times a random
-  // factor, now and then the reverse ("sell the news"). Stories before the open move prices at the bell, stories in hours move
-  // them over the next half hour. Earnings are scheduled ahead with a hidden result, which is what tips are about.
-  const CO = [
-    ['HBF', 'Harbor Federal', 'Banks', 4200, 1.3], ['FHT', 'Fairhaven Trust', 'Banks', 6100, 1.1], ['CLC', 'Calloway Capital', 'Banks', 2850, 1.6],
-    ['KSY', 'Kestrel Systems', 'Tech', 11800, 2.4], ['BWS', 'Brightwater Software', 'Tech', 7400, 2.2], ['ORD', 'Orion Devices', 'Tech', 15600, 2.0], ['CVN', 'Corvid Networks', 'Tech', 3200, 2.8],
-    ['BLE', 'Bayline Energy', 'Energy', 5200, 1.7], ['RDO', 'Redfern Oil', 'Energy', 3900, 2.0], ['SMS', 'Summit Solar', 'Energy', 2100, 3.0],
-    ['HLS', 'Hollis Stores', 'Retail', 3400, 1.4], ['WBB', 'Westbrook Brands', 'Retail', 5800, 1.3], ['PTF', 'Pantry Foods', 'Retail', 2600, 1.0],
-    ['LGP', 'Langford Property', 'Property', 1900, 1.4], ['SBR', 'Seabright Realty', 'Property', 2400, 1.2],
-    ['TRH', 'Trident Health', 'Health', 8800, 1.5], ['ALP', 'Alder Pharma', 'Health', 4600, 2.6],
-    ['PHL', 'Port Haven Logistics', 'Transport', 3100, 1.6], ['SKA', 'Skyline Air', 'Transport', 1700, 2.5],
-    ['MRM', 'Marlowe Media', 'Media', 2200, 1.9], ['STT', 'Sterling Telecom', 'Telecom', 3300, .9],
-    ['OKM', 'Oakmont Mining', 'Mining', 4400, 2.3], ['HBM', 'Halberd Metals', 'Mining', 2700, 2.4],
-    ['ACI', 'Ashcroft Industries', 'Industrial', 6700, 1.3], ['PNC', 'Pinnacle Construction', 'Industrial', 3600, 1.8]];
-  const OPEN = 570, CLOSE = 960, FEE = 995;
+  // The Harbor City Exchange. Fifty companies make up the HCX 50 index, an index fund tracks it, and new companies list through
+  // IPOs now and then (they trade but are not in the index). Trading 9:30 am to 4 pm on weekdays. Each morning at six the day's
+  // stories are written: company news, results, sector moves and city events. Each story carries a move for the stocks it
+  // touches, but the market does not read the paper perfectly: the real move is the story's size times a random factor, now and
+  // then the reverse. Stories before the open move prices at the bell, stories in hours move them over the next half hour.
+  // Results come quarterly with a hidden surprise, which is what tips are about, and dividend payers pay on results day.
+  // Money: cash comes from the bank account and every trade costs a flat brokerage fee. A margin account lends against your
+  // shares (interest charged daily) and allows short selling (a daily borrow fee, and shorts pay the dividends). Margin calls
+  // give a day to fix things before the broker sells. Limit and stop orders wait and fill on their own. Term deposits pay a
+  // fixed rate set from the central bank rate. Tips from people who work in finance are inside information.
+  // Prices are kept as daily bars (open, high, low, close) for a year and 15-minute bars for the last five sessions.
+  const CO = [ // [symbol, name, sector, start price in cents, daily volatility %, dividend yield %]
+    ['HBF', 'Harbor Federal', 'Banks', 4200, 1.3, 4.2], ['FHT', 'Fairhaven Trust', 'Banks', 6100, 1.1, 4.8], ['CLC', 'Calloway Capital', 'Banks', 2850, 1.6, 2.5], ['SRB', 'Silverbank Investment', 'Banks', 3100, 1.8, 3.2],
+    ['NSI', 'Northshore Insurance', 'Insurance', 5400, 1.1, 4.0], ['GRA', 'Granite Assurance', 'Insurance', 3800, 1.3, 3.4],
+    ['KSY', 'Kestrel Systems', 'Tech', 11800, 2.4, 0], ['BWS', 'Brightwater Software', 'Tech', 7400, 2.2, .4], ['ORD', 'Orion Devices', 'Tech', 15600, 2.0, 1.0], ['CVN', 'Corvid Networks', 'Tech', 3200, 2.8, 0],
+    ['QNT', 'Quantix Chips', 'Tech', 8900, 2.6, .3], ['CLD', 'Cloudpeak Systems', 'Tech', 4300, 2.9, 0], ['PYL', 'Paylane', 'Tech', 2700, 2.7, 0],
+    ['BLE', 'Bayline Energy', 'Energy', 5200, 1.7, 3.5], ['RDO', 'Redfern Oil', 'Energy', 3900, 2.0, 5.0], ['SMS', 'Summit Solar', 'Energy', 2100, 3.0, 0],
+    ['HCP', 'Harbor City Power', 'Utilities', 2900, .8, 5.5], ['CWW', 'Clearwater Water', 'Utilities', 2200, .7, 4.9], ['VRS', 'Veridian Gas', 'Utilities', 1800, 1.0, 5.8],
+    ['HLS', 'Hollis Stores', 'Retail', 3400, 1.4, 2.8], ['WBB', 'Westbrook Brands', 'Retail', 5800, 1.3, 2.2], ['PTF', 'Pantry Foods', 'Retail', 2600, 1.0, 3.6], ['GRN', 'Greenfield Grocers', 'Retail', 1600, .9, 3.8], ['MOD', 'Modista Fashion', 'Retail', 1300, 2.4, 1.0],
+    ['LUX', 'Luxe Hotels Group', 'Hospitality', 4100, 1.8, 1.8], ['TBR', 'Tavern and Brew', 'Hospitality', 1500, 2.0, 2.4],
+    ['GCR', 'Grand Crown Resorts', 'Gaming', 6300, 2.1, 2.0], ['BTL', 'Bettor Lane', 'Gaming', 900, 3.2, 0],
+    ['LGP', 'Langford Property', 'Property', 1900, 1.4, 5.2], ['SBR', 'Seabright Realty', 'Property', 2400, 1.2, 4.4], ['EST', 'Eastgate Developments', 'Property', 1100, 1.9, 3.0],
+    ['TRH', 'Trident Health', 'Health', 8800, 1.5, 1.8], ['ALP', 'Alder Pharma', 'Health', 4600, 2.6, .6], ['MDV', 'Medivale Clinics', 'Health', 3500, 1.3, 2.2], ['GEN', 'Genova Biotech', 'Health', 1400, 4.0, 0],
+    ['PHL', 'Port Haven Logistics', 'Transport', 3100, 1.6, 3.0], ['SKA', 'Skyline Air', 'Transport', 1700, 2.5, 0], ['ARL', 'Atlas Rail', 'Transport', 4800, 1.2, 3.6], ['CBX', 'Crossbay Shipping', 'Transport', 2000, 2.6, 4.5],
+    ['RVM', 'Riverton Motors', 'Autos', 2500, 2.0, 1.5], ['VLT', 'Volta Electric Cars', 'Autos', 5200, 3.4, 0],
+    ['MRM', 'Marlowe Media', 'Media', 2200, 1.9, 2.0], ['SIG', 'Signal Broadcasting', 'Media', 1200, 2.3, 4.0], ['STT', 'Sterling Telecom', 'Telecom', 3300, .9, 6.0],
+    ['OKM', 'Oakmont Mining', 'Mining', 4400, 2.3, 3.8], ['HBM', 'Halberd Metals', 'Mining', 2700, 2.4, 1.5], ['AUR', 'Aurum Gold', 'Mining', 1900, 2.8, 1.0],
+    ['ACI', 'Ashcroft Industries', 'Industrial', 6700, 1.3, 2.6], ['PNC', 'Pinnacle Construction', 'Industrial', 3600, 1.8, 1.2], ['STL', 'Steelhaven Works', 'Industrial', 2300, 2.0, 2.5]];
+  const IXN = 'HCX ' + CO.length, FUNDSYM = 'HCXF';
+  const FUND = [FUNDSYM, `Harbor City ${CO.length} Index Fund`, 'Index fund', 0, 1, +(CO.reduce((a, c) => a + c[5], 0) / CO.length).toFixed(2)];
+  const IPOS = [['NVB', 'Novabright Robotics', 'Tech', 3.2], ['FLX', 'Flexa Fitness', 'Hospitality', 2.6], ['OCN', 'Oceanic Wind', 'Energy', 2.8], ['HVF', 'Harvest Valley Foods', 'Retail', 1.6], ['DRV', 'Drivewise Insurance', 'Insurance', 2.0],
+    ['SPK', 'Sparkline Games', 'Media', 3.4], ['CRB', 'Corbel Homes', 'Property', 2.2], ['MDX', 'Medix Diagnostics', 'Health', 3.0], ['FRT', 'Freightline Couriers', 'Transport', 2.2], ['ZNT', 'Zenith Space', 'Industrial', 4.2]];
+  const OPEN = 570, CLOSE = 960, FEE = 995, LOANRATE = 8.5, BORROW = 3, INIT = .5, MAINT = .3, NDAYS = 260, NQ = 130;
   const gauss = r => { let u = 0, v = 0; while (!u) u = r(); v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(TAUg * v); }, TAUg = Math.PI * 2;
   const tradingDay = d => { const w = CR.parts(d * 1440 + 720).dow; return w >= 1 && w <= 5; };
   const rngFor = seed => { let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
   const pickR = (r, a) => a[Math.floor(r() * a.length)];
-  const coBy = sym => CO.find(c => c[0] === sym);
-  // story templates: [kind, weight, make(r, co) => { head, body, eff }]
+  const cosOf = M => M.extra && M.extra.length ? CO.concat(M.extra) : CO; // every listed company, not the fund
+  const symsOf = M => cosOf(M).map(c => c[0]).concat([FUNDSYM]);
+  const coBy = sym => sym === FUNDSYM ? FUND : CO.find(c => c[0] === sym) || ((S.mkt && S.mkt.extra) || []).find(c => c[0] === sym);
+  const tdAdd = (d, n) => { while (n > 0) { d++; if (tradingDay(d)) n--; } return d; };
   const BROKERS = ['Dunmore Securities', 'Halsey and Grant', 'Bramwell Research', 'Northcote Partners'];
   function companyStory(r, c) { const [sym, name, sec] = c, roll = r();
     if (roll < .18) { const up = r() < .5, by = BROKERS[Math.floor(r() * BROKERS.length)]; return { head: `${by} ${up ? 'upgrades' : 'downgrades'} ${name} to ${up ? 'buy' : 'sell'}`, body: `Analysts say ${up ? 'the shares look cheap after a quiet quarter' : 'the valuation has run ahead of the business'}.`, eff: [[sym, up ? 2 + r() * 2.5 : -(2 + r() * 2.5)]] }; }
@@ -6802,73 +6823,226 @@ window.GAME = (() => {
     if (roll < .44) return { head: `${name} faces a lawsuit over ${pickR(r, ['billing practices', 'a product recall', 'a failed merger', 'safety claims'])}`, body: 'The company says the claims are without merit and it will defend itself.', eff: [[sym, -(2 + r() * 4)]] };
     if (roll < .54) return { head: `${name} chief executive steps down`, body: r() < .5 ? 'The board has started a search. Investors are nervous about the timing.' : 'The move was planned. A long-serving deputy takes over.', eff: [[sym, -(1 + r() * 4)]] };
     if (roll < .64) { const fizz = r() < .4; return { head: `Rumors of a takeover bid for ${name}`, body: 'Neither company would comment. Traders piled in late in the day.', eff: [[sym, 6 + r() * 8]], fizz: fizz ? sym : null }; }
-    if (roll < .8 && (sec === 'Tech' || sec === 'Health' || sec === 'Retail' || sec === 'Telecom')) { const good = r() < .62; return { head: `${name} ${sec === 'Health' ? (good ? 'drug passes a key trial' : 'drug trial disappoints') : good ? 'launch draws long lines' : 'launch falls flat'}`, body: good ? 'Early numbers are ahead of the company\'s own forecasts.' : 'Reviews are mixed and the company has cut its sales outlook.', eff: [[sym, good ? 2 + r() * (sec === 'Health' ? 9 : 5) : -(2 + r() * (sec === 'Health' ? 12 : 5))]] }; }
+    if (roll < .8 && (sec === 'Tech' || sec === 'Health' || sec === 'Retail' || sec === 'Telecom' || sec === 'Autos')) { const good = r() < .62; return { head: `${name} ${sec === 'Health' ? (good ? 'drug passes a key trial' : 'drug trial disappoints') : good ? 'launch draws long lines' : 'launch falls flat'}`, body: good ? 'Early numbers are ahead of the company\'s own forecasts.' : 'Reviews are mixed and the company has cut its sales outlook.', eff: [[sym, good ? 2 + r() * (sec === 'Health' ? 9 : 5) : -(2 + r() * (sec === 'Health' ? 12 : 5))]] }; }
     const up = r() < .5; return { head: `${name} ${up ? 'raises' : 'trims'} its dividend`, body: up ? 'A sign of confidence from the board.' : 'The board wants to keep cash for investment.', eff: [[sym, up ? 1 + r() * 2 : -(1 + r() * 2)]] }; }
   const SECTOR = [
-    r => { const up = r() < .5; return { head: `Oil prices ${up ? 'jump' : 'slide'} overnight`, body: up ? 'Supply worries are back. Airlines and freight feel the pinch.' : 'Producers are pumping more than the market needs.', eff: [['Energy', up ? 2 + r() * 2 : -(2 + r() * 2)], ['Transport', up ? -(1 + r() * 2) : 1 + r()]] }; },
-    r => { const hike = r() < .45; return { head: `Central bank ${hike ? 'raises rates' : r() < .5 ? 'holds rates steady' : 'cuts rates'}`, body: hike ? 'Borrowing costs go up again. Banks gain, property and builders lose.' : 'Markets had expected the move.', eff: hike ? [['Banks', 1.5 + r()], ['Property', -(2 + r() * 2)], ['Industrial', -(1 + r())], ['all', -.6]] : [['Property', 1 + r() * 2], ['all', .5 + r() * .5]] }; },
+    r => { const up = r() < .5; return { head: `Oil prices ${up ? 'jump' : 'slide'} overnight`, body: up ? 'Supply worries are back. Airlines and freight feel the pinch.' : 'Producers are pumping more than the market needs.', eff: [['Energy', up ? 2 + r() * 2 : -(2 + r() * 2)], ['Transport', up ? -(1 + r() * 2) : 1 + r()], ['Autos', up ? -(.5 + r()) : .5 + r()]] }; },
+    r => { const k = r(), hike = k < .4, cut = k > .75; return { head: `Central bank ${hike ? 'raises rates' : cut ? 'cuts rates' : 'holds rates steady'}`, body: hike ? 'Borrowing costs go up a quarter point. Banks gain, property and builders lose.' : cut ? 'Borrowing gets a quarter point cheaper. Property and builders rally.' : 'Markets had expected the move.', rate: hike ? .25 : cut ? -.25 : 0,
+      eff: hike ? [['Banks', 1.5 + r()], ['Insurance', .5 + r()], ['Property', -(2 + r() * 2)], ['Utilities', -(1 + r())], ['Industrial', -(1 + r())], ['all', -.6]] : cut ? [['Property', 2 + r() * 2], ['Utilities', 1 + r()], ['Banks', -(1 + r())], ['all', .7 + r() * .5]] : [['all', (r() - .5) * .6]] }; },
     r => ({ head: 'Dock workers walk off the job at the port', body: 'The strike could run all week. Freight is piling up at the quay.', eff: [['Transport', -(2 + r() * 3)], ['Retail', -(.5 + r())]] }),
-    r => ({ head: 'City Hall approves the harbor redevelopment', body: 'Thousands of new homes and offices along the waterfront over ten years.', eff: [['Property', 2 + r() * 3], ['PNC', 3 + r() * 4], ['Industrial', 1 + r()]] }),
-    r => { const up = r() < .55; return { head: `Jobs report ${up ? 'beats expectations' : 'comes in weak'}`, body: up ? 'Hiring picked up across the country last month.' : 'Employers added far fewer jobs than forecast.', eff: [['all', up ? .8 + r() * .8 : -(.8 + r())], ['Retail', up ? 1 : -1]] }; },
+    r => { const up = r() < .5; return up ? { head: 'City Hall approves the harbor redevelopment', body: 'Thousands of new homes and offices along the waterfront over ten years.', eff: [['Property', 2 + r() * 3], ['PNC', 3 + r() * 4], ['Industrial', 1 + r()]] } : { head: 'City Hall shelves the harbor redevelopment', body: 'The council says the cost has blown out. Builders had been counting on it.', eff: [['Property', -(2 + r() * 3)], ['PNC', -(3 + r() * 4)], ['Industrial', -(1 + r())]] }; },
+    r => { const up = r() < .5; return { head: `Jobs report ${up ? 'beats expectations' : 'comes in weak'}`, body: up ? 'Hiring picked up across the country last month.' : 'Employers added far fewer jobs than forecast.', eff: [['all', up ? .8 + r() * .8 : -(.8 + r())], ['Retail', up ? 1 : -1]] }; },
     r => { const up = r() < .5; return { head: `Tech stocks ${up ? 'rally' : 'sell off'} on Wall Street overnight`, body: up ? 'Chipmakers led the way.' : 'Investors took profits after a long run.', eff: [['Tech', up ? 1.5 + r() * 2.5 : -(1.5 + r() * 3)]] }; },
     r => { const up = r() < .5; return { head: `Metal prices ${up ? 'surge' : 'fall'} on demand from overseas`, body: up ? 'Factories are buying again.' : 'Orders have dried up.', eff: [['Mining', up ? 2 + r() * 3 : -(2 + r() * 3)]] }; },
-    r => ({ head: 'Heatwave grips the city for a week', body: 'Power use is at a record. Shops report strong sales of fans and cold drinks.', eff: [['Energy', 1 + r() * 2], ['Retail', .5 + r()], ['SKA', -(1 + r())]] }),
-    r => ({ head: 'Holiday shopping season starts strong', body: 'Malls report foot traffic up on last year.', eff: [['Retail', 1.5 + r() * 2]] }) ];
+    r => ({ head: 'Heatwave grips the city for a week', body: 'Power use is at a record. Shops report strong sales of fans and cold drinks.', eff: [['Energy', 1 + r() * 2], ['Utilities', .5 + r()], ['Hospitality', -(1 + r())], ['Transport', -(.5 + r())]] }),
+    r => { const up = r() < .5; return { head: `Holiday shopping season ${up ? 'starts strong' : 'gets off to a slow start'}`, body: up ? 'Malls report foot traffic up on last year.' : 'Shoppers are holding back. Discounts have started early.', eff: [['Retail', up ? 1.5 + r() * 2 : -(1.5 + r() * 2)]] }; },
+    r => { const up = r() < .5; return { head: `Casino visitor numbers ${up ? 'hit a record' : 'fall for a third month'}`, body: up ? 'The Strip had its busiest month on record.' : 'Operators blame the cost of living.', eff: [['Gaming', up ? 2 + r() * 3 : -(2 + r() * 3)], ['Hospitality', up ? .5 + r() : -(.5 + r())]] }; },
+    r => ({ head: 'Storm season forecast to be the worst in a decade', body: 'Insurers expect a jump in claims.', eff: [['Insurance', -(2 + r() * 3)], ['Property', -(.5 + r())]] }),
+    r => { const up = r() < .5; return { head: `Government ${up ? 'extends' : 'ends'} electric car rebates`, body: up ? 'Buyers keep the discount for two more years.' : 'The discount ends next month.', eff: [['VLT', up ? 4 + r() * 5 : -(4 + r() * 5)], ['Autos', up ? 1 + r() : -(1 + r())]] }; },
+    r => { const up = r() < .5; return { head: `Regulator ${up ? 'approves' : 'blocks'} a rise in power prices`, body: up ? 'Bills go up from next quarter.' : 'Households are spared, for now.', eff: [['Utilities', up ? 1.5 + r() * 2 : -(1.5 + r() * 2)]] }; },
+    r => { const up = r() < .5; return { head: `Tourist bookings ${up ? 'surge' : 'slump'} ahead of the season`, body: up ? 'Hotels near the harbor report full weekends.' : 'Visitors are staying shorter and spending less.', eff: [['Hospitality', up ? 2 + r() * 2 : -(2 + r() * 2)], ['SKA', up ? 1 + r() : -(1 + r())]] }; } ];
   const CITY = ['A new bike lane opens downtown', 'The Arena announces a sold-out concert season', 'Tourist numbers at a five-year high', 'Commuters face delays as roadworks begin on the avenue', 'Harbor Grand Hotel reopens its rooftop bar', 'University enrolments rise again', 'Fan zone opens ahead of race weekend', 'Midtown Plaza hosts a weekend food festival'];
-  function initMarket(S) { const M = { px: {}, open: {}, hist: {}, intra: {}, idx0: 0, day: -1, t: S.time, stories: [], earn: [], pend: [], fizz: [] }, r = rngFor(77);
-    for (const c of CO) { let p = c[3]; const h = []; for (let i = 0; i < 60; i++) { p = Math.max(100, p * (1 + gauss(r) * c[4] / 100 + .0003)); h.push(Math.round(p)); } M.px[c[0]] = p; M.hist[c[0]] = h; M.open[c[0]] = p; M.intra[c[0]] = [Math.round(p)]; }
-    M.idx0 = 1; M.base = {}; for (const c of CO) M.base[c[0]] = M.hist[c[0]][0];
-    S.mkt = M; S.port = S.port || {}; scheduleEarnings(S, Math.floor(S.time / 1440)); return M; }
+  // made-up history: daily bars from a walk of closes, and 15-minute bars for a session drawn between a day's open and close
+  const barsFrom = (closes, vol, r) => closes.map((c, i) => { const o = i ? Math.round(closes[i - 1] * (1 + gauss(r) * vol * .12 / 100)) : c, hi = Math.max(o, c), lo = Math.min(o, c);
+    return [o, Math.round(hi * (1 + Math.abs(gauss(r)) * vol * .3 / 100)), Math.round(lo * (1 - Math.abs(gauss(r)) * vol * .3 / 100)), c]; });
+  function sessionBars(b, d, r) { const [o, h, l, c] = b, n = 26, w = [0]; for (let k = 1; k <= n; k++) w.push(w[k - 1] + gauss(r)); const s = (h - l) / 5 || 1;
+    const v = w.map((x, k) => Math.min(h, Math.max(l, o + (c - o) * k / n + (x - w[n] * k / n) * s / 2))); v[0] = o; v[n] = c;
+    const out = []; for (let k = 0; k < n; k++) { const a = v[k], z = v[k + 1], j = Math.abs(gauss(r)) * s * .25; out.push([Math.round(a), Math.round(Math.min(h, Math.max(a, z) + j)), Math.round(Math.max(l, Math.min(a, z) - j)), Math.round(z), d * 1440 + OPEN + k * 15]); } return out; }
+  function initMarket(S) { S.mkt = { px: {}, open: {}, hist: {}, d: {}, q: {}, cur: {}, base: {}, t: S.time, day: -1, stories: [], earn: [], pend: [], fizz: [] }; migrateMarket(S); return S.mkt; }
+  // also brings older saves up to date: fills in the new companies, a year of daily bars, the fund and the account fields
+  function migrateMarket(S) { const M = S.mkt, d0 = Math.floor(S.time / 1440), r = rngFor(77);
+    for (const k of ['d', 'q', 'cur', 'base', 'open', 'hist', 'px']) M[k] = M[k] || {}; M.extra = M.extra || []; M.alerts = M.alerts || []; if (M.rate == null) M.rate = 4.25;
+    if (M.ipoNext == null) M.ipoNext = d0 + 6 + Math.floor(r() * 10); if (M.fundDiv == null) M.fundDiv = d0 + 20 + Math.floor(r() * 60);
+    const prevDays = []; for (let d = d0 - 1; prevDays.length < 5; d--) if (tradingDay(d)) prevDays.unshift(d);
+    const fresh = !M.v2;
+    for (const c of CO) { const sym = c[0]; if (M.d[sym] && M.d[sym].length) continue;
+      let cl = M.hist[sym] ? M.hist[sym].slice() : []; const rr = rngFor(sym.charCodeAt(0) * 131 + sym.charCodeAt(1) * 17 + sym.charCodeAt(2));
+      if (!cl.length) { let p = c[3]; for (let i = 0; i < NDAYS; i++) { p = Math.max(100, p * (1 + gauss(rr) * c[4] / 100 + .0003)); cl.push(Math.round(p)); } }
+      else while (cl.length < NDAYS) { cl.unshift(Math.max(100, Math.round(cl[0] / (1 + gauss(rr) * c[4] / 100 + .0003)))); }
+      M.hist[sym] = cl; M.d[sym] = barsFrom(cl, c[4], rr); if (M.px[sym] == null) { M.px[sym] = cl[cl.length - 1]; M.open[sym] = M.px[sym]; }
+      const db = M.d[sym]; M.q[sym] = [].concat(...prevDays.map((d, i) => sessionBars(db[db.length - 5 + i], d, rr))); }
+    if (fresh) { for (const c of CO) M.base[c[0]] = M.hist[c[0]][0]; M.v2 = 1; }
+    // the fund is worth a tenth of a dollar per index point, so 1,000 points is $100 a unit
+    if (!M.d[FUNDSYM]) { const n = M.hist[CO[0][0]].length, ix = (k, i) => 1000 * CO.reduce((a, c) => a + M.d[c[0]][i][k] / M.base[c[0]], 0) / CO.length * 10;
+      M.d[FUNDSYM] = []; for (let i = 0; i < n; i++) { const o = ix(0, i), c = ix(3, i); M.d[FUNDSYM].push([Math.round(o), Math.round(Math.max(o, c) * 1.002), Math.round(Math.min(o, c) * .998), Math.round(c)]); }
+      M.hist[FUNDSYM] = M.d[FUNDSYM].map(b => b[3]); const qs = CO.map(c => M.q[c[0]]); M.q[FUNDSYM] = qs[0].map((b0, j) => { const v = k => Math.round(10000 * CO.reduce((a, c, i) => a + qs[i][j][k] / M.base[c[0]], 0) / CO.length); return [v(0), v(1), v(2), v(3), b0[4]]; }); }
+    delete M.intra; M.px[FUNDSYM] = indexOf(M) * 10; if (M.open[FUNDSYM] == null) M.open[FUNDSYM] = M.px[FUNDSYM];
+    S.port = S.port || {}; S.mord = S.mord || []; S.tds = S.tds || []; S.tipLog = S.tipLog || []; S.acct = S.acct || { margin: false, loan: 0, call: null, int: 0 }; if (S.secCount == null) S.secCount = 0;
+    M.earn = M.earn.filter(e => cosOf(M).some(c => c[0] === e.sym)); scheduleEarnings(S, d0); }
   const indexOf = M => { let s = 0; for (const c of CO) s += M.px[c[0]] / M.base[c[0]]; return 1000 * s / CO.length; };
   const indexHist = M => { const n = M.hist[CO[0][0]].length, out = []; for (let i = 0; i < n; i++) { let s = 0; for (const c of CO) s += M.hist[c[0]][i] / M.base[c[0]]; out.push(1000 * s / CO.length); } return out; };
   function scheduleEarnings(S, d0) { const M = S.mkt, r = rngFor(d0 * 31 + 7);
-    for (const c of CO) if (!M.earn.some(e => e.sym === c[0] && e.day >= d0)) { let d = d0 + 3 + Math.floor(r() * 40); while (!tradingDay(d)) d++; const s = gauss(r); M.earn.push({ sym: c[0], day: d, surprise: s, done: false }); } }
-  // the day's stories, written at 6 am
-  function writeDay(S, d) { const M = S.mkt, r = rngFor(d * 977 + 13), td = tradingDay(d), out = [];
+    for (const c of cosOf(M)) if (!M.earn.some(e => e.sym === c[0] && !e.done)) { const last = M.earn.filter(e => e.sym === c[0]).reduce((a, e) => Math.max(a, e.day), -1);
+      let d = last >= 0 ? last + 88 + Math.floor(r() * 6) : d0 + 3 + Math.floor(r() * 60); while (!tradingDay(d)) d++; M.earn.push({ sym: c[0], day: d, surprise: gauss(r), done: false }); }
+    M.earn = M.earn.filter(e => !e.done || e.day > d0 - 120); }
+  const alertM = (S, text) => { const M = S.mkt; M.alerts.unshift({ t: S.time, text }); if (M.alerts.length > 30) M.alerts.length = 30; CR.note(S, text); toast(text, 4.5); };
+  // pay (or, for a short, charge) a dividend per share to whoever holds the stock
+  const payDiv = (S, sym, dps) => { const h = S.port[sym]; if (!h || !dps) return; const amt = h.q * dps; S.player.bank += amt; txn(`${h.q > 0 ? 'Dividend' : 'Dividend owed on short'}, ${sym}`, amt); };
+  // money that moves at midnight: margin interest, the short borrow fee, term deposits, the fund's quarterly dividend
+  function dayMoney(S, d) { const M = S.mkt, A = S.acct;
+    if (A.loan > 0) { const i = Math.round(A.loan * LOANRATE / 36500); A.loan += i; A.int += i; }
+    let sh = 0; for (const [k, h] of Object.entries(S.port)) if (h.q < 0) sh -= h.q * M.px[k]; A.fee = (A.fee || 0) + sh * BORROW / 36500; if (A.fee >= 1 && CR.parts(d * 1440 + 720).dow === 1) { const f = Math.round(A.fee); A.fee = 0; S.player.bank -= f; txn('Short borrow fees for the week', -f); }
+    for (const td of S.tds.filter(x => d >= x.end)) { const i = Math.round(td.amt * td.rate / 100 * td.m / 12); S.player.bank += td.amt + i; txn(`Term deposit matured, ${td.m} months`, td.amt + i); alertM(S, `Your ${td.m}-month term deposit matured. ${money(td.amt + i)} paid to your bank, ${money(i)} of it interest.`); }
+    S.tds = S.tds.filter(x => d < x.end);
+    if (d >= M.fundDiv && tradingDay(d)) { M.fundDiv = d + 91; const dps = Math.round(M.px[FUNDSYM] * FUND[5] / 400); if (S.port[FUNDSYM]) { payDiv(S, FUNDSYM, dps); alertM(S, `The index fund paid its quarterly distribution, ${money(dps)} a unit.`); } } }
+  // the day's stories, written at 6 am, plus results, dividends, IPOs and anything the regulator is doing about you
+  function writeDay(S, d) { const M = S.mkt, r = rngFor(d * 977 + 13), td = tradingDay(d), out = [], ALL = cosOf(M);
     const at = () => Math.round(360 + r() * (td ? 600 : 720));
-    const n = td ? 3 + Math.floor(r() * 3) : 1 + Math.floor(r() * 2);
-    for (let i = 0; i < n; i++) { const st = r() < .45 ? pickR(r, SECTOR)(r) : companyStory(r, pickR(r, CO)); st.t = d * 1440 + at(); out.push(st); }
-    for (const e of M.earn) if (e.day === d && !e.done) { const c = coBy(e.sym), s = e.surprise, pct = s > .35 ? 3 + s * 3 : s < -.35 ? -(3 - s * 3) : s * 2;
-      out.push({ t: d * 1440 + 480, head: s > .35 ? `${c[1]} profit beats forecasts` : s < -.35 ? `${c[1]} misses profit forecasts` : `${c[1]} results in line with forecasts`, body: s > .35 ? 'Revenue and margins both came in ahead. The company raised its outlook for the year.' : s < -.35 ? 'Costs ran higher than expected and the outlook was cut.' : 'No surprises. Management kept its guidance.', eff: [[e.sym, pct]], earn: true }); e.done = true; }
-    for (const sym of M.fizz) { const c = coBy(sym); out.push({ t: d * 1440 + 420, head: `${c[1]} denies takeover talks`, body: 'The company says it has received no approach.', eff: [[sym, -(4 + r() * 5)]] }); } M.fizz = [];
+    const n = td ? 4 + Math.floor(r() * 4) : 1 + Math.floor(r() * 2);
+    for (let i = 0; i < n; i++) { const st = r() < .4 ? pickR(r, SECTOR)(r) : companyStory(r, pickR(r, ALL)); st.t = d * 1440 + at(); out.push(st); }
+    for (const e of M.earn) if (e.day === d && !e.done) { const c = coBy(e.sym); if (!c) { e.done = true; continue; } const s = e.surprise, pct = s > .35 ? 3 + s * 3 : s < -.35 ? -(3 - s * 3) : s * 2, dps = c[5] ? Math.round(M.px[e.sym] * c[5] / 400) : 0;
+      out.push({ t: d * 1440 + 480, head: s > .35 ? `${c[1]} profit beats forecasts` : s < -.35 ? `${c[1]} misses profit forecasts` : `${c[1]} results in line with forecasts`, body: (s > .35 ? 'Revenue and margins both came in ahead. The company raised its outlook for the year.' : s < -.35 ? 'Costs ran higher than expected and the outlook was cut.' : 'No surprises. Management kept its guidance.') + (dps ? ` A dividend of ${money(dps)} a share is paid today.` : ''), eff: [[e.sym, pct]], earn: true }); e.done = true;
+      if (dps && S.port[e.sym]) { payDiv(S, e.sym, dps); alertM(S, `${c[1]} ${S.port[e.sym].q > 0 ? 'paid you' : 'dividend charged to your short,'} ${money(Math.abs(S.port[e.sym].q * dps))}.`); } }
+    for (const sym of M.fizz) { const c = coBy(sym); if (c) out.push({ t: d * 1440 + 420, head: `${c[1]} denies takeover talks`, body: 'The company says it has received no approach.', eff: [[sym, -(4 + r() * 5)]] }); } M.fizz = [];
     out.push({ t: d * 1440 + 400 + Math.round(r() * 600), head: pickR(r, CITY), body: 'Around the city.', eff: [], city: true });
+    // IPOs: announced, applications close four sessions later, trading starts two sessions after that
+    const I = M.ipo; if (I && d === I.list) { const req = Math.floor(I.app / I.offer), hot = I.pop > .1, got = hot ? Math.floor(req * (.25 + r() * .35)) : req, refund = I.app - got * I.offer;
+      if (I.app) { if (refund) { S.player.bank += refund; txn(`IPO refund, ${I.sym}`, refund); } if (got) S.port[I.sym] = { q: got, cost: got * I.offer }; alertM(S, `${I.name} listed today. You were allocated ${got} of the ${req} shares you applied for${refund ? `, ${money(refund)} refunded` : ''}.`); }
+      const row = [I.sym, I.name, I.sec, I.offer, I.vol, 0], p = Math.round(I.offer * (1 + I.pop)); M.extra.push(row); M.px[I.sym] = p; M.open[I.sym] = p; M.hist[I.sym] = [I.offer]; M.d[I.sym] = [[I.offer, I.offer, I.offer, I.offer]]; M.q[I.sym] = [];
+      out.push({ t: d * 1440 + OPEN, head: `${I.name} shares ${I.pop >= 0 ? 'jump' : 'slip'} ${Math.abs(I.pop * 100).toFixed(0)}% on their first day`, body: `The shares were offered at ${money(I.offer)}.${hot ? ' The float was heavily oversubscribed.' : ''}`, eff: [] });
+      M.ipo = null; M.ipoNext = d + 20 + Math.floor(r() * 20); }
+    else if (!I && td && d >= M.ipoNext) { const used = new Set(M.extra.map(c => c[0])), next = IPOS.find(c => !used.has(c[0]));
+      if (next) { const offer = Math.round(800 + r() * 4200), close = tdAdd(d, 4), list = tdAdd(close, 2); M.ipo = { sym: next[0], name: next[1], sec: next[2], vol: next[3], offer, close, list, pop: gauss(r) * .14 + .07, app: 0 };
+        out.push({ t: d * 1440 + 450, head: `${next[1]} to list on the exchange`, body: `Shares are offered at ${money(offer)}. Applications close ${CR.fmtDate(close * 1440)} and trading starts ${CR.fmtDate(list * 1440)}.`, eff: [], ipo: true }); }
+      else M.ipoNext = 1e9; }
+    // insider trading: trades that followed a tip from someone in finance, and paid off, can draw the regulator
+    for (const tl of S.tipLog.filter(x => x.day < d && !x.done)) { tl.done = true; if (!tl.trades.length || S.sec) continue; let profit = 0; for (const [q, p0] of tl.trades) profit += q * (M.px[tl.sym] - p0); profit = Math.round(profit);
+      if (profit > 0 && r() < .25 + Math.min(.45, profit / 2e6)) S.sec = { sym: tl.sym, profit, letter: d + 3 + Math.floor(r() * 6), decide: 0 }; }
+    S.tipLog = S.tipLog.filter(x => !x.done || x.day > d - 30);
+    const X = S.sec; if (X && d === X.letter) { X.decide = d + 7; alertM(S, `A letter from the Securities Commission. It is looking into your trades in ${X.sym} before the company's results and wants your phone records.`); }
+    else if (X && X.decide && d >= X.decide) { const fine = X.profit + Math.max(250000, X.profit), J = S.player.job; S.player.bank -= fine; txn('Securities Commission penalty', -fine); S.secCount++;
+      if (J) { J.perf = Math.max(0, J.perf - 30); J.shiftsAt = 0; } S.sec = null;
+      alertM(S, `The Securities Commission found you traded on inside information. You paid ${money(fine)}: the ${money(X.profit)} profit and a penalty. ${EMPLOYER} has put a formal warning on your file.`); }
     for (const st of out) { if (st.fizz) M.fizz.push(st.fizz); st.day = d; st.real = st.eff.map(([k, p]) => [k, p * (r() < .12 ? -.6 : .4 + r() * 1.1)]); }
     M.stories = M.stories.filter(s => s.day >= d - 6).concat(out.sort((a, b) => a.t - b.t)); scheduleEarnings(S, d); }
   const touches = (k, c) => k === 'all' || k === c[0] || k === c[2];
+  const queueStory = (M, st, at) => { st.queued = true; if (st.rate) M.rate = Math.max(.25, +(M.rate + st.rate).toFixed(2)); M.pend.push({ real: st.real, left: 1, at }); };
+  // the close: the day's bars are filed and margin is checked
+  function closeDay(S, d) { const M = S.mkt; M.lastClose = d;
+    for (const sym of symsOf(M)) { const b = M.cur[sym] || [M.px[sym], M.px[sym], M.px[sym], M.px[sym]], p = Math.round(M.px[sym]); b[3] = p; M.d[sym].push(b.map(Math.round)); M.hist[sym].push(p); if (M.d[sym].length > NDAYS) { M.d[sym].shift(); M.hist[sym].shift(); } }
+    M.cur = {}; marginCheck(S, d); }
   // price path: five-minute steps through trading hours; news lands as a jump spread over half an hour
   function stepMarket(S, t1) { const M = S.mkt; if (!M) return; let t = M.t; if (t1 - t > 1440 * 40) t = t1 - 1440 * 40;
     while (t < t1) { const d = Math.floor(t / 1440), m = t - d * 1440;
-      if (d !== M.day) { M.day = d; writeDay(S, d); if (tradingDay(d)) for (const c of CO) { M.open[c[0]] = M.px[c[0]]; M.intra[c[0]] = [Math.round(M.px[c[0]])]; } M.mood = gauss(rngFor(d * 5 + 1)) * .5; }
+      if (d !== M.day) { M.day = d; dayMoney(S, d); writeDay(S, d); M.mood = gauss(rngFor(d * 5 + 1)) * .5; }
       const td = tradingDay(d);
-      if (!td || m < OPEN || m >= CLOSE) { const nx = !td || m >= CLOSE ? (d + 1) * 1440 : d * 1440 + OPEN; // closed: just collect stories for the bell
-        for (const st of M.stories) if (!st.queued && st.t <= Math.min(nx, t1)) { st.queued = true; M.pend.push({ real: st.real, left: 1, at: 'open' }); }
-        t = Math.min(nx, t1); if (td && m >= CLOSE && t >= (d + 1) * 1440 - 1) { for (const c of CO) { const h = M.hist[c[0]]; h.push(Math.round(M.px[c[0]])); if (h.length > 90) h.shift(); } } continue; }
-      const dt = Math.min(5, t1 - t), r = rngFor(Math.floor(t) * 7 + 3), mk = gauss(r) * .09 * Math.sqrt(dt / 5) + (M.mood || 0) * .008 * dt / 5;
-      for (const st of M.stories) if (!st.queued && st.t <= t + dt) { st.queued = true; M.pend.push({ real: st.real, left: 1, at: 'now' }); }
-      for (const c of CO) { const v = c[4] * .75 / Math.sqrt(78); let ret = (gauss(r) * v * Math.sqrt(dt / 5) + mk * c[4] / 1.6) / 100;
+      if (!td || m < OPEN || m >= CLOSE) { if (td && m >= CLOSE && M.curDay === d && M.lastClose !== d) closeDay(S, d);
+        const nx = !td || m >= CLOSE ? (d + 1) * 1440 : d * 1440 + OPEN; // closed: just collect stories for the bell
+        for (const st of M.stories) if (!st.queued && st.t <= Math.min(nx, t1)) queueStory(M, st, 'open');
+        t = Math.min(nx, t1); continue; }
+      const ALL = cosOf(M), SY = symsOf(M);
+      const first = M.curDay !== d; M.curDay = d;
+      const dt = Math.min(5, t1 - t, d * 1440 + CLOSE - t), r = rngFor(Math.floor(t) * 7 + 3), mk = gauss(r) * .09 * Math.sqrt(dt / 5) + (M.mood || 0) * .008 * dt / 5, prev = {};
+      for (const st of M.stories) if (!st.queued && st.t <= t + dt) queueStory(M, st, 'now');
+      for (const s of SY) prev[s] = M.px[s];
+      for (const c of ALL) { const v = c[4] * .75 / Math.sqrt(78); let ret = (gauss(r) * v * Math.sqrt(dt / 5) + mk * c[4] / 1.6) / 100;
         for (const pe of M.pend) for (const [k, p] of pe.real) if (touches(k, c)) ret += (pe.at === 'open' ? p * .7 : p / 6 * Math.min(1, dt / 5)) / 100;
         M.px[c[0]] = Math.max(50, M.px[c[0]] * (1 + ret)); }
+      M.px[FUNDSYM] = indexOf(M) * 10;
       for (const pe of M.pend) { if (pe.at === 'open') { pe.real = pe.real.map(([k, p]) => [k, p * .3]); pe.at = 'now'; pe.left = 1; } else pe.left -= Math.min(1, dt / 5) / 6; }
       M.pend = M.pend.filter(pe => pe.left > .01);
-      t += dt; if (Math.floor(t) % 15 === 0 || t >= t1) for (const c of CO) { const a = M.intra[c[0]]; if (a.length < 80) a.push(Math.round(M.px[c[0]])); } }
+      const slot = d * 1440 + OPEN + Math.floor((m - OPEN) / 15) * 15;
+      if (first) for (const s of SY) { const p = Math.round(M.px[s]); prev[s] = M.px[s]; M.open[s] = M.px[s]; M.cur[s] = [p, p, p, p]; } // the open is the first trade, gap and all
+      for (const s of SY) { const p = Math.round(M.px[s]), b = M.cur[s] || (M.cur[s] = [p, p, p, p]); b[1] = Math.max(b[1], p); b[2] = Math.min(b[2], p); b[3] = p;
+        const Q = M.q[s] || (M.q[s] = []), L = Q[Q.length - 1]; if (!L || L[4] !== slot) { const o = Math.round(prev[s]); Q.push([o, Math.max(o, p), Math.min(o, p), p, slot]); if (Q.length > NQ) Q.shift(); } else { L[1] = Math.max(L[1], p); L[2] = Math.min(L[2], p); L[3] = p; } }
+      t += dt; fillOrders(S);
+      if (t >= d * 1440 + CLOSE && M.lastClose !== d) closeDay(S, d); }
     M.t = t1; }
-  const mktOpen = () => { const d = Math.floor(S.time / 1440), m = S.time - d * 1440; return tradingDay(d) && m >= OPEN && m < CLOSE; };
+  const nowOpen = t => { const d = Math.floor(t / 1440), m = t - d * 1440; return tradingDay(d) && m >= OPEN && m < CLOSE; };
+  const mktOpen = () => nowOpen(S.time);
   const nextOpen = () => { let d = Math.floor(S.time / 1440); if (S.time - d * 1440 >= OPEN) d++; while (!tradingDay(d)) d++; return d * 1440 + OPEN; };
-  const chg = sym => { const M = S.mkt, h = M.hist[sym], prev = mktOpen() || (S.time - Math.floor(S.time / 1440) * 1440) >= CLOSE && tradingDay(Math.floor(S.time / 1440)) ? M.open[sym] : h[h.length - 2] || h[h.length - 1]; return (M.px[sym] / prev - 1) * 100; };
+  // change against the previous close: once today's session has begun that is the last filed close, before it the one before
+  const prevIdx = M => { const d = Math.floor(S.time / 1440), begun = tradingDay(d) && S.time - d * 1440 >= OPEN; return begun && M.lastClose !== d ? 1 : 2; };
+  const chg = sym => { const M = S.mkt, h = M.hist[sym], k = prevIdx(M), prev = h[h.length - k] || h[0]; return (M.px[sym] / prev - 1) * 100; };
+  const ixChg = () => { const M = S.mkt, ih = indexHist(M), prev = ih[ih.length - prevIdx(M)] || ih[0]; return (indexOf(M) / prev - 1) * 100; };
   const pct = v => `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`, pctCol = v => v >= 0 ? 'var(--good,#6bc48a)' : 'var(--bad,#d66b5f)';
-  const spark = (a, w = 300, h = 70) => { if (!a || a.length < 2) return ''; const lo = Math.min(...a), hi = Math.max(...a), sx = w / (a.length - 1), sy = (hi - lo) || 1; const d = a.map((v, i) => `${i ? 'L' : 'M'}${(i * sx).toFixed(1)},${(h - 4 - (v - lo) / sy * (h - 8)).toFixed(1)}`).join(''); const up = a[a.length - 1] >= a[0];
-    return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:${h}px;display:block"><path d="${d}" fill="none" stroke="${up ? '#6bc48a' : '#d66b5f'}" stroke-width="2"/></svg>`; };
-  const portValue = () => Object.entries(S.port).reduce((a, [k, h]) => a + h.q * S.mkt.px[k], 0);
-  function trade(sym, q) { const M = S.mkt, px = Math.round(M.px[sym]), h = S.port[sym] || (S.port[sym] = { q: 0, cost: 0 });
-    if (!mktOpen()) return toast(`The market is closed. It opens ${dayWord(nextOpen())} at 9:30 am.`, 3);
-    if (q > 0) { const tot = px * q + FEE; if (S.player.bank < tot) return toast('Not enough in your bank account.'); S.player.bank -= tot; txn(`Bought ${q} ${sym}`, -tot); h.cost += px * q + FEE; h.q += q; toast(`Bought ${q} ${sym} at ${money(px)}.`, 2.5); }
-    else { q = Math.min(-q, h.q); if (!q) return; const tot = px * q - FEE, avg = h.cost / h.q; S.player.bank += tot; txn(`Sold ${q} ${sym}`, tot); h.cost -= avg * q; h.q -= q; if (!h.q) delete S.port[sym]; toast(`Sold ${q} ${sym} at ${money(px)}.`, 2.5); }
-    CR.note(S, `Traded ${sym}.`); }
+  // ---- accounts and orders ----
+  const posVals = () => { let L = 0, Sh = 0; for (const [k, h] of Object.entries(S.port)) { const v = h.q * S.mkt.px[k]; if (v > 0) L += v; else Sh -= v; } return [L, Sh]; };
+  const equity = () => { const [L, Sh] = posVals(); return S.player.bank + L - Sh - S.acct.loan; };
+  const unreal = (sym, h) => h.q > 0 ? h.q * S.mkt.px[sym] - h.cost : h.cost + h.q * S.mkt.px[sym];
+  const SIDEW = { buy: 'Bought', sell: 'Sold', short: 'Sold short', cover: 'Covered' };
+  // carry out a trade at price px. Returns an empty string, or why it could not be done.
+  function exec(sym, side, q, px, how) { const A = S.acct, P = S.player, h = S.port[sym] || { q: 0, cost: 0 }; q = Math.floor(q); if (!(q >= 1)) return 'That is less than one share.';
+    const [L, Sh] = posVals(); let cash = 0;
+    if (side === 'buy') { if (h.q < 0) return 'Cover your short first.'; const cost = px * q + FEE, pay = Math.min(cost, Math.max(0, P.bank)), borrow = cost - pay;
+      if (borrow > 0) { if (!A.margin) return 'Not enough in your bank account.'; const E = P.bank - pay + L + px * q - Sh - A.loan - borrow; if (E < INIT * (L + px * q + Sh)) return 'That is more than your buying power.'; }
+      P.bank -= pay; A.loan += borrow; h.q += q; h.cost += cost; cash = -cost; }
+    else if (side === 'sell') { if (h.q <= 0) return 'You do not hold any.'; q = Math.min(q, h.q); const got = px * q - FEE, avg = h.cost / h.q, rep = Math.min(A.loan, Math.max(0, got)); A.loan -= rep; P.bank += got - rep; h.cost -= avg * q; h.q -= q; cash = got; }
+    else if (side === 'short') { if (!A.margin) return 'Short selling needs a margin account.'; if (h.q > 0) return 'Sell your shares first.'; const got = px * q - FEE;
+      if (equity() - FEE < INIT * (L + Sh + px * q)) return 'That is more than your buying power.'; P.bank += got; h.q -= q; h.cost += got; cash = got; }
+    else if (side === 'cover') { if (h.q >= 0) return 'You are not short.'; q = Math.min(q, -h.q); const cost = px * q + FEE, avg = h.cost / -h.q; P.bank -= cost; if (P.bank < 0 && A.margin) { A.loan -= P.bank; P.bank = 0; } h.cost -= avg * q; h.q += q; cash = -cost; }
+    if (h.q) S.port[sym] = h; else delete S.port[sym];
+    txn(`${SIDEW[side]} ${q} ${sym} at ${money(px)}${how ? ', ' + how : ''}`, cash);
+    for (const tl of S.tipLog) if (tl.sym === sym && !tl.done && S.time >= tl.from && S.time < tl.day * 1440 + 480) { const dir = side === 'buy' || side === 'cover' ? 1 : -1; if (dir === tl.dir) tl.trades.push([dir * q, px]); }
+    return `${SIDEW[side]} ${q} ${sym} at ${money(px)}.`; }
+  // dollar amount to shares: buying and shorting leave room for the brokerage, selling and covering are capped at what you hold
+  const sharesFor = (sym, side, amt, px) => { const h = S.port[sym] || { q: 0 }; if (amt === 'all') return side === 'sell' ? Math.max(0, h.q) : side === 'cover' ? Math.max(0, -h.q) : 0;
+    if (side === 'buy' || side === 'short') return Math.max(0, Math.floor((amt - FEE) / px)); return Math.min(side === 'sell' ? Math.max(0, h.q) : Math.max(0, -h.q), Math.floor(amt / px)); };
+  function marketOrder(sym, side, amt) { if (!mktOpen()) return toast(`The market is closed. It opens ${dayWord(nextOpen())} at 9:30 am.`, 3); const px = Math.round(S.mkt.px[sym]), q = sharesFor(sym, side, amt, px);
+    if (q < 1) return toast(side === 'buy' || side === 'short' ? 'That amount does not cover one share plus brokerage.' : 'That is less than one share.', 3); const res = exec(sym, side, q, px); toast(res, 3); }
+  // limit: buy (or cover) at the price or lower, sell (or short) at it or higher. Stop: triggers once the price passes it.
+  function placeOrder(sym, side, type, trig, amt) { if (!(trig > 0)) return toast('Enter a price for the order.', 3); const q = amt === 'all' ? 0 : sharesFor(sym, side, amt, trig);
+    if (amt !== 'all' && q < 1) return toast('That amount does not cover one share at that price.', 3); if (amt === 'all' && !sharesFor(sym, side, 'all', trig)) return toast('You have nothing to ' + side + '.', 3);
+    S.mord.push({ id: (S.mordN = (S.mordN || 0) + 1), sym, side, type, px: trig, q, all: amt === 'all', t: S.time }); toast(`${type === 'limit' ? 'Limit' : 'Stop'} order placed: ${side} ${amt === 'all' ? 'all' : q} ${sym} at ${money(trig)}.`, 3); }
+  const orderHit = (o, p) => { const up = o.side === 'buy' || o.side === 'cover'; return o.type === 'limit' ? (up ? p <= o.px : p >= o.px) : (up ? p >= o.px : p <= o.px); };
+  function fillOrders(S) { if (!S.mord.length) return; for (const o of S.mord.slice()) { const p = S.mkt.px[o.sym]; if (p == null || !orderHit(o, p)) continue;
+      S.mord = S.mord.filter(x => x !== o); const q = o.all ? sharesFor(o.sym, o.side, 'all', p) : o.q, res = q ? exec(o.sym, o.side, q, Math.round(p), (o.type === 'limit' ? 'limit' : 'stop') + ' order') : 'Nothing left to trade.';
+      alertM(S, /^(Bought|Sold|Covered)/.test(res) ? `Order filled. ${res}` : `Your ${o.type} order to ${o.side} ${o.sym} was cancelled. ${res}`); } }
+  // margin: equity must stay above 30% of the shares held long and short. Below it you get a day, then the broker sells.
+  function marginCheck(S, d) { const A = S.acct, [L, Sh] = posVals(), g = L + Sh, E = equity();
+    if (!g && !A.loan) { A.call = null; return; }
+    if (E >= MAINT * g) { if (A.call) { A.call = null; alertM(S, 'Margin call met. Your account is back above the minimum.'); } return; }
+    if (!A.call) { A.call = { day: d }; alertM(S, `Margin call. Your account is ${money(Math.round(MAINT * g - E))} below the 30% minimum. Add cash or sell by 4 pm next session or the broker will sell for you.`); return; }
+    if (d === A.call.day) return; const sold = [];
+    for (let k = 0; k < 40; k++) { const [L2, Sh2] = posVals(), g2 = L2 + Sh2; if (!g2 || equity() >= (MAINT + .05) * g2) break;
+      const [sym, h] = Object.entries(S.port).sort((a, b) => Math.abs(b[1].q * S.mkt.px[b[0]]) - Math.abs(a[1].q * S.mkt.px[a[0]]))[0], p = Math.round(S.mkt.px[sym]);
+      exec(sym, h.q > 0 ? 'sell' : 'cover', Math.abs(h.q), p, 'margin call'); sold.push(sym); }
+    A.call = null; alertM(S, `The broker closed your positions in ${[...new Set(sold)].join(', ') || 'nothing'} to meet the margin call.`); }
+  // term deposits: locked for 3, 6 or 12 months at a rate set from the central bank rate on the day you open it
+  const TDT = { 3: 0, 6: .15, 12: .35 }, tdRate = m => Math.max(.5, +(S.mkt.rate - .6 + TDT[m]).toFixed(2));
+  // ---- charts ----
+  const CH = { r: '1D', m: 'line' }, RANGES = ['1D', '5D', '1M', '6M', '1Y'];
+  function chartBars(sym, r) { const M = S.mkt, Q = M.q[sym] || [], D = M.d[sym] || [], today = Math.floor(S.time / 1440), live = M.curDay === today && M.lastClose !== today && M.cur[sym] ? [M.cur[sym].slice()] : [];
+    if (r === '1D') { const last = Q.length ? Math.floor(Q[Q.length - 1][4] / 1440) : today; return { bars: Q.filter(b => Math.floor(b[4] / 1440) === last), intra: true, day: last }; }
+    if (r === '5D') return { bars: Q.slice(), intra: true, group: 2 };
+    const n = r === '1M' ? 21 : r === '6M' ? 125 : 251, bars = D.slice(-n).concat(live); return { bars, group: r === '1M' ? 1 : 5, n: bars.length }; }
+  const groupBars = (bars, g) => { if (g <= 1) return bars; const out = []; for (let i = 0; i < bars.length; i += g) { const s = bars.slice(i, i + g); out.push([s[0][0], Math.max(...s.map(b => b[1])), Math.min(...s.map(b => b[2])), s[s.length - 1][3], s[0][4]]); } return out; };
+  function chartHTML(sym) { const M = S.mkt, { bars, intra, group, day } = chartBars(sym, CH.r); if (!bars.length) return '<p class="phnote">No trading yet.</p>';
+    const W = 300, H = 130, pad = 6, candle = CH.m === 'candle', B = candle ? groupBars(bars, group || 1) : bars, slots = CH.r === '1D' ? 26 : B.length;
+    const h = M.hist[sym], refIdx = CH.r === '1D' ? (M.lastClose === day ? 2 : 1) : 0, ref = CH.r === '1D' ? h[h.length - refIdx] : null;
+    const vals = candle ? B.flatMap(b => [b[1], b[2]]) : B.map(b => b[3]); if (ref) vals.push(ref); const lo = Math.min(...vals), hi = Math.max(...vals), sy = (hi - lo) || 1, sx = W / Math.max(1, slots - (candle ? 0 : 1));
+    const Y = v => (H - pad - (v - lo) / sy * (H - pad * 2)).toFixed(1), first = CH.r === '1D' ? ref : B[0][0], last = B[B.length - 1][3], ch = (last / first - 1) * 100, col = last >= first ? '#6bc48a' : '#d66b5f';
+    let g = ''; if (ref) g += `<line x1="0" x2="${W}" y1="${Y(ref)}" y2="${Y(ref)}" stroke="currentColor" stroke-opacity=".3" stroke-dasharray="3 3"/>`;
+    if (candle) { const bw = Math.max(1, sx * .62); g += B.map((b, i) => { const x = i * sx + sx / 2, up = b[3] >= b[0], c = up ? '#6bc48a' : '#d66b5f', y0 = +Y(Math.max(b[0], b[3])), y1 = +Y(Math.min(b[0], b[3]));
+      return `<line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${Y(b[1])}" y2="${Y(b[2])}" stroke="${c}"/><rect x="${(x - bw / 2).toFixed(1)}" y="${y0}" width="${bw.toFixed(1)}" height="${Math.max(1, y1 - y0).toFixed(1)}" fill="${c}"/>`; }).join(''); }
+    else g += `<path d="${B.map((b, i) => `${i ? 'L' : 'M'}${(i * sx).toFixed(1)},${Y(b[3])}`).join('')}" fill="none" stroke="${col}" stroke-width="1.8"/>`;
+    const from = intra ? (CH.r === '1D' ? '9:30 am' : CR.fmtDate(bars[0][4]).replace(/^\w+ /, '')) : { '1M': 'A month ago', '6M': 'Six months ago', '1Y': 'A year ago' }[CH.r], to = intra ? (CH.r === '1D' ? '4 pm' : dayWord(bars[bars.length - 1][4])) : 'today';
+    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;min-height:${H}px;flex:none;display:block;color:var(--muted)">${g}</svg>
+      <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted)"><span>${from}</span><span>High ${money(Math.max(...bars.map(b => b[1])))} · Low ${money(Math.min(...bars.map(b => b[2])))}</span><span>${to}</span></div>
+      <div style="font-size:12.5px;color:var(--muted)">${{ '1D': 'Today', '5D': 'Five sessions', '1M': 'One month', '6M': 'Six months', '1Y': 'One year' }[CH.r]} <b style="color:${pctCol(ch)}">${pct(ch)}</b></div>`; }
+  const chartCtl = () => `<div class="phseg">${RANGES.map(r => `<button data-act="chr:${r}" class="${CH.r === r ? 'on' : ''}">${r}</button>`).join('')}</div><div class="phseg">${[['line', 'Line'], ['candle', 'Candles']].map(([k, n]) => `<button data-act="chm:${k}" class="${CH.m === k ? 'on' : ''}">${n}</button>`).join('')}</div>`;
+  // ---- the order form keeps what you typed while the screen redraws ----
+  const OF = { sym: '', type: 'mkt', amt: '', px: '', tdamt: '', rep: '', ipoamt: '' };
+  const dollars = v => Math.round(parseFloat(String(v).replace(/[$,\s]/g, '')) * 100);
+  function previewText(sym) { const M = S.mkt, h = S.port[sym] || { q: 0 }, trig = OF.type === 'mkt' ? Math.round(M.px[sym]) : dollars(OF.px), amt = dollars(OF.amt);
+    if (OF.type !== 'mkt' && !(trig > 0)) return `Enter the ${OF.type === 'limit' ? 'limit' : 'stop'} price, then an amount.`;
+    if (!(amt > 0)) return `Enter a dollar amount. Brokerage is ${money(FEE)} a trade and comes out of it.`;
+    const at = OF.type === 'mkt' ? `at ${money(trig)}` : `at ${money(trig)}`, out = [];
+    if (h.q >= 0) { const q = sharesFor(sym, 'buy', amt, trig); out.push(q ? `Buy ${q} shares ${at} = ${money(q * trig)} + ${money(FEE)} brokerage = ${money(q * trig + FEE)}.` : 'Not enough for one share after brokerage.'); }
+    if (h.q > 0) { const q = sharesFor(sym, 'sell', amt, trig); if (q) out.push(`Sell ${q} shares for ${money(q * trig - FEE)} after brokerage.`); }
+    if (h.q < 0) { const q = sharesFor(sym, 'cover', amt, trig); if (q) out.push(`Cover ${q} shares for ${money(q * trig + FEE)} with brokerage.`); }
+    else if (S.acct.margin && h.q === 0) { const q = sharesFor(sym, 'short', amt, trig); if (q) out.push(`Or short ${q}.`); }
+    if (OF.type === 'limit') out.push('A limit order waits until the price reaches yours or better.'); if (OF.type === 'stop') out.push('A stop order triggers once the price passes yours, then fills at the market.');
+    return out.join(' '); }
+  function bindForms(root) { for (const el of root.querySelectorAll('[data-of]')) el.oninput = () => { OF[el.dataset.of] = el.value; for (const pv of root.querySelectorAll('[data-ofprev]')) pv.textContent = previewText(pv.dataset.ofprev); }; }
   // tips: what people have heard about results coming up. How often they are right depends on who they are.
-  const TIPACC = c => c.rob ? .35 : /analyst|bank|trader|finance|broker|account|invest/i.test(c.job || '') ? .72 : .5;
+  const FINJOB = /analyst|bank|trader|finance|broker|account|invest/i;
+  const TIPACC = c => c.rob ? .35 : FINJOB.test(c.job || '') ? .72 : .5;
   function tipFrom(c) { const M = S.mkt, d0 = Math.floor(S.time / 1440), up = M.earn.filter(e => !e.done && e.day > d0 && e.day <= d0 + 12); if (!up.length) return 'Honestly? No idea. Quiet week by the sound of it.';
-    const r = rngFor(d0 * 13 + (c.cid || 'x').length * 7 + Math.floor(S.time)), e = pickR(r, up), co = coBy(e.sym), right = r() < TIPACC(c), good = (e.surprise > 0) === right;
+    const r = rngFor(d0 * 13 + (c.cid || 'x').length * 7 + Math.floor(S.time)), e = pickR(r, up), co = coBy(e.sym), right = r() < TIPACC(c), good = (e.surprise > 0) === right, ins = !c.rob && FINJOB.test(c.job || '');
+    if (ins) S.tipLog.push({ sym: e.sym, day: e.day, dir: good ? 1 : -1, from: S.time, trades: [] });
     return c.rob ? `Guy at the poker game reckons ${co[1]} ${good ? 'is about to smash its numbers' : 'is in trouble'}. Results ${dayWord(e.day * 1440)}. Do not quote me.` :
+      ins ? pickR(r, [`Between us, I have seen ${co[1]}'s numbers. They ${good ? 'beat' : 'miss'}. Results ${dayWord(e.day * 1440)}. You did not hear it from me.`, `Keep this quiet. ${co[1]} reports ${dayWord(e.day * 1440)} and it is ${good ? 'a big beat' : 'ugly'}. I mean it, keep it quiet.`]) :
       pickR(r, [`I keep hearing ${co[1]} ${good ? 'will beat its numbers' : 'is going to disappoint'} when it reports ${dayWord(e.day * 1440)}. Just talk, mind you.`, `Word is ${co[1]}'s results ${dayWord(e.day * 1440)} will be ${good ? 'strong' : 'rough'}. Could be nothing.`]); }
   // ---------------- the phone ----------------
   // Owned from the start. The clock stops while it is open. P opens it, Esc goes back.
@@ -6936,17 +7110,49 @@ window.GAME = (() => {
         <button class="phbtn" data-act="checkout:std">Order, standard delivery, ${money(sub + ship)}</button><button class="phbtn" data-act="checkout:exp">Order, express delivery, ${money(sub + 1200)}</button>` : '<p class="phnote">Your cart is empty.</p>'; }
     else if (app === 'orders') { title = 'Deliveries'; const L = S.orders.filter(o => !o.got);
       html = L.map(o => `<div class="phrow" style="cursor:default"><b>${o.arrived ? 'At your front door' : 'Arrives ' + dayWord(o.at) + (o.at - S.time < 1440 * 3 ? ', ' + CR.fmtTime(o.at) : '')}</b><span>${o.items.map(([k, q]) => { const it = CATALOG.find(c => c.k === k); return (q > 1 ? q + ' × ' : '') + (it ? it.n : k); }).join(', ')}</span></div>`).join('') || '<p class="phnote">Nothing on the way.</p>'; }
-    else if (app === 'news') { title = 'News'; const M = S.mkt, ix = indexOf(M), ih = indexHist(M), prev = ih[ih.length - (mktOpen() ? 1 : 2)] || ih[ih.length - 1], ch = (ix / prev - 1) * 100;
-      const L = M.stories.filter(st => st.t <= S.time).sort((a, b) => b.t - a.t).slice(0, 14);
-      html = `<div class="phbal"><span>HCX 25 index</span><b>${ix.toFixed(1)}</b><span>${mktOpen() ? 'Today' : 'Last session'}</span><b style="color:${pctCol(ch)}">${pct(ch)}</b></div>` + (L.map(st => `<div class="phrow" style="cursor:default"><span>${dayWord(st.t)}, ${CR.fmtTime(st.t)}${st.earn ? ' · Results' : st.city ? ' · City' : ''}</span><b>${esc(st.head)}</b><span>${esc(st.body)}</span></div>`).join('') || '<p class="phnote">Nothing yet today.</p>'); }
-    else if (app === 'trade' && !arg) { title = 'Trading'; const M = S.mkt, ix = indexOf(M), pv = portValue(), cost = Object.values(S.port).reduce((a, h) => a + h.cost, 0);
-      html = `<div class="phbal"><span>Market</span><b>${mktOpen() ? 'Open until 4 pm' : 'Closed, opens ' + dayWord(nextOpen()) + ' 9:30 am'}</b><span>HCX 25</span><b>${ix.toFixed(1)}</b><span>Your shares</span><b>${money(pv)}</b><span>Gain or loss</span><b style="color:${pctCol(pv - cost)}">${money(pv - cost)}</b></div>` +
-        CO.map(([sym, n]) => { const c = chg(sym), h = S.port[sym]; return `<button class="phrow" data-go="trade:${sym}"><b>${sym} <span style="float:right">${money(Math.round(M.px[sym]))} <span style="color:${pctCol(c)}">${pct(c)}</span></span></b><span>${esc(n)}${h ? ` · you hold ${h.q}` : ''}</span></button>`; }).join('') + `<p class="phnote">Brokerage ${money(FEE)} a trade, paid from your bank account.</p>`; }
-    else if (app === 'trade') { const M = S.mkt, c = coBy(arg); if (!c) return null; title = c[0]; const h = S.port[arg], px = Math.round(M.px[arg]), e = M.earn.find(q => q.sym === arg && !q.done), ch = chg(arg);
-      html = `<div class="phbal"><span>${esc(c[1])}</span><b>${money(px)}</b><span>${esc(c[2])}</span><b style="color:${pctCol(ch)}">${pct(ch)} today</b></div><span class="phnote" style="margin:0">Today</span>${spark(M.intra[arg], 300, 60)}<span class="phnote" style="margin:0">Last 60 sessions</span>${spark(M.hist[arg].slice(-60).concat([px]), 300, 70)}
-        <div class="phbal"><span>You hold</span><b>${h ? h.q : 0}</b><span>Average cost</span><b>${h ? money(Math.round(h.cost / h.q)) : '-'}</b><span>Next results</span><b>${e ? dayWord(e.day * 1440) : '-'}</b></div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">${[1, 10, 100].map(q => `<button class="phbtn" data-act="buy:${arg}.${q}">Buy ${q}</button>`).join('')}${[1, 10].map(q => `<button class="phbtn" data-act="buy:${arg}.-${q}" ${h ? '' : 'disabled'}>Sell ${q}</button>`).join('')}<button class="phbtn" data-act="buy:${arg}.-999999" ${h ? '' : 'disabled'}>Sell all</button></div>
-        ${M.stories.filter(st => st.t <= S.time && st.eff.some(([k]) => touches(k, c))).slice(-4).reverse().map(st => `<p class="phlog"><small>${dayWord(st.t)}</small>${esc(st.head)}</p>`).join('')}`; }
+    else if (app === 'news') { title = 'News'; const M = S.mkt, ch = ixChg();
+      const L = M.stories.filter(st => st.t <= S.time).sort((a, b) => b.t - a.t).slice(0, 16);
+      html = `<div class="phbal"><span>${IXN} index</span><b>${indexOf(M).toFixed(1)}</b><span>${mktOpen() ? 'Today' : 'Last session'}</span><b style="color:${pctCol(ch)}">${pct(ch)}</b><span>Central bank rate</span><b>${M.rate.toFixed(2)}%</b></div>` + (L.map(st => `<div class="phrow" style="cursor:default"><span>${dayWord(st.t)}, ${CR.fmtTime(st.t)}${st.earn ? ' · Results' : st.ipo ? ' · IPO' : st.city ? ' · City' : ''}</span><b>${esc(st.head)}</b><span>${esc(st.body)}</span></div>`).join('') || '<p class="phnote">Nothing yet today.</p>'); }
+    else if (app === 'trade' && !arg) { title = 'Trading'; const M = S.mkt, A = S.acct, [L, Sh] = posVals(), ug = Object.entries(S.port).reduce((a, [k, h]) => a + unreal(k, h), 0), ixc = ixChg(), d = Math.floor(S.time / 1440);
+      const row = c => { if (!c) return ''; const [sym, n] = c, ch = chg(sym), h = S.port[sym]; return `<button class="phrow" data-go="trade:${sym}"><b>${sym} <span style="float:right">${money(Math.round(M.px[sym]))} <span style="color:${pctCol(ch)}">${pct(ch)}</span></span></b><span>${esc(n)}${h ? ` · ${h.q > 0 ? 'you hold ' + h.q : 'short ' + -h.q}` : ''}${c[5] ? ` · yield ${c[5]}%` : ''}</span></button>`; };
+      html = `<div class="phbal"><span>Market</span><b>${mktOpen() ? 'Open until 4 pm' : 'Closed, opens ' + dayWord(nextOpen()) + ' 9:30 am'}</b><span>${IXN}</span><b>${indexOf(M).toFixed(1)} <span style="color:${pctCol(ixc)}">${pct(ixc)}</span></b><span>Bank</span><b>${money(S.player.bank)}</b><span>Shares held</span><b>${money(Math.round(L))}</b>${Sh ? `<span>Short positions</span><b>${money(Math.round(Sh))}</b>` : ''}${A.loan ? `<span>Margin loan</span><b>${money(A.loan)}</b>` : ''}<span>Account value</span><b>${money(Math.round(equity()))}</b><span>Unrealized gain</span><b style="color:${pctCol(ug)}">${money(Math.round(ug))}</b></div>`
+        + (A.call ? '<p class="phnote" style="color:var(--bad,#d66b5f);margin:0">Margin call open. Add cash or sell by 4 pm next session.</p>' : '')
+        + M.alerts.slice(0, 3).map(a => `<p class="phlog"><small>${dayWord(a.t)}, ${CR.fmtTime(a.t)}</small>${esc(a.text)}</p>`).join('')
+        + `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><button class="phbtn" data-go="trade:_orders">Orders${S.mord.length ? ` (${S.mord.length})` : ''}</button><button class="phbtn" data-go="trade:_td">Term deposits${S.tds.length ? ` (${S.tds.length})` : ''}</button><button class="phbtn" data-go="trade:_acct">${A.margin ? 'Margin account' : 'Margin and shorts'}</button>${M.ipo && d <= M.ipo.close ? `<button class="phbtn" data-go="trade:_ipo">IPO: ${esc(M.ipo.name)}</button>` : ''}</div>`
+        + (Object.keys(S.port).length ? '<p class="phsec">Your positions</p>' + Object.keys(S.port).map(k => row(coBy(k))).join('') : '')
+        + '<p class="phsec">Index fund</p>' + row(FUND)
+        + [...new Set(CO.map(c => c[2]))].map(s => `<p class="phsec">${s}</p>` + CO.filter(c => c[2] === s).map(row).join('')).join('')
+        + (M.extra.length ? '<p class="phsec">New listings</p>' + M.extra.map(row).join('') : '')
+        + `<p class="phnote">Brokerage ${money(FEE)} a trade, paid from your bank account. The ${IXN} index is the ${CO.length} companies above. New listings trade but are not in the index.</p>`; }
+    else if (app === 'trade' && arg[0] === '_') { const M = S.mkt, A = S.acct, d = Math.floor(S.time / 1440);
+      if (arg === '_orders') { title = 'Orders'; html = (S.mord.map(o => `<div class="phrow" style="cursor:default"><b>${o.type === 'limit' ? 'Limit' : 'Stop'}: ${o.side} ${o.all ? 'all' : o.q} ${o.sym} at ${money(o.px)}</b><span>Now ${money(Math.round(M.px[o.sym]))} · placed ${dayWord(o.t)}</span><button class="phbtn" data-act="ocan:${o.id}">Cancel</button></div>`).join('') || '<p class="phnote">No open orders. Place limit and stop orders from a stock page. They stay open until they fill or you cancel them.</p>')
+        + '<p class="phsec">Activity</p>' + (M.alerts.slice(0, 12).map(a => `<p class="phlog"><small>${dayWord(a.t)}, ${CR.fmtTime(a.t)}</small>${esc(a.text)}</p>`).join('') || '<p class="phnote">Nothing yet.</p>'); }
+      else if (arg === '_td') { title = 'Term deposits'; html = `<div class="phbal"><span>Central bank rate</span><b>${M.rate.toFixed(2)}%</b>${[3, 6, 12].map(m => `<span>${m} months</span><b>${tdRate(m).toFixed(2)}% a year</b>`).join('')}</div>` + ofIn('tdamt', 'Amount, $ (minimum $500)')
+        + `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">${[3, 6, 12].map(m => `<button class="phbtn" data-act="td:${m}">Lock ${m} months</button>`).join('')}</div><p class="phnote" style="margin:0">The rate is fixed for the term. You get your money back with the interest at the end. Breaking early returns your money with no interest.</p>`
+        + S.tds.map(td => `<div class="phrow" style="cursor:default"><b>${money(td.amt)} at ${td.rate.toFixed(2)}% for ${td.m} months</b><span>Matures ${dayWord(td.end * 1440)}, paying ${money(Math.round(td.amt * td.rate / 100 * td.m / 12))} interest</span><button class="phbtn" data-act="tdbrk:${td.id}">Break early</button></div>`).join(''); }
+      else if (arg === '_acct') { title = 'Margin account'; const [L, Sh] = posVals(), g = L + Sh, E = equity();
+        html = `<p class="phnote" style="margin:0">A margin account lets you borrow from the broker against your shares, up to half of what you hold, and sell short. The loan costs ${LOANRATE}% a year, charged daily. Shorts cost ${BORROW}% a year to borrow and you pay their dividends. If your account value falls below 30% of your positions you get a margin call and one session to fix it. After that the broker sells for you.</p>`
+          + (A.margin ? `<div class="phbal"><span>Account value</span><b>${money(Math.round(E))}</b><span>Positions, long and short</span><b>${money(Math.round(g))}</b><span>Minimum to keep</span><b>${money(Math.round(MAINT * g))}</b><span>Buying power</span><b>${money(Math.max(0, Math.round(E / INIT - g)))}</b><span>Loan</span><b>${money(A.loan)}</b><span>Interest charged so far</span><b>${money(A.int)}</b></div>`
+            + (A.call ? '<p class="phnote" style="color:var(--bad,#d66b5f);margin:0">Margin call open. Add cash or sell by 4 pm next session.</p>' : '')
+            + (A.loan ? ofIn('rep', 'Repay amount, $') + '<button class="phbtn" data-act="repay">Repay from bank</button>' : '') + `<button class="phbtn" data-act="marg:off" ${A.loan || Sh ? 'disabled' : ''}>Close the margin account</button>`
+            : '<button class="phbtn" data-act="marg:on">Open a margin account</button>'); }
+      else if (arg === '_ipo') { title = 'IPO'; const I = M.ipo; if (!I) html = '<p class="phnote">No IPO open right now. New listings are announced in the news.</p>';
+        else html = `<div class="phbal"><span>${esc(I.name)}</span><b>${I.sym}</b><span>Sector</span><b>${esc(I.sec)}</b><span>Offer price</span><b>${money(I.offer)}</b><span>Applications close</span><b>${dayWord(I.close * 1440)}</b><span>Trading starts</span><b>${dayWord(I.list * 1440)}</b><span>You applied for</span><b>${money(I.app)}, ${Math.floor(I.app / I.offer)} shares</b></div>`
+          + (d <= I.close ? ofIn('ipoamt', 'Amount, $ (minimum $500)') + '<button class="phbtn" data-act="ipo">Apply</button>' : '<p class="phnote">Applications have closed.</p>')
+          + '<p class="phnote" style="margin:0">No brokerage on an IPO application. The money leaves your bank now. If the float is popular, applications are scaled back and the rest is refunded on listing day.</p>'; }
+      else return null; }
+    else if (app === 'trade') { const M = S.mkt, c = coBy(arg); if (!c) return null; title = c[0]; if (OF.sym !== arg) { OF.sym = arg; OF.px = ''; }
+      const h = S.port[arg], px = Math.round(M.px[arg]), e = M.earn.find(q => q.sym === arg && !q.done), ch = chg(arg), A = S.acct, isF = arg === FUNDSYM;
+      const btn = (side, lab, all) => `<button class="phbtn" data-act="ord:${arg}.${side}${all ? '.all' : ''}">${lab}</button>`;
+      html = `<div class="phbal"><span>${esc(c[1])}</span><b>${money(px)}</b><span>${esc(c[2])}</span><b style="color:${pctCol(ch)}">${pct(ch)} today</b><span>Dividend yield</span><b>${c[5] ? c[5] + '% a year' : 'None'}</b><span>${isF ? 'Next distribution' : 'Next results'}</span><b>${isF ? dayWord(M.fundDiv * 1440) : e ? dayWord(e.day * 1440) : '-'}</b></div>`
+        + chartCtl() + chartHTML(arg)
+        + (h ? `<div class="phbal"><span>${h.q > 0 ? 'You hold' : 'You are short'}</span><b>${Math.abs(h.q)}</b><span>${h.q > 0 ? 'Average cost' : 'Average sale price'}</span><b>${money(Math.round(h.cost / Math.abs(h.q)))}</b><span>Value</span><b>${money(Math.round(Math.abs(h.q) * M.px[arg]))}</b><span>Gain or loss</span><b style="color:${pctCol(unreal(arg, h))}">${money(Math.round(unreal(arg, h)))}</b></div>` : '')
+        + `<div class="phseg">${[['mkt', 'Market'], ['limit', 'Limit'], ['stop', 'Stop']].map(([k, n]) => `<button data-act="oft:${k}" class="${OF.type === k ? 'on' : ''}">${n}</button>`).join('')}</div>`
+        + (OF.type !== 'mkt' ? ofIn('px', OF.type === 'limit' ? 'Limit price, $' : 'Stop price, $') : '') + ofIn('amt', 'Amount, $')
+        + `<p class="phnote" data-ofprev="${arg}" style="margin:0">${esc(previewText(arg))}</p>`
+        + `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${!h || h.q > 0 ? btn('buy', 'Buy') : ''}${h && h.q > 0 ? btn('sell', 'Sell') + btn('sell', 'Sell all', true) : ''}${!h && A.margin ? btn('short', 'Short') : ''}${h && h.q < 0 ? btn('cover', 'Cover') + btn('cover', 'Cover all', true) : ''}</div>`
+        + (!A.margin && !h ? '<p class="phnote" style="margin:0">Open a margin account to sell short.</p>' : '')
+        + M.stories.filter(st => st.t <= S.time && st.eff.some(([k]) => touches(k, c))).slice(-4).reverse().map(st => `<p class="phlog"><small>${dayWord(st.t)}</small>${esc(st.head)}</p>`).join(''); }
     else if (app === 'work') { title = 'Work email'; const J = S.player.job;
       html = `<div class="phbal"><span>${esc(EMPLOYER)}</span><b>${esc(LADDER[J.level].t)}</b><span>Shifts worked</span><b>${J.shifts}</b></div><p class="phnote">Work happens at the office from 9 am on weekdays. Messages from your manager land here.</p>`; }
     else if (app === 'study') { title = 'Study'; const f = S.player.skills.finance;
@@ -6962,7 +7168,8 @@ window.GAME = (() => {
     $('phhead').innerHTML = app === 'home' ? '' : `<button data-act="back">‹ Back</button><b>${esc(title)}</b>`;
     body.innerHTML = html; body.scrollTop = 0;
     for (const b of $('phone').querySelectorAll('[data-go]')) b.onclick = () => go(b.dataset.go);
-    for (const b of $('phone').querySelectorAll('[data-act]')) b.onclick = () => phoneAct(b.dataset.act); }
+    for (const b of $('phone').querySelectorAll('[data-act]')) b.onclick = () => phoneAct(b.dataset.act); bindForms($('phone')); }
+  const ofIn = (k, ph) => `<input class="phin" data-of="${k}" inputmode="decimal" autocomplete="off" placeholder="${ph}" value="${esc(OF[k])}">`;
   const dayWord = t => { const d = Math.floor(t / 1440) - Math.floor(S.time / 1440); return d === 0 ? 'today' : d === 1 ? 'tomorrow' : CR.fmtDate(t); };
   function phoneAct(a) { const [k, arg] = a.split(':');
     if (k === 'back') return back();
@@ -6970,7 +7177,19 @@ window.GAME = (() => {
     if (k === 'add') { const it = CATALOG.find(c => c.k === arg); if (it && !(it.once && (S.cart[arg] || S.owned[arg]))) S.cart[arg] = (S.cart[arg] || 0) + 1; return refreshApps(); }
     if (k === 'rem') { if (S.cart[arg]) S.cart[arg]--; if (!S.cart[arg]) delete S.cart[arg]; return refreshApps(); }
     if (k === 'checkout') return checkout(arg);
-    if (k === 'buy') { const [sym, q] = arg.split('.'); trade(sym, +q); return refreshApps(); }
+    if (k === 'chr') { CH.r = arg; return refreshApps(); }
+    if (k === 'chm') { CH.m = arg; return refreshApps(); }
+    if (k === 'oft') { OF.type = arg; return refreshApps(); }
+    if (k === 'ord') { const [sym, side, all] = arg.split('.'), amt = all ? 'all' : dollars(OF.amt); if (!all && !(amt > 0)) return toast('Enter a dollar amount.', 2.5);
+      if (OF.type === 'mkt') marketOrder(sym, side, amt); else placeOrder(sym, side, OF.type, dollars(OF.px), amt); return refreshApps(); }
+    if (k === 'ocan') { S.mord = S.mord.filter(o => o.id !== +arg); toast('Order cancelled.', 2); return refreshApps(); }
+    if (k === 'td') { const m = +arg, amt = dollars(OF.tdamt), d = Math.floor(S.time / 1440), rate = tdRate(m); if (!(amt >= 50000)) return toast('The minimum is $500.', 2.5); if (S.player.bank < amt) return toast('Not enough in your bank account.', 2.5);
+      S.player.bank -= amt; txn(`Term deposit, ${m} months at ${rate.toFixed(2)}%`, -amt); S.tds.push({ id: (S.tdN = (S.tdN || 0) + 1), amt, rate, m, start: d, end: d + Math.round(m * 30.42) }); OF.tdamt = ''; toast(`${money(amt)} locked for ${m} months at ${rate.toFixed(2)}%.`, 3); return refreshApps(); }
+    if (k === 'tdbrk') { const td = S.tds.find(x => x.id === +arg); if (td) { S.tds = S.tds.filter(x => x !== td); S.player.bank += td.amt; txn('Term deposit broken early, no interest', td.amt); toast(`${money(td.amt)} back in your bank, no interest.`, 3); } return refreshApps(); }
+    if (k === 'marg') { if (arg === 'on') { S.acct.margin = true; toast('Margin account open. You can now borrow against your shares and sell short.', 3.5); } else if (!S.acct.loan && !Object.values(S.port).some(h => h.q < 0)) { S.acct.margin = false; toast('Margin account closed.', 2.5); } return refreshApps(); }
+    if (k === 'repay') { const a = Math.min(dollars(OF.rep) || 0, S.acct.loan, Math.max(0, S.player.bank)); if (!(a > 0)) return toast('Enter an amount you have in the bank.', 2.5); S.player.bank -= a; S.acct.loan -= a; txn('Margin loan repaid', -a); OF.rep = ''; toast(`Repaid ${money(a)}.`, 2.5); return refreshApps(); }
+    if (k === 'ipo') { const I = S.mkt.ipo, amt = dollars(OF.ipoamt); if (!I || Math.floor(S.time / 1440) > I.close) return toast('Applications have closed.', 2.5); if (!(amt >= 50000)) return toast('The minimum is $500.', 2.5); if (S.player.bank < amt) return toast('Not enough in your bank account.', 2.5);
+      S.player.bank -= amt; I.app += amt; txn(`IPO application, ${I.sym}`, -amt); OF.ipoamt = ''; toast(`Applied for ${money(amt)} of ${I.name}.`, 3); return refreshApps(); }
     if (k === 'tip') { askTip(arg); return refreshApps(); }
     if (k === 'cash') { const c = +arg; if (S.player.bank < c) toast('Not enough in the bank.'); else { S.player.bank -= c; S.player.cash += c; toast(`${money(c)} moved to cash.`, 2); } return refreshApps(); }
     if (k === 'mplay') music.phonePlay(); if (k === 'mstop') music.phoneStop(); if (k === 'mnext') music.phoneStep(1); if (k === 'mprev') music.phoneStep(-1); if (k === 'mshuf') music.phoneShuffle(); if (k === 'mpick') music.phonePlay(+arg);
@@ -7042,7 +7261,7 @@ window.GAME = (() => {
       el.querySelector('[data-wclose]').onclick = () => { wins = wins.filter(q => q !== w); drawLaptop(); };
       const bk = el.querySelector('[data-wback]'); if (bk) bk.onclick = () => { w.stack.pop(); drawLaptop(); };
       for (const b of el.querySelectorAll('.lwbody [data-go]')) b.onclick = () => { const g = b.dataset.go; if (g.split(':')[0] === 'maps') { closeLaptop(); toggleMap(true); return; } w.stack.push(g); drawLaptop(); };
-      for (const b of el.querySelectorAll('.lwbody [data-act]')) b.onclick = () => { if (b.dataset.act === 'back') { if (w.stack.length > 1) w.stack.pop(); return drawLaptop(); } phoneAct(b.dataset.act); };
+      for (const b of el.querySelectorAll('.lwbody [data-act]')) b.onclick = () => { if (b.dataset.act === 'back') { if (w.stack.length > 1) w.stack.pop(); return drawLaptop(); } phoneAct(b.dataset.act); }; bindForms(el);
       // drag by the title bar, mouse or touch, kept on the screen
       const hd = el.querySelector('header'); hd.onpointerdown = e => { if (e.target.closest('button')) return; e.preventDefault(); hd.setPointerCapture(e.pointerId); const sx = e.clientX - w.x, sy = e.clientY - w.y, R = $('lapscr').getBoundingClientRect();
         hd.onpointermove = m => { w.x = clampv(m.clientX - sx, -w.w + 80, R.width - 80); w.y = clampv(m.clientY - sy, 0, Math.max(0, R.height - 40 - Math.min(w.h, 120))); el.style.left = w.x + 'px'; el.style.top = w.y + 'px'; };
