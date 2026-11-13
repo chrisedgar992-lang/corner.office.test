@@ -3816,7 +3816,7 @@ function renderTalk() {
   document.getElementById('tl').textContent = talk.line;
   if (typeof VOICE !== 'undefined' && talk.voiced !== talk.line) { talk.voiced = talk.line; VOICE.stop(); VOICE.say(talk.line, p.voice || (p.voice = VOICE.forPerson(p.uid || p.name, p.L && p.L.fem ? 'f' : 'm', 35))); }
   const pct = (p.rel + 100) / 2;
-  document.getElementById('trel').innerHTML = `<div class="bar"><i style="width:${pct}%"></i></div><span>${relLabel(p.rel)}${talk.turns ? ` <em class="${talk.delta > 0 ? 'up' : talk.delta < 0 ? 'down' : ''}">${talk.delta > 0 ? '+' : ''}${talk.delta}</em>` : ''}</span>${talk.note ? `<span class="note">${talk.note}</span>` : ''}`;
+  document.getElementById('trel').innerHTML = `<div class="bar"><i style="width:${pct}%"></i></div><span>${p.coll && p.rel < 15 && p.rel > -10 ? 'Colleague' : relLabel(p.rel)}${talk.turns ? ` <em class="${talk.delta > 0 ? 'up' : talk.delta < 0 ? 'down' : ''}">${talk.delta > 0 ? '+' : ''}${talk.delta}</em>` : ''}</span>${talk.note ? `<span class="note">${talk.note}</span>` : ''}`;
   const opts = [];
   if (!talk.ended) {
     for (const t of TOPIC_ORDER) { const st = topicStep(p, t); if (st) opts.push([t, st.say(p)]); }
@@ -4406,7 +4406,7 @@ function buildLobby(ox, oy) {
   I.exits.push({ x: 15, y: 1.2, r: 1.6, to: 'office', label: 'Take the lift to level 32' });
   I.npcs.push(roomNPC(I, 'Grace', 'suit', { fem: true, hair: 'bun', skin: SKIN[2] }, null, 'Receptionist at Northgate.', { sit: { x: 7, y: 10.6, z: .5, hx: 0, hy: 1 }, fixed: true }));
   I.npcs.push(roomNPC(I, 'Tom', 'hivis', { fem: false, hair: 'short', top: [40, 44, 52], hat: false }, null, 'Security guard.', { fixedAt: [17.8, 9.4, 0, 1] }));
-  for (let i = 0; i < 5; i++) I.npcs.push(roomNPC(I, null, R() < .6 ? 'suit' : 'coat', {}, [[rnd(12, 18), 16], [rnd(10, 20), 2.2], [rnd(20, 26), 12]], null));
+  for (let i = 0; i < 6; i++) { const lx = 9 + Math.floor(R() * 4) * 4; I.npcs.push(roomNPC(I, null, R() < .6 ? 'suit' : 'coat', {}, R() < .5 ? [[rnd(14, 16), 17.6, 1], [lx, 1.4, 1]] : [[rnd(14, 16), 17.6, 1], [rnd(20, 26), 12], [lx, 1.4, 1]], null)); }
   return I;
 }
 function buildOffice(ox, oy) {
@@ -4436,9 +4436,13 @@ function buildOffice(ox, oy) {
   const bank = (x0, y0, n) => { for (let i = 0; i < n; i++) { const x = x0 + i * 1.7; F(I, 'workdesk', x, y0, { mug: R() < .4, papers: R() < .5 }); F(I, 'officechair', x, y0 + .75, {}); seats.push([x, y0 + .7, 0, -1]); F(I, 'workdesk', x, y0 - 1.62, { rot: 2, mug: R() < .4 }); F(I, 'officechair', x, y0 - 2.37, { rot: 2 }); seats.push([x, y0 - 2.32, 0, 1]); } };
   bank(9, 4.2, 6); bank(25, 13, 6); bank(9, 22.4, 8); bank(27.3, 4.2, 0);
   // people: most at their desks, some walking to the kitchen, printer or meetings
-  const kinds = () => R() < .7 ? 'suit' : 'casual';
-  for (const s of seats) if (R() < .72) { I.npcs.push(roomNPC(I, null, kinds(), {}, null, null, { sit: { x: s[0], y: s[1], z: .52, hx: s[2], hy: s[3], typing: true } })); }
-  for (let i = 0; i < 6; i++) I.npcs.push(roomNPC(I, null, kinds(), {}, [[rnd(8, 20), rnd(6, 8)], [29.5, 23.6], [25, 8.6], [rnd(24, 34), 16.4], [7.5, 15]], null));
+  // the people you work with are the same people every day: their own seed picks who sits where, and each has a fixed id
+  // the game uses to keep their name, face and how well you know them in the save
+  const Q = mulberry(32032), kinds = () => Q() < .7 ? 'suit' : 'casual'; let cid = 0;
+  const coll = (kind, route, extra) => { const n = roomNPC(I, null, kind, {}, route, null, extra); n.uid = 70000 + cid++; n.coll = true; return n; };
+  for (const s of seats) if (Q() < .72) I.npcs.push(coll(kinds(), null, { sit: { x: s[0], y: s[1], z: .52, hx: s[2], hy: s[3], typing: true } }));
+  for (let i = 0; i < 6; i++) I.npcs.push(coll(kinds(), [[8 + Q() * 12, 6 + Q() * 2], [29.5, 23.6], [25, 8.6], [24 + Q() * 10, 16.4], [7.5, 15]]));
+  for (let i = 0; i < 3; i++) I.npcs.push(roomNPC(I, null, kinds(), {}, [[i % 2 ? 15 : 21, 10.6, 1], [8 + Q() * 22, 6.4 + Q() * 12], [29.5, 23.6]], null)); // visitors and people from other floors
   for (let j = 0; j < 3; j++) I.npcs.push(roomNPC(I, null, 'suit', {}, null, null, { sit: { x: 1.6, y: 11.5 + j, z: .52, hx: 1, hy: 0 } }));
   I.npcs.push(roomNPC(I, null, 'suit', {}, null, null, { sit: { x: 3.6, y: 12.5, z: .52, hx: -1, hy: 0 } }));
   return I;
@@ -4502,7 +4506,7 @@ function enterInterior(key, at, door) {
   INSIDE = I; LEAN = IN_LEAN;
   const ex = at === 'office' ? I.exits.find(e => e.to === 'lobby') : at === 'lobby-from-office' ? I.exits.find(e => e.to === 'office') : I.exits.find(e => e.to === 'street');
   player.x = I.ox + ex.x; player.y = I.oy + ex.y + (ex.to === 'street' ? -1.6 : 1.8); player.hx = 0; player.hy = ex.to === 'street' ? -1 : 1;
-  for (const n of I.npcs) if (!n.placed) { n.x += I.ox; n.y += I.oy; if (n.sit) { n.sit.x += I.ox; n.sit.y += I.oy; } if (n.pts) n.pts = n.pts.map(q => [q[0] + I.ox, q[1] + I.oy]); n.placed = true; }
+  for (const n of I.npcs) if (!n.placed) { n.x += I.ox; n.y += I.oy; if (n.sit) { n.sit.x += I.ox; n.sit.y += I.oy; } if (n.pts) n.pts = n.pts.map(q => [q[0] + I.ox, q[1] + I.oy, q[2]]); n.placed = true; }
   cx = player.x; cy = player.y; I.cool = 1;
 }
 function leaveInterior() {
@@ -4551,7 +4555,9 @@ function updateInside(dt) {
     if (!n.hidden && blockedInside(n.x, n.y, .15)) { const N = navGrid(I), c = navNearestFree(N, ...navCell(N, I, n.x, n.y)); if (c) { n.x = I.ox + (c[0] + .5) * N.cs; n.y = I.oy + (c[1] + .5) * N.cs; } } // never left standing inside a desk
     if (n.idle > 0) { n.idle -= dt; continue; }
     if (!n.route.length && n.arrive) { const f = n.arrive; n.arrive = null; f(n); continue; }
-    if (!n.route.length) { if (!n.pts) continue; n.wi = (n.wi + 1) % n.pts.length; const T = n.pts[n.wi]; n.route = navPath(I, n.x, n.y, T[0], T[1]) || [T]; n.idle = rnd(2, 6); continue; }
+    if (!n.route.length) { if (!n.pts) continue; const at = n.went ? n.pts[n.wi] : null; n.went = false;
+      if (at && at[2] && !n.hidden) { n.hidden = true; n.idle = rnd(5, 16); continue; } // through the lift or the door: gone for a while
+      const back = n.hidden; n.hidden = false; n.wi = (n.wi + 1) % n.pts.length; const T = n.pts[n.wi]; n.route = navPath(I, n.x, n.y, T[0], T[1]) || [T]; n.idle = back || (at && at[2]) ? 0 : rnd(2, 6); n.went = true; continue; }
     const [tx, ty] = n.route[0], dx = tx - n.x, dy = ty - n.y, d = Math.hypot(dx, dy);
     if (d < .1) { n.route.shift(); continue; }
     let ux = dx / d, uy = dy / d; const st = n.speed * dt;
@@ -4603,7 +4609,7 @@ function renderInterior() {
   }
   if ((event === 'december' || event === 'nye') && I.xtree) { const T = { x: I.ox + I.xtree[0], y: I.oy + I.xtree[1], sc: I.xtree[2] }; bigs.push({ r: { x0: T.x - 1, y0: T.y - 1, x1: T.x + 1, y1: T.y + 1 }, d: Math.hypot(T.x - cx, T.y - cy), draw: () => drawXmasTree(T), box: bigBox({ x0: T.x - 2, y0: T.y - 2, x1: T.x + 2, y1: T.y + 2 }, 14 * T.sc) }); }
   if (event === 'halloween' && I.pumpkins) for (const [px, py] of I.pumpkins) { const pk = { x: I.ox + px, y: I.oy + py, s: 1, seed: px * 10 | 0 }; smalls.push({ x: pk.x, y: pk.y, hgt: .4, rad: .3, draw: () => drawPumpkin(pk) }); }
-  for (const p of I.npcs) smalls.push({ x: p.x, y: p.y + (p.sleep ? 2.2 : p.sit ? .5 : 0), hgt: 1.9, rad: .5, draw: () => drawPed(p) }); // seated people sort after their seat
+  for (const p of I.npcs) if (!p.hidden || p.sleep) smalls.push({ x: p.x, y: p.y + (p.sleep ? 2.2 : p.sit ? .5 : 0), hgt: 1.9, rad: .5, draw: () => drawPed(p) }); // seated people sort after their seat
   smalls.push({ x: player.x, y: player.y + (player.sleep ? 2.2 : player.sit ? .5 : 0), hgt: 1.9, rad: .5, draw: () => drawPed(player, true), isPlayer: true });
   bigs.sort((a, b) => b.d - a.d);
   const slots = bigs.map(() => []); slots.push([]);
