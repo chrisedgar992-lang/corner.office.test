@@ -6856,7 +6856,8 @@ window.GAME = (() => {
 
   // ---------------- clock, needs, money, season and weather ----------------
   let carry = 0;
-  function runClock(dt) { carry += dt; const m = Math.floor(carry); if (m < 1) return; carry -= m; const before = S.time; CR.passMinutes(S, m); dailyThings(before, S.time); }
+  const SEC_PER_MIN = 3; // real seconds for each game minute: a day is 72 real minutes
+  function runClock(dt) { carry += dt / SEC_PER_MIN; const m = Math.floor(carry); if (m < 1) return; carry -= m; const before = S.time; CR.passMinutes(S, m); dailyThings(before, S.time); }
   // things that happen when a day turns over: rent on Sunday night, the day's weather
   function dailyThings(t0, t1) { const d0 = Math.floor(t0 / 1440), d1 = Math.floor(t1 / 1440);
     for (let d = d0 + 1; d <= d1; d++) { const p = CR.parts(d * 1440); hrDay(d); if (p.d === 1) { const bills = [['Power, your half', 4800], ['Internet, your half', 3500], ['Phone plan', 4500], ['Car insurance', 11800]]; for (const [w, c] of bills) { S.player.bank -= c; txn(w, -c); } CR.note(S, 'Monthly bills paid: ' + money(bills.reduce((a, b) => a + b[1], 0)) + '.'); toast('Monthly bills: power, internet, phone and car insurance, ' + money(bills.reduce((a, b) => a + b[1], 0)) + '.', 4); }
@@ -6882,7 +6883,7 @@ window.GAME = (() => {
     const p = CR.parts(S.time), P0 = S.player, N = P0.needs, J = P0.job, L = J && LAD()[J.level];
     const bar = (n, v, c) => `<div class="need">${n}<i><b style="width:${Math.round(v)}%;background:${c || (v < 25 ? 'var(--bad)' : v < 50 ? 'var(--warn)' : 'var(--good)')}"></b></i></div>`;
     const room = roomKey(), where = room ? roomName(room) : (DNAME[districtAt(player.x, player.y)] || '');
-    let jobLine = ''; if (L) { const h = gHour(); jobLine = J.co ? `${L.t}, ${empName()}` : 'Unemployed'; if (J.co && isWeekday() && h < 9.25 && J.lastShiftDay !== Math.floor(S.time / 1440) && Math.floor(S.time / 1440) >= (J.startDay || 0) && !(J.leaveUntil > Math.floor(S.time / 1440))) jobLine += ` <span style="color:var(--acc)">· shift at 9:00</span>`; }
+    let jobLine = ''; if (L) { const h = gHour(); jobLine = J.co ? `${L.t}, ${empName()}` : S.gig ? `${GIGS[S.gig.id].t}, ${S.gig.name}` : 'Unemployed'; if (J.co && isWeekday() && h < 9.25 && J.lastShiftDay !== Math.floor(S.time / 1440) && Math.floor(S.time / 1440) >= (J.startDay || 0) && !(J.leaveUntil > Math.floor(S.time / 1440))) jobLine += ` <span style="color:var(--acc)">· shift at 9:00</span>`; }
     const wx = { clear: 'Clear', rain: 'Rain', snow: 'Snow', fog: 'Fog' }[weather];
     $('ghud').innerHTML = `<div class="t"><span class="clock">${String(p.h).padStart(2, '0')}:${String(p.mi).padStart(2, '0')}</span><span class="date">${CR.fmtDate(S.time)}</span></div>
       <div class="t"><span class="money">${money(P0.cash)}</span><span class="date">Bank ${money(P0.bank)}</span></div>${bar('Energy', N.energy)}${bar('Fed', 100 - N.hunger)}${bar('Mood', N.mood)}${N.health != null && N.health < 85 ? bar('Health', N.health) : ''}
@@ -7190,7 +7191,7 @@ window.GAME = (() => {
       else if (n) near = { id: 'npc', n, act: 'Talk to ' + n.name }; else if (f) { const id = MYBED(f) ? 'bed' : MYDESK(f) ? 'desk' : f.t === 'tvunit' ? 'sofa' : f.t; near = { id, act: { bed: 'Your bed', desk: 'Your laptop', fridge: 'Fridge', stove: 'Cook', sofa: 'Watch TV', shower: 'Shower', stereo: 'Stereo' }[id] }; } else if (st2) near = { id: 'sit', st: st2, act: st2.f.t === 'sofa' ? 'Sit on the couch' : 'Sit down' }; }
     else { const lift = nearLift(); if (seated) near = { id: 'seated', act: 'Stand up' }; else if (lift) near = { id: 'lift', to: lift.to, act: lift.label }; else if (n) near = { id: 'npc', n, act: 'Talk to ' + n.name };
       else if (room === 'office') { const f = nearFurn(f => f.t === 'workdesk' || f.t === 'fridge' || f.t === 'counter', 1.0); if (f) near = f.t === 'workdesk' ? { id: 'work', f, act: 'Sit down at a desk and work' } : { id: 'coffee', act: 'Office kitchen' }; }
-      else if (BUSY[room]) { const f = nearFurn(g => !!g.svc, 1.1); if (f) near = { id: 'svc', f, act: f.svc }; }
+      else if (BUSY[room]) { const f = nearFurn(g => !!g.svc, 1.1); if (f) near = { id: 'svc', f, act: gigHere() && ['counter2', 'display', 'checkout'].includes(f.t) && (f.sk === 'venue' || f.sk === 'store') ? 'Start a shift, or order' : f.svc }; }
       if (!near) { const st2 = nearSeat(); if (st2 && st2.f.t !== 'officechair') near = { id: 'sit', st: st2, act: 'Sit down' }; } }
   }
   async function useRoom(f) {
@@ -7810,6 +7811,7 @@ window.GAME = (() => {
           + `<p class="phnote" style="margin:0">${pg ? (pg.gaps.length ? 'For ' + esc(L[J.level + 1].t) + ': ' + esc(pg.gaps.join(', ')) + '.' : 'You are ready for promotion. It comes at the end of a good shift.') + (pg.fr ? ' Someone senior is in your corner.' : '') : 'You are at the top of this ladder.'}</p>`
           + (S.resignAsk === d ? '<button class="phbtn" data-act="resign:2" style="border-color:var(--bad,#d66b5f)">Yes, resign today</button><button class="phbtn" data-act="resign:0">Keep the job</button>' : '<button class="phbtn" data-act="resign:1">Resign</button>'); }
       else html = `<div class="phbal"><span>Status</span><b>Unemployed</b><span>Best role so far</span><b>${esc(ladderFor(J.lastCo || 'meridian')[Math.min(J.best || 0, ladderFor(J.lastCo || 'meridian').length - 1)].t)}</b></div><button class="phbtn" data-go="jobs">Find a job</button>`;
+      if (S.gig) html += `<p class="phsec">Casual work</p><div class="phbal"><span>${esc(GIGS[S.gig.id].t)}</span><b>${esc(S.gig.name)}</b><span>Earned so far</span><b>${money(S.gig.earned)}</b></div>`;
       html += '<p class="phsec">Inbox</p>' + (mail.map(m => `<div class="phrow" style="cursor:default"><span>${dayWord(m.t)}, ${CR.fmtTime(m.t)}</span><b>${esc(m.subj)}</b><span style="white-space:normal">${esc(m.text)}</span></div>`).join('') || '<p class="phnote">No email yet.</p>');
       for (const m of mail) m.read = true; setTimeout(phoneBadge, 0); }
     else if (app === 'jobs' && !arg) { title = 'Jobs'; refreshJobs(); const d = Math.floor(S.time / 1440), live = (S.apps || []).filter(a => !['withdrawn'].includes(a.status) && S.time - a.t < 30 * 1440).slice(0, 8);
@@ -7817,7 +7819,7 @@ window.GAME = (() => {
       html = (live.length ? '<p class="phsec">Your applications</p>' + live.map(a => { const c = coById(a.co), L = ladderFor(a.co)[a.level]; return `<div class="phrow" style="cursor:default"><b>${esc(L.t)}, ${esc(c.name)}</b><span style="white-space:normal">${esc(st(a))}</span>${a.status === 'offer' ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px"><button class="phbtn" data-act="offer:${a.id}.yes">Accept, ${salary(L.pay * 100)}</button><button class="phbtn" data-act="offer:${a.id}.no">Decline</button></div>` : ''}</div>`; }).join('') : '')
         + '<p class="phsec">Openings this week</p>' + ((S.jobs || []).filter(j => j.closes > d).sort((a, b) => (coById(a.co).locked ? 1 : 0) - (coById(b.co).locked ? 1 : 0) || jobFit(b) - jobFit(a)).map(j => { const c = coById(j.co), L = ladderFor(j.co)[j.level], f = jobFit(j), mine = S.player.job.co === j.co, sent = (S.apps || []).some(a => a.job === j.id);
           return `<div class="phrow" style="cursor:default"><b>${esc(c.locked ? 'Legal roles' : L.t)} <span style="float:right">${c.locked ? '' : salary(L.pay * 100)}</span></b><span>${esc(c.name)}, ${esc(c.ind)}${c.small ? ', smaller firm' : ''} · ${esc(towerName(j.co))}</span><span style="white-space:normal">${esc(c.locked || (c.about + (j.level ? ` Wants finance level ${j.level + 2} and experience at ${ladderFor(j.co)[j.level - 1].t} or above.` : ` Wants finance level 2.`)))}</span>${c.locked || mine ? '' : sent ? '<span>Applied</span>' : `<div style="display:flex;gap:8px;align-items:center;margin-top:6px"><button class="phbtn" data-act="apply:${j.id}">Apply</button><span>${f > .65 ? 'Good chance' : f > .35 ? 'Worth a try' : 'Long shot'}</span></div>`}</div>`; }).join('') || '<p class="phnote">Nothing this week. New roles are posted on Mondays.</p>')
-        + '<p class="phnote">Interviews are at the company’s tower, before or after work. Look smart and arrive on time.</p>'; }
+        + '<p class="phnote">Interviews are at the company’s tower, before or after work. Look smart and arrive on time.</p>' + gigSection(); }
     else if (app === 'study') { title = 'Study'; const f = S.player.skills.finance;
       html = `<div class="phbal"><span>Finance skill</span><b>${Math.floor(f)}</b></div><button class="phbtn" data-act="study:1">Study finance for an hour</button><button class="phbtn" data-act="study:3">Study for three hours, a proper session</button><p class="phnote">Studying is a little tiring. The clock runs on while you work.</p>`; }
     else if (app === 'cash') { title = 'Withdraw cash'; const P0 = S.player;
@@ -7860,6 +7862,8 @@ window.GAME = (() => {
     if (k === 'cash') { const c = +arg; if (S.player.bank < c) toast('Not enough in the bank.'); else { S.player.bank -= c; S.player.cash += c; toast(`${money(c)} moved to cash.`, 2); } return refreshApps(); }
     if (k === 'mplay') music.phonePlay(); if (k === 'mstop') music.phoneStop(); if (k === 'mnext') music.phoneStep(1); if (k === 'mprev') music.phoneStep(-1); if (k === 'mshuf') music.phoneShuffle(); if (k === 'mpick') music.phonePlay(+arg);
     if (k[0] === 'm') return setTimeout(refreshApps, 80);
+    if (k === 'gig') { const [id, key] = arg.split('.'); takeGig(id, key); return refreshApps(); }
+    if (k === 'gigquit') { quitGig(); return refreshApps(); }
     if (k === 'taxiorder') { orderTaxi(arg); phoneView = ['home', 'taxi']; return refreshApps(); }
     if (k === 'taxicancel') { const here = S.taxi && S.taxi.state === 'here'; cancelTaxi(here); toast(here ? `Cancelled. ${money(TAXI.noshow)} fee.` : 'Booking cancelled.', 2.5); return refreshApps(); }
     if (k === 'route') { const d = DOORS.find(q => doorKey(q) === arg); closePhone(); closeLaptop(); if (d) { setRoute(d.x, d.y); toggleMap(true); } return; }
@@ -7923,6 +7927,7 @@ window.GAME = (() => {
     fadeTo('', '', () => { goIn(key, d); INSIDE.name = d.name; crowd(); }, 200).then(() => { if (d.k === 'venue') { music.venue(d.vk); const due = planHere(d); if (due) meetup(due, d); } }); return true; }
   // the service points inside: counters, the bar, the pool table, the triage desk, the carrels
   function useSvc(f) { const d = savedOut && savedOut.door, N = S.player.needs; if (!d) return;
+    if ((f.sk === 'venue' || f.sk === 'store') && ['counter2', 'display', 'checkout'].includes(f.t) && gigMenu(d)) return;
     if (f.sk === 'venue') return venue(d); if (f.sk === 'store') return storeMenu(d); if (f.sk === 'dealer') return dealer(d);
     if (f.sk === 'pool') return menu('Pool table', 'Coins on the rail, winner stays on.', [{ t: 'Play a game', s: '$2, half an hour, mood up', fn: buy(200, 30, { need: { mood: 8 } }, 'You sink the black. Just.') }]);
     if (f.sk === 'darts') return menu('Dartboard', 'The chalkboard says 501.', [{ t: 'Throw a few rounds', s: 'Free, 20 minutes', fn: buy(0, 20, { need: { mood: 4 } }, 'Two tons and a bounce-out.') }]);
@@ -7940,6 +7945,48 @@ window.GAME = (() => {
   // you come round in the hospital's ward, by the window bed
   function wakeInWard() { if (!hospDoor) return toHospital(); if (seated) standUp(); if (player.driving) toggleCar(); if (INSIDE) leaveInterior(); goIn('hospital', hospDoor); INSIDE.name = hospDoor.name; crowd();
     const [bx, by] = INSIDE.wardBed; player.x = INSIDE.ox + bx - 1.0; player.y = INSIDE.oy + by + .3; player.hx = 1; player.hy = 0; cx = player.x; cy = player.y; }
+  // ---------- casual and part-time work: shifts at the counters you buy from ----------
+  // One casual job at a time, on top of a career or instead of one. You pick your hours: walk in while the place is open,
+  // go to the counter and start a shift. Pay is hourly, plus tips where people tip, paid into your account at the end of the shift.
+  const GIGS = {
+    barista: { t: 'Barista', key: 'cafe', door: d => d.k === 'venue' && d.vk === 'cafe', rate: 1750, tips: [200, 1200], spot: [12.5, 3.6, -1, 0], tired: 6, about: 'Early starts, the coffee rush, regulars who know your name.' },
+    bartender: { t: 'Bartender', key: 'bar', door: d => d.k === 'venue' && d.vk === 'bar', rate: 1600, tips: [1500, 6000], spot: [6.2, 1.9, 0, 1], tired: 7, about: 'Evenings and late nights. Tips are most of the money.' },
+    server: { t: 'Server', key: 'rest', door: d => d.k === 'venue' && d.vk === 'restaurant', rate: 1500, tips: [2000, 7000], spot: [7.96, 12.0, 0, 1], tired: 7, about: 'Lunch and dinner service. On your feet the whole shift, good tips.' },
+    pizza: { t: 'Pizza counter', key: 'slice', door: d => d.k === 'venue' && d.vk === 'takeout', rate: 1650, tips: [0, 800], spot: [3.2, 2.0, 0, 1], tired: 6, about: 'Ovens, slices and the late crowd.' },
+    checkout: { t: 'Checkout operator', key: 'market', door: d => d.sk === 'super', rate: 1750, tips: [0, 0], spot: [27.14, 19.4, -1, 0], tired: 5, about: 'Scanning, bagging, the occasional price check.' },
+    gymdesk: { t: 'Gym front desk', key: 'gym', door: d => d.sk === 'gym', rate: 1800, tips: [0, 0], spot: [12.0, 13.1, 0, 1], tired: 4, about: 'Sign-ins, towels and free use of the gym.' },
+    clerk: { t: 'Night clerk', key: 'conv', door: d => d.sk === 'conv', rate: 1900, night: 300, tips: [0, 0], spot: [11.0, 9.6, 0, -1], tired: 6, about: 'Any hours you like, $3 an hour more after 10 pm.' } };
+  const openAtH = (d, h) => { h = ((h % 24) + 24) % 24; const vk = d.vk; if (d.k === 'venue') return vk === 'club' ? (h >= 21 || h < 3) : vk === 'cafe' ? (h >= 6 && h < 17) : (vk === 'bar' || vk === 'lounge') ? (h >= 11 || h < 1) : (h >= 11 && h < 23); if (d.k === 'store') return STORE[d.sk].open(h); return true; };
+  const gigDoor = () => S.gig && DOORS.find(d => doorKey(d) === S.gig.door);
+  // this week's openings: one venue for each kind of casual work, the same all week
+  function gigOpenings() { const wk = Math.floor((Math.floor(S.time / 1440) + 3) / 7), out = [];
+    for (const [id, G2] of Object.entries(GIGS)) { const ds = DOORS.filter(G2.door); if (!ds.length) continue; const d = ds[hash(id + wk) % ds.length]; out.push({ id, d, G: G2 }); } return out; }
+  function takeGig(id, key) { const G2 = GIGS[id], d = DOORS.find(q => doorKey(q) === key); if (!G2 || !d) return;
+    if (S.gig && S.gigAsk !== id + key) { S.gigAsk = id + key; return toast(`You already work at ${S.gig.name}. Tap again to quit that and start here.`, 3.5); }
+    S.gigAsk = null; S.gig = { id, door: key, name: d.name, since: S.time, shifts: 0, earned: 0 }; txn(`Started as ${G2.t.toLowerCase()}, ${d.name}`, 0); S.tx.shift();
+    S.mail = S.mail || []; S.mail.unshift({ t: S.time, subj: `${G2.t} at ${d.name}`, text: `Great to have you. Pick your own hours. Come in any time we are open, find the counter and start a shift. Pay is ${money(G2.rate)} an hour${G2.tips[1] ? ' plus tips' : ''}, into your account after each shift.`, read: false });
+    toast(`You start as ${G2.t.toLowerCase()} at ${d.name}. Work whenever they are open.`, 4); }
+  const gigSection = () => '<p class="phsec">Casual and part-time</p>' + (S.gig ? `<div class="phrow" style="cursor:default"><b>${esc(GIGS[S.gig.id].t)}, ${esc(S.gig.name)} <span style="float:right">yours</span></b><span>${S.gig.shifts} shift${S.gig.shifts === 1 ? '' : 's'}, ${money(S.gig.earned)} earned</span><button class="phbtn" data-act="gigquit">Quit</button></div>` : '')
+    + gigOpenings().filter(o => !(S.gig && S.gig.door === doorKey(o.d))).map(o => `<div class="phrow" style="cursor:default"><b>${esc(o.G.t)} <span style="float:right">${money(o.G.rate)} an hour</span></b><span>${esc(o.d.name)}${o.G.tips[1] ? ', plus tips' : ''} · ${esc(DNAME[districtAt(o.d.x, o.d.y)] || '')}</span><span style="white-space:normal">${esc(o.G.about)}</span><button class="phbtn" data-act="gig:${o.id}.${doorKey(o.d)}">Take it, start any time</button></div>`).join('')
+    + '<p class="phnote">Casual work fits around a career. Choose your own shifts while the place is open.</p>';
+  function quitGig() { if (!S.gig) return; toast(`You hand in your apron at ${S.gig.name}.`, 3); S.gig = null; }
+  const gigHere = () => { const d = savedOut && savedOut.door, G2 = S.gig && GIGS[S.gig.id]; return G2 && d && doorKey(d) === S.gig.door && roomKey() === G2.key ? G2 : null; };
+  const standAt = (x, y, hx, hy) => on => { if (on) { player.saved = { x: player.x, y: player.y, hx: player.hx, hy: player.hy }; player.x = INSIDE.ox + x; player.y = INSIDE.oy + y; player.sit = null; player.hx = hx; player.hy = hy; player.moving = false; } else Object.assign(player, player.saved || {}); };
+  function gigMenu(d) { const G2 = gigHere(); if (!G2) return false; const h0 = gHour(); let max = 0; while (max < 8 && openAtH(d, h0 + max + 1 - .01)) max++;
+    const J = S.player.job, due = J.co && isWeekday() && J.lastShiftDay !== Math.floor(S.time / 1440) && h0 < 17 && Math.floor(S.time / 1440) >= (J.startDay || 0) && !(J.leaveUntil > Math.floor(S.time / 1440));
+    const opts = [2, 4, 6, 8].filter(n => n <= max).map(n => ({ t: `Work a ${n} hour shift`, s: `About ${money(G2.rate * n)}${G2.tips[1] ? ' plus tips' : ''}, until ${CR.fmtTime(S.time + n * 60)}`, fn: () => gigShift(n, G2, d) }));
+    if (!opts.length) opts.push({ t: 'Too close to closing for a shift', s: 'Come back when they open', off: true });
+    opts.push({ t: 'Order as a customer', s: 'Staff discount, sort of', fn: () => { closeMenu(); setTimeout(() => venueOr(d), 50); } });
+    menu(`${G2.t}, ${d.name}`, (due ? `You are due at ${empName()} today. ` : '') + `${S.gig.shifts} shift${S.gig.shifts === 1 ? '' : 's'} so far, ${money(S.gig.earned)} earned.`, opts); return true; }
+  const venueOr = d => d.k === 'store' ? storeMenu(d) : venue(d);
+  async function gigShift(hrs, G2, d) { closeMenu(); const I = INSIDE, [x, y, hx, hy] = G2.spot; let cover = null, bd = 1.2;
+    for (const n of I.npcs) if (n.staff && !n.hidden) { const dd = Math.hypot(n.x - I.ox - x, n.y - I.oy - y); if (dd < bd) { bd = dd; cover = n; } } if (cover) cover.hidden = true;
+    let night = 0; await ffwd(hrs * 60, { label: `${G2.t}, ${d.name}`, pose: standAt(x, y, hx, hy), each: m => { need('energy', -G2.tired * m / 60); need('mood', -.6 * m / 60); const h = gHour(); if (G2.night && (h >= 22 || h < 6)) night += m; } });
+    if (cover) cover.hidden = false;
+    const r = Math.random(), tips = Math.round((G2.tips[0] + (G2.tips[1] - G2.tips[0]) * r) * hrs / 4 / 100) * 100, base = G2.rate * hrs + Math.round((G2.night || 0) * night / 60), pay = base + tips;
+    S.player.bank += pay; txn(`Shift pay, ${d.name}`, pay); S.gig.shifts++; S.gig.earned += pay;
+    toast(`${hrs} hours done. ${money(base)} pay${tips ? ` and ${money(tips)} in tips` : ''}, in your account.`, 4); }
+
 
   function storeMenu(d) { const T = STORE[d.sk], h = gHour(); if (!T.open(h)) return menu(d.name, d.sub + '. Closed right now.', []);
     if (d.sk === 'gym') return menu(d.name, 'Day pass, $15.', [{ t: 'Work out for an hour', s: '$15, tiring now, mood and health up', fn: () => { if (!spend(1500, 'Gym day pass')) return toast('You cannot afford that.'); closeMenu(); ffwd(60, { label: 'Working out', each: m => { need('energy', -16 * m / 60); need('mood', 9 * m / 60); need('health', 4 * m / 60); need('hunger', 10 * m / 60); } }); } }]);
