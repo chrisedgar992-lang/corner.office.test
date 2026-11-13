@@ -6851,7 +6851,7 @@ window.GAME = (() => {
   function initMarket(S) { S.mkt = { px: {}, open: {}, hist: {}, d: {}, q: {}, cur: {}, base: {}, t: S.time, day: -1, stories: [], earn: [], pend: [], fizz: [] }; migrateMarket(S); return S.mkt; }
   // also brings older saves up to date: fills in the new companies, a year of daily bars, the fund and the account fields
   function migrateMarket(S) { const M = S.mkt, d0 = Math.floor(S.time / 1440), r = rngFor(77);
-    for (const k of ['d', 'q', 'cur', 'base', 'open', 'hist', 'px']) M[k] = M[k] || {}; M.extra = M.extra || []; M.alerts = M.alerts || []; if (M.rate == null) M.rate = 4.25;
+    for (const k of ['d', 'q', 'cur', 'base', 'open', 'hist', 'px']) M[k] = M[k] || {}; M.extra = M.extra || []; M.alerts = M.alerts || []; M.divs = M.divs || []; if (M.rate == null) M.rate = 4.25;
     if (M.ipoNext == null) M.ipoNext = d0 + 6 + Math.floor(r() * 10); if (M.fundDiv == null) M.fundDiv = d0 + 20 + Math.floor(r() * 60);
     const prevDays = []; for (let d = d0 - 1; prevDays.length < 5; d--) if (tradingDay(d)) prevDays.unshift(d);
     const fresh = !M.v2;
@@ -6877,22 +6877,28 @@ window.GAME = (() => {
     M.earn = M.earn.filter(e => !e.done || e.day > d0 - 120); }
   const alertM = (S, text) => { const M = S.mkt; M.alerts.unshift({ t: S.time, text }); if (M.alerts.length > 30) M.alerts.length = 30; CR.note(S, text); toast(text, 4.5); };
   // pay (or, for a short, charge) a dividend per share to whoever holds the stock
-  const payDiv = (S, sym, dps) => { const h = S.port[sym]; if (!h || !dps) return; const amt = h.q * dps; S.player.bank += amt; txn(`${h.q > 0 ? 'Dividend' : 'Dividend owed on short'}, ${sym}`, amt); };
   // money that moves at midnight: margin interest, the short borrow fee, term deposits, the fund's quarterly dividend
   function dayMoney(S, d) { const M = S.mkt, A = S.acct;
     if (A.loan > 0) { const i = Math.round(A.loan * LOANRATE / 36500); A.loan += i; A.int += i; }
     let sh = 0; for (const [k, h] of Object.entries(S.port)) if (h.q < 0) sh -= h.q * M.px[k]; A.fee = (A.fee || 0) + sh * BORROW / 36500; if (A.fee >= 1 && CR.parts(d * 1440 + 720).dow === 1) { const f = Math.round(A.fee); A.fee = 0; S.player.bank -= f; txn('Short borrow fees for the week', -f); }
     for (const td of S.tds.filter(x => d >= x.end)) { const i = Math.round(td.amt * td.rate / 100 * td.m / 12); S.player.bank += td.amt + i; txn(`Term deposit matured, ${td.m} months`, td.amt + i); alertM(S, `Your ${td.m}-month term deposit matured. ${money(td.amt + i)} paid to your bank, ${money(i)} of it interest.`); }
     S.tds = S.tds.filter(x => d < x.end);
-    if (d >= M.fundDiv && tradingDay(d)) { M.fundDiv = d + 91; const dps = Math.round(M.px[FUNDSYM] * FUND[5] / 400); if (S.port[FUNDSYM]) { payDiv(S, FUNDSYM, dps); alertM(S, `The index fund paid its quarterly distribution, ${money(dps)} a unit.`); } } }
+    if (d >= M.fundDiv && tradingDay(d)) { M.fundDiv = d + 91; const ex = tdAdd(d, 5); M.divs.push({ sym: FUNDSYM, dps: Math.round(M.px[FUNDSYM] * FUND[5] / 400), ex, pay: tdAdd(ex, 10), ent: null }); }
+    // dividends: on the ex date the price opens lower by the dividend and whoever held at the last close is entitled; cash follows on the pay date.
+    // The fund's own price is the index, which already falls as its companies go ex, so the fund pays out without a further drop.
+    if (tradingDay(d)) for (const v of M.divs) { const c = coBy(v.sym); if (!c) continue;
+      if (v.ent == null && d >= v.ex) { v.ent = (S.port[v.sym] || { q: 0 }).q; if (v.sym !== FUNDSYM) M.px[v.sym] = Math.max(50, M.px[v.sym] - v.dps);
+        if (v.ent) alertM(S, v.ent > 0 ? `${c[1]} went ex-dividend. Your ${v.ent} ${v.sym === FUNDSYM ? 'units' : 'shares'} earn ${money(v.ent * v.dps)}, paid ${CR.fmtDate(v.pay * 1440)}.` : `${c[1]} went ex-dividend. Your short owes ${money(-v.ent * v.dps)}, charged ${CR.fmtDate(v.pay * 1440)}.`); }
+      if (v.ent != null && !v.paid && d >= v.pay) { v.paid = true; if (v.ent) { const amt = v.ent * v.dps; S.player.bank += amt; txn(`${amt > 0 ? (v.sym === FUNDSYM ? 'Fund distribution' : 'Dividend') : 'Dividend owed on short'}, ${v.sym}, ${Math.abs(v.ent)} at ${money(v.dps)}`, amt); alertM(S, amt > 0 ? `${c[1]} paid you ${money(amt)} in dividends.` : `${money(-amt)} charged to your short in ${v.sym} for its dividend.`); } } }
+    M.divs = M.divs.filter(v => !v.paid); }
   // the day's stories, written at 6 am, plus results, dividends, IPOs and anything the regulator is doing about you
   function writeDay(S, d) { const M = S.mkt, r = rngFor(d * 977 + 13), td = tradingDay(d), out = [], ALL = cosOf(M);
     const at = () => Math.round(360 + r() * (td ? 600 : 720));
     const n = td ? 4 + Math.floor(r() * 4) : 1 + Math.floor(r() * 2);
     for (let i = 0; i < n; i++) { const st = r() < .4 ? pickR(r, SECTOR)(r) : companyStory(r, pickR(r, ALL)); st.t = d * 1440 + at(); out.push(st); }
-    for (const e of M.earn) if (e.day === d && !e.done) { const c = coBy(e.sym); if (!c) { e.done = true; continue; } const s = e.surprise, pct = s > .35 ? 3 + s * 3 : s < -.35 ? -(3 - s * 3) : s * 2, dps = c[5] ? Math.round(M.px[e.sym] * c[5] / 400) : 0;
-      out.push({ t: d * 1440 + 480, head: s > .35 ? `${c[1]} profit beats forecasts` : s < -.35 ? `${c[1]} misses profit forecasts` : `${c[1]} results in line with forecasts`, body: (s > .35 ? 'Revenue and margins both came in ahead. The company raised its outlook for the year.' : s < -.35 ? 'Costs ran higher than expected and the outlook was cut.' : 'No surprises. Management kept its guidance.') + (dps ? ` A dividend of ${money(dps)} a share is paid today.` : ''), eff: [[e.sym, pct]], earn: true }); e.done = true;
-      if (dps && S.port[e.sym]) { payDiv(S, e.sym, dps); alertM(S, `${c[1]} ${S.port[e.sym].q > 0 ? 'paid you' : 'dividend charged to your short,'} ${money(Math.abs(S.port[e.sym].q * dps))}.`); } }
+    for (const e of M.earn) if (e.day === d && !e.done) { const c = coBy(e.sym); if (!c) { e.done = true; continue; } const s = e.surprise, pct = s > .35 ? 3 + s * 3 : s < -.35 ? -(3 - s * 3) : s * 2, dps = c[5] ? Math.round(M.px[e.sym] * c[5] / 400) : 0, ex = tdAdd(d, 10), pay = tdAdd(ex, 10);
+      out.push({ t: d * 1440 + 480, head: s > .35 ? `${c[1]} profit beats forecasts` : s < -.35 ? `${c[1]} misses profit forecasts` : `${c[1]} results in line with forecasts`, body: (s > .35 ? 'Revenue and margins both came in ahead. The company raised its outlook for the year.' : s < -.35 ? 'Costs ran higher than expected and the outlook was cut.' : 'No surprises. Management kept its guidance.') + (dps ? ` The board declared a dividend of ${money(dps)} a share. It goes ex ${CR.fmtDate(ex * 1440)}, so hold the shares at the close the session before to receive it. Paid ${CR.fmtDate(pay * 1440)}.` : ''), eff: [[e.sym, pct]], earn: true }); e.done = true;
+      if (dps) M.divs.push({ sym: e.sym, dps, ex, pay, ent: null }); }
     for (const sym of M.fizz) { const c = coBy(sym); if (c) out.push({ t: d * 1440 + 420, head: `${c[1]} denies takeover talks`, body: 'The company says it has received no approach.', eff: [[sym, -(4 + r() * 5)]] }); } M.fizz = [];
     out.push({ t: d * 1440 + 400 + Math.round(r() * 600), head: pickR(r, CITY), body: 'Around the city.', eff: [], city: true });
     // IPOs: announced, applications close four sessions later, trading starts two sessions after that
@@ -7144,7 +7150,7 @@ window.GAME = (() => {
     else if (app === 'trade') { const M = S.mkt, c = coBy(arg); if (!c) return null; title = c[0]; if (OF.sym !== arg) { OF.sym = arg; OF.px = ''; }
       const h = S.port[arg], px = Math.round(M.px[arg]), e = M.earn.find(q => q.sym === arg && !q.done), ch = chg(arg), A = S.acct, isF = arg === FUNDSYM;
       const btn = (side, lab, all) => `<button class="phbtn" data-act="ord:${arg}.${side}${all ? '.all' : ''}">${lab}</button>`;
-      html = `<div class="phbal"><span>${esc(c[1])}</span><b>${money(px)}</b><span>${esc(c[2])}</span><b style="color:${pctCol(ch)}">${pct(ch)} today</b><span>Dividend yield</span><b>${c[5] ? c[5] + '% a year' : 'None'}</b><span>${isF ? 'Next distribution' : 'Next results'}</span><b>${isF ? dayWord(M.fundDiv * 1440) : e ? dayWord(e.day * 1440) : '-'}</b></div>`
+      html = `<div class="phbal"><span>${esc(c[1])}</span><b>${money(px)}</b><span>${esc(c[2])}</span><b style="color:${pctCol(ch)}">${pct(ch)} today</b><span>Dividend yield</span><b>${c[5] ? c[5] + '% a year' : 'None'}</b><span>${isF ? 'Next distribution' : 'Next results'}</span><b>${isF ? dayWord(M.fundDiv * 1440) : e ? dayWord(e.day * 1440) : '-'}</b>${M.divs.filter(v => v.sym === arg).map(v => `<span>Dividend ${money(v.dps)}</span><b>${v.ent == null ? 'ex ' + dayWord(v.ex * 1440) : 'went ex'}, paid ${dayWord(v.pay * 1440)}</b>`).join('')}</div>`
         + chartCtl() + chartHTML(arg)
         + (h ? `<div class="phbal"><span>${h.q > 0 ? 'You hold' : 'You are short'}</span><b>${Math.abs(h.q)}</b><span>${h.q > 0 ? 'Average cost' : 'Average sale price'}</span><b>${money(Math.round(h.cost / Math.abs(h.q)))}</b><span>Value</span><b>${money(Math.round(Math.abs(h.q) * M.px[arg]))}</b><span>Gain or loss</span><b style="color:${pctCol(unreal(arg, h))}">${money(Math.round(unreal(arg, h)))}</b></div>` : '')
         + `<div class="phseg">${[['mkt', 'Market'], ['limit', 'Limit'], ['stop', 'Stop']].map(([k, n]) => `<button data-act="oft:${k}" class="${OF.type === k ? 'on' : ''}">${n}</button>`).join('')}</div>`
