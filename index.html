@@ -7087,8 +7087,12 @@ window.GAME = (() => {
   const contactList = () => [{ cid: 'rob', name: 'Rob', job: 'Housemate', rel: S.rels.rob.score, rob: true }, ...Object.values(S.contacts)].map(c => c.rob ? c : Object.assign({}, c));
   const unread = () => S.msgs.filter(m => !m.me && !m.read).length;
   // too long without food: you collapse, lose the afternoon and get a bill
-  async function faint() { const N = S.player.needs; N.health = 45; N.hunger = 35; N.energy = Math.max(N.energy, 40); await fadeTo('You collapse', 'You wake up in urgent care', () => { const t0 = S.time; CR.passMinutes(S, 240); dailyThings(t0, S.time); }, 1400);
-    S.player.bank -= 45000; txn('Urgent care bill', -45000); need('mood', -15); CR.note(S, 'Collapsed from hunger. Urgent care, $450.'); toast('Low blood sugar, the doctor says. Eat properly. The visit cost $450 after insurance.', 6); }
+  async function faint() { const N = S.player.needs; N.health = 45; N.hunger = 35; N.energy = Math.max(N.energy, 40); await fadeTo('You collapse', 'You wake up at City General Hospital', () => { const t0 = S.time; CR.passMinutes(S, 240); dailyThings(t0, S.time); toHospital(); }, 1400);
+    S.player.bank -= 45000; txn('Urgent care bill', -45000); need('mood', -15); CR.note(S, 'Collapsed from hunger. Urgent care, $450.'); toast('Low blood sugar, the doctor says. Eat properly. The visit cost $450 after insurance. Your car is where you left it.', 6); }
+  // you are discharged at the hospital's front entrance; the car stays where you left it. When the hospital gets an inside, you wake up in a ward instead.
+  // the spot is the main block's front doors, by the drop-off canopy
+  function toHospital() { const b = buildings.find(q => q.name === 'City General Hospital'); if (!b) return; if (seated) standUp(); if (player.driving) toggleCar(); if (INSIDE) leaveInterior();
+    const o = b.fp, d = (o.y1 - o.y0 + 2) / .7, w = (o.x1 - o.x0 + 4) / .98, [x, y] = toW(b.F, o.x0 - 2 + w * .62, o.y0 + d * .06 - 1.2); player.x = x; player.y = y; cx = x; cy = y; }
   // colleagues keep their names, faces and how well you know them in the save, so the office is the same people every day
   const COLLROLE = ['Analyst', 'Senior Analyst', 'Associate', 'Analyst', 'Vice President', 'Graduate Analyst', 'Compliance Officer', 'Associate', 'Office Manager', 'Trader', 'Senior Analyst', 'Portfolio Manager', 'Executive Assistant', 'Analyst'];
   const collSnap = n => ({ name: n.name, job: n.job, jobLine: n.jobLine, L: JSON.parse(JSON.stringify(n.L)), rel: n.rel, trait: n.trait, fan: n.fan, fin: n.fin, metBefore: !!n.metBefore, knownJob: !!n.knownJob, traitKnown: n.traitKnown, hobby: n.hobby, team: n.team, from: n.from, weekend: n.weekend, topics: n.topics, gain: n.gain, cid: n.cid || null });
