@@ -6725,7 +6725,7 @@ window.GAME = (() => {
     law: [['Associate', 120000]] };
   const NEED = [30, 55, 90, 140, 180, 240, 300], TENURE = [42, 90, 150, 240, 365, 540, 730]; // solid shifts and days in the role for each step
   const COS = [
-    { id: 'meridian', name: EMPLOYER, ind: 'Banking', lad: 'bank', area: ['core'], boss: ['Ms Calder', true], tk: 'APB', about: 'The established bank. Old money, big deals, long hours.' },
+    { id: 'meridian', name: EMPLOYER, ind: 'Banking', lad: 'bank', area: ['core'], boss: ['Ms Calder', true], tk: 'APG', about: 'The established bank. Old money, big deals, long hours.' },
     { id: 'fairhaven', name: 'Fairhaven Trust', ind: 'Banking', lad: 'bank', area: ['core', 'cbd'], boss: ['Mr Okafor', false], tk: 'FHT', about: 'The rival bank, hungry to catch Apogee and quick to hire away its people.' },
     { id: 'blackfen', name: 'Blackfen Partners', ind: 'Hedge fund', lad: 'fund', area: ['cbd', 'core'], boss: ['Ms Varga', true], about: 'A hedge fund. Pay follows your track record, and so does your seat.' },
     { id: 'thorne', name: 'Thorne and Vale', ind: 'Consulting', lad: 'consult', area: ['cbd', 'core'], boss: ['Mr Ellison', false], about: 'Consultants to every industry in the city. You learn everyone’s business.' },
@@ -7350,7 +7350,7 @@ window.GAME = (() => {
   // fixed rate set from the central bank rate. Tips from people who work in finance are inside information.
   // Prices are kept as daily bars (open, high, low, close) for a year and 15-minute bars for the last five sessions.
   const CO = [ // [symbol, name, sector, start price in cents, daily volatility %, dividend yield %]
-    ['HBF', 'Harbor Federal', 'Banks', 4200, 1.3, 4.2], ['FHT', 'Fairhaven Trust', 'Banks', 6100, 1.1, 4.8], ['CLC', 'Calloway Capital', 'Banks', 2850, 1.6, 2.5], ['SRB', 'Silverbank Investment', 'Banks', 3100, 1.8, 3.2], ['APB', 'Apogee Bank', 'Banks', 8500, 1.2, 3.8],
+    ['HBF', 'Harbor Federal', 'Banks', 4200, 1.3, 4.2], ['FHT', 'Fairhaven Trust', 'Banks', 6100, 1.1, 4.8], ['CLC', 'Calloway Capital', 'Banks', 2850, 1.6, 2.5], ['SRB', 'Silverbank Investment', 'Banks', 3100, 1.8, 3.2], ['APG', 'Apogee Bank', 'Banks', 8500, 1.2, 3.8],
     ['NSI', 'Northshore Insurance', 'Insurance', 5400, 1.1, 4.0], ['GRA', 'Granite Assurance', 'Insurance', 3800, 1.3, 3.4],
     ['KSY', 'Kestrel Systems', 'Tech', 11800, 2.4, 0], ['BWS', 'Brightwater Software', 'Tech', 7400, 2.2, .4], ['ORD', 'Orion Devices', 'Tech', 15600, 2.0, 1.0], ['CVN', 'Corvid Networks', 'Tech', 3200, 2.8, 0],
     ['QNT', 'Quantix Chips', 'Tech', 8900, 2.6, .3], ['CLD', 'Cloudpeak Systems', 'Tech', 4300, 2.9, 0], ['PYL', 'Paylane', 'Tech', 900, 4.0, 0],
@@ -7414,10 +7414,10 @@ window.GAME = (() => {
   function initMarket(S) { S.mkt = { px: {}, open: {}, hist: {}, d: {}, q: {}, cur: {}, base: {}, t: S.time, day: -1, stories: [], earn: [], pend: [], fizz: [] }; migrateMarket(S); return S.mkt; }
   // also brings older saves up to date: fills in the new companies, a year of daily bars, the fund and the account fields
   function migrateMarket(S) { const M = S.mkt, d0 = Math.floor(S.time / 1440), r = rngFor(77);
-    // the bank was renamed from Meridian Capital (MRC) to Apogee Bank (APB): carry old saves across
-    for (const k of ['d', 'q', 'cur', 'base', 'open', 'hist', 'px']) if (M[k] && M[k].MRC != null && M[k].APB == null) { M[k].APB = M[k].MRC; delete M[k].MRC; }
+    // the bank was renamed from Meridian Capital (MRC) to Apogee Bank (APG): carry old saves across
+    for (const old of ['MRC', 'APB']) { for (const k of ['d', 'q', 'cur', 'base', 'open', 'hist', 'px']) if (M[k] && M[k][old] != null && M[k].APG == null) { M[k].APG = M[k][old]; delete M[k][old]; }
+      if (S.port && S.port[old] && !S.port.APG) { S.port.APG = S.port[old]; delete S.port[old]; } }
     if (S.player && S.player.job && S.player.job.employer === 'Meridian Capital') S.player.job.employer = 'Apogee Bank';
-    if (S.port && S.port.MRC && !S.port.APB) { S.port.APB = S.port.MRC; delete S.port.MRC; }
     for (const m of S.mail || []) for (const f of ['subj', 'text']) if (m[f]) m[f] = m[f].replace(/Meridian Capital/g, 'Apogee Bank').replace(/Meridian/g, 'Apogee');
     for (const t of S.tx || []) if (t.text) t.text = t.text.replace(/Meridian Capital/g, 'Apogee Bank');
     for (const k of ['d', 'q', 'cur', 'base', 'open', 'hist', 'px']) M[k] = M[k] || {}; M.extra = M.extra || []; M.alerts = M.alerts || []; M.divs = M.divs || []; if (M.rate == null) M.rate = 4.25;
