@@ -299,7 +299,7 @@ function draw(ctx, s, scale = 1, mirror = s.mirror) {
   if (IMG[P.eyeKey]) ctx.drawImage(IMG[P.eyeKey].im, IMG[P.eyeKey].x, IMG[P.eyeKey].y);
   if (IMG[P.browKey]) put(tinted(P.browKey, col));
   ctx.restore();
-  put(underHat(tinted(fit('hairf/' + s.hair), col), s.hat, 'f' + s.head + s.hair + hk));
+  if (s.hair !== 'none' && IMG[fit('hairf/' + s.hair)]) put(underHat(tinted(fit('hairf/' + s.hair), col), s.hat, 'f' + s.head + s.hair + hk));
   const nk = `nose/${s.nose}/${s.tone}`; if (IMG[nk]) ctx.drawImage(IMG[nk].im, IMG[nk].x, IMG[nk].y + fy);
   // glasses go over the nose, lenses clear or darkened for sunglasses
   if (s.glasses !== 'none' && IMG['gl/' + s.glasses]) {
@@ -353,16 +353,17 @@ function fromLook(L) {
   // any face but the older ones. Grey hair on someone with no age set still reads as older.
   const age = L.young ? 'young' : L.age || (grey ? 'senior' : 'mid');
   s.head = pk(META.heads.filter(h => h.startsWith(g) && (age === 'young' ? /average|fit/.test(h) : age === 'senior' ? /older/.test(h) : !/older/.test(h))));
-  s.hairRGB = hc; s.hair = pk((HAIRMAP[g][L.hair] || HAIRMAP[g][g === 'feminine' ? 'long' : 'short']));
-  s.fh = L.fem ? 'none' : L.beard === 'stubble' ? 'stubble_01' : L.beard === 'beard' ? pk(['short_beard_02', 'full_beard_03']) : L.beard === 'mous' ? 'moustache_04' : 'none';
-  s.glasses = L.glasses ? pk(META.glasses) : 'none'; s.lens = 'clear';
+  if (typeof assignGarment === 'function' && !L.set) assignGarment(L);
+  s.hairRGB = hc; s.hair = L.hairId || pk((HAIRMAP[g][L.hair] || HAIRMAP[g][g === 'feminine' ? 'long' : 'short']));
+  s.fh = L.fhId ? L.fhId : L.fem ? 'none' : L.beard === 'stubble' ? 'stubble_01' : L.beard === 'beard' ? pk(['short_beard_02', 'full_beard_03']) : L.beard === 'mous' ? 'moustache_04' : 'none';
+  s.glasses = L.glassesId ? L.glassesId : L.glasses ? pk(META.glasses) : 'none'; s.lens = 'clear';
   const fem = L.fem, kind = L.cop ? 'police' : L.kind;
   if (typeof assignGarment === 'function' && !L.set) assignGarment(L);
   s.cloth = L.garment ? L.garment : kind === 'police' ? (fem ? 'police_feminine' : 'police_masculine') : kind === 'suit' ? (fem ? 'feminine_blazer' : L.tie ? 'suit_tie' : 'open_collar') : kind === 'coat' ? 'wool_coat' : kind === 'hivis' ? 'hi_vis_vest'
     : kind === 'jog' ? 'crew_neck_tee' : kind === 'courier' ? (fem ? 'hoodie' : 'masculine_three_quarter_zip') : kind === 'tourist' ? pk(['open_collar', 'collared_shirt_puffer_vest'])
     : L.hood ? 'hoodie' : pk(fem ? ['crew_neck_tee', 'denim_jacket', 'feminine_square_neck', 'feminine_mock_neck', 'feminine_cardigan', 'feminine_wrap_blouse'] : ['crew_neck_tee', 'denim_jacket', 'open_collar', 'collared_shirt_puffer_vest']);
   s.clothRGB = L.top || [90, 90, 94];
-  s.hat = kind === 'police' ? (fem ? 'police_hat_feminine' : 'police_hat_masculine') : L.hat && kind === 'hivis' ? 'hard_hat' : L.hat ? 'baseball_cap' : 'none'; s.hatRGB = L.hatC || [206, 200, 170];
+  s.hat = L.hatId ? L.hatId : kind === 'police' ? (fem ? 'police_hat_feminine' : 'police_hat_masculine') : L.hat && kind === 'hivis' ? 'hard_hat' : L.hat ? 'baseball_cap' : 'none'; s.hatRGB = L.hatC || [206, 200, 170];
   s.expr = 'neutral'; s.mirror = false;
   L.pr = s; return s;
 }

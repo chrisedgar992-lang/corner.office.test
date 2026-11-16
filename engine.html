@@ -1707,6 +1707,14 @@ const GARM = {
   denim_jacket: { open: true, seams: true }, feminine_cardigan: { open: true }, collared_shirt_puffer_vest: { arms: 'shirt', quilt: true, neck: 'collar' },
   masculine_three_quarter_zip: { neck: 'zip' }, feminine_mock_neck: { neck: 'mock' }, feminine_square_neck: { neck: 'square' }, feminine_wrap_blouse: { neck: 'wrap' },
   hi_vis_vest: {}, police_masculine: {}, police_feminine: {}, medical_scrubs: { short: true, neck: 'v' }, mechanic_uniform: { neck: 'collar' }, duty_uniform: { neck: 'collar' } };
+// the exact portrait hair, facial hair, glasses and hat each person has. Bald is simply no hair.
+const HAIRSET = {
+  feminine: { long: ['long_straight_16', 'long_wavy_17', 'shoulder_wavy_15'], bun: ['braided_bun_20', 'tied_back_09'], pony: ['high_ponytail_19'], bob: ['chin_bob_12', 'wavy_bob_13'], short: ['pixie_crop_11'], curly: ['long_curly_18', 'rounded_coils_06', 'short_curls_05'], side: ['shoulder_wavy_15'], bald: ['none'] },
+  masculine: { short: ['crew_crop_01', 'textured_quiff_03'], side: ['short_side_part_02', 'slicked_back_04'], buzz: ['crew_crop_01'], bald: ['none'], curly: ['short_curls_05', 'rounded_coils_06', 'tapered_loc_top_08'], long: ['messy_shag_10', 'medium_wavy_07'], bob: ['medium_wavy_07'], pony: ['tied_back_09'], bun: ['tied_back_09'] } };
+// and back again, so a haircut chosen in the barber's chair sets the street figure's style
+const HAIRSTREET = { none: 'bald', crew_crop_01: 'short', textured_quiff_03: 'short', short_side_part_02: 'side', slicked_back_04: 'side', short_curls_05: 'curly', rounded_coils_06: 'curly', tapered_loc_top_08: 'curly', messy_shag_10: 'long', medium_wavy_07: 'long', tied_back_09: 'bun',
+  long_straight_16: 'long', long_wavy_17: 'long', shoulder_wavy_15: 'long', braided_bun_20: 'bun', high_ponytail_19: 'pony', chin_bob_12: 'bob', wavy_bob_13: 'bob', pixie_crop_11: 'short', long_curly_18: 'curly' };
+const GLASSES = ['thin_round_01', 'medium_rectangular_02', 'bold_square_03', 'cat_eye_04'];
 const DENIM = [[62, 86, 120], [48, 66, 96], [90, 112, 140]], INNER = [[226, 226, 220], [200, 200, 196], [40, 42, 46], [190, 196, 206]];
 // chosen from the look itself, not the random stream, so adding garments never shifts how the city is built
 function assignGarment(L) { if (L.garment) return L; const hh = Math.abs(((L.top || [0])[0] * 31 + (L.top || [0, 0])[1] * 7 + L.skin[0] * 13 + Math.round(L.h * 1000)) | 0), hp = a => a[hh % a.length], kind = L.cop ? 'police' : L.kind, fem = L.fem;
@@ -1714,6 +1722,11 @@ function assignGarment(L) { if (L.garment) return L; const hh = Math.abs(((L.top
     : kind === 'jog' ? 'crew_neck_tee' : kind === 'courier' ? (fem ? 'hoodie' : 'masculine_three_quarter_zip') : kind === 'tourist' ? hp(['open_collar', 'collared_shirt_puffer_vest'])
     : L.hood ? 'hoodie' : hp(fem ? ['crew_neck_tee', 'denim_jacket', 'feminine_square_neck', 'feminine_mock_neck', 'feminine_cardigan', 'feminine_wrap_blouse'] : ['crew_neck_tee', 'denim_jacket', 'open_collar', 'collared_shirt_puffer_vest', 'masculine_three_quarter_zip']);
   if (L.garment === 'hoodie') L.hood = true;
+  const gk = fem ? 'feminine' : 'masculine';
+  if (!L.hairId) L.hairId = hp((HAIRSET[gk][L.hair] || HAIRSET[gk][fem ? 'long' : 'short']));
+  if (!L.fhId) { L.fhId = fem ? 'none' : L.beard === 'stubble' ? 'stubble_01' : L.beard === 'beard' ? hp(['short_beard_02', 'full_beard_03']) : L.beard === 'mous' ? 'moustache_04' : 'none'; if (L.fhId === 'full_beard_03') L.beard = 'full'; }
+  if (!L.glassesId) L.glassesId = L.glasses ? hp(GLASSES) : 'none';
+  if (!L.hatId) L.hatId = kind === 'police' ? (fem ? 'police_hat_feminine' : 'police_hat_masculine') : L.hat && kind === 'hivis' ? 'hard_hat' : L.hat ? hp(['baseball_cap', 'baseball_cap', 'backwards_cap', 'flat_cap']) : 'none';
   if (L.garment === 'denim_jacket') L.top = hp(DENIM);
   const G = GARM[L.garment] || {}; if ((G.open || G.arms === 'shirt') && !L.shirt) L.shirt = hp(INNER);
   return L; }
@@ -3556,7 +3569,7 @@ function bodyShadow(c, p, dx, dy, umb) {
   if (umb) { const u = W(.02, .05, hz + .4); c.beginPath(); c.ellipse(u[0], u[1], .55, .55, 0, 0, TAU); c.fill(); }
 }
 function drawPerson3D(p, isPlayer, umb) {
-  const L = p.L, hf = L.h;
+  const L = p.L, hf = L.h, GM = (typeof GARM !== 'undefined' && GARM[L.garment]) || {}, legacy = !L.garment;
   let hx = p.hx || 0, hy = p.hy; if (hy === undefined) { hx = 0; hy = 1; }
   if (!p.moving && p.wait && p.wait.e) { const dx = p.wait.e[0] - p.x, dy = p.wait.e[1] - p.y, d = Math.hypot(dx, dy) || 1; hx = dx / d; hy = dy / d; }
   if (p.talkFace) { hx = p.talkFace[0]; hy = p.talkFace[1]; }
@@ -3589,9 +3602,9 @@ function drawPerson3D(p, isPlayer, umb) {
     const ox = s * .02;
     const el = [shp[0] + B.fx * Math.sin(al) * .29 + B.rx * ox, shp[1] + B.fy * Math.sin(al) * .29 + B.ry * ox], ez = shZ - .03 - Math.cos(al) * .29;
     const hd = [el[0] + B.fx * Math.sin(al + eb) * .26, el[1] + B.fy * Math.sin(al + eb) * .26], hz2 = ez - Math.cos(al + eb) * .26;
-    const sleeve = t(L.top, 1.2, front ? 1 : .74);
+    const sleeve = t(GM.arms === 'shirt' && L.shirt ? L.shirt : L.top, 1.2, front ? 1 : .74);
     capsule(B, { x: el[0], y: el[1], z: ez, rr: .045, rf: .048 }, { x: shp[0], y: shp[1], z: shZ - .03, rr: .058, rf: .062 }, sleeve, out);
-    capsule(B, { x: hd[0], y: hd[1], z: hz2 + .03, rr: .038, rf: .04 }, { x: el[0], y: el[1], z: ez, rr: .045, rf: .048 }, (L.shorts && L.kind === 'jog') || L.shortSleeve ? t(L.skin, 1, front ? 1 : .8) : sleeve, out);
+    capsule(B, { x: hd[0], y: hd[1], z: hz2 + .03, rr: .038, rf: .04 }, { x: el[0], y: el[1], z: ez, rr: .045, rf: .048 }, (L.shorts && L.kind === 'jog') || L.shortSleeve || GM.short ? t(L.skin, 1, front ? 1 : .8) : sleeve, out);
     capsule(B, { x: hd[0], y: hd[1], z: hz2 - .03, rr: .036, rf: .04 }, { x: hd[0], y: hd[1], z: hz2 + .03, rr: .036, rf: .04 }, t(L.skin, .8), null);
     if (L.bag === 'case' && s === 1) capsule(B, { x: hd[0], y: hd[1], z: hz2 - .32, rr: .03, rf: .17, yaw: 0 }, { x: hd[0], y: hd[1], z: hz2 - .05, rr: .03, rf: .17 }, t([40, 30, 24], .7), out);
     if (L.bag === 'shop' && s === -1) capsule(B, { x: hd[0], y: hd[1], z: hz2 - .32, rr: .04, rf: .1 }, { x: hd[0], y: hd[1], z: hz2 - .04, rr: .04, rf: .1 }, t([200, 196, 184], .7), out);
@@ -3617,7 +3630,16 @@ function drawPerson3D(p, isPlayer, umb) {
     for (let i = -3; i <= 3; i++) { const q = atY(i * sw / 3.6, .125, G.shYaw); ellTop(B, { x: q[0], y: q[1], z: shZ - .16, rr: .022, rf: .012, yaw: G.shYaw }, i % 2 ? 'rgba(40,70,170,.95)' : 'rgba(236,240,246,.95)'); }
   }
   if (L.kind === 'hivis' || (L.vest && !L.cop)) ellTop(B, { x: p.x, y: p.y, z: shZ + .006, rr: sw - .03, rf: .02, yaw: G.shYaw }, 'rgba(225,230,235,.8)');
-  if (L.shirt && (L.kind === 'suit' || L.coat)) { const c = atY(0, .09, G.shYaw); ellTop(B, { x: c[0], y: c[1], z: shZ + .007, rr: .045, rf: .03, yaw: G.shYaw }, t(L.shirt, 1.4)); }
+  if (L.shirt && (GM.jacket || (legacy && (L.kind === 'suit' || L.coat)))) { const c = atY(0, .09, G.shYaw); ellTop(B, { x: c[0], y: c[1], z: shZ + .007, rr: .045, rf: .03, yaw: G.shYaw }, t(L.shirt, 1.4)); if (L.tie) { const tc = atY(0, .115, G.shYaw); capsule(B, { x: tc[0], y: tc[1], z: shZ - .2, rr: .018, rf: .006, yaw: G.shYaw }, { x: tc[0], y: tc[1], z: shZ - .01, rr: .016, rf: .006, yaw: G.shYaw }, t(L.tie, 1.2), null); } }
+  if (facing > -.1) {
+    const fr = (lf, z0, z1, rr, col) => { const c = atY(0, lf, G.shYaw); capsule(B, { x: c[0], y: c[1], z: z0, rr, rf: .008, yaw: G.shYaw }, { x: c[0], y: c[1], z: z1, rr, rf: .008, yaw: G.shYaw }, col, null); };
+    if (GM.open && L.shirt) fr(.118, hipZ, shZ - .02, .035, t(L.shirt, 1.1));
+    if (GM.quilt) for (const dz of [.12, .24, .36]) { const c = atY(0, .02, G.shYaw); ellTop(B, { x: c[0], y: c[1], z: hipZ + dz, rr: sw - .01, rf: .118, yaw: G.shYaw }, 'rgba(0,0,0,.18)'); ellTop(B, { x: c[0], y: c[1], z: hipZ + dz - .012, rr: sw - .01, rf: .118, yaw: G.shYaw }, t(L.top, 1.2, .9)); }
+    if (GM.neck === 'zip') fr(.115, shZ - .16, shZ - .02, .006, 'rgba(210,210,206,.8)');
+    if (GM.neck === 'collar') for (const s2 of [-1, 1]) { const c = atY(s2 * .04, .09, G.shYaw); ellTop(B, { x: c[0], y: c[1], z: shZ + .012, rr: .028, rf: .02, yaw: G.shYaw }, t(mixc(L.top, [255, 255, 255], .25), 1.4)); }
+  }
+  if (GM.neck === 'zip' || GM.neck === 'mock') capsule(B, { x: p.x, y: p.y, z: shZ, rr: .062, rf: .06 }, { x: p.x, y: p.y, z: shZ + .05, rr: .058, rf: .056 }, t(mixc(L.top, [0, 0, 0], .15), 1.4), out);
+  if (L.hood || L.garment === 'hoodie') { const hb2 = atY(0, -.09, G.shYaw); capsule(B, { x: hb2[0], y: hb2[1], z: shZ - .04, rr: .11, rf: .06, yaw: G.shYaw }, { x: hb2[0], y: hb2[1], z: shZ + .06, rr: .1, rf: .06, yaw: G.shYaw }, t(L.top, 1.3, .85), out); }
   arm(camSide);
   if (L.scarf) { capsule(B, { x: p.x, y: p.y, z: shZ - .02, rr: .12, rf: .1, yaw: G.shYaw }, { x: p.x, y: p.y, z: shZ + .07, rr: .1, rf: .09 }, t(L.scarf, shZ), out); const e2 = atY(.05, .08, G.shYaw); capsule(B, { x: e2[0], y: e2[1], z: shZ - .3, rr: .04, rf: .02 }, { x: e2[0], y: e2[1], z: shZ, rr: .045, rf: .025 }, t(L.scarf, shZ, .85), null); }
   // head, with a little bob carried from the hips
@@ -3637,10 +3659,23 @@ function drawPerson3D(p, isPlayer, umb) {
   if (facing > .25 && k > 22) {
     const eye = s2 => { const e = atH(s2 * .032, .085); const q = PP(e[0], e[1], hz + .015, p.x, p.y); ctx.fillStyle = 'rgba(20,16,14,.85)'; ctx.beginPath(); ctx.arc(q[0], q[1], Math.max(.7, k * .011), 0, TAU); ctx.fill(); };
     eye(-1); eye(1);
-    if (L.beard === 'beard') { const c = atH(0, .07); ellTop(B, { x: c[0], y: c[1], z: hz - .07, rr: .06, rf: .03 }, hair); }
+    const fh = L.fhId || (L.beard === 'beard' ? 'short_beard_02' : L.beard === 'stubble' ? 'stubble_01' : L.beard === 'mous' ? 'moustache_04' : 'none');
+    if (fh === 'short_beard_02' || fh === 'full_beard_03') { const c = atH(0, .07); ellTop(B, { x: c[0], y: c[1], z: hz - .07, rr: fh === 'full_beard_03' ? .072 : .06, rf: fh === 'full_beard_03' ? .045 : .03 }, hair); if (fh === 'full_beard_03') { const c2 = atH(0, .075); ellTop(B, { x: c2[0], y: c2[1], z: hz - .11, rr: .05, rf: .03 }, hair); } }
+    else if (fh === 'stubble_01') { const c = atH(0, .075); ellTop(B, { x: c[0], y: c[1], z: hz - .07, rr: .062, rf: .03 }, rgb(toneA(L.hairC, hz), .4)); }
+    else if (fh === 'moustache_04' || fh === 'fancy_moustache_05') { const c = atH(0, .092); ellTop(B, { x: c[0], y: c[1], z: hz - .035, rr: fh === 'fancy_moustache_05' ? .045 : .03, rf: .012 }, hair); }
+    const gl = L.glassesId || (L.glasses ? 'medium_rectangular_02' : 'none');
+    if (gl !== 'none') { ctx.strokeStyle = 'rgba(14,14,16,.9)'; ctx.lineWidth = Math.max(.8, k * (gl === 'bold_square_03' ? .009 : .005));
+      for (const s2 of [-1, 1]) { const e = atH(s2 * .032, .092), q = PP(e[0], e[1], hz + .015, p.x, p.y), r = Math.max(1.6, k * .019); ctx.beginPath();
+        if (gl === 'thin_round_01') ctx.arc(q[0], q[1], r, 0, TAU); else if (gl === 'cat_eye_04') { ctx.moveTo(q[0] - r, q[1] - r * .4); ctx.lineTo(q[0] + r * 1.1, q[1] - r * .9); ctx.lineTo(q[0] + r, q[1] + r * .6); ctx.lineTo(q[0] - r, q[1] + r * .6); ctx.closePath(); } else ctx.rect(q[0] - r, q[1] - r * .7, r * 2, r * 1.4); ctx.stroke(); } }
   }
-  if (L.beanie) capsule(B, { x: h0[0], y: h0[1], z: hz - .01, rr: .088, rf: .1 }, { x: h0[0], y: h0[1], z: hz + .1, rr: .06, rf: .065 }, t(L.beanie, hz), out);
-  if (L.hat) {
+  const hid = L.hatId || (L.beanie ? 'beanie' : L.hat ? (L.cop ? 'police' : 'baseball_cap') : 'none'), hc2 = t(L.hatC || L.beanie || [206, 200, 170], hz);
+  if (hid === 'beanie') capsule(B, { x: h0[0], y: h0[1], z: hz - .01, rr: .088, rf: .1 }, { x: h0[0], y: h0[1], z: hz + .1, rr: .06, rf: .065 }, hc2, out);
+  else if (hid === 'baseball_cap' || hid === 'backwards_cap') { capsule(B, { x: h0[0], y: h0[1], z: hz + .04, rr: .09, rf: .1 }, { x: h0[0], y: h0[1], z: hz + .1, rr: .07, rf: .08 }, hc2, out); const pk2 = atH(0, hid === 'baseball_cap' ? .11 : -.11); ellTop(B, { x: pk2[0], y: pk2[1], z: hz + .05, rr: .06, rf: .05 }, hc2); }
+  else if (hid === 'flat_cap') { capsule(B, { x: h0[0], y: h0[1], z: hz + .05, rr: .092, rf: .108 }, { x: h0[0], y: h0[1], z: hz + .09, rr: .088, rf: .1 }, hc2, out); const pk2 = atH(0, .1); ellTop(B, { x: pk2[0], y: pk2[1], z: hz + .055, rr: .07, rf: .04 }, hc2); }
+  else if (hid === 'brimmed_hat') { ellTop(B, { x: h0[0], y: h0[1], z: hz + .06, rr: .17, rf: .18 }, hc2); capsule(B, { x: h0[0], y: h0[1], z: hz + .06, rr: .08, rf: .09 }, { x: h0[0], y: h0[1], z: hz + .15, rr: .07, rf: .08 }, hc2, out); }
+  else if (hid === 'headscarf') capsule(B, { x: hb[0], y: hb[1], z: hz - .06, rr: .095, rf: .11 }, { x: h0[0], y: h0[1], z: hz + .1, rr: .075, rf: .08 }, hc2, out);
+  else if (hid === 'hard_hat') { ellTop(B, { x: h0[0], y: h0[1], z: hz + .05, rr: .12, rf: .13 }, hc2); capsule(B, { x: h0[0], y: h0[1], z: hz + .05, rr: .095, rf: .105 }, { x: h0[0], y: h0[1], z: hz + .13, rr: .07, rf: .08 }, hc2, out); }
+  if (L.hat && (L.cop || (!L.hatId && hid === 'police'))) {
     capsule(B, { x: h0[0], y: h0[1], z: hz + .04, rr: .11, rf: .125 }, { x: h0[0], y: h0[1], z: hz + .12, rr: .085, rf: .095 }, t(L.hatC || [206, 200, 170], hz), out);
     if (L.cop) { // chequered band and a peak, readable from above
       for (let i = 0; i < 12; i++) { const a = i / 12 * TAU, q = atH(Math.cos(a) * .1, Math.sin(a) * .112); ellTop(B, { x: q[0], y: q[1], z: hz + .07, rr: .02, rf: .02 }, i % 2 ? 'rgba(40,70,170,.95)' : 'rgba(240,242,246,.95)'); }
@@ -4318,6 +4353,7 @@ function dressOne(p) {
     else if (!L.coat && L.garment === 'wool_coat') L.garment = 'open_collar';
     if (season === 'summer' && L.shortSleeve && ['denim_jacket', 'hoodie', 'collared_shirt_puffer_vest', 'masculine_three_quarter_zip', 'feminine_cardigan', 'feminine_mock_neck'].includes(L.garment)) L.garment = 'crew_neck_tee';
     if (season === 'summer' && L.kind === 'suit' && L.top === L.shirt) L.garment = 'open_collar';
+    if (L.beanie && (!L.hatId || L.hatId === 'none')) { L.hatId = 'beanie'; L.hatC = L.beanie; }
     L.pr = null; p.L = L;
   }
 }
