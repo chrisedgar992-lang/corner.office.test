@@ -1907,7 +1907,7 @@ function updatePigeons(dt) {
 // ---------- player ----------
 const START = DOORS.find(d => d.to === 'lobby') || DOORS[0] || { x: CBD.x, y: CBD.y, nx: 0, ny: 1 };
 const player = { x: START.x + START.nx * 1.4, y: START.y + START.ny * 1.4, L: null, phase: 0, dir: 'up', moving: false, hx: START.nx, hy: START.ny };
-player.L = randomLook('suit'); player.L.age = 'young'; player.L.fem = false; player.L.hair = 'side'; player.L.hairC = [46, 34, 26]; player.L.skin = SKIN[1]; player.L.top = [60, 66, 74]; player.L.bot = [60, 66, 74]; player.L.tie = [30, 36, 60]; player.L.skirt = false; player.L.bag = 'case'; player.L.beard = null; player.L.h = 1; player.L.glasses = false;
+player.L = randomLook('suit'); player.L.age = 'young'; player.L.fem = false; player.L.hair = 'side'; player.L.hairC = [46, 34, 26]; player.L.skin = SKIN[1]; player.L.top = [60, 66, 74]; player.L.bot = [60, 66, 74]; player.L.tie = [30, 36, 60]; player.L.skirt = false; player.L.bag = null; player.L.beard = null; player.L.h = 1; player.L.glasses = false;
 const keys = {};
 let pointer = null;
 function blocked(x, y, r) {

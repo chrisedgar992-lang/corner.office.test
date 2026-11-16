@@ -2038,7 +2038,7 @@ function updatePigeons(dt) {
 // ---------- player ----------
 const START = DOORS.find(d => d.to === 'lobby') || DOORS[0] || { x: CBD.x, y: CBD.y, nx: 0, ny: 1 };
 const player = { x: START.x + START.nx * 1.4, y: START.y + START.ny * 1.4, L: null, phase: 0, dir: 'up', moving: false, hx: START.nx, hy: START.ny };
-player.L = randomLook('suit'); player.L.age = 'young'; player.L.fem = false; player.L.hair = 'side'; player.L.hairC = [46, 34, 26]; player.L.skin = SKIN[1]; player.L.top = [60, 66, 74]; player.L.bot = [60, 66, 74]; player.L.tie = [30, 36, 60]; player.L.skirt = false; player.L.bag = 'case'; player.L.beard = null; player.L.h = 1; player.L.glasses = false;
+player.L = randomLook('suit'); player.L.age = 'young'; player.L.fem = false; player.L.hair = 'side'; player.L.hairC = [46, 34, 26]; player.L.skin = SKIN[1]; player.L.top = [60, 66, 74]; player.L.bot = [60, 66, 74]; player.L.tie = [30, 36, 60]; player.L.skirt = false; player.L.bag = null; player.L.beard = null; player.L.h = 1; player.L.glasses = false;
 const keys = {};
 let pointer = null;
 function blocked(x, y, r) {
@@ -6822,11 +6822,10 @@ window.GAME = (() => {
   const adTier = (lad, lv) => { const n = (LADDERS[lad] || []).length; return lv === 0 ? 0 : lv < n * .45 ? 1 : lv < n * .75 ? 2 : 3; };
   const districtOf = co => { const d = DOORS.find(q => q.k === 'hq' && q.co === co); return d ? (DNAME[districtAt(d.x, d.y)] || '') : ''; };
   function jobAd(j) { const c = coById(j.co), L = ladderFor(j.co)[j.level], lad = ladOf(j.co), rl = ADROLE[lad] || ADROLE.corp, f = jobFit(j), mine = S.player.job.co === j.co, sent = (S.apps || []).some(a => a.job === j.id);
-    const size = c.small ? 'Boutique firm' : c.id === 'paylane' ? 'Startup' : 'Large employer';
     const need = c.locked ? 'A law degree and admission to the bar.' : `${gateText(j.co, j.level)}.${j.level ? ` Experience as ${ladderFor(j.co)[j.level - 1].t} or above.` : ' Recent graduates welcome.'}`;
     const how = lad === 'tech' ? 'Apply online, then a technical interview with a coding test at our tower.' : c.locked ? 'Applications open to admitted attorneys.' : 'Apply online, then an interview at our tower.';
     return `<div class="phrow jobad" style="cursor:default"><b>${esc(c.locked ? 'Associate Attorney' : L.t)} <span style="float:right">${c.locked ? salary(LADDERS.law[0][1] * 100) : salary(L.pay * 100)}</span></b>`
-      + `<span style="white-space:normal"><i class="adlogo" style="background:${c.col || '#567'}">${esc(c.name[0])}</i>${esc(c.name)} · ${esc(c.ind)} · ${size} · ${esc(districtOf(j.co) || towerName(j.co))}</span>`
+      + `<span style="white-space:normal"><i class="adlogo" style="background:${c.col || '#567'}">${esc(c.name[0])}</i>${esc(c.name)} · ${esc(c.ind)} · ${esc(districtOf(j.co) || towerName(j.co))}</span>`
       + `<span style="white-space:normal;margin-top:4px">${esc(ADCO[c.id] || c.about)} ${esc(rl[Math.min(rl.length - 1, adTier(lad, j.level))])}</span>`
       + `<span style="white-space:normal;margin-top:4px"><b style="font-size:inherit">What we are looking for.</b> ${esc(need)}</span><span style="white-space:normal"><b style="font-size:inherit">How to apply.</b> ${esc(how)} Closes ${dayWord(j.closes * 1440)}.</span>`
       + (c.locked || mine ? '' : sent ? '<span>Applied</span>' : `<div style="display:flex;gap:8px;align-items:center;margin-top:6px"><button class="phbtn" data-act="apply:${j.id}">Apply</button><span>${f > .65 ? 'Good chance' : f > .35 ? 'Worth a try' : 'Long shot'}</span></div>`) + '</div>'; }
