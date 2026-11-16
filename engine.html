@@ -1698,6 +1698,25 @@ const SUITC = [[44, 47, 52], [33, 40, 56], [80, 84, 90], [26, 27, 30], [72, 60, 
 const COATC = [[132, 112, 84], [74, 78, 62], [30, 30, 32], [62, 64, 68], [92, 72, 58], [48, 40, 52]];
 const CASC = [[104, 108, 112], [88, 42, 46], [52, 70, 94], [140, 128, 106], [60, 72, 60], [150, 150, 146], [40, 42, 46]];
 const UMB = [[24, 24, 26], [30, 34, 46], [24, 24, 26], [110, 30, 34], [40, 52, 48], [70, 70, 74]];
+// one garment per person, from the Portrait Creator's clothing set, so the street figure and the conversation portrait wear the same thing.
+// jacket: a jacket over a shirt with a V at the neck. open: an open front showing the layer underneath. short: short sleeves.
+// arms: which color the sleeves are. neck: how the neckline is drawn.
+const GARM = {
+  suit_tie: { jacket: true }, feminine_blazer: { jacket: true }, wool_coat: { jacket: true, coat: true },
+  open_collar: { neck: 'collar' }, crew_neck_tee: { short: true, neck: 'round' }, hoodie: { neck: 'hood' },
+  denim_jacket: { open: true, seams: true }, feminine_cardigan: { open: true }, collared_shirt_puffer_vest: { arms: 'shirt', quilt: true, neck: 'collar' },
+  masculine_three_quarter_zip: { neck: 'zip' }, feminine_mock_neck: { neck: 'mock' }, feminine_square_neck: { neck: 'square' }, feminine_wrap_blouse: { neck: 'wrap' },
+  hi_vis_vest: {}, police_masculine: {}, police_feminine: {}, medical_scrubs: { short: true, neck: 'v' }, mechanic_uniform: { neck: 'collar' }, duty_uniform: { neck: 'collar' } };
+const DENIM = [[62, 86, 120], [48, 66, 96], [90, 112, 140]], INNER = [[226, 226, 220], [200, 200, 196], [40, 42, 46], [190, 196, 206]];
+// chosen from the look itself, not the random stream, so adding garments never shifts how the city is built
+function assignGarment(L) { if (L.garment) return L; const hh = Math.abs(((L.top || [0])[0] * 31 + (L.top || [0, 0])[1] * 7 + L.skin[0] * 13 + Math.round(L.h * 1000)) | 0), hp = a => a[hh % a.length], kind = L.cop ? 'police' : L.kind, fem = L.fem;
+  L.garment = kind === 'police' ? (fem ? 'police_feminine' : 'police_masculine') : kind === 'suit' ? (fem ? 'feminine_blazer' : L.tie ? 'suit_tie' : 'open_collar') : kind === 'coat' ? 'wool_coat' : kind === 'hivis' ? 'hi_vis_vest'
+    : kind === 'jog' ? 'crew_neck_tee' : kind === 'courier' ? (fem ? 'hoodie' : 'masculine_three_quarter_zip') : kind === 'tourist' ? hp(['open_collar', 'collared_shirt_puffer_vest'])
+    : L.hood ? 'hoodie' : hp(fem ? ['crew_neck_tee', 'denim_jacket', 'feminine_square_neck', 'feminine_mock_neck', 'feminine_cardigan', 'feminine_wrap_blouse'] : ['crew_neck_tee', 'denim_jacket', 'open_collar', 'collared_shirt_puffer_vest', 'masculine_three_quarter_zip']);
+  if (L.garment === 'hoodie') L.hood = true;
+  if (L.garment === 'denim_jacket') L.top = hp(DENIM);
+  const G = GARM[L.garment] || {}; if ((G.open || G.arms === 'shirt') && !L.shirt) L.shirt = hp(INNER);
+  return L; }
 function randomLook(kind) {
   const fem = R() < .48;
   kind = kind || (() => { const r = R(); return r < .44 ? 'suit' : r < .64 ? 'coat' : r < .8 ? 'casual' : r < .86 ? 'hivis' : r < .9 ? 'jog' : r < .95 ? 'courier' : 'tourist'; })();
@@ -1720,7 +1739,7 @@ function randomLook(kind) {
   else if (kind === 'courier') { L.top = pick([[46, 74, 64], [140, 60, 40]]); L.bot = [36, 38, 44]; L.pack = pick([[150, 110, 40], [40, 120, 90], [160, 50, 40]]); }
   else if (kind === 'police') { L.top = [128, 162, 204]; L.bot = [26, 30, 44]; L.shirt = null; L.tie = null; L.hat = true; L.hatC = [24, 28, 42]; L.cop = true; L.vestC = [28, 34, 52]; L.shoes = [18, 18, 20]; L.bag = null; L.glasses = false; }
   else { L.top = pick([[180, 170, 150], [90, 120, 140], [150, 90, 80]]); L.bot = [140, 128, 106]; L.bag = 'shop'; L.cam = true; }
-  return L;
+  return assignGarment(L);
 }
 
 const PEDS = []; let PUID = 1;
@@ -3268,7 +3287,7 @@ function personColors(L, tz) {
   return { skin: t(L.skin), skinD: t(mulc(L.skin, .8)), hair: t(L.hairC), top: t(L.top), topD: t(mulc(L.top, .72)), bot: t(L.bot), botD: t(mulc(L.bot, .72)), shoes: t(L.shoes), shirt: L.shirt ? t(L.shirt) : null, tie: L.tie ? t(L.tie) : null, umb: t(L.umb), out: 'rgba(10,10,12,.9)' };
 }
 function drawPerson(c, L, phase, dir, moving, kk, opts = {}) {
-  const C = opts.colors || personColors(L);
+  const C = opts.colors || personColors(L), G = (typeof GARM !== 'undefined' && GARM[L.garment]) || {}, armC = G.arms === 'shirt' && C.shirt ? C.shirt : null;
   c.save(); c.scale(kk, kk);
   const hf = L.h, lw = opts.portrait ? 2.2 / kk : Math.max(.9 / kk, .016);
   c.lineJoin = 'round'; c.lineCap = 'round';
@@ -3307,15 +3326,27 @@ function drawPerson(c, L, phase, dir, moving, kk, opts = {}) {
     c.save(); c.clip(tor); c.fillStyle = 'rgba(0,0,0,.16)'; c.fillRect(sw * .12, shY - .1, sw, 1.2); c.fillStyle = 'rgba(255,255,255,.05)'; c.fillRect(-sw, shY - .1, sw * .7, 1.2); c.restore();
     if (L.kind === 'hivis') { c.strokeStyle = 'rgba(220,226,230,.85)'; c.lineWidth = .035; c.beginPath(); c.moveTo(-sw / 2 + .03, shY + .32); c.lineTo(sw / 2 - .03, shY + .32); c.moveTo(-ww / 2 + .02, shY + .42); c.lineTo(ww / 2 - .02, shY + .42); c.stroke(); }
     if (dir === 'down') {
-      if (C.shirt && (L.kind === 'suit' || L.coat)) { const v = new Path2D(); v.moveTo(-.06, shY); v.lineTo(.06, shY); v.lineTo(0, shY + (L.coat ? .16 : .24)); v.closePath(); c.fillStyle = C.shirt; c.fill(v); if (C.tie) { c.strokeStyle = C.tie; c.lineWidth = .03; c.beginPath(); c.moveTo(0, shY + .02); c.lineTo(0, shY + .3); c.stroke(); } }
+      if (C.shirt && (G.jacket || (!L.garment && (L.kind === 'suit' || L.coat)))) { const v = new Path2D(); v.moveTo(-.06, shY); v.lineTo(.06, shY); v.lineTo(0, shY + (L.coat ? .16 : .24)); v.closePath(); c.fillStyle = C.shirt; c.fill(v); if (C.tie) { c.strokeStyle = C.tie; c.lineWidth = .03; c.beginPath(); c.moveTo(0, shY + .02); c.lineTo(0, shY + .3); c.stroke(); } }
       if (L.coat) { c.strokeStyle = C.topD; c.lineWidth = .014; c.beginPath(); c.moveTo(0, shY + .2); c.lineTo(0, hem); c.stroke(); }
-      if (L.hood) { c.strokeStyle = C.topD; c.lineWidth = .03; c.beginPath(); c.moveTo(-.09, shY + .01); c.quadraticCurveTo(0, shY + .1, .09, shY + .01); c.stroke(); }
+      if (L.hood) { c.strokeStyle = C.topD; c.lineWidth = .03; c.beginPath(); c.moveTo(-.09, shY + .01); c.quadraticCurveTo(0, shY + .1, .09, shY + .01); c.stroke(); c.beginPath(); c.moveTo(-.08, hem - .14); c.lineTo(.08, hem - .14); c.lineWidth = .014; c.stroke(); }
+      if (G.open && C.shirt) { const p = new Path2D(); p.moveTo(-.05, shY + .005); p.lineTo(.05, shY + .005); p.lineTo(.035, hem); p.lineTo(-.035, hem); p.closePath(); c.fillStyle = C.shirt; c.fill(p); c.strokeStyle = C.topD; c.lineWidth = .012; c.stroke(p); }
+      if (G.seams) { c.strokeStyle = 'rgba(230,220,190,.35)'; c.lineWidth = .008; c.beginPath(); c.moveTo(-sw / 2 + .05, shY + .17); c.lineTo(-.06, shY + .17); c.moveTo(.06, shY + .17); c.lineTo(sw / 2 - .05, shY + .17); c.stroke(); }
+      if (G.quilt) { c.save(); c.clip(tor); c.strokeStyle = C.topD; c.lineWidth = .01; c.beginPath(); for (let y = shY + .1; y < hem - .02; y += .085) { c.moveTo(-sw / 2, y); c.lineTo(sw / 2, y); } c.stroke(); c.restore(); }
+      const nk = G.neck; if (nk === 'collar') { c.fillStyle = C.skinD; c.beginPath(); c.moveTo(-.04, shY - .005); c.lineTo(.04, shY - .005); c.lineTo(0, shY + .08); c.closePath(); c.fill(); c.fillStyle = C.topD; c.beginPath(); c.moveTo(-.07, shY - .01); c.lineTo(-.01, shY + .03); c.lineTo(-.045, shY + .07); c.closePath(); c.moveTo(.07, shY - .01); c.lineTo(.01, shY + .03); c.lineTo(.045, shY + .07); c.closePath(); c.fill(); }
+      else if (nk === 'round') { c.strokeStyle = C.topD; c.lineWidth = .016; c.beginPath(); c.moveTo(-.05, shY); c.quadraticCurveTo(0, shY + .05, .05, shY); c.stroke(); }
+      else if (nk === 'v') { c.fillStyle = C.skinD; c.beginPath(); c.moveTo(-.05, shY - .005); c.lineTo(.05, shY - .005); c.lineTo(0, shY + .1); c.closePath(); c.fill(); }
+      else if (nk === 'square') { c.fillStyle = C.skinD; c.fillRect(-.06, shY - .01, .12, .06); }
+      else if (nk === 'mock') { c.fillStyle = C.topD; c.fillRect(-.045, shY - .05, .09, .06); }
+      else if (nk === 'zip') { c.fillStyle = C.topD; c.fillRect(-.05, shY - .04, .1, .05); c.strokeStyle = 'rgba(200,200,196,.7)'; c.lineWidth = .008; c.beginPath(); c.moveTo(0, shY - .03); c.lineTo(0, shY + .16); c.stroke(); }
+      else if (nk === 'wrap') { c.fillStyle = C.skinD; c.beginPath(); c.moveTo(-.05, shY - .005); c.lineTo(.05, shY - .005); c.lineTo(0, shY + .09); c.closePath(); c.fill(); c.strokeStyle = C.topD; c.lineWidth = .012; c.beginPath(); c.moveTo(-.05, shY); c.lineTo(ww / 2 - .02, hipY - .04); c.stroke(); }
     }
     // arms
     for (const s of [-1, 1]) {
       const sw2 = moving ? -s * sp * .045 : 0;
       const hx = s * (sw / 2 - .012), hy = -.86 * hf + sw2;
-      limb(s * (sw / 2 - .05), shY + .06, hx, hy, .088, dir === 'up' ? C.topD : C.top);
+      const ac = armC || (dir === 'up' ? C.topD : C.top);
+      if (G.short) { limb(s * (sw / 2 - .05), shY + .06, hx, hy, .08, C.skin); limb(s * (sw / 2 - .05), shY + .06, s * (sw / 2 - .05) + (hx - s * (sw / 2 - .05)) * .4, shY + .06 + (hy - shY - .06) * .4, .092, ac); }
+      else limb(s * (sw / 2 - .05), shY + .06, hx, hy, .088, ac);
       ell(hx, hy + .02, .038, .042, C.skin, false);
       if (s === 1 && L.bag === 'case' && dir !== 'up') { const p = new Path2D(); p.rect(hx - .02, hy + .03, .07, .26); fill(tone([40, 30, 24], 1), p); }
       if (s === -1 && L.bag === 'shop') { const p = new Path2D(); p.rect(hx - .12, hy + .03, .22, .26); fill(tone([200, 196, 184], 1), p); }
@@ -3341,7 +3372,7 @@ function drawPerson(c, L, phase, dir, moving, kk, opts = {}) {
     if (L.skirt) { const p = new Path2D(); p.moveTo(-.12, hipY - .06); p.lineTo(.12, hipY - .06); p.lineTo(.16, hipY + .4); p.lineTo(-.16, hipY + .4); p.closePath(); fill(C.bot, p); }
     if (L.shorts) { const p = new Path2D(); p.moveTo(-.13, hipY - .02); p.lineTo(.13, hipY - .02); p.lineTo(.15, hipY + .27); p.lineTo(-.15, hipY + .27); p.closePath(); fill(C.bot, p); }
     // back arm
-    limb(-.01, shY + .06, -swing * .8, -.88 * hf, .085, C.topD);
+    limb(-.01, shY + .06, -swing * .8, -.88 * hf, .085, G.short ? C.skinD : armC || C.topD);
     if (L.pack) { const p = new Path2D(); p.rect(-.24, shY + .03, .13, .42); fill(tone(L.pack, 1), p); }
     const tor = new Path2D(); const hem = L.coat ? -.5 * hf : hipY + .05;
     tor.moveTo(-.12, shY + .05); tor.quadraticCurveTo(-.12, shY - .01, -.05, shY - .01); tor.lineTo(.07, shY - .01); tor.quadraticCurveTo(.13, shY + .01, .13, shY + .09);
@@ -3354,7 +3385,7 @@ function drawPerson(c, L, phase, dir, moving, kk, opts = {}) {
     drawHairSide(c, L, C, headCY, hrx, hry, shY, lw);
     if (L.hat) { const p = new Path2D(); p.ellipse(.012, headCY - hry * .45, hrx + .03, hry * .62, 0, Math.PI, TAU); p.closePath(); fill(tone(L.hatC || [200, 196, 172], 1), p); }
     // front arm
-    limb(.0, shY + .06, swing * .8, -.86 * hf, .088, C.top);
+    limb(.0, shY + .06, swing * .8, -.86 * hf, .088, G.short ? C.skin : armC || C.top); if (G.short) limb(.0, shY + .06, swing * .32, shY + .06 + (-.86 * hf - shY - .06) * .4, .094, C.top);
     ell(swing * .8, -.84 * hf, .038, .042, C.skin, false);
     if (L.bag === 'case') { const p = new Path2D(); p.rect(swing * .8 - .14, -.84 * hf + .02, .28, .2); fill(tone([40, 30, 24], 1), p); }
   }
@@ -4260,8 +4291,7 @@ function drawLeaves(vw) {
 const SCARF = [[130, 40, 40], [40, 60, 90], [170, 140, 90], [60, 64, 60], [120, 110, 100]];
 const BEANIE = [[40, 42, 46], [110, 40, 40], [50, 70, 60], [150, 140, 120]];
 function applySeason() {
-  for (const p of PEDS.concat([player])) dressOne(p);
-  if (player.L0) { player.L.bag = 'case'; }
+  for (const p of PEDS) dressOne(p); // the player picks their own clothes at the wardrobe
 }
 function dressOne(p) {
   const r = mulberry(season.length * 991 + (p.uid || 7) * 31);
@@ -4283,7 +4313,12 @@ function dressOne(p) {
       if (L.kind === 'suit' && roll < .3) { L.coat = true; L.top = COATC[Math.floor(r() * COATC.length)]; }
       if (r() < .12 && L.kind !== 'jog') L.scarf = SCARF[Math.floor(r() * SCARF.length)];
     }
-    p.L = L;
+    // the garment follows what the season put them in, so the portrait matches the street
+    if (L.coat && L.garment !== 'wool_coat' && L.kind !== 'police') { L.garment = 'wool_coat'; L.shirt = L.shirt || [220, 220, 216]; }
+    else if (!L.coat && L.garment === 'wool_coat') L.garment = 'open_collar';
+    if (season === 'summer' && L.shortSleeve && ['denim_jacket', 'hoodie', 'collared_shirt_puffer_vest', 'masculine_three_quarter_zip', 'feminine_cardigan', 'feminine_mock_neck'].includes(L.garment)) L.garment = 'crew_neck_tee';
+    if (season === 'summer' && L.kind === 'suit' && L.top === L.shirt) L.garment = 'open_collar';
+    L.pr = null; p.L = L;
   }
 }
 

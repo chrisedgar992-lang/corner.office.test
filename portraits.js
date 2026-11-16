@@ -357,7 +357,8 @@ function fromLook(L) {
   s.fh = L.fem ? 'none' : L.beard === 'stubble' ? 'stubble_01' : L.beard === 'beard' ? pk(['short_beard_02', 'full_beard_03']) : L.beard === 'mous' ? 'moustache_04' : 'none';
   s.glasses = L.glasses ? pk(META.glasses) : 'none'; s.lens = 'clear';
   const fem = L.fem, kind = L.cop ? 'police' : L.kind;
-  s.cloth = kind === 'police' ? (fem ? 'police_feminine' : 'police_masculine') : kind === 'suit' ? (fem ? 'feminine_blazer' : L.tie ? 'suit_tie' : 'open_collar') : kind === 'coat' ? 'wool_coat' : kind === 'hivis' ? 'hi_vis_vest'
+  if (typeof assignGarment === 'function' && !L.set) assignGarment(L);
+  s.cloth = L.garment ? L.garment : kind === 'police' ? (fem ? 'police_feminine' : 'police_masculine') : kind === 'suit' ? (fem ? 'feminine_blazer' : L.tie ? 'suit_tie' : 'open_collar') : kind === 'coat' ? 'wool_coat' : kind === 'hivis' ? 'hi_vis_vest'
     : kind === 'jog' ? 'crew_neck_tee' : kind === 'courier' ? (fem ? 'hoodie' : 'masculine_three_quarter_zip') : kind === 'tourist' ? pk(['open_collar', 'collared_shirt_puffer_vest'])
     : L.hood ? 'hoodie' : pk(fem ? ['crew_neck_tee', 'denim_jacket', 'feminine_square_neck', 'feminine_mock_neck', 'feminine_cardigan', 'feminine_wrap_blouse'] : ['crew_neck_tee', 'denim_jacket', 'open_collar', 'collared_shirt_puffer_vest']);
   s.clothRGB = L.top || [90, 90, 94];
