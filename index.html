@@ -6722,15 +6722,39 @@ window.GAME = (() => {
     fund: [['Junior Analyst', 70000], ['Analyst', 90000], ['Senior Analyst', 120000], ['Portfolio Manager', 210000], ['Partner', 450000], ['Chief Investment Officer', 1200000]],
     consult: [['Business Analyst', 68000], ['Consultant', 85000], ['Senior Consultant', 105000], ['Engagement Manager', 140000], ['Principal', 200000], ['Partner', 380000], ['Managing Partner', 900000]],
     corp: [['Financial Analyst', 60000], ['Senior Financial Analyst', 75000], ['Finance Manager', 98000], ['Director of Finance', 140000], ['Vice President, Finance', 190000], ['Chief Financial Officer', 320000], ['Chief Executive', 900000]],
+    tech: [['Graduate Software Engineer', 85000], ['Software Engineer', 110000], ['Senior Software Engineer', 150000], ['Software Engineering Manager', 190000], ['Director of Software Engineering', 240000], ['VP of Software Engineering', 320000], ['Chief Technology Officer', 450000], ['Chief Executive', 1500000]],
     law: [['Associate', 120000]] };
+  // ---------- career stats. 0 is a layman, about 20 a new graduate, 100 a top CEO. Every career needs a mix ----------
+  const STATS = [['finance', 'Finance'], ['strategy', 'Strategy'], ['management', 'Management'], ['coding', 'Coding'], ['persuasion', 'Persuasion']];
+  const STATN = Object.fromEntries(STATS), STUDY_CAP = 40;
+  // the minimum stats to hold each role, by ladder and level. The first stat listed carries the junior roles
+  const GATES = {
+    bank: [{ finance: 18 }, { finance: 26, strategy: 12 }, { finance: 33, strategy: 18, persuasion: 12 }, { finance: 40, strategy: 25, persuasion: 20, management: 15 }, { finance: 52, strategy: 38, persuasion: 35, management: 30 }, { finance: 70, strategy: 52, persuasion: 50, management: 50 }, { finance: 86, strategy: 70, persuasion: 75, management: 70 }, { finance: 88, strategy: 92, persuasion: 90, management: 95 }],
+    fund: [{ finance: 20 }, { finance: 30, strategy: 15 }, { finance: 42, strategy: 25, persuasion: 15 }, { finance: 60, strategy: 45, persuasion: 30, management: 20 }, { finance: 80, strategy: 65, persuasion: 55, management: 40 }, { finance: 92, strategy: 85, persuasion: 75, management: 60 }],
+    consult: [{ strategy: 18 }, { strategy: 26, persuasion: 12, finance: 12 }, { strategy: 34, persuasion: 20, management: 12, finance: 18 }, { strategy: 45, persuasion: 32, management: 28, finance: 22 }, { strategy: 60, persuasion: 48, management: 42, finance: 28 }, { strategy: 78, persuasion: 72, management: 60, finance: 32 }, { strategy: 92, persuasion: 90, management: 85, finance: 38 }],
+    corp: [{ finance: 18 }, { finance: 25, strategy: 12 }, { finance: 33, management: 20, strategy: 15 }, { finance: 45, management: 32, strategy: 22, persuasion: 18 }, { finance: 58, management: 45, strategy: 35, persuasion: 30 }, { finance: 75, management: 65, strategy: 55, persuasion: 50 }, { finance: 80, management: 90, strategy: 90, persuasion: 85 }],
+    tech: [{ coding: 18 }, { coding: 26 }, { coding: 36, strategy: 15 }, { coding: 44, strategy: 25, management: 22, persuasion: 12 }, { coding: 55, strategy: 40, management: 38, persuasion: 25 }, { coding: 68, strategy: 55, management: 55, persuasion: 40 }, { coding: 85, strategy: 70, management: 65, persuasion: 50 }, { coding: 86, strategy: 90, management: 92, persuasion: 85 }],
+    law: [{ persuasion: 20, strategy: 18 }] };
+  const stat = k => (S.player.skills && S.player.skills[k]) || 0;
+  // each point costs more than the last: half an hour at 0, about 1.4 hours at 30, 2.8 at 50, 5.7 at 70, 11 at 90
+  const hrsTo = p => 14.427 * (Math.pow(2, p / 20) - 1), ptsFrom = h => 20 * Math.log2(h / 14.427 + 1);
+  function gainSkill(k, hrs, study) { const sk = S.player.skills, p = sk[k] || 0; if (study && p >= STUDY_CAP) return 0; let n = Math.min(100, ptsFrom(hrsTo(p) + hrs)); if (study) n = Math.min(n, STUDY_CAP); sk[k] = n; return n - p; }
+  const ladOf = co => (S.player.job && S.player.job.co === co && S.player.job.lad) || (coById(co) || COS[0]).lad;
+  const gateFor = (co, lv) => { const G = GATES[ladOf(co)] || GATES.corp; return G[Math.max(0, Math.min(lv, G.length - 1))]; };
+  const mainStat = () => { const J = S.player.job, G = gateFor(J.co || J.lastCo || 'meridian', 0); return stat(Object.keys(G)[0]); };
+  const gateMargin = (co, lv) => Math.min(...Object.entries(gateFor(co, lv)).map(([k, v]) => stat(k) - v));
+  const gateText = (co, lv) => Object.entries(gateFor(co, lv)).map(([k, v]) => `${STATN[k]} ${v}`).join(', ');
+  // a shift's experience goes to what the next role up asks for
+  function workXP(hrs, score) { const J = S.player.job, G = gateFor(J.co, J.level + 1), tot = Object.values(G).reduce((a, b) => a + b, 0), e = (.6 + score / 250) * hrs / 8.5 * Object.keys(G).length * .55;
+    for (const [k, v] of Object.entries(G)) gainSkill(k, e * v / tot); }
   const NEED = [30, 55, 90, 140, 180, 240, 300], TENURE = [42, 90, 150, 240, 365, 540, 730]; // solid shifts and days in the role for each step
   const COS = [
     { id: 'meridian', name: EMPLOYER, ind: 'Banking', lad: 'bank', area: ['core'], boss: ['Ms Calder', true], tk: 'APG', about: 'The established bank. Old money, big deals, long hours.' },
     { id: 'fairhaven', name: 'Fairhaven Trust', ind: 'Banking', lad: 'bank', area: ['core', 'cbd'], boss: ['Mr Okafor', false], tk: 'FHT', about: 'The rival bank, hungry to catch Apogee and quick to hire away its people.' },
     { id: 'blackfen', name: 'Blackfen Partners', ind: 'Hedge fund', lad: 'fund', area: ['cbd', 'core'], boss: ['Ms Varga', true], about: 'A hedge fund. Pay follows your track record, and so does your seat.' },
     { id: 'thorne', name: 'Thorne and Vale', ind: 'Consulting', lad: 'consult', area: ['cbd', 'core'], boss: ['Mr Ellison', false], about: 'Consultants to every industry in the city. You learn everyone’s business.' },
-    { id: 'kestrel', name: 'Kestrel Systems', ind: 'Big tech', lad: 'corp', area: ['mid', 'cbd'], boss: ['Ms Tanaka', true], tk: 'KSY', tech: true, about: 'The dependable tech giant. Finance roles now, engineering roles in a later update.' },
-    { id: 'paylane', name: 'Paylane', ind: 'Tech upstart', lad: 'corp', area: ['mid', 'cbd'], boss: ['Mr Duarte', false], tk: 'PYL', tech: true, about: 'A fast growing payments upstart. Quick promotions, real risk.' },
+    { id: 'kestrel', name: 'Kestrel Systems', ind: 'Big tech', lad: 'tech', area: ['mid', 'cbd'], boss: ['Ms Tanaka', true], tk: 'KSY', tech: true, about: 'The dependable tech giant. Steady promotions, a coding test to get in.' },
+    { id: 'paylane', name: 'Paylane', ind: 'Tech upstart', lad: 'tech', area: ['mid', 'cbd'], boss: ['Mr Duarte', false], tk: 'PYL', tech: true, about: 'A fast growing payments upstart. Quick promotions, real risk.' },
     { id: 'oakmont', name: 'Oakmont Mining', ind: 'Mining', lad: 'corp', area: ['cbd', 'hside', 'core'], boss: ['Mr Brandt', false], tk: 'OKM', about: 'Commodity cycles and big bets on new mines.' },
     { id: 'eastgate', name: 'Eastgate Developments', ind: 'Property', lad: 'corp', area: ['cbd', 'mid'], boss: ['Ms Moreau', true], tk: 'EST', about: 'Builds the city, one council approval at a time.' },
     { id: 'whitlock', name: 'Whitlock and Hale', ind: 'Law', lad: 'law', area: ['core', 'cbd'], boss: ['Ms Ashby', true], locked: 'Legal roles need a law degree, which comes in a later update.', about: 'A top law firm. Billable hours and a long road to partner.' },
@@ -6741,7 +6765,7 @@ window.GAME = (() => {
     { id: 'ashcroft', name: 'Ashcroft Industries', ind: 'Industrial', lad: 'corp', small: true, boss: ['Ms Kowalski', true], tk: 'ACI', about: 'An industrial company with a lean finance team.' }];
   const coById = id => COS.find(c => c.id === id);
   const SMALLF = { pay: .88, need: .65, ten: .7 };
-  const ladderFor = co => { const c = coById(co) || COS[0], sm = c.small ? SMALLF.pay : 1; return LADDERS[c.lad].map(([t, pay]) => ({ t, pay: Math.round(pay * sm / 100) * 100 })); };
+  const ladderFor = co => { const c = coById(co) || COS[0], sm = c.small ? SMALLF.pay : 1; return LADDERS[ladOf(co)].map(([t, pay]) => ({ t, pay: Math.round(pay * sm / 100) * 100 })); };
   const LAD = () => ladderFor((S.player.job && (S.player.job.co || S.player.job.lastCo)) || 'meridian');
   const needFor = (J, lv = J.level) => { const c = coById(J.co) || COS[0]; return Math.round(NEED[Math.min(lv, NEED.length - 1)] * (c.small ? SMALLF.need : 1)); };
   const tenureFor = (J, lv = J.level) => { const c = coById(J.co) || COS[0]; return Math.round(TENURE[Math.min(lv, TENURE.length - 1)] * (c.small ? SMALLF.ten : 1)); };
@@ -6771,8 +6795,8 @@ window.GAME = (() => {
   const BOSSW = () => bossName() + ', your manager';
   // promotion: everything the next step needs, and who senior is on your side
   const seniorFriend = () => Object.entries(S.coll || {}).some(([k, c]) => collCoOf(k) === S.player.job.co && (c.rank || 0) >= S.player.job.level + 2 && (c.rel || 0) >= 30);
-  function promoGaps(J) { const L = LAD(), gaps = []; if (J.level >= L.length - 1) return null; const fr = seniorFriend(), need = Math.round(needFor(J) * (fr ? .75 : 1)), days = Math.floor(S.time / 1440) - (J.roleSince || 0), ten = tenureFor(J), fin = CR.levelOf(S.player.skills.finance || 0), pmin = J.level >= L.length - 3 ? 78 : 68;
-    if (J.shiftsAt < need) gaps.push(`about ${Math.ceil(need - J.shiftsAt)} more solid shifts`); if (days < ten) gaps.push(`another ${ten - days} days in the role`); if (J.perf < pmin) gaps.push('better day to day performance'); if (fin < J.level + 2) gaps.push('stronger finance skills');
+  function promoGaps(J) { const L = LAD(), gaps = []; if (J.level >= L.length - 1) return null; const fr = seniorFriend(), need = Math.round(needFor(J) * (fr ? .75 : 1)), days = Math.floor(S.time / 1440) - (J.roleSince || 0), ten = tenureFor(J), pmin = J.level >= L.length - 3 ? 78 : 68;
+    if (J.shiftsAt < need) gaps.push(`about ${Math.ceil(need - J.shiftsAt)} more solid shifts`); if (days < ten) gaps.push(`another ${ten - days} days in the role`); if (J.perf < pmin) gaps.push('better day to day performance'); for (const [k, v] of Object.entries(gateFor(J.co, J.level + 1))) if (stat(k) < v) gaps.push(`${STATN[k]} ${v}, you have ${Math.floor(stat(k))}`);
     return { gaps, fr }; }
   // job listings refresh every Monday: one or two openings at some companies, pitched around what you could do
   const bestLevel = J => Math.max(J.best || 0, J.co ? J.level - (coById(J.co).small ? 1 : 0) : 0);
@@ -6780,8 +6804,8 @@ window.GAME = (() => {
     S.jobs = (S.jobs || []).filter(j => j.closes > d && S.apps.some(a => a.job === j.id));
     for (const c of COS) { if (c.id === J.co && !r()) continue; const n = c.locked ? (r() < .3 ? 1 : 0) : r() < .55 ? 1 : r() < .75 ? 2 : 0;
       for (let i = 0; i < n; i++) { const L = ladderFor(c.id), lv = c.locked ? 0 : Math.max(0, Math.min(L.length - 2, top - Math.floor(r() * 3))); if (S.jobs.some(q => q.co === c.id && q.level === lv)) continue; S.jobs.push({ id: 'j' + wk + c.id + i, co: c.id, level: lv, posted: d, closes: d + 14 }); } } }
-  const jobFit = j => { const c = coById(j.co), J = S.player.job, fin = CR.levelOf(S.player.skills.finance || 0), exp = bestLevel(J) + (J.co && coById(J.co).small && !c.small ? -1 : 0), d = Math.floor(S.time / 1440);
-    let p = .7 + Math.min(2, fin - (j.level + 2)) * .12 - Math.max(0, j.level - 1 - exp) * .35 + ((J.perf || 60) - 60) / 120 - (J.firedAt != null && d - J.firedAt < 60 ? .3 : 0) - (c.small ? -.1 : 0); return clampv(p, .05, .95); };
+  const jobFit = j => { const c = coById(j.co), J = S.player.job, mg = gateMargin(j.co, j.level), exp = bestLevel(J) + (J.co && coById(J.co).small && !c.small ? -1 : 0), d = Math.floor(S.time / 1440);
+    let p = .7 + Math.max(-3, Math.min(1, mg / 6)) * .2 - Math.max(0, j.level - 1 - exp) * .35 + ((J.perf || 60) - 60) / 120 - (J.firedAt != null && d - J.firedAt < 60 ? .3 : 0) - (c.small ? -.1 : 0); return clampv(p, .05, .95); };
   function applyJob(id) { const j = (S.jobs || []).find(q => q.id === id); if (!j) return; if (S.apps.some(a => a.co === j.co && ['sent', 'interview', 'offer'].includes(a.status))) return toast('You already have an application in with them.', 3);
     S.apps.unshift({ id: 'a' + Date.now().toString(36), job: j.id, co: j.co, level: j.level, t: S.time, status: 'sent', reply: S.time + 1440 * (1 + Math.floor(Math.random() * 3)) + Math.round(Math.random() * 400) }); toast(`Application sent to ${coById(j.co).name}. They usually reply within a few days.`, 3.5); }
   // replies arrive by email; an interview is booked before or after work on the next weekday
@@ -6804,20 +6828,21 @@ window.GAME = (() => {
     bank: ['Walk me through how you would value a company.', 'Cash flows, a discount rate and a terminal value, checked against comparable deals'],
     fund: ['Pitch me a stock.', 'A listed company, the numbers, the catalyst and what would prove you wrong'],
     consult: ['How many coffees does this city sell in a day?', 'Break it down by people, habits and outlets, then sanity check it'],
-    corp: ['How would you cut costs by ten percent without hurting sales?', 'Rank spending by return, cut the bottom, protect what customers see'] };
-  async function interview(a, door) { const c = coById(a.co), L = ladderFor(a.co)[a.level], fin = CR.levelOf(S.player.skills.finance || 0), N = S.player.needs, late = Math.max(0, S.time - a.at); let sc = 40;
+    corp: ['How would you cut costs by ten percent without hurting sales?', 'Rank spending by return, cut the bottom, protect what customers see'],
+    tech: ['Coding test. Find the one repeated number in a list of a million. How do you do it?', 'Use a hash set in one pass, talk through the time and memory cost, then test the edge cases'] };
+  async function interview(a, door) { const c = coById(a.co), L = ladderFor(a.co)[a.level], mg = gateMargin(a.co, a.level), N = S.player.needs, late = Math.max(0, S.time - a.at); let sc = 40;
     await fadeTo('Interview', `${c.name}, ${towerName(a.co)}`, null, 700);
     const qs = IQ.gen.slice().sort(() => Math.random() - .5).slice(0, 2), tq = IQ[c.lad] || IQ.corp, interviewer = c.boss[0];
     for (const [q, ch] of qs) { const r = await say(interviewer, 'none', q, ch.map(([t, v]) => ({ text: t, then: () => { sc += v; } }))); }
-    const good = fin >= a.level + 2; await say(interviewer, 'none', tq[0], [{ text: tq[1], then: () => { sc += good ? 14 : 4; } }, { text: 'Admit you would need to look into it', then: () => { sc += 2; } }]);
-    sc += fin * 2 + (S.owned.suit ? 6 : S.owned.shirt ? 3 : 0) + (N.mood - 50) * .1 - (N.energy < 30 ? 6 : 0) - Math.min(20, late * .8) + (Math.random() - .5) * 12;
+    const good = mg >= 0; await say(interviewer, 'none', tq[0], [{ text: tq[1], then: () => { sc += good ? 14 : 4; } }, { text: 'Admit you would need to look into it', then: () => { sc += 2; } }]);
+    sc += Math.max(-12, Math.min(8, mg / 2)) + (S.owned.suit ? 6 : S.owned.shirt ? 3 : 0) + (N.mood - 50) * .1 - (N.energy < 30 ? 6 : 0) - Math.min(20, late * .8) + (Math.random() - .5) * 12;
     a.status = 'done'; CR.passMinutes(S, 45);
     if (sc >= 60) { a.status = 'offer'; a.until = S.time + 3 * 1440; await say(interviewer, 'none', `We would like to offer you the role of ${L.t}, at ${salary(L.pay * 100)} a year. Have a think and let us know within three days.`, [{ text: 'Thank you. I will be in touch.' }]); workMail(`${c.name}: offer`, `Offer for ${L.t} at ${salary(L.pay * 100)} a year. Reply within three days in the Jobs app.`); }
     else { await say(interviewer, 'none', 'Thanks for coming in. We will be in touch.', [{ text: 'Thank you for your time.' }]); a.status = 'rejected'; workMail(`${c.name}: your interview`, 'Thank you for coming in. On this occasion we have chosen another candidate.'); } }
   // switching: accept an offer and you start at the new place on the next weekday after two days' notice
   function acceptOffer(id) { const a = S.apps.find(q => q.id === id); if (!a || a.status !== 'offer') return; const J = S.player.job, c = coById(a.co), L = ladderFor(a.co)[a.level]; let d = Math.floor(S.time / 1440) + 3; while (!tradingDay(d)) d++;
     if (J.co) CR.note(S, `Handed in notice at ${empName()}.`); J.best = bestLevel(J); a.status = 'accepted';
-    Object.assign(J, { co: a.co, employer: c.name, level: a.level, perf: 60, shiftsAt: 0, since: d, roleSince: d, lastShiftDay: d - 1, miss: 0, warns: [], startDay: d, lastCo: a.co, firedAt: J.firedAt });
+    Object.assign(J, { lad: undefined, co: a.co, employer: c.name, level: a.level, perf: 60, shiftsAt: 0, since: d, roleSince: d, lastShiftDay: d - 1, miss: 0, warns: [], startDay: d, lastCo: a.co, firedAt: J.firedAt });
     for (const o of S.apps) if (o !== a && ['sent', 'interview', 'offer'].includes(o.status)) o.status = 'withdrawn';
     workMail(`${c.name}: welcome`, `Welcome aboard as ${L.t}. Your first day is ${CR.fmtDate(d * 1440)} at 9:00 in ${towerName(a.co)}.`); toast(`You accepted ${c.name}'s offer. You start ${CR.fmtDate(d * 1440)} at 9:00 in ${towerName(a.co)}.`, 6); }
   function resign() { const J = S.player.job; if (!J.co) return; CR.note(S, `Resigned from ${empName()}.`); J.best = bestLevel(J); J.lastCo = J.co; J.co = null; J.employer = null; toast('You resigned. Look for your next role on the Jobs app.', 5); }
@@ -6841,7 +6866,7 @@ window.GAME = (() => {
   function fresh() {
     const S = CR.newGame({ name: 'Alex', mode: 'main', start: CR.fromParts(2026, 7, 5, 10, 0), birth: { y: 2004, mo: 3, d: 9 } });
     S.mode = 'main'; S.player.cash = 12000; S.player.bank = 240000; S.player.needs = { energy: 82, mood: 68, hunger: 30, health: 90 };
-    S.player.skills = { finance: 120 }; S.player.home = HOME && HOME.id; S.player.car = 'Dobbin';
+    S.player.skills = { finance: 20, strategy: 12, management: 10, coding: 10, persuasion: 12 }; S.player.home = HOME && HOME.id; S.player.car = 'Dobbin';
     { const d1 = Math.floor(S.time / 1440) + 1; S.player.job = { co: 'meridian', lastCo: 'meridian', employer: EMPLOYER, level: 0, perf: 60, shifts: 0, shiftsAt: 0, lastShiftDay: -1, since: d1, roleSince: d1, startDay: d1, miss: 0, warns: [], burn: 0, best: 0 }; }
     S.items = { meals: 3 }; S.rels.rob = { score: 30, met: true, flags: {} };
     S.contacts = {}; S.msgs = []; S.plans = []; S.tx = []; S.stereo = { on: false, by: null, day: -1 };
@@ -6850,7 +6875,12 @@ window.GAME = (() => {
   }
   let S = null;
   // older saves predate the phone
-  const upgrade = s => { s.contacts = s.contacts || {}; s.msgs = s.msgs || []; s.plans = s.plans || []; s.tx = s.tx || []; s.stereo = s.stereo || { on: false, by: null, day: -1 }; s.fines = s.fines || []; s.cart = s.cart || {}; s.orders = s.orders || []; s.owned = s.owned || {}; s.items = s.items || { meals: 0 }; s.port = s.port || {}; if (s.player && s.player.job && !('co' in s.player.job)) { const d = Math.floor(s.time / 1440); Object.assign(s.player.job, { co: 'meridian', lastCo: 'meridian', since: d - Math.round((s.player.job.shifts || 0) * 1.4), roleSince: d - Math.round((s.player.job.shiftsAt || 0) * 1.4), startDay: 0, miss: 0, warns: [], burn: 0, best: s.player.job.level || 0 }); } s.apps = s.apps || []; s.jobs = s.jobs || []; s.mail = s.mail || [];
+  function upgradeStats(s) { const P = s.player, sk = P && P.skills; if (!sk || 'strategy' in sk) return; const xp = sk.finance || 0, J = P.job || {};
+    const pts = ptsFrom(hrsTo(20) + Math.max(0, xp - 120) / 45), lv = J.level || 0;
+    P.skills = { finance: Math.min(100, pts), strategy: 12, management: 10, coding: 10, persuasion: 12 };
+    if (J.co && (J.co === 'kestrel' || J.co === 'paylane')) J.lad = 'corp';
+    const G = (GATES[J.lad || ((COS.find(c => c.id === J.co) || COS[0]).lad)] || GATES.corp)[Math.min(lv, 7)] || {}; for (const [k, v] of Object.entries(G)) P.skills[k] = Math.max(P.skills[k] || 0, v); }
+  const upgrade = s => { upgradeStats(s); s.contacts = s.contacts || {}; s.msgs = s.msgs || []; s.plans = s.plans || []; s.tx = s.tx || []; s.stereo = s.stereo || { on: false, by: null, day: -1 }; s.fines = s.fines || []; s.cart = s.cart || {}; s.orders = s.orders || []; s.owned = s.owned || {}; s.items = s.items || { meals: 0 }; s.port = s.port || {}; if (s.player && s.player.job && !('co' in s.player.job)) { const d = Math.floor(s.time / 1440); Object.assign(s.player.job, { co: 'meridian', lastCo: 'meridian', since: d - Math.round((s.player.job.shifts || 0) * 1.4), roleSince: d - Math.round((s.player.job.shiftsAt || 0) * 1.4), startDay: 0, miss: 0, warns: [], burn: 0, best: s.player.job.level || 0 }); } s.apps = s.apps || []; s.jobs = s.jobs || []; s.mail = s.mail || [];
     if (!s.mkt && s.time != null) initMarket(s); else if (s.mkt) migrateMarket(s); return s; };
   const txn = (text, cents) => { S.tx.unshift({ t: S.time, text, c: cents }); if (S.tx.length > 60) S.tx.length = 60; };
 
@@ -6960,7 +6990,7 @@ window.GAME = (() => {
     const hrs = Math.min(8.5, SHIFT_END - Math.max(h, 9)), mins = Math.round((SHIFT_END - h) * 60);
     // a few minutes costs little, a lost morning costs a lot
     const latePen = late ? Math.min(45, 6 + lateMin / 8) : 0;
-    let payExtra = 0; const fin = CR.levelOf(S.player.skills.finance || 0); let score = clampv(35 + (S.owned.suit ? 6 : S.owned.shirt ? 3 : 0) + N.energy * .3 + N.mood * .15 + fin * 6 - latePen - (N.hunger > 70 ? 10 : 0) + (Math.random() - .5) * 16, 0, 100);
+    let payExtra = 0; let score = clampv(35 + (S.owned.suit ? 6 : S.owned.shirt ? 3 : 0) + N.energy * .3 + N.mood * .15 + Math.min(30, mainStat() * .3) - latePen - (N.hunger > 70 ? 10 : 0) + (Math.random() - .5) * 16, 0, 100);
     const payC = Math.round(L.pay * 100 / 260 * hrs / 8.5);
     const start = S.time, sh = { perf: 0, extra: 0 };
     const events = workEvents(sh, mins), lunchAt = Math.round((12.5 - h) * 60); if (lunchAt > 10 && lunchAt < mins - 30) events.push({ at: lunchAt, run: () => lunchBreak(sh) });
@@ -6968,7 +6998,7 @@ window.GAME = (() => {
     score = clampv(score + sh.perf, 0, 100); if (sh.extra) payExtra = Math.round(L.pay * 100 / 260 * sh.extra / 60 / 8.5);
     const gross = payC + payExtra, net = Math.round(gross * (1 - taxRate(L.pay)));
     { S.player.bank += net; txn(`${empName()}, pay for the day${payExtra ? ' with overtime' : ''}, ${money(gross)} before tax`, net); J.perf = J.perf * .8 + score * .2; J.shifts++; J.shiftsAt += hrs >= 6 ? 1 : .5; J.lastShiftDay = Math.floor(start / 1440);
-      S.player.skills.finance = (S.player.skills.finance || 0) + Math.round((28 + score / 6) * hrs / 8.5); need('mood', score > 65 ? 3 : score < 40 ? -6 : -2);
+      workXP(hrs, score); need('mood', score > 65 ? 3 : score < 40 ? -6 : -2);
       CR.note(S, `Worked a shift${late ? `, ${Math.round(lateMin)} minutes late` : ''}, ${money(net)} paid in after tax, performance ${Math.round(J.perf)}.`); }
     toast(`${score >= 70 ? 'A strong day.' : score >= 45 ? 'An ordinary day.' : 'A rough day.'} Shift done. ${money(net)} paid to your bank after tax. Performance now ${Math.round(J.perf)}.`);
     addStress(J, sh, N); J.miss = 0; if (J.perf < 30) warn('Your work has slipped well below what we need.');
@@ -6984,71 +7014,150 @@ window.GAME = (() => {
   // mandates. A few things happen to everybody. Choices move performance, mood and money, and some are remembered.
   // levels: 0 Graduate Analyst, 1 Analyst, 2 Senior Analyst, 3 Associate, 4 Vice President
   const COWORKERS = ['Priya', 'Marcus', 'Elena', 'Theo', 'Nadia', 'Sam'], cw = () => COWORKERS[Math.floor(Math.random() * COWORKERS.length)];
-  const fin = () => CR.levelOf(S.player.skills.finance || 0), flag = f => CR.apply({ flag: f }, S);
+  const fin = () => { const v = mainStat(); return v >= 40 ? 4 : v >= 33 ? 3 : v >= 26 ? 2 : v >= 18 ? 1 : 0; }, flag = f => CR.apply({ flag: f }, S);
+  // a check against the stats a moment calls for, with a little luck either way, and the experience a choice gives
+  const chk = req => Object.entries(req).every(([k, v]) => stat(k) + (Math.random() * 8 - 4) >= v);
+  let EVXP = null; const grow = m => { EVXP = EVXP || {}; for (const [k, h] of Object.entries(m)) EVXP[k] = (EVXP[k] || 0) + gainSkill(k, h); };
+  const ALL = ['bank', 'consult', 'corp', 'fund', 'tech'], FINL = ['bank', 'consult', 'corp', 'fund'];
   const WORK_EVENTS = [
     // graduates
-    { id: 'g_deck', lv: [0, 0], who: 'boss', text: () => '"The partners present at eight tomorrow. The deck needs every chart restyled to the new template. Tonight."', ch: [
-      ['Stay and get it done', sh => { sh.perf += 9; sh.extra += 180; need('mood', -8); need('energy', -12); if (FF) { FF.left += 180; FF.total += 180; } }, 'Ms Calder looks at the finished deck the next morning, then nods once. "Good."'],
+    { id: 'g_deck', lad: FINL, lv: [0, 0], who: 'boss', text: () => '"The partners present at eight tomorrow. The deck needs every chart restyled to the new template. Tonight."', ch: [
+      ['Stay and get it done', sh => { grow({ finance: 1.5, persuasion: .5 }); sh.perf += 9; sh.extra += 180; need('mood', -8); need('energy', -12); if (FF) { FF.left += 180; FF.total += 180; } }, 'Ms Calder looks at the finished deck the next morning, then nods once. "Good."'],
       ['Do what you can before six', sh => { sh.perf -= 2; }, '"Fine. I will finish the rest myself." She does not look up.']] },
-    { id: 'g_coffee', lv: [0, 0], text: () => 'A managing director you have never met stops at your desk. "You. Grad. Six flat whites from the place downstairs, my client is waiting."', ch: [
+    { id: 'g_coffee', lad: ['bank', 'consult', 'fund'], lv: [0, 0], text: () => 'A managing director you have never met stops at your desk. "You. Grad. Six flat whites from the place downstairs, my client is waiting."', ch: [
       ['Go and get them', sh => { if (spend(3600, 'Coffees for the client meeting')) { sh.perf += 3; } need('energy', -3); }, 'Thirty six dollars of your own money. He takes the tray without a word, but you hear him tell the client you are "one of the good ones".'],
       ['Say you are on a deadline for Ms Calder', sh => { sh.perf -= 3; }, 'He stares for a second, then picks someone else. Later, Ms Calder mentions it. Twice.']] },
-    { id: 'g_error', lv: [0, 1], text: () => 'Checking last week\'s model, you find an error. Yours. A formula pointing at the wrong row. The number already went to a client.', ch: [
-      ['Tell Ms Calder straight away', sh => { sh.perf += 4; need('mood', -6); flag('owned_mistake'); }, '"Thank you for telling me. We will send a correction. Check everything twice from now on." It stings, but she remembers who owned it.'],
+    { id: 'g_error', lad: ['bank', 'consult', 'fund'], lv: [0, 1], text: () => 'Checking last week\'s model, you find an error. Yours. A formula pointing at the wrong row. The number already went to a client.', ch: [
+      ['Tell Ms Calder straight away', sh => { grow({ finance: 1.5, management: .5 }); sh.perf += 4; need('mood', -6); flag('owned_mistake'); }, '"Thank you for telling me. We will send a correction. Check everything twice from now on." It stings, but she remembers who owned it.'],
       ['Fix it quietly and say nothing', sh => { if (Math.random() < .4) { sh.perf -= 14; need('mood', -10); toast('The client found the error first. Ms Calder traced it to you.', 5); } else need('mood', -3); }, null]] },
-    { id: 'g_meeting', lv: [0, 0], text: () => 'You are taking notes in a client meeting. The client asks a question nobody senior can answer, and you know it from the model.', ch: [
-      ['Speak up', sh => { if (fin() >= 2) { sh.perf += 8; need('mood', 8); } else { sh.perf -= 4; need('mood', -6); } }, null],
-      ['Pass a note to Ms Calder', sh => { sh.perf += 4; }, 'She reads it, answers the client smoothly, and gives you a small nod across the table.']] },
+    { id: 'g_meeting', lad: ['bank', 'consult'], lv: [0, 0], text: () => 'You are taking notes in a client meeting. The client asks a question nobody senior can answer, and you know it from the model.', ch: [
+      ['Speak up', sh => { grow({ persuasion: 2, finance: 1 }); if (chk({ persuasion: 13, finance: 22 })) { sh.perf += 8; need('mood', 8); toast('The client nods along. Ms Calder raises an eyebrow, impressed.', 4); } else { sh.perf -= 4; need('mood', -6); toast('You trip over the numbers. Ms Calder steps in to rescue it.', 4); } }, null],
+      ['Pass a note to Ms Calder', sh => { grow({ finance: .5 }); sh.perf += 4; }, 'She reads it, answers the client smoothly, and gives you a small nod across the table.']] },
     // analysts
-    { id: 'a_check', lv: [1, 2], text: () => `Reviewing ${cw()}'s valuation before it goes out, you find the discount rate is off by a full point. They are a level above you.`, ch: [
-      ['Raise it with them quietly', sh => { sh.perf += 5; CR.apply({ rep: { general: 2 } }, S); }, 'They go pale, then thank you. Properly. You have made a friend on the floor.'],
-      ['Take it straight to Ms Calder', sh => { sh.perf += 7; CR.apply({ rep: { general: -2 } }, S); }, 'Ms Calder appreciates it. The person you went around does not.'],
+    { id: 'a_check', lad: ['bank', 'fund', 'corp'], lv: [1, 2], text: () => `Reviewing ${cw()}'s valuation before it goes out, you find the discount rate is off by a full point. They are a level above you.`, ch: [
+      ['Raise it with them quietly', sh => { grow({ finance: 1.5, persuasion: 1 }); sh.perf += 5; CR.apply({ rep: { general: 2 } }, S); }, 'They go pale, then thank you. Properly. You have made a friend on the floor.'],
+      ['Take it straight to Ms Calder', sh => { grow({ finance: 1.5 }); sh.perf += 7; CR.apply({ rep: { general: -2 } }, S); }, 'Ms Calder appreciates it. The person you went around does not.'],
       ['Leave it, it is not your work', sh => { if (Math.random() < .5) sh.perf -= 6; }, null]] },
-    { id: 'a_weekend', lv: [1, 3], who: 'boss', text: () => '"A deal has come in hot. I need someone on it this Saturday. It is not an order. But it would be noticed."', ch: [
-      ['Volunteer', sh => { sh.perf += 8; S.player.job.weekend = (S.player.job.weekend || 0) + 1; need('mood', -5); }, '"Good. Nine o clock Saturday." Your weekend just got shorter.'],
+    { id: 'a_weekend', lad: ['bank', 'consult'], lv: [1, 3], who: 'boss', text: () => '"A deal has come in hot. I need someone on it this Saturday. It is not an order. But it would be noticed."', ch: [
+      ['Volunteer', sh => { grow({ finance: 2, strategy: 1.5 }); sh.perf += 8; S.player.job.weekend = (S.player.job.weekend || 0) + 1; need('mood', -5); }, '"Good. Nine o clock Saturday." Your weekend just got shorter.'],
       ['Say you have plans', sh => { sh.perf -= 2; }, '"Understood." It is hard to tell if it is.']] },
-    { id: 'a_grad', lv: [1, 2], text: () => 'A new graduate has been put next to you. They are drowning in their first model and too scared to ask anyone.', ch: [
-      ['Spend an hour walking them through it', sh => { sh.perf += 2; need('mood', 5); need('energy', -4); CR.apply({ rep: { general: 2 } }, S); }, 'By the end they are laughing at their own mistakes. Ms Calder notices who trained them.'],
+    { id: 'a_grad', lad: FINL, lv: [1, 2], text: () => 'A new graduate has been put next to you. They are drowning in their first model and too scared to ask anyone.', ch: [
+      ['Spend an hour walking them through it', sh => { grow({ management: 2, persuasion: .5 }); sh.perf += 2; need('mood', 5); need('energy', -4); CR.apply({ rep: { general: 2 } }, S); }, 'By the end they are laughing at their own mistakes. Ms Calder notices who trained them.'],
       ['Point them at the training folder', sh => { sh.perf += 1; }, null]] },
     // seniors and associates
-    { id: 's_deadline', lv: [2, 3], who: 'boss', text: () => '"The client wants the full model by Thursday. I said yes." Thursday is two days away. It is a two week job.', ch: [
-      ['Push back with a realistic plan', sh => { if (fin() >= 4) { sh.perf += 9; need('mood', 4); } else { sh.perf -= 3; } }, null],
-      ['Say yes and work through the nights', sh => { sh.perf += 6; need('energy', -20); need('mood', -10); }, 'It gets done. Mostly. You do not remember Wednesday.']] },
-    { id: 's_number', lv: [2, 4], text: () => 'The client wants a valuation of at least four hundred million in the pitch. Your model, done properly, says three forty.', ch: [
-      ['Stand by three forty', sh => { sh.perf += 3; flag('integrity'); need('mood', 3); }, 'The client grumbles. Months later, when the deal is audited, your number is the one that held up.'],
+    { id: 's_deadline', lad: ['bank', 'consult', 'corp'], lv: [2, 3], who: 'boss', text: () => '"The client wants the full model by Thursday. I said yes." Thursday is two days away. It is a two week job.', ch: [
+      ['Push back with a realistic plan', sh => { grow({ strategy: 2, persuasion: 2 }); if (chk({ strategy: 25, persuasion: 22 })) { sh.perf += 9; need('mood', 4); toast('She reads your plan twice, then calls the client to reset the date.', 4); } else { sh.perf -= 3; toast('"That is not what I asked for." The plan goes in the bin.', 4); } }, null],
+      ['Say yes and work through the nights', sh => { grow({ finance: 2 }); sh.perf += 6; need('energy', -20); need('mood', -10); }, 'It gets done. Mostly. You do not remember Wednesday.']] },
+    { id: 's_number', lad: ['bank'], lv: [2, 4], text: () => 'The client wants a valuation of at least four hundred million in the pitch. Your model, done properly, says three forty.', ch: [
+      ['Stand by three forty', sh => { grow({ strategy: 1.5, persuasion: 1.5 }); sh.perf += 3; flag('integrity'); need('mood', 3); }, 'The client grumbles. Months later, when the deal is audited, your number is the one that held up.'],
       ['Tweak the assumptions until it reaches four hundred', sh => { sh.perf += 6; flag('stretched_numbers'); need('mood', -6); }, 'Everyone is happy. For now.']] },
-    { id: 's_present', lv: [2, 3], who: 'boss', text: () => '"I am stuck in another meeting. Can you present our numbers to the partners at four?"', ch: [
-      ['Take it', sh => { const ok = fin() >= 3 && S.player.needs.energy > 35; sh.perf += ok ? 12 : -6; need('mood', ok ? 10 : -10); }, null],
+    { id: 's_present', lad: ['bank', 'consult', 'corp'], lv: [2, 3], who: 'boss', text: () => '"I am stuck in another meeting. Can you present our numbers to the partners at four?"', ch: [
+      ['Take it', sh => { grow({ persuasion: 2.5, finance: 1 }); const ok = chk({ persuasion: 20, finance: 30 }) && S.player.needs.energy > 35; sh.perf += ok ? 12 : -6; need('mood', ok ? 10 : -10); toast(ok ? 'The partners ask sharp questions and you have an answer for each.' : 'A partner asks one question you cannot answer, and the room goes cold.', 4); }, null],
       ['Ask her to move it', sh => { sh.perf -= 1; }, null]] },
-    { id: 's_headhunt', lv: [2, 4], text: () => 'Your phone buzzes. A recruiter from a rival firm. "We have a role that pays twenty percent more. Coffee this week?"', ch: [
+    { id: 's_headhunt', lad: ALL, lv: [2, 4], text: () => 'Your phone buzzes. A recruiter from a rival firm. "We have a role that pays twenty percent more. Coffee this week?"', ch: [
       ['Take the call', sh => { flag('headhunted'); need('mood', 4); }, 'Nothing is decided. But it is nice to be wanted.'],
       ['Decline politely', sh => { }, null]] },
-    { id: 'as_burnout', lv: [3, 4], text: () => `${cw()}, one of your juniors, has been in the office until two every night this week. They just made a basic error and looked close to tears.`, ch: [
-      ['Send them home and cover it yourself', sh => { sh.perf += 2; need('energy', -10); need('mood', 3); CR.apply({ rep: { general: 3 } }, S); }, 'They come back the next day rested, and loyal.'],
+    { id: 'as_burnout', lad: ALL, lv: [3, 4], text: () => `${cw()}, one of your juniors, has been in the office until two every night this week. They just made a basic error and looked close to tears.`, ch: [
+      ['Send them home and cover it yourself', sh => { grow({ management: 2.5 }); sh.perf += 2; need('energy', -10); need('mood', 3); CR.apply({ rep: { general: 3 } }, S); }, 'They come back the next day rested, and loyal.'],
       ['Tell them to push through', sh => { sh.perf += 3; if (Math.random() < .35) { toast('They handed in their notice the following week.', 5); sh.perf -= 8; } }, null]] },
-    { id: 'as_dinner', lv: [3, 4], who: 'boss', text: () => '"The client wants dinner tonight. Steak, wine, the works. You are leading."', ch: [
-      ['Go to dinner', sh => { sh.perf += 7; need('energy', -10); need('mood', 2); need('hunger', -60); }, 'You get home after midnight, full of red wine and with the client on first name terms.'],
+    { id: 'as_dinner', lad: ['bank', 'consult', 'fund'], lv: [3, 4], who: 'boss', text: () => '"The client wants dinner tonight. Steak, wine, the works. You are leading."', ch: [
+      ['Go to dinner', sh => { grow({ persuasion: 2.5 }); sh.perf += 7; need('energy', -10); need('mood', 2); need('hunger', -60); }, 'You get home after midnight, full of red wine and with the client on first name terms.'],
       ['Send someone junior instead', sh => { sh.perf -= 4; }, null]] },
     // vice presidents
-    { id: 'vp_cuts', lv: [4, 4], who: 'boss', text: () => '"We are cutting the team by one. I need your recommendation by Friday."', ch: [
-      ['Recommend on performance alone', sh => { sh.perf += 4; need('mood', -8); }, 'It is the right call, and it does not feel like one.'],
-      ['Push back and fight for the whole team', sh => { sh.perf -= 3; CR.apply({ rep: { general: 4 } }, S); }, 'You win, this time. The partners note that you are hard to move.']] },
-    { id: 'vp_mandate', lv: [4, 4], text: () => 'A mandate you spent three months chasing is down to you and one other bank. The client wants a fee cut to decide.', ch: [
-      ['Cut the fee and win it', sh => { sh.perf += 6; S.player.bank += 250000; txn('Deal bonus', 250000); }, 'You win the mandate. A bonus lands in your account.'],
-      ['Hold the price', sh => { if (Math.random() < .5) { sh.perf += 14; S.player.bank += 600000; txn('Deal bonus', 600000); toast('They chose you anyway. Big bonus.', 4); } else { sh.perf -= 8; toast('They went with the other bank.', 4); } }, null]] },
+    { id: 'vp_cuts', lad: ALL, lv: [4, 4], who: 'boss', text: () => '"We are cutting the team by one. I need your recommendation by Friday."', ch: [
+      ['Recommend on performance alone', sh => { grow({ management: 2.5, strategy: 1 }); sh.perf += 4; need('mood', -8); }, 'It is the right call, and it does not feel like one.'],
+      ['Push back and fight for the whole team', sh => { grow({ management: 1.5, persuasion: 2 }); sh.perf -= 3; CR.apply({ rep: { general: 4 } }, S); }, 'You win, this time. The partners note that you are hard to move.']] },
+    { id: 'vp_mandate', lad: ['bank'], lv: [4, 4], text: () => 'A mandate you spent three months chasing is down to you and one other bank. The client wants a fee cut to decide.', ch: [
+      ['Cut the fee and win it', sh => { grow({ persuasion: 2 }); sh.perf += 6; S.player.bank += 250000; txn('Deal bonus', 250000); }, 'You win the mandate. A bonus lands in your account.'],
+      ['Hold the price', sh => { grow({ persuasion: 2.5, strategy: 1 }); if (chk({ persuasion: 40 }) || Math.random() < .3) { sh.perf += 14; S.player.bank += 600000; txn('Deal bonus', 600000); toast('They chose you anyway. Big bonus.', 4); } else { sh.perf -= 8; toast('They went with the other bank.', 4); } }, null]] },
     // anyone
-    { id: 'x_drill', lv: [0, 4], text: () => 'The fire alarm goes off. A drill. Everyone is herded down thirty two floors of stairs.', ch: [['Go down with everyone', sh => { need('energy', -4); need('mood', 2); }, null], ['Hide in the stairwell and keep working', sh => { if (Math.random() < .35) { sh.perf -= 6; toast('A fire warden found you. Ms Calder heard about it.', 4); } else sh.perf += 2; }, null]] },
-    { id: 'x_market', lv: [0, 4], text: () => 'The market drops four percent in an hour. The floor goes quiet, then every phone rings at once.', ch: [['Get on the phones and help', sh => { sh.perf += 5; need('energy', -6); }, null], ['Keep your head down on your own work', sh => { sh.perf += 1; }, null]] },
-    { id: 'x_praise', lv: [0, 4], when: () => S.player.job.perf > 70, text: () => 'A partner you have never spoken to stops by. "You did the numbers on the logistics deal? Good work."', ch: [['Thank you. It was a team effort.', sh => { sh.perf += 3; need('mood', 8); }, null], ['Thanks. I have some ideas on the next one too.', sh => { sh.perf += 5; need('mood', 6); }, null]] }];
+    { id: 'x_drill', lad: ALL, lv: [0, 4], text: () => 'The fire alarm goes off. A drill. Everyone is herded down thirty two floors of stairs.', ch: [['Go down with everyone', sh => { need('energy', -4); need('mood', 2); }, null], ['Hide in the stairwell and keep working', sh => { if (Math.random() < .35) { sh.perf -= 6; toast('A fire warden found you. Ms Calder heard about it.', 4); } else sh.perf += 2; }, null]] },
+    { id: 'x_market', lad: ['bank', 'fund'], lv: [0, 4], text: () => 'The market drops four percent in an hour. The floor goes quiet, then every phone rings at once.', ch: [['Get on the phones and help', sh => { grow({ finance: 1.5, persuasion: 1 }); sh.perf += 5; need('energy', -6); }, null], ['Keep your head down on your own work', sh => { sh.perf += 1; }, null]] },
+    { id: 'x_praise', lad: ['bank', 'consult'], lv: [0, 4], when: () => S.player.job.perf > 70, text: () => 'A partner you have never spoken to stops by. "You did the numbers on the logistics deal? Good work."', ch: [['Thank you. It was a team effort.', sh => { sh.perf += 3; need('mood', 8); }, null], ['Thanks. I have some ideas on the next one too.', sh => { sh.perf += 5; need('mood', 6); }, null]] },
+    // ---- software engineering, at Kestrel and Paylane ----
+    { id: 't_review', lad: ['tech'], lv: [0, 1], text: () => `Your first big pull request comes back from ${cw()}, a senior engineer, with forty one review comments.`, ch: [
+      ['Work through every comment and ask about the ones you do not follow', sh => { grow({ coding: 3, persuasion: .5 }); sh.perf += 5; need('energy', -4); }, 'Half the comments teach you something. The code that ships is much better than what you wrote.'],
+      ['Push back on the ones you think are just taste', sh => { grow({ coding: 1.5, persuasion: 1.5 }); if (chk({ coding: 24, persuasion: 14 })) { sh.perf += 6; toast('You make your case well. They approve with a thumbs up.', 4); } else { sh.perf -= 4; toast('It turns out most of them were not taste. Awkward.', 4); } }, null]] },
+    { id: 't_prod', lad: ['tech'], lv: [0, 1], text: () => 'You run a clean-up script against what you think is the test database. The row count is far too big. It was production.', ch: [
+      ['Raise the alarm in the incident channel now', sh => { grow({ coding: 2, management: .5 }); sh.perf += 3; need('mood', -8); flag('owned_mistake'); }, 'Backups restore everything within the hour. The write-up blames the process, not you, because you spoke up.'],
+      ['Try to roll it back quietly yourself', sh => { grow({ coding: 1 }); if (chk({ coding: 30 })) { need('mood', -3); toast('You restore it before anyone notices. Your heart rate takes longer.', 4); } else { sh.perf -= 14; need('mood', -10); toast('Customers noticed first. The incident review traces it to you.', 5); } }, null]] },
+    { id: 't_standup', lad: ['tech'], lv: [0, 2], who: 'boss', text: () => '"Why is the payments feature three days late?" It is late because another team broke the service it depends on.', ch: [
+      ['Explain the dependency and propose a workaround', sh => { grow({ persuasion: 1.5, strategy: 1 }); if (chk({ persuasion: 14, strategy: 14 })) { sh.perf += 6; toast('Ms Calder nods. "Good. Do that." The workaround gets it out by Friday.', 4); } else { sh.perf -= 1; toast('It comes out sounding like excuses.', 3.5); } }, null],
+      ['Say it will be done tomorrow', sh => { sh.perf -= 3; need('energy', -10); }, 'It is not done tomorrow. Or the day after.']] },
+    { id: 't_oncall', lad: ['tech'], lv: [1, 3], text: () => 'You are on call. At 3 am your phone screams. Checkout is down for half the country.', ch: [
+      ['Get up and fix it', sh => { grow({ coding: 3, strategy: 1 }); need('energy', -15); if (chk({ coding: 30 })) { sh.perf += 9; toast('Back up in forty minutes. The morning channel is full of thank yous.', 4); } else { sh.perf += 3; toast('It takes until dawn and a senior engineer, but you learn exactly how it broke.', 4); } }, null],
+      ['Escalate straight to the senior on call', sh => { grow({ coding: .5 }); sh.perf += 1; need('energy', -5); }, 'It gets fixed. You watch and take notes.']] },
+    { id: 't_rewrite', lad: ['tech'], lv: [1, 3], text: () => 'The team wants to rewrite the whole service in a new framework. You think it is six months of risk for very little.', ch: [
+      ['Write up the trade-offs and argue for a smaller change', sh => { grow({ strategy: 2, persuasion: 1.5 }); if (chk({ strategy: 22, persuasion: 18 })) { sh.perf += 8; toast('Your doc wins the room. The smaller change ships in three weeks.', 4); } else { sh.perf += 1; toast('They go ahead anyway. You note the date.', 4); } }, null],
+      ['Go along with it', sh => { grow({ coding: 1 }); }, 'Six months later the rewrite is still at sixty percent.']] },
+    { id: 't_intern', lad: ['tech'], lv: [1, 2], text: () => 'The summer intern has been stuck on the same bug for two days and is too nervous to ask for help.', ch: [
+      ['Pair with them for an hour', sh => { grow({ management: 2, coding: .5 }); sh.perf += 2; need('mood', 5); CR.apply({ rep: { general: 2 } }, S); }, 'You find it together. They thank you three times and tell everyone at lunch.'],
+      ['Send them a link to the docs', sh => { sh.perf += 1; }, null]] },
+    { id: 't_launch', lad: ['tech'], lv: [3, 4], who: 'boss', text: () => '"Launch is in two weeks and product wants three more features." Your team says one, maybe two.', ch: [
+      ['Negotiate the scope down to what can ship well', sh => { grow({ persuasion: 2, strategy: 2, management: 1 }); if (chk({ persuasion: 30, strategy: 30 })) { sh.perf += 10; toast('Product grumbles but agrees. The launch goes clean.', 4); } else { sh.perf -= 4; toast('You lose the argument. The team will be working weekends.', 4); } }, null],
+      ['Promise all three and push the team', sh => { grow({ management: 1 }); sh.perf += 6; need('mood', -6); if (Math.random() < .4) { sh.perf -= 10; toast('It ships with a bug that takes payments down for an hour.', 5); } }, null]] },
+    { id: 't_hire', lad: ['tech'], lv: [3, 4], text: () => 'You are hiring for your team. Two finalists. A brilliant coder who was rude to the recruiter, and a solid one everyone liked.', ch: [
+      ['Hire the solid one', sh => { grow({ management: 2.5 }); sh.perf += 3; }, 'Six months on, they are the glue of the team.'],
+      ['Hire the brilliant one', sh => { grow({ management: 1.5 }); if (Math.random() < .5) { sh.perf += 8; toast('They ship more than anyone. Mostly worth the friction.', 4); } else { sh.perf -= 6; toast('Two of your engineers ask to move teams.', 4); } }, null]] },
+    { id: 't_outage', lad: ['tech'], lv: [4, 4], who: 'boss', text: () => '"The outage made the news. Someone senior needs to explain it to the press and to our biggest customers. I want it to be you."', ch: [
+      ['Front it yourself', sh => { grow({ persuasion: 3, management: 1 }); if (chk({ persuasion: 40 })) { sh.perf += 10; CR.apply({ rep: { general: 4 } }, S); toast('Calm, clear and honest. The story dies by the afternoon.', 4); } else { sh.perf -= 6; toast('A reporter quotes your worst sentence.', 4); } }, null],
+      ['Leave it to the communications team', sh => { sh.perf -= 2; }, null]] },
+    { id: 't_runway', lad: ['tech'], co: 'paylane', lv: [0, 4], text: () => 'At the all-hands, the founders say the next funding round has slipped. Payroll is fine, "for now".', ch: [
+      ['Keep your head down and keep shipping', sh => { grow({ coding: 1.5 }); sh.perf += 4; flag('stayed_paylane'); }, 'The room is quiet for the rest of the day.'],
+      ['Quietly update your resume', sh => { need('mood', 2); flag('paylane_doubts'); }, 'Just in case.']] },
+    // ---- consulting ----
+    { id: 'c_redink', lad: ['consult'], lv: [0, 1], text: () => 'The engagement manager hands back your slides covered in red ink. "Lead with the answer. Always."', ch: [
+      ['Rebuild the storyline tonight', sh => { grow({ strategy: 2, persuasion: 1 }); sh.perf += 6; need('energy', -10); }, 'The second version tells a story. She changes three words.'],
+      ['Fix the typos and resend', sh => { sh.perf -= 3; }, '"This is the same deck." It is.']] },
+    { id: 'c_estimate', lad: ['consult'], lv: [0, 2], text: () => 'Mid-workshop, the client asks how many electric scooters the city could support. Everyone turns to you.', ch: [
+      ['Estimate it out loud', sh => { grow({ strategy: 2, persuasion: 1 }); if (chk({ strategy: 20 })) { sh.perf += 8; toast('People, trips, fleet turnover. The client writes your number down.', 4); } else { sh.perf -= 3; toast('You lose the thread halfway. A partner gently takes over.', 4); } }, null],
+      ['Promise to come back with a number tomorrow', sh => { grow({ strategy: .5 }); sh.perf += 1; }, null]] },
+    { id: 'c_travel', lad: ['consult'], lv: [1, 2], who: 'boss', text: () => '"New engagement. Client site upstate, Monday to Thursday, for twelve weeks. You in?"', ch: [
+      ['Go', sh => { grow({ strategy: 2, management: 1, persuasion: 1 }); sh.perf += 6; need('mood', -5); }, 'Hotel breakfasts, a rental car and a crash course in how a factory actually runs.'],
+      ['Ask to stay on a local case', sh => { sh.perf -= 3; }, '"Noted." It is.']] },
+    { id: 'c_reject', lad: ['consult'], lv: [2, 4], text: () => 'In the steering meeting, the client CEO rejects your team\'s recommendation outright.', ch: [
+      ['Walk him back through the evidence', sh => { grow({ persuasion: 2.5, strategy: 1 }); if (chk({ persuasion: 30, strategy: 34 })) { sh.perf += 10; toast('By the end of the meeting he is presenting it as his idea. Perfect.', 4); } else { sh.perf -= 4; toast('He digs in. The partner calls you afterwards.', 4); } }, null],
+      ['Offer to revisit the analysis', sh => { grow({ strategy: 1 }); sh.perf += 1; }, null]] },
+    { id: 'c_sell', lad: ['consult'], lv: [3, 4], who: 'boss', text: () => '"The client is happy. I want to sell them the next phase. Will you lead the pitch?"', ch: [
+      ['Lead the pitch', sh => { grow({ persuasion: 3, strategy: 1 }); if (chk({ persuasion: 40 })) { sh.perf += 10; S.player.bank += 150000; txn('Sales bonus', 150000); toast('They sign the follow-on. A bonus lands in your account.', 4); } else { sh.perf -= 2; toast('They want to think about it. They are still thinking.', 4); } }, null],
+      ['Support from the back of the room', sh => { grow({ persuasion: 1 }); }, null]] },
+    // ---- the hedge fund ----
+    { id: 'f_pitch', lad: ['fund'], lv: [0, 2], who: 'boss', text: () => '"Morning meeting. Best idea you have. Sixty seconds. Go."', ch: [
+      ['Pitch the stock you have been researching', sh => { grow({ finance: 1.5, persuasion: 1.5 }); if (chk({ finance: 28, persuasion: 14 })) { sh.perf += 8; toast('Ms Calder asks two questions, then says "Start a small position."', 4); } else { sh.perf -= 3; toast('"What is the catch?" You do not have one ready.', 4); } }, null],
+      ['Pass this week', sh => { sh.perf -= 1; }, null]] },
+    { id: 'f_loss', lad: ['fund'], lv: [1, 3], text: () => 'A position you recommended just fell twelve percent on a profit warning.', ch: [
+      ['Re-underwrite it and give an honest view', sh => { grow({ finance: 2, strategy: 2 }); sh.perf += 4; need('mood', -4); }, 'You recommend trimming. It is the right call, and the desk remembers you owned it.'],
+      ['Defend it to the end', sh => { grow({ finance: .5 }); if (Math.random() < .4) { sh.perf += 6; toast('It bounces back. You look like a genius, for now.', 4); } else { sh.perf -= 8; toast('It falls another fifteen percent.', 4); } }, null]] },
+    { id: 'f_crowded', lad: ['fund'], lv: [2, 4], text: () => 'Every fund in the city owns the stock you want to buy. It has gone straight up for months.', ch: [
+      ['Size it small and wait for a better price', sh => { grow({ strategy: 2, finance: 1 }); sh.perf += 3; }, 'When the crowd rushes for the exit, you are already mostly out of the way.'],
+      ['Go big before it runs further', sh => { grow({ finance: .5 }); if (Math.random() < .45) { sh.perf += 8; } else { sh.perf -= 9; toast('The crowd heads for the exit at once. It is not pretty.', 4); } }, null]] },
+    { id: 'f_investor', lad: ['fund'], lv: [3, 4], text: () => 'After a bad quarter, one of the fund\'s biggest investors is threatening to pull their money.', ch: [
+      ['Fly out and explain the strategy in person', sh => { grow({ persuasion: 3, strategy: 1 }); if (chk({ persuasion: 35 })) { sh.perf += 10; toast('They stay, and they double their allocation next year.', 4); } else { sh.perf -= 5; toast('They redeem anyway.', 4); } }, null],
+      ['Send a careful letter', sh => { grow({ persuasion: 1 }); }, null]] },
+    // ---- corporate finance ----
+    { id: 'k_close', lad: ['corp'], lv: [0, 2], text: () => 'Month-end close. The accounts are out by forty thousand dollars and the books lock at midnight.', ch: [
+      ['Stay and find it', sh => { grow({ finance: 3 }); sh.perf += 7; need('energy', -12); }, 'A duplicated invoice, buried three systems deep. Found at 11:20.'],
+      ['Book it to an adjustment and move on', sh => { if (Math.random() < .35) { sh.perf -= 10; toast('The auditors found it.', 4); } }, null]] },
+    { id: 'k_budget', lad: ['corp'], lv: [1, 3], text: () => 'Budget season. Every department head swears their number cannot be cut.', ch: [
+      ['Dig into the line items with each of them', sh => { grow({ finance: 1.5, persuasion: 1.5, strategy: 1 }); sh.perf += 6; need('energy', -6); }, 'You find eight percent nobody would miss, and nobody hates you for it. Mostly.'],
+      ['Take their numbers as given', sh => { sh.perf -= 2; }, null]] },
+    { id: 'k_capex', lad: ['corp'], lv: [2, 4], text: () => 'Operations wants sign-off on a huge new investment. Their business case looks suspiciously rosy.', ch: [
+      ['Stress test their assumptions', sh => { grow({ strategy: 2, finance: 1.5, persuasion: 1 }); if (chk({ strategy: 25, finance: 35 })) { sh.perf += 8; toast('You find the flaw. The revised case still works, at half the size.', 4); } else { sh.perf += 2; toast('You suspect something is off but cannot prove it.', 4); } }, null],
+      ['Sign it off', sh => { if (Math.random() < .4) { sh.perf -= 8; toast('A year later it is badly over budget, with your signature on it.', 5); } }, null]] },
+    { id: 'k_board', lad: ['corp'], lv: [3, 4], who: 'boss', text: () => '"I want you to present the quarterly numbers to the board on Thursday."', ch: [
+      ['Take it', sh => { grow({ persuasion: 3, finance: 1, management: 1 }); if (chk({ persuasion: 32, finance: 45 })) { sh.perf += 11; toast('A director thanks you for the clearest results they have seen.', 4); } else { sh.perf -= 5; toast('A director picks apart one slide and you never recover.', 4); } }, null],
+      ['Suggest Ms Calder presents it', sh => { sh.perf -= 1; }, null]] },
+];
   let forceEvent = null; // set from the test tools: an event id, or 'any'
   function workEvents(sh, mins) { const J = S.player.job, today = Math.floor(S.time / 1440), forced = forceEvent; forceEvent = null;
     if (!forced) { if (J.lastEventDay != null && today - J.lastEventDay < 1) return []; if (Math.random() > .3) return []; }
-    const lv4 = Math.min(J.level, 4), fits = e => lv4 >= e.lv[0] && lv4 <= e.lv[1];
+    const lv4 = Math.min(J.level, 4), lad = ladOf(J.co), fits = e => lv4 >= e.lv[0] && lv4 <= e.lv[1] && (!e.lad || e.lad.includes(lad)) && (!e.co || e.co === J.co);
     const pool = forced && forced !== 'any' ? WORK_EVENTS.filter(e => e.id === forced) : WORK_EVENTS.filter(e => fits(e) && (forced || !(S.seen['work:' + e.id] && S.time - S.seen['work:' + e.id] < 1440 * 30))); if (!pool.length) return [];
     const e = pool[Math.floor(Math.random() * pool.length)], at = Math.round(mins * (.25 + Math.random() * .5));
     return [{ at, run: async () => { if (e.when && !e.when() && !forced) return; S.seen['work:' + e.id] = S.time; J.lastEventDay = today; const boss = e.who === 'boss';
       const ch = await say(boss ? 'Ms Calder, your manager' : 'At work', boss ? VOICES.boss : 'none', e.text(), e.ch.map(([text, fx]) => ({ text, then: () => fx(sh) })), boss ? bossLook() : null);
-      const pick = e.ch.find(c => bossify(c[0], boss ? 'boss' : 'At work') === ch.text); if (pick && pick[2]) await say('At work', 'none', pick[2]); CR.note(S, 'At work: ' + ch.text + '.'); } }]; }
+      const pick = e.ch.find(c => bossify(c[0], boss ? 'boss' : 'At work') === ch.text); if (pick && pick[2]) await say('At work', 'none', pick[2]); CR.note(S, 'At work: ' + ch.text + '.');
+      if (EVXP) { const g = Object.entries(EVXP).filter(([, v]) => v > .05).map(([k, v]) => `${STATN[k]} +${v.toFixed(1)}`); EVXP = null; if (g.length) toast('Experience: ' + g.join(', '), 3.5); } } }]; }
   // lunch: bring it from home, buy it downstairs, eat with someone from the office, or keep working
   async function lunchBreak(sh) { const I = S.items, N = S.player.needs, ch = [];
     if (I.meals) ch.push({ text: `Heat up a meal you brought from home (${I.meals} left)`, then: () => { I.meals--; need('hunger', -40); need('mood', 2); } });
@@ -7113,7 +7222,7 @@ window.GAME = (() => {
   function closeMenu() { pauseSound(false); $('modal').hidden = true; modalOpen = false; menu.keys = null; music.venue(null); G.hold = !!(dlgOpen || fading); }
   let soundPaused = false;
   function pauseSound(on) { if (on && !soundPaused) { soundPaused = true; try { if (AC && AU.on) AC.suspend(); } catch (e) { } music.hush(true); } else if (!on && soundPaused) { soundPaused = false; try { if (AC && AU.on) AC.resume(); } catch (e) { } music.hush(false); } }
-  function pauseMenu() { pauseSound(true); const P0 = S.player, J = P0.job, sk = Object.entries(P0.skills).map(([kq, v]) => `<span>${kq[0].toUpperCase() + kq.slice(1)}</span><b>level ${CR.levelOf(v)}</b>`).join('');
+  function pauseMenu() { pauseSound(true); const P0 = S.player, J = P0.job, sk = STATS.map(([kq, n]) => `<span>${n}</span><b>${Math.floor(stat(kq))}</b>`).join('');
     modalOpen = true; G.hold = true; const P2 = $('panel');
     P2.innerHTML = `<h2>Paused</h2><div class="kv"><span>Date</span><b>${CR.fmtDate(S.time)} ${CR.fmtTime(S.time)}</b><span>Age</span><b>${CR.ageOn(S.time, P0.birth)}</b><span>Job</span><b>${J.co ? LAD()[J.level].t + ', ' + empName() : 'Unemployed'}</b><span>Shifts worked</span><b>${J.shifts}</b><span>Performance</span><b>${Math.round(J.perf)}</b><span>Cash</span><b>${money(P0.cash)}</b><span>Bank</span><b>${money(P0.bank)}</b><span>Meals in the fridge</span><b>${S.items.meals || 0}</b>${sk}</div>
       <h2 style="font-size:14px">Sound</h2><div id="sndrow"><span>City sound</span><button id="bSnd">${AU.on ? 'On' : 'Off'}</button>${['master', 'amb', 'traffic', 'people', 'music'].map(kq => `<span>${{ master: 'Master', amb: 'Ambience', traffic: 'Traffic', people: 'People', music: 'Venue music' }[kq]}</span><input type="range" min="0" max="100" value="${Math.round(AU.vol[kq] * 100)}" data-v="${kq}" style="accent-color:var(--acc)">`).join('')}</div><h2 style="font-size:14px">Saves</h2><div id="slots" class="opts"></div><textarea class="io" id="io" rows="2" placeholder="Save code"></textarea><div class="row"><button id="bExp">Copy save code</button><button id="bImp">Load save code</button><button id="bNew">New game</button></div><div class="sub2" id="ioMsg"></div>
@@ -7222,7 +7331,7 @@ window.GAME = (() => {
 
   // Sleep for as long as you choose, half an hour to twelve hours. Every hour asleep restores 12 energy and adds 2 hunger,
   // so seven to eight hours from tired gets you to full, and you can cut a night short to be up early.
-  const study = hrs => () => { closeMenu(); ffwd(hrs * 60, { label: 'Studying finance', pose: poseAt(10.6, 1.0, .48, 0, -1, true), each: m => { S.player.skills.finance += 45 * m / 60 * (1 + (S.owned.lamp ? .12 : 0) + (S.owned.monitor ? .15 : 0)); need('energy', -4 * m / 60); } }); };
+  const study = (k, hrs) => () => { closeMenu(); if (stat(k) >= STUDY_CAP) return toast(`${STATN[k]} is past what books can teach. It grows on the job now.`, 3); ffwd(hrs * 60, { label: `Studying ${STATN[k].toLowerCase()}`, pose: poseAt(10.6, 1.0, .48, 0, -1, true), each: m => { gainSkill(k, m / 60 * (1 + (S.owned.lamp ? .12 : 0) + (S.owned.monitor ? .15 : 0)), true); need('energy', -4 * m / 60); } }); };
   function sleepPanel() {
     modalOpen = true; G.hold = true; const N = S.player.needs, P2 = $('panel'); let hrs = clampv(Math.round((100 - N.energy) / 12 * 2) / 2, 1, 9);
     { const h = gHour(); if (h >= 18 || h < 4) { const to7 = ((7 - h) + 24) % 24; hrs = clampv(Math.round(to7 * 2) / 2, .5, 12); } }
@@ -7824,10 +7933,11 @@ window.GAME = (() => {
       const st = a => ({ sent: 'Applied, waiting to hear', interview: `Interview ${dayWord(a.at)} at ${CR.fmtTime(a.at)}, ${towerName(a.co)}`, offer: `Offer, reply by ${dayWord(a.until)}`, rejected: 'Not this time', missed: 'Missed the interview', lapsed: 'Offer lapsed', accepted: 'Accepted', declined: 'Declined', done: 'Interviewed' }[a.status] || a.status);
       html = (live.length ? '<p class="phsec">Your applications</p>' + live.map(a => { const c = coById(a.co), L = ladderFor(a.co)[a.level]; return `<div class="phrow" style="cursor:default"><b>${esc(L.t)}, ${esc(c.name)}</b><span style="white-space:normal">${esc(st(a))}</span>${a.status === 'offer' ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px"><button class="phbtn" data-act="offer:${a.id}.yes">Accept, ${salary(L.pay * 100)}</button><button class="phbtn" data-act="offer:${a.id}.no">Decline</button></div>` : ''}</div>`; }).join('') : '')
         + '<p class="phsec">Openings this week</p>' + ((S.jobs || []).filter(j => j.closes > d).sort((a, b) => (coById(a.co).locked ? 1 : 0) - (coById(b.co).locked ? 1 : 0) || jobFit(b) - jobFit(a)).map(j => { const c = coById(j.co), L = ladderFor(j.co)[j.level], f = jobFit(j), mine = S.player.job.co === j.co, sent = (S.apps || []).some(a => a.job === j.id);
-          return `<div class="phrow" style="cursor:default"><b>${esc(c.locked ? 'Legal roles' : L.t)} <span style="float:right">${c.locked ? '' : salary(L.pay * 100)}</span></b><span>${esc(c.name)}, ${esc(c.ind)}${c.small ? ', smaller firm' : ''} · ${esc(towerName(j.co))}</span><span style="white-space:normal">${esc(c.locked || (c.about + (j.level ? ` Wants finance level ${j.level + 2} and experience at ${ladderFor(j.co)[j.level - 1].t} or above.` : ` Wants finance level 2.`)))}</span>${c.locked || mine ? '' : sent ? '<span>Applied</span>' : `<div style="display:flex;gap:8px;align-items:center;margin-top:6px"><button class="phbtn" data-act="apply:${j.id}">Apply</button><span>${f > .65 ? 'Good chance' : f > .35 ? 'Worth a try' : 'Long shot'}</span></div>`}</div>`; }).join('') || '<p class="phnote">Nothing this week. New roles are posted on Mondays.</p>')
+          return `<div class="phrow" style="cursor:default"><b>${esc(c.locked ? 'Legal roles' : L.t)} <span style="float:right">${c.locked ? '' : salary(L.pay * 100)}</span></b><span>${esc(c.name)}, ${esc(c.ind)}${c.small ? ', smaller firm' : ''} · ${esc(towerName(j.co))}</span><span style="white-space:normal">${esc(c.locked || (c.about + ` Needs ${gateText(j.co, j.level)}${j.level ? ` and experience at ${ladderFor(j.co)[j.level - 1].t} or above` : ''}.`))}</span>${c.locked || mine ? '' : sent ? '<span>Applied</span>' : `<div style="display:flex;gap:8px;align-items:center;margin-top:6px"><button class="phbtn" data-act="apply:${j.id}">Apply</button><span>${f > .65 ? 'Good chance' : f > .35 ? 'Worth a try' : 'Long shot'}</span></div>`}</div>`; }).join('') || '<p class="phnote">Nothing this week. New roles are posted on Mondays.</p>')
         + '<p class="phnote">Interviews are at the company’s tower, before or after work. Look smart and arrive on time.</p>' + gigSection(); }
-    else if (app === 'study') { title = 'Study'; const f = S.player.skills.finance;
-      html = `<div class="phbal"><span>Finance skill</span><b>${Math.floor(f)}</b></div><button class="phbtn" data-act="study:1">Study finance for an hour</button><button class="phbtn" data-act="study:3">Study for three hours, a proper session</button><p class="phnote">Studying is a little tiring. The clock runs on while you work.</p>`; }
+    else if (app === 'study') { title = 'Study';
+      html = STATS.map(([k, n]) => { const v = stat(k), capped = v >= STUDY_CAP; return `<div class="phrow" style="cursor:default"><b>${n} <span style="float:right">${Math.floor(v)}</span></b>${capped ? '<span>Past what study can teach. Grows on the job.</span>' : `<div style="display:flex;gap:8px;margin-top:6px"><button class="phbtn" data-act="study:${k}.1">1 hour</button><button class="phbtn" data-act="study:${k}.3">3 hours</button></div>`}</div>`; }).join('')
+        + `<p class="phnote">0 is a layman, about 20 a new graduate, 100 a top CEO. Study takes a stat to ${STUDY_CAP}. Past that it grows from work, and every point costs more than the last.</p>`; }
     else if (app === 'cash') { title = 'Withdraw cash'; const P0 = S.player;
       html = `<div class="phbal"><span>Checking</span><b>${money(P0.bank)}</b><span>Cash in your wallet</span><b>${money(P0.cash)}</b></div>${[2000, 5000, 20000].map(c => `<button class="phbtn" data-act="cash:${c}">Move ${money(c)} to cash</button>`).join('')}<p class="phnote">For cafes, bars and street carts.</p>`; }
     return { title, html, app };
@@ -7844,7 +7954,7 @@ window.GAME = (() => {
   const dayWord = t => { const d = Math.floor(t / 1440) - Math.floor(S.time / 1440); return d === 0 ? 'today' : d === 1 ? 'tomorrow' : CR.fmtDate(t); };
   function phoneAct(a) { const [k, arg] = a.split(':');
     if (k === 'back') return back();
-    if (k === 'study') { closeLaptop(); closePhone(); return study(+arg)(); }
+    if (k === 'study') { const [sk2, h2] = arg.split('.'); closeLaptop(); closePhone(); return study(sk2, +h2)(); }
     if (k === 'add') { const it = CATALOG.find(c => c.k === arg); if (it && !(it.once && (S.cart[arg] || S.owned[arg]))) S.cart[arg] = (S.cart[arg] || 0) + 1; return refreshApps(); }
     if (k === 'rem') { if (S.cart[arg]) S.cart[arg]--; if (!S.cart[arg]) delete S.cart[arg]; return refreshApps(); }
     if (k === 'checkout') return checkout(arg);
@@ -7946,8 +8056,8 @@ window.GAME = (() => {
       return menu('Reception and triage', hl >= 90 ? 'The triage nurse looks you over. You are fine.' : `The triage nurse looks you over. Health ${Math.round(hl)} of 100.`, hl >= 90 ? [{ t: 'Nothing wrong with you', s: 'Come back if that changes', off: true }] : [{ t: 'See a doctor', s: '$150 after insurance, about two hours, health back to full', fn: () => { if (!spend(15000, 'Hospital visit')) return toast('You cannot cover the bill.'); const t0 = S.time; CR.passMinutes(S, 120); dailyThings(t0, S.time); N.health = 100; closeMenu(); toast('Bloods, a drip and a lecture about eating properly. You feel human again.', 4); } }]); }
     if (f.sk === 'study') { const I = INSIDE; let st = null, bd = 9; for (const g of I.furn) { if (g.t !== 'chair' && g.t !== 'carrel') continue; const s2 = g.t === 'carrel' ? { x: g.x - .55, y: g.y, z: .48, hx: 1, hy: 0 } : seatsOf(g)[0]; const dd = Math.hypot(I.ox + s2.x - player.x, I.oy + s2.y - player.y); if (dd < bd && !I.npcs.some(n => n.sit && !n.hidden && Math.hypot(n.sit.x - I.ox - s2.x, n.sit.y - I.oy - s2.y) < .4)) { bd = dd; st = s2; } }
       if (!st) return toast('Every seat nearby is taken.', 2);
-      const go = hrs => () => { closeMenu(); ffwd(hrs * 60, { label: 'Studying at the library', pose: poseAt(st.x, st.y, st.z, st.hx, st.hy, true), each: m => { S.player.skills.finance += 45 * m / 60 * 1.15; need('energy', -3.5 * m / 60); } }); };
-      return menu('Study', 'Quiet, warm and nobody asking you for anything. Study goes about 15% further here than at home.', [1, 2, 3].map(h => ({ t: `Study for ${h} hour${h > 1 ? 's' : ''}`, s: 'Finance skill up, energy down', fn: go(h) }))); } }
+      const go = (sk3, hrs) => () => { closeMenu(); if (stat(sk3) >= STUDY_CAP) return toast(`${STATN[sk3]} is past what books can teach. It grows on the job now.`, 3); ffwd(hrs * 60, { label: `Studying ${STATN[sk3].toLowerCase()} at the library`, pose: poseAt(st.x, st.y, st.z, st.hx, st.hy, true), each: m => { gainSkill(sk3, m / 60 * 1.15, true); need('energy', -3.5 * m / 60); } }); };
+      return menu('Study for two hours', 'Quiet, warm and nobody asking you for anything. Study goes about 15% further here than at home.', STATS.map(([k, n]) => ({ t: n, s: stat(k) >= STUDY_CAP ? 'Past what study can teach' : `${Math.floor(stat(k))} now, energy down`, off: stat(k) >= STUDY_CAP, fn: go(k, 2) }))); } }
   // you come round in the hospital's ward, by the window bed
   function wakeInWard() { if (!hospDoor) return toHospital(); if (seated) standUp(); if (player.driving) toggleCar(); if (INSIDE) leaveInterior(); goIn('hospital', hospDoor); INSIDE.name = hospDoor.name; crowd();
     const [bx, by] = INSIDE.wardBed; player.x = INSIDE.ox + bx - 1.0; player.y = INSIDE.oy + by + .3; player.hx = 1; player.hy = 0; cx = player.x; cy = player.y; }
@@ -8094,7 +8204,7 @@ window.GAME = (() => {
     $('ttWork').onclick = () => { let d = Math.floor(S.time / 1440) + 1; while ([0, 6].includes(CR.parts(d * 1440).dow)) d++; S.time = d * 1440 + 8 * 60 + 55; skyForDay(); closeMenu(); if (INSIDE) leaveInterior(); player.driving = false; const wd = empDoor(); player.x = wd.x + wd.nx * 1.5; player.y = wd.y + wd.ny * 1.5; cx = player.x; cy = player.y; toast('Next weekday, 8:55, outside ' + wd.name + '.', 3); };
     $('ttFull').onclick = () => { Object.assign(S.player.needs, { energy: 100, hunger: 10, mood: 80 }); testTools(); };
     $('ttCash').onclick = () => { S.player.bank += 100000; testTools(); };
-    $('ttFin').onclick = () => { const lv = CR.levelOf(S.player.skills.finance || 0); let v = S.player.skills.finance || 0; while (CR.levelOf(v) <= lv) v += 25; S.player.skills.finance = v; toast('Finance level ' + CR.levelOf(v) + '.', 2); testTools(); };
+    $('ttFin').onclick = () => { for (const [k] of STATS) S.player.skills[k] = Math.min(100, stat(k) + 5); toast('All stats +5. Finance ' + Math.floor(stat('finance')), 2); testTools(); };
     $('ttPerf').onclick = () => { J.perf = 80; testTools(); };
     $('ttBack').onclick = closeMenu; $('modal').hidden = false; menu.keys = null; }
 
@@ -8202,7 +8312,7 @@ window.GAME = (() => {
   function introSay() { setTimeout(() => say('Rob', VOICES.rob, 'Welcome home, roomie! Your room is the big one at the back, past the kitchen. Big first day at Apogee tomorrow, huh?', [{ text: 'Nine o clock sharp. Wish me luck.', effects: { rel: { rob: 3 } }, reply: 'You will smash it. Get an early night tonight, I will keep the music down. Probably.' }], robLook(), 'happy'), 0); }
 
   // ---------------- start ----------------
-  const G = { hold: false, key, tick, say, get S() { return S; }, music, HOME, WORK, homeDoor, workDoor, save, load, interact, roomKey, openPhone, closePhone, openLaptop, closeLaptop, startGame, ffwd, get FF() { return FF; }, get phoneOpen() { return phoneOpen; }, use: f => useRoom(f), get busy() { return !!(modalOpen || dlgOpen || FF || fading); } };
+  const G = { hold: false, key, tick, say, get S() { return S; }, music, HOME, WORK, homeDoor, workDoor, save, load, interact, roomKey, openPhone, closePhone, openLaptop, closeLaptop, startGame, ffwd, get FF() { return FF; }, get phoneOpen() { return phoneOpen; }, use: f => useRoom(f), dev: { WORK_EVENTS, setForce: id => { forceEvent = id; }, stat, gainSkill, gateText, gateMargin, ladderFor, promoGaps, workXP, pauseMenu, hrsTo, ptsFrom }, get busy() { return !!(modalOpen || dlgOpen || FF || fading); } };
   setTimeout(showTitle, 0);
   return G;
 })();
