@@ -6749,20 +6749,20 @@ window.GAME = (() => {
     for (const [k, v] of Object.entries(G)) gainSkill(k, e * v / tot); }
   const NEED = [30, 55, 90, 140, 180, 240, 300], TENURE = [42, 90, 150, 240, 365, 540, 730]; // solid shifts and days in the role for each step
   const COS = [
-    { id: 'meridian', col: '#1d2f5a', name: EMPLOYER, ind: 'Banking', lad: 'bank', area: ['core'], boss: ['Ms Calder', true], tk: 'APG', about: 'The established bank. Old money, big deals, long hours.' },
-    { id: 'fairhaven', col: '#1f5a3c', name: 'Fairhaven Trust', ind: 'Banking', lad: 'bank', area: ['core', 'cbd'], boss: ['Mr Okafor', false], tk: 'FHT', about: 'The rival bank, hungry to catch Apogee and quick to hire away its people.' },
-    { id: 'blackfen', col: '#16181c', name: 'Blackfen Partners', ind: 'Hedge fund', lad: 'fund', area: ['cbd', 'core'], boss: ['Ms Varga', true], about: 'A hedge fund. Pay follows your track record, and so does your seat.' },
-    { id: 'thorne', col: '#2f6f73', name: 'Thorne and Vale', ind: 'Consulting', lad: 'consult', area: ['cbd', 'core'], boss: ['Mr Ellison', false], about: 'Consultants to every industry in the city. You learn everyone’s business.' },
-    { id: 'kestrel', col: '#2a7de1', name: 'Kestrel Systems', ind: 'Big tech', lad: 'tech', area: ['mid', 'cbd'], boss: ['Ms Tanaka', true], tk: 'KSY', tech: true, about: 'The dependable tech giant. Steady promotions, a coding test to get in.' },
-    { id: 'paylane', col: '#7b3fe4', name: 'Paylane', ind: 'Tech upstart', lad: 'tech', area: ['mid', 'cbd'], boss: ['Mr Duarte', false], tk: 'PYL', tech: true, about: 'A fast growing payments upstart. Quick promotions, real risk.' },
-    { id: 'oakmont', nohire: true, col: '#3d5a2a', name: 'Oakmont Mining', ind: 'Mining', lad: 'corp', area: ['cbd', 'hside', 'core'], boss: ['Mr Brandt', false], tk: 'OKM', about: 'Commodity cycles and big bets on new mines.' },
-    { id: 'eastgate', nohire: true, col: '#5a4436', name: 'Eastgate Developments', ind: 'Property', lad: 'corp', area: ['cbd', 'mid'], boss: ['Ms Moreau', true], tk: 'EST', about: 'Builds the city, one council approval at a time.' },
-    { id: 'whitlock', col: '#6b1f26', name: 'Whitlock and Hale', ind: 'Law', lad: 'law', area: ['core', 'cbd'], boss: ['Ms Ashby', true], locked: 'Needs a law degree and admission to the bar. Law school comes in a later update.', about: 'A top law firm. Billable hours and a long road to partner.' },
-    { id: 'marlowe', nohire: true, col: '#a3221e', name: 'Marlowe Media', ind: 'Media', lad: 'corp', area: ['mid', 'cbd'], boss: ['Mr Quinlan', false], tk: 'MRM', about: 'Newspapers, television and the campaigns that shape every other company’s reputation.' },
-    { id: 'harborfed', col: '#2f6ea5', name: 'Harbor Federal', ind: 'Regional bank', lad: 'bank', small: true, boss: ['Mr Pratt', false], tk: 'HBF', about: 'A regional bank on a few leased floors. Faster steps, smaller name.' },
-    { id: 'calloway', col: '#6a2433', name: 'Calloway Capital', ind: 'Boutique bank', lad: 'bank', small: true, boss: ['Ms Lindqvist', true], tk: 'CLC', about: 'A boutique investment bank. Small team, more responsibility early.' },
-    { id: 'brindle', col: '#8a5a34', name: 'Brindle Advisory', ind: 'Consulting', lad: 'consult', small: true, boss: ['Mr Haddad', false], about: 'A small consultancy that works for mid-size firms.' },
-    { id: 'ashcroft', nohire: true, col: '#34465e', name: 'Ashcroft Industries', ind: 'Industrial', lad: 'corp', small: true, boss: ['Ms Kowalski', true], tk: 'ACI', about: 'An industrial company with a lean finance team.' }];
+    { id: 'meridian', pto: 15, col: '#1d2f5a', name: EMPLOYER, ind: 'Banking', lad: 'bank', area: ['core'], boss: ['Ms Calder', true], tk: 'APG', about: 'The established bank. Old money, big deals, long hours.' },
+    { id: 'fairhaven', pto: 15, col: '#1f5a3c', name: 'Fairhaven Trust', ind: 'Banking', lad: 'bank', area: ['core', 'cbd'], boss: ['Mr Okafor', false], tk: 'FHT', about: 'The rival bank, hungry to catch Apogee and quick to hire away its people.' },
+    { id: 'blackfen', pto: 20, col: '#16181c', name: 'Blackfen Partners', ind: 'Hedge fund', lad: 'fund', area: ['cbd', 'core'], boss: ['Ms Varga', true], about: 'A hedge fund. Pay follows your track record, and so does your seat.' },
+    { id: 'thorne', pto: 18, col: '#2f6f73', name: 'Thorne and Vale', ind: 'Consulting', lad: 'consult', area: ['cbd', 'core'], boss: ['Mr Ellison', false], about: 'Consultants to every industry in the city. You learn everyone’s business.' },
+    { id: 'kestrel', pto: 20, col: '#2a7de1', name: 'Kestrel Systems', ind: 'Big tech', lad: 'tech', area: ['mid', 'cbd'], boss: ['Ms Tanaka', true], tk: 'KSY', tech: true, about: 'The dependable tech giant. Steady promotions, a coding test to get in.' },
+    { id: 'paylane', pto: 15, col: '#7b3fe4', name: 'Paylane', ind: 'Tech upstart', lad: 'tech', area: ['mid', 'cbd'], boss: ['Mr Duarte', false], tk: 'PYL', tech: true, about: 'A fast growing payments upstart. Quick promotions, real risk.' },
+    { id: 'oakmont', pto: 15, nohire: true, col: '#3d5a2a', name: 'Oakmont Mining', ind: 'Mining', lad: 'corp', area: ['cbd', 'hside', 'core'], boss: ['Mr Brandt', false], tk: 'OKM', about: 'Commodity cycles and big bets on new mines.' },
+    { id: 'eastgate', pto: 15, nohire: true, col: '#5a4436', name: 'Eastgate Developments', ind: 'Property', lad: 'corp', area: ['cbd', 'mid'], boss: ['Ms Moreau', true], tk: 'EST', about: 'Builds the city, one council approval at a time.' },
+    { id: 'whitlock', pto: 15, col: '#6b1f26', name: 'Whitlock and Hale', ind: 'Law', lad: 'law', area: ['core', 'cbd'], boss: ['Ms Ashby', true], locked: 'Needs a law degree and admission to the bar. Law school comes in a later update.', about: 'A top law firm. Billable hours and a long road to partner.' },
+    { id: 'marlowe', pto: 15, nohire: true, col: '#a3221e', name: 'Marlowe Media', ind: 'Media', lad: 'corp', area: ['mid', 'cbd'], boss: ['Mr Quinlan', false], tk: 'MRM', about: 'Newspapers, television and the campaigns that shape every other company’s reputation.' },
+    { id: 'harborfed', pto: 12, col: '#2f6ea5', name: 'Harbor Federal', ind: 'Regional bank', lad: 'bank', small: true, boss: ['Mr Pratt', false], tk: 'HBF', about: 'A regional bank on a few leased floors. Faster steps, smaller name.' },
+    { id: 'calloway', pto: 12, col: '#6a2433', name: 'Calloway Capital', ind: 'Boutique bank', lad: 'bank', small: true, boss: ['Ms Lindqvist', true], tk: 'CLC', about: 'A boutique investment bank. Small team, more responsibility early.' },
+    { id: 'brindle', pto: 12, col: '#8a5a34', name: 'Brindle Advisory', ind: 'Consulting', lad: 'consult', small: true, boss: ['Mr Haddad', false], about: 'A small consultancy that works for mid-size firms.' },
+    { id: 'ashcroft', pto: 12, nohire: true, col: '#34465e', name: 'Ashcroft Industries', ind: 'Industrial', lad: 'corp', small: true, boss: ['Ms Kowalski', true], tk: 'ACI', about: 'An industrial company with a lean finance team.' }];
   const coById = id => COS.find(c => c.id === id);
   const SMALLF = { pay: .88, need: .65, ten: .7 };
   const ladderFor = co => { const c = coById(co) || COS[0], sm = c.small ? SMALLF.pay : 1; return LADDERS[ladOf(co)].map(([t, pay]) => ({ t, pay: Math.round(pay * sm / 100) * 100 })); };
@@ -6868,7 +6868,7 @@ window.GAME = (() => {
   // switching: accept an offer and you start at the new place on the next weekday after two days' notice
   function acceptOffer(id) { const a = S.apps.find(q => q.id === id); if (!a || a.status !== 'offer') return; const J = S.player.job, c = coById(a.co), L = ladderFor(a.co)[a.level]; let d = Math.floor(S.time / 1440) + 3; while (!tradingDay(d)) d++;
     if (J.co) CR.note(S, `Handed in notice at ${empName()}.`); J.best = bestLevel(J); a.status = 'accepted';
-    Object.assign(J, { lad: undefined, co: a.co, employer: c.name, level: a.level, perf: 60, shiftsAt: 0, since: d, roleSince: d, lastShiftDay: d - 1, miss: 0, warns: [], startDay: d, lastCo: a.co, firedAt: J.firedAt });
+    Object.assign(J, { lad: undefined, pto: 1, leave: [], unplanned: 0, co: a.co, employer: c.name, level: a.level, perf: 60, shiftsAt: 0, since: d, roleSince: d, lastShiftDay: d - 1, miss: 0, warns: [], startDay: d, lastCo: a.co, firedAt: J.firedAt });
     for (const o of S.apps) if (o !== a && ['sent', 'interview', 'offer'].includes(o.status)) o.status = 'withdrawn';
     workMail(`${c.name}: welcome`, `Welcome aboard as ${L.t}. Your first day is ${CR.fmtDate(d * 1440)} at 9:00 in ${towerName(a.co)}.`, true); toast(`You accepted ${c.name}'s offer. You start ${CR.fmtDate(d * 1440)} at 9:00 in ${towerName(a.co)}.`, 6); }
   function resign() { const J = S.player.job; if (!J.co) return; CR.note(S, `Resigned from ${empName()}.`); J.best = bestLevel(J); J.lastCo = J.co; J.co = null; J.employer = null; toast('You resigned. Look for your next role on the Jobs app.', 5); }
@@ -6878,8 +6878,21 @@ window.GAME = (() => {
   function warn(why) { const J = S.player.job, d = Math.floor(S.time / 1440); J.warns = (J.warns || []).filter(w => d - w.d < 90);
     if (J.warns.length) return fired(why + ' This follows an earlier warning.'); J.warns.push({ d, why }); workMail(`${empName()}: formal warning`, `${why} This is a formal warning. Another within ninety days and we will let you go.`, true); toast(`Formal warning from ${bossName()}.`, 5); }
   // each weekday: a shift missed without leave counts against you; two in a row is a warning, four is the sack. Rest lowers stress.
-  function hrDay(d) { const J = S.player.job; if (!J || !J.co) return; const prev = d - 1;
-    if (tradingDay(prev) && prev >= (J.startDay || 0) && !(J.leaveUntil > prev) && J.lastShiftDay < prev) { J.miss = (J.miss || 0) + 1; if (J.miss === 2) warn('You have missed two days without telling anyone.'); else if (J.miss >= 4) fired('You stopped turning up for work.'); }
+  function bookLeave(d) { const J = S.player.job; J.leave = J.leave || []; const today = Math.floor(S.time / 1440);
+    if (d <= today) return toast('Leave has to be booked at least a day ahead.', 3); if (J.leave.includes(d)) return; if ((J.pto || 0) < 1) return toast('You have no leave left. It builds up as you work.', 3);
+    J.pto -= 1; J.leave.push(d); J.leave.sort((a, b) => a - b); toast(`Leave booked for ${CR.fmtDate(d * 1440)}. ${Math.floor(J.pto)} days left.`, 3); }
+  function cancelLeave(d) { const J = S.player.job, i = (J.leave || []).indexOf(d); if (i < 0 || d <= Math.floor(S.time / 1440)) return; J.leave.splice(i, 1); J.pto += 1; toast(`Leave on ${CR.fmtDate(d * 1440)} cancelled.`, 2.5); }
+  // plans that fall in working hours on a working day
+  const clashes = d => S.plans.filter(pl => !pl.done && Math.floor(pl.t / 1440) === d && (pl.t % 1440) >= 8.5 * 60 && (pl.t % 1440) < 17.5 * 60);
+  const dayNet = () => { const L = LAD()[S.player.job.level], g = Math.round(L.pay * 100 / 260); return [g, Math.round(g * (1 - taxRate(L.pay)))]; };
+  function payLeave(why) { const [g, n] = dayNet(); S.player.bank += n; txn(`${empName()}, ${why}, ${money(g)} before tax`, n); }
+  function hrDay(d) { const J = S.player.job; if (!J || !J.co) return; const prev = d - 1, c = coById(J.co);
+    if (prev >= (J.startDay || 0)) J.pto = Math.min(c.pto * 1.5, (J.pto == null ? 1 : J.pto) + c.pto / 365); // accrues daily, carries over up to a year and a half
+    J.leave = J.leave || []; const booked = J.leave.indexOf(prev);
+    if (booked >= 0) { J.leave.splice(booked, 1); if (J.lastShiftDay !== prev) { payLeave('paid leave'); J.burn = Math.max(0, (J.burn || 0) - 8); } else J.pto += 1; return; }
+    if (tradingDay(prev) && prev >= (J.startDay || 0) && !(J.leaveUntil > prev) && J.lastShiftDay < prev && J.pto >= 1) { J.pto -= 1; J.unplanned = (J.unplanned || 0) + 1; payLeave('unplanned day off, paid from leave'); J.burn = Math.max(0, (J.burn || 0) - 8);
+      workMail(`${empName()}: unplanned leave`, `You did not come in on ${CR.fmtDate(prev * 1440)}. We have recorded it as a day of paid leave. You have ${Math.floor(J.pto)} days left. Please book leave in advance where you can.`, true); return; }
+    if (tradingDay(prev) && prev >= (J.startDay || 0) && !(J.leaveUntil > prev) && J.lastShiftDay < prev) { J.miss = (J.miss || 0) + 1; if (J.miss === 2) warn('You have missed two days without leave or telling anyone.'); else if (J.miss >= 4) fired('You stopped turning up for work.'); }
     else if (J.lastShiftDay === prev) J.miss = 0;
     if (J.lastShiftDay !== prev) J.burn = Math.max(0, (J.burn || 0) - 8); }
   // stress from long days, weekend work and grinding on when exhausted; at 100 you burn out and lose three days
@@ -7002,6 +7015,7 @@ window.GAME = (() => {
     if (f0 && !taken(seatOf(f0))) return seatOf(f0); let best = null, bd = 1e9; for (const f of I.furn) if (f.t === 'workdesk') { const q = seatOf(f); if (taken(q)) continue; const d = Math.hypot(I.ox + q[0] - player.x, I.oy + q[1] - player.y); if (d < bd) { bd = d; best = q; } } return best; }
   function atWork(desk) {
     const J = S.player.job, L = LAD()[J.level], h = gHour(), today = Math.floor(S.time / 1440), opts = [], day = Math.round(L.pay * 100 / 260);
+    if ((J.leave || []).includes(today) && isWeekday()) opts.push({ t: 'You are on leave today', s: 'Work anyway and the day goes back into your balance', off: true });
     if (today < (J.startDay || 0)) opts.push({ t: `You start on ${CR.fmtDate(J.startDay * 1440)}`, s: 'Come back then at 9:00', off: true });
     else if (J.leaveUntil > today) opts.push({ t: `You are signed off until ${CR.fmtDate(J.leaveUntil * 1440)}`, s: 'Doctor\u2019s orders', off: true });
     else if (isWeekday() && h >= 7 && h < LAST_START && J.lastShiftDay !== today) {
@@ -7937,7 +7951,8 @@ window.GAME = (() => {
       html = `<div class="phbal"><span>Checking</span><b>${money(P0.bank)}</b><span>Cash in your wallet</span><b>${money(P0.cash)}</b></div><p class="phnote">Cash comes out at your laptop for now. ATMs come in a later build.</p>${(S.fines || []).filter(f => !f.paid).map((f, i) => `<div class="phbal" style="border-color:var(--bad)"><span>Parking fine, ${esc(f.why)}</span><b>${money(f.fine)}</b><span>${f.late ? 'Overdue, doubled' : 'Due ' + CR.fmtDate(f.due)}</span><b><button class="phbtn" data-act="fine:${S.fines.indexOf(f)}">Pay</button></b></div>`).join('')}<div class="phtx">${S.tx.slice(0, 18).map(x => `<p><span>${esc(x.text)}<small>${CR.fmtDate(x.t)}</small></span><b class="${x.c > 0 ? 'in' : ''}">${x.c > 0 ? '+' : ''}${money(x.c)}</b></p>`).join('') || '<p><span>No transactions yet</span></p>'}</div>`; }
     else if (app === 'calendar') { title = 'Calendar'; const out = [], J = S.player.job, d0 = Math.floor(S.time / 1440);
       for (let d = d0; d < d0 + 7; d++) { const pp = CR.parts(d * 1440 + 720), items = [];
-        if (J.co && pp.dow >= 1 && pp.dow <= 5 && d >= (J.startDay || 0) && !(J.leaveUntil > d)) items.push(['9:00 am', `Work at ${empName()}${J.lastShiftDay === d ? ', done' : ''}`]);
+        if (J.co && (J.leave || []).includes(d)) items.push(['All day', 'Annual leave']);
+        else if (J.co && pp.dow >= 1 && pp.dow <= 5 && d >= (J.startDay || 0) && !(J.leaveUntil > d)) items.push(['9:00 am', `Work at ${empName()}${J.lastShiftDay === d ? ', done' : ''}`]);
         for (const a of S.apps || []) if (a.status === 'interview' && Math.floor(a.at / 1440) === d) items.push([CR.fmtTime(a.at), `Interview at ${coById(a.co).name}, ${towerName(a.co)}`]);
         if (pp.dow === 4 && S.flags && S.flags.poker_night) items.push(['8:00 pm', 'Poker night at home']);
         if (pp.dow === 0) items.push(['Midnight', `Rent, ${money(26000)}`]);
@@ -8012,6 +8027,12 @@ window.GAME = (() => {
         html = `<div class="portal" style="background:${c.col};color:#fff;border-radius:10px;padding:12px 14px;margin-bottom:10px"><i class="adlogo" style="background:#fff;color:${c.col}">${esc(c.name[0])}</i><b style="font-size:15px">${esc(c.name)}</b><div style="opacity:.8;font-size:12px;margin-top:2px">Employee portal · ${esc(J.employee || S.player.name || '')}</div></div>`
           + `<div class="phbal"><span>Role</span><b>${esc(L[J.level].t)}</b><span>Salary</span><b>${salary(L[J.level].pay * 100)} a year</b><span>Manager</span><b>${esc(bossName())}</b><span>Performance</span><b>${Math.round(J.perf)} of 100</b><span>Stress</span><b style="color:${(J.burn || 0) > 70 ? 'var(--bad,#d66b5f)' : 'inherit'}">${Math.round(J.burn || 0)} of 100</b><span>In the role</span><b>${Math.max(0, d - (J.roleSince || d))} days</b>${w.length ? `<span>Warnings</span><b style="color:var(--bad,#d66b5f)">${w.length}, until ${CR.fmtDate((w[0].d + 90) * 1440)}</b>` : ''}</div>`
           + (pl ? `<p class="phsec">Promotion to ${esc(pl.next.t)}</p><div class="phbal">${pl.rows.map(([n, v, ok]) => `<span>${ok ? '✓' : '○'} ${esc(n)}</span><b style="color:${ok ? 'inherit' : 'var(--bad,#d66b5f)'}">${esc(v)}</b>`).join('')}</div><p class="phnote" style="margin:4px 0 0">${pl.rows.every(r => r[2]) ? 'You are ready. Promotions come at the end of a good shift.' : 'Promotions come at the end of a good shift once every box is ticked.'}${pl.fr ? ' Someone senior is in your corner, so you need fewer shifts.' : ''}</p>` : '<p class="phnote">You are at the top of this ladder.</p>')
+          + (() => { const today = d, up = (J.leave || []).filter(x => x > today), days = []; for (let x = today + 1; days.length < 10; x++) if (tradingDay(x) && x >= (J.startDay || 0)) days.push(x);
+            const nm = pl => { const cc = S.contacts[pl.cid]; return `${cc ? cc.name.split(' ')[0] : 'someone'}, ${CR.fmtTime(pl.t)}`; };
+            return `<p class="phsec">Leave</p><div class="phbal"><span>Leave balance</span><b>${Math.floor(J.pto == null ? 1 : J.pto)} days</b><span>Company policy</span><b>${c.pto} days a year</b><span>Unplanned days off</span><b>${J.unplanned || 0}</b></div>`
+              + `<p class="phnote" style="margin:4px 0 6px">Leave builds up as you work. Book days off at least a day ahead and they are paid. A day you miss without booking comes out of your leave while you have some, then counts against you. Being late is a separate matter.</p>`
+              + (up.length ? up.map(x => `<div class="phrow" style="cursor:default;flex-direction:row;align-items:center;justify-content:space-between"><span><b style="font-size:inherit">${CR.fmtDate(x * 1440)}</b> · booked</span><button class="phbtn" data-act="unleave:${x}">Cancel</button></div>`).join('') : '')
+              + `<p class="phnote" style="margin:6px 0 4px">${(J.pto || 0) < 1 ? 'Not enough leave to book a day yet. A full day builds up roughly every ' + Math.round(365 / c.pto) + ' days.' : 'Book a day off'}</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${days.filter(x => !up.includes(x)).map(x => { const cl = clashes(x); return `<button class="phbtn" data-act="leave:${x}" ${(J.pto || 0) < 1 ? 'disabled ' : ''}style="text-align:left${(J.pto || 0) < 1 ? ';opacity:.45' : ''}${cl.length ? ';border-color:#d6a347' : ''}">${CR.fmtDate(x * 1440).replace(/ \d{4}$/, '')}${cl.length ? `<small style="display:block;color:#d6a347">Clashes with ${esc(cl.map(nm).join(', '))}</small>` : ''}</button>`; }).join('')}</div>`; })()
           + '<p class="phsec">Company email</p>' + (mail.map(m => `<div class="phrow" style="cursor:default"><span>${dayWord(m.t)}, ${CR.fmtTime(m.t)}</span><b>${esc(m.subj)}</b><span style="white-space:normal">${esc(m.text)}</span></div>`).join('') || '<p class="phnote">No email.</p>')
           + (S.resignAsk === d ? '<button class="phbtn" data-act="resign:2" style="border-color:var(--bad,#d66b5f)">Yes, resign today</button><button class="phbtn" data-act="resign:0">Keep the job</button>' : '<button class="phbtn" data-act="resign:1">Resign</button>');
         for (const m of mail) m.read = true; setTimeout(phoneBadge, 0); } }
@@ -8064,6 +8085,8 @@ window.GAME = (() => {
     if (k === 'cash') { const c = +arg; if (S.player.bank < c) toast('Not enough in the bank.'); else { S.player.bank -= c; S.player.cash += c; toast(`${money(c)} moved to cash.`, 2); } return refreshApps(); }
     if (k === 'mplay') music.phonePlay(); if (k === 'mstop') music.phoneStop(); if (k === 'mnext') music.phoneStep(1); if (k === 'mprev') music.phoneStep(-1); if (k === 'mshuf') music.phoneShuffle(); if (k === 'mpick') music.phonePlay(+arg);
     if (k[0] === 'm') return setTimeout(refreshApps, 80);
+    if (k === 'leave') { bookLeave(+arg); return refreshApps(); }
+    if (k === 'unleave') { cancelLeave(+arg); return refreshApps(); }
     if (k === 'gig') { const [id, key] = arg.split('.'); takeGig(id, key); return refreshApps(); }
     if (k === 'gigquit') { quitGig(); return refreshApps(); }
     if (k === 'taxiorder') { orderTaxi(arg); phoneView = ['home', 'taxi']; return refreshApps(); }
@@ -8240,7 +8263,7 @@ window.GAME = (() => {
     const near = cafes().sort((a, b) => Math.hypot(a.x - player.x, a.y - player.y) - Math.hypot(b.x - player.x, b.y - player.y)).slice(0, 4), d = pick2(near); if (!d) return;
     const day0 = Math.floor(S.time / 1440) + 1, dow = CR.parts(day0 * 1440).dow, hr = dow === 0 || dow === 6 ? 11 : pick2([8, 12.5, 17.75]), t = day0 * 1440 + Math.round(hr * 60);
     S.plans.push({ cid, door: doorKey(d), place: d.name, t, done: false });
-    S.msgs.unshift({ cid, me: false, t: S.time, read: true, text: `Yes! ${d.name}, tomorrow at ${CR.fmtTime(t)}?` }); toast(`Coffee with ${c.name.split(' ')[0]} at ${d.name}, tomorrow ${CR.fmtTime(t)}. It is in your calendar.`, 5); }
+    S.msgs.unshift({ cid, me: false, t: S.time, read: true, text: `Yes! ${d.name}, tomorrow at ${CR.fmtTime(t)}?` }); toast(`Coffee with ${c.name.split(' ')[0]} at ${d.name}, tomorrow ${CR.fmtTime(t)}. It is in your calendar.${S.player.job.co && tradingDay(day0) && hr >= 8.5 && hr < 17.5 ? ' That is during work hours, so book the day off in your portal.' : ''}`, 5); }
 
   // ---------------- parking ----------------
   // Where you leave the car matters. Marked bays in town are metered 8 am to 6 pm, Monday to Saturday. Bays out of town, the kerb on
@@ -8399,7 +8422,7 @@ window.GAME = (() => {
   function introSay() { setTimeout(() => say('Rob', VOICES.rob, 'Welcome home, roomie! Your room is the big one at the back, past the kitchen. Big first day at Apogee tomorrow, huh?', [{ text: 'Nine o clock sharp. Wish me luck.', effects: { rel: { rob: 3 } }, reply: 'You will smash it. Get an early night tonight, I will keep the music down. Probably.' }], robLook(), 'happy'), 0); }
 
   // ---------------- start ----------------
-  const G = { hold: false, key, tick, say, get S() { return S; }, music, HOME, WORK, homeDoor, workDoor, save, load, interact, roomKey, openPhone, closePhone, openLaptop, closeLaptop, startGame, ffwd, get FF() { return FF; }, get phoneOpen() { return phoneOpen; }, use: f => useRoom(f), dev: { WORK_EVENTS, setForce: id => { forceEvent = id; }, stat, gainSkill, gateText, gateMargin, ladderFor, promoGaps, workXP, pauseMenu, hrsTo, ptsFrom }, get busy() { return !!(modalOpen || dlgOpen || FF || fading); } };
+  const G = { hold: false, key, tick, say, get S() { return S; }, music, HOME, WORK, homeDoor, workDoor, save, load, interact, roomKey, openPhone, closePhone, openLaptop, closeLaptop, startGame, ffwd, get FF() { return FF; }, get phoneOpen() { return phoneOpen; }, use: f => useRoom(f), dev: { dailyThings: (a, b) => dailyThings(a, b), bookLeave, WORK_EVENTS, setForce: id => { forceEvent = id; }, stat, gainSkill, gateText, gateMargin, ladderFor, promoGaps, workXP, pauseMenu, hrsTo, ptsFrom }, get busy() { return !!(modalOpen || dlgOpen || FF || fading); } };
   setTimeout(showTitle, 0);
   return G;
 })();
