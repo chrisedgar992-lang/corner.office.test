@@ -6811,7 +6811,10 @@ window.GAME = (() => {
   const hrsTo = p => 14.427 * (Math.pow(2, p / 20) - 1), ptsFrom = h => 20 * Math.log2(h / 14.427 + 1);
   function gainSkill(k, hrs, study) { const sk = S.player.skills, p = sk[k] || 0; if (study && p >= STUDY_CAP) return 0; let n = Math.min(100, ptsFrom(hrsTo(p) + hrs)); if (study) n = Math.min(n, STUDY_CAP); sk[k] = n; return n - p; }
   const ladOf = co => (S.player.job && S.player.job.co === co && S.player.job.lad) || (coById(co) || COS[0]).lad;
-  const gateFor = (co, lv) => { const G = GATES[ladOf(co)] || GATES.corp; return G[Math.max(0, Math.min(lv, G.length - 1))]; };
+  // prestige sets the bar. The top firms ask for more at every step, the challengers ask the standard amount, the small firms ask less
+  const PRESTIGE = { meridian: 1.15, blackfen: 1.15, kestrel: 1.15, thorne: 1.15, whitlock: 1.15 };
+  const prestigeOf = co => { const c = coById(co); return PRESTIGE[co] || (c && c.small ? .8 : 1); };
+  const gateFor = (co, lv) => { const G = GATES[ladOf(co)] || GATES.corp, g = G[Math.max(0, Math.min(lv, G.length - 1))], m = prestigeOf(co), o = {}; for (const k in g) o[k] = Math.min(98, Math.round(g[k] * m)); return o; };
   const mainStat = () => { const J = S.player.job, G = gateFor(J.co || J.lastCo || 'meridian', 0); return stat(Object.keys(G)[0]); };
   const gateMargin = (co, lv) => Math.min(...Object.entries(gateFor(co, lv)).map(([k, v]) => stat(k) - v));
   const gateText = (co, lv) => Object.entries(gateFor(co, lv)).map(([k, v]) => `${STATN[k]} ${v}`).join(', ');
@@ -6894,7 +6897,7 @@ window.GAME = (() => {
   const districtOf = co => { const d = DOORS.find(q => q.k === 'hq' && q.co === co); return d ? (DNAME[districtAt(d.x, d.y)] || '') : ''; };
   function jobAd(j) { const c = coById(j.co), L = ladderFor(j.co)[j.level], lad = ladOf(j.co), rl = ADROLE[lad] || ADROLE.corp, f = jobFit(j), mine = S.player.job.co === j.co, sent = (S.apps || []).some(a => a.job === j.id);
     const need = c.locked ? 'A law degree and admission to the bar.' : `${gateText(j.co, j.level)}.${j.level ? ` Experience as ${ladderFor(j.co)[j.level - 1].t} or above.` : ' Recent graduates welcome.'}`;
-    const how = lad === 'tech' ? 'Apply online, then a technical interview with a coding test at our tower.' : c.locked ? 'Applications open to admitted attorneys.' : 'Apply online, then an interview at our tower.';
+    const at = c.small ? 'our offices' : 'our tower', how = lad === 'tech' ? `Apply online, then a technical interview with a coding test at ${at}.` : c.locked ? 'Applications open to admitted attorneys.' : `Apply online, then an interview at ${at}.`;
     return `<div class="phrow jobad" style="cursor:default"><b>${esc(c.locked ? 'Associate Attorney' : L.t)} <span style="float:right">${c.locked ? salary(LADDERS.law[0][1] * 100) : salary(L.pay * 100)}</span></b>`
       + `<span style="white-space:normal"><i class="adlogo" style="background:${c.col || '#567'}">${esc(c.name[0])}</i>${esc(c.name)} · ${esc(c.ind)} · ${esc(districtOf(j.co) || towerName(j.co))}</span>`
       + `<span style="white-space:normal;margin-top:4px">${esc(ADCO[c.id] || c.about)} ${esc(rl[Math.min(rl.length - 1, adTier(lad, j.level))])}</span>`
