@@ -6783,7 +6783,7 @@ window.GAME = (() => {
 
   // ---------------- the game state ----------------
   // ---------------- companies and careers ----------------
-  // Ten major companies, each with an HQ tower that is assigned per playthrough, plus smaller firms on leased floors that
+  // The major companies, each with an HQ tower that is assigned per playthrough, plus smaller firms on leased floors that
   // promote faster but count for less. Every company runs one of four ladders. Promotion comes from effort: solid shifts,
   // a minimum time in the role, finance skill, day to day performance, and a senior colleague in your corner helps. Nonstop
   // work builds stress, which ends in burnout. Missing shifts or poor work brings warnings and then the sack. Jobs are found
@@ -6812,7 +6812,7 @@ window.GAME = (() => {
   function gainSkill(k, hrs, study) { const sk = S.player.skills, p = sk[k] || 0; if (study && p >= STUDY_CAP) return 0; let n = Math.min(100, ptsFrom(hrsTo(p) + hrs)); if (study) n = Math.min(n, STUDY_CAP); sk[k] = n; return n - p; }
   const ladOf = co => (S.player.job && S.player.job.co === co && S.player.job.lad) || (coById(co) || COS[0]).lad;
   // prestige sets the bar. The top firms ask for more at every step, the challengers ask the standard amount, the small firms ask less
-  const PRESTIGE = { meridian: 1.15, blackfen: 1.15, kestrel: 1.15, thorne: 1.15, whitlock: 1.15 };
+  const PRESTIGE = { meridian: 1.15, blackfen: 1.15, kestrel: 1.15, brightwater: 1.15, orion: 1.15, thorne: 1.15, whitlock: 1.15, pemberton: 1.15 };
   const prestigeOf = co => { const c = coById(co); return PRESTIGE[co] || (c && c.small ? .8 : 1); };
   const gateFor = (co, lv) => { const G = GATES[ladOf(co)] || GATES.corp, g = G[Math.max(0, Math.min(lv, G.length - 1))], m = prestigeOf(co), o = {}; for (const k in g) o[k] = Math.min(98, Math.round(g[k] * m)); return o; };
   const mainStat = () => { const J = S.player.job, G = gateFor(J.co || J.lastCo || 'meridian', 0); return stat(Object.keys(G)[0]); };
@@ -6836,7 +6836,16 @@ window.GAME = (() => {
     { id: 'harborfed', pto: 12, col: '#2f6ea5', name: 'Harbor Federal', ind: 'Regional bank', lad: 'bank', small: true, boss: ['Mr Pratt', false], tk: 'HBF', about: 'A regional bank on a few leased floors. Faster steps, smaller name.' },
     { id: 'calloway', pto: 12, col: '#6a2433', name: 'Calloway Capital', ind: 'Boutique bank', lad: 'bank', small: true, boss: ['Ms Lindqvist', true], tk: 'CLC', about: 'A boutique investment bank. Small team, more responsibility early.' },
     { id: 'brindle', pto: 12, col: '#8a5a34', name: 'Brindle Advisory', ind: 'Consulting', lad: 'consult', small: true, boss: ['Mr Haddad', false], about: 'A small consultancy that works for mid-size firms.' },
-    { id: 'ashcroft', pto: 12, nohire: true, col: '#34465e', name: 'Ashcroft Industries', ind: 'Industrial', lad: 'corp', small: true, boss: ['Ms Kowalski', true], tk: 'ACI', about: 'An industrial company with a lean finance team.' }];
+    { id: 'ashcroft', pto: 12, nohire: true, col: '#34465e', name: 'Ashcroft Industries', ind: 'Industrial', lad: 'corp', small: true, boss: ['Ms Kowalski', true], tk: 'ACI', about: 'An industrial company with a lean finance team.' },
+    { id: 'brightwater', pto: 20, col: '#0f7a8a', name: 'Brightwater Software', ind: 'Big tech', lad: 'tech', area: ['mid', 'cbd'], boss: ['Mr Lindgren', false], tk: 'BWS', tech: true, about: 'Business software sold to companies around the world. Calm, well paid and hard to get into.' },
+    { id: 'orion', pto: 20, col: '#2b2d36', name: 'Orion Devices', ind: 'Consumer tech', lad: 'tech', area: ['mid', 'cbd'], boss: ['Ms Okonkwo', true], tk: 'ORD', tech: true, about: 'Phones, laptops and the apps that run on them. Famous products, famous secrecy.' },
+    { id: 'cloudpeak', pto: 18, col: '#d9682b', name: 'Cloudpeak Systems', ind: 'Cloud computing', lad: 'tech', area: ['mid', 'cbd'], boss: ['Mr Sato', false], tk: 'CLD', tech: true, about: 'The servers behind half the city’s apps. Growing fast and hiring.' },
+    { id: 'lanternfish', pto: 12, col: '#1f8a6e', name: 'Lanternfish Studio', ind: 'Software agency', lad: 'tech', small: true, boss: ['Ms Reyes', true], tech: true, about: 'A small agency building apps and websites for local businesses. You ship something new every month.' },
+    { id: 'ridgeway', pto: 12, col: '#5b4b8a', name: 'Ridgeway Asset Management', ind: 'Investment fund', lad: 'fund', small: true, boss: ['Mr Whitcombe', false], about: 'A small fund manager for families, charities and pension funds. Slower, steadier, more forgiving.' },
+    { id: 'halden', pto: 15, col: '#7a2f5c', name: 'Halden Group', ind: 'Consulting', lad: 'consult', area: ['cbd', 'mid'], boss: ['Ms Adeyemi', true], about: 'A fast growing consultancy taking on the big names. More responsibility, sooner.' },
+    { id: 'pemberton', pto: 15, col: '#1e3b33', name: 'Pemberton Crane', ind: 'Law', lad: 'law', area: ['core', 'cbd'], boss: ['Mr Greaves', false], locked: 'Needs a law degree and admission to the bar. Law school comes in a later update.', about: 'The other top law firm. Courtroom heavyweights and the city’s biggest disputes.' },
+    { id: 'delancey', pto: 15, col: '#3c4f7a', name: 'Delancey and Marsh', ind: 'Law', lad: 'law', area: ['cbd', 'mid'], boss: ['Ms Fontaine', true], locked: 'Needs a law degree and admission to the bar. Law school comes in a later update.', about: 'A growing law firm winning work from the big two. Partners who know your name.' },
+    { id: 'rourke', pto: 12, col: '#6e5a3a', name: 'Rourke Legal', ind: 'Law', lad: 'law', small: true, boss: ['Mr Rourke', false], locked: 'Needs a law degree and admission to the bar. Law school comes in a later update.', about: 'A small practice handling property, contracts and the odd dispute for local businesses.' }];
   const coById = id => COS.find(c => c.id === id);
   const SMALLF = { pay: .88, need: .65, ten: .7 };
   const ladderFor = co => { const c = coById(co) || COS[0], sm = c.small ? SMALLF.pay : 1; return LADDERS[ladOf(co)].map(([t, pay]) => ({ t, pay: Math.round(pay * sm / 100) * 100 })); };
@@ -6847,15 +6856,15 @@ window.GAME = (() => {
   const hqOf = co => S.hq && S.hq[co];
   const towerName = co => (S.hq && S.hq.names && S.hq.names[co]) || 'the tower';
   const floorOf = co => co === 'meridian' ? 32 : 10 + (hash(co) % 38);
-  const TOWERN = ['Atlas', 'Beacon', 'Crown', 'Liberty', 'Summit', 'Union', 'Exchange', 'Pinnacle', 'Granite', 'Sterling', 'Commerce', 'Harbor Point', 'Park Avenue', 'Lexington'];
+  const TOWERN = ['Atlas', 'Beacon', 'Crown', 'Liberty', 'Summit', 'Union', 'Exchange', 'Pinnacle', 'Granite', 'Sterling', 'Commerce', 'Harbor Point', 'Park Avenue', 'Lexington', 'Keystone', 'Founders', 'Harborview', 'Ironbridge', 'Chancery', 'Waterfront', 'Grand Central', 'Bayside'];
   // HQ towers: each major takes a tall tower in its preferred districts, the smaller firms lease floors in others. Chosen once per save.
-  function assignHQ(S) { if (S.hq && S.hq.v === 2) return mountHQ(S); const rnd = rngFor(S.hqSeed || (S.hqSeed = Math.floor(Math.random() * 1e9))), used = new Set([WORK && WORK.id, HOME && HOME.id]);
-    const towers = LOTL.filter(l => l.kind === 'tower' && l.cs && LOTB.has(l.id) && !used.has(l.id)), HQ = { v: 2, names: {} };
+  function assignHQ(S) { const old = S.hq && S.hq.v === 2 ? S.hq : null; if (old && COS.every(c => old[c.id] || (old.miss || []).includes(c.id))) return mountHQ(S); const rnd = rngFor((S.hqSeed || (S.hqSeed = Math.floor(Math.random() * 1e9))) + (old ? 7 : 0)), used = new Set([WORK && WORK.id, HOME && HOME.id]); if (old) for (const c of COS) if (old[c.id]) used.add(old[c.id]);
+    const towers = LOTL.filter(l => l.kind === 'tower' && l.cs && LOTB.has(l.id) && !used.has(l.id)), HQ = old || { v: 2, names: {} };
     if (WORK) { HQ.meridian = WORK.id; HQ.names.meridian = 'Northgate tower'; }
-    let tn = 0; const nameFor = id => { const b = LOTB.get(id)[0]; return b && b.name && !/tower$/i.test(b.name) ? b.name : (b && b.name) || TOWERN[tn++ % TOWERN.length] + ' Tower'; };
+    let tn = 0; const nameFor = id => { const b = LOTB.get(id)[0]; return b && b.name && !/tower$/i.test(b.name) ? b.name : (b && b.name) || (() => { const taken = new Set(Object.values(HQ.names).map(x => x.toLowerCase())); for (let i = 0; i < TOWERN.length; i++) { const n = TOWERN[(tn + i) % TOWERN.length] + ' Tower'; if (!taken.has(n.toLowerCase())) { tn += i + 1; return n; } } return TOWERN[tn++ % TOWERN.length] + ' Tower'; })(); };
     for (const c of COS) { if (HQ[c.id]) continue; const tall = c.small ? 25 : 60, pool = towers.filter(l => !used.has(l.id) && (l.h || 0) > tall), pref = pool.filter(l => (c.area || []).includes(C.districtAt(l.cx, l.cy)));
       const pick = (pref.length ? pref : pool)[Math.floor(rnd() * (pref.length || pool.length))]; if (!pick) continue; used.add(pick.id); HQ[c.id] = pick.id; HQ.names[c.id] = nameFor(pick.id); }
-    S.hq = HQ; mountHQ(S); }
+    HQ.miss = COS.filter(c => !HQ[c.id]).map(c => c.id); S.hq = HQ; mountHQ(S); }
   const HQDOORS = [];
   function mountHQ(S) { for (const d of HQDOORS) { d.k = 'shop'; d.sub = 'Offices'; } HQDOORS.length = 0;
     for (const c of COS) { const id = S.hq[c.id]; if (!id) continue; const d = doorFor(id, { k: 'hq', co: c.id, to: 'lobby', name: S.hq.names[c.id], sub: c.name + (c.small ? ', leased floors' : ' headquarters'), sign: S.hq.names[c.id].split(' ')[0].toUpperCase() }); if (d) HQDOORS.push(d); } }
@@ -6885,7 +6894,11 @@ window.GAME = (() => {
   // job ads, written the way a recruiter would
   const ADCO = { meridian: 'Apogee is the city’s most established investment bank, with a client list that reads like the stock exchange.', fairhaven: 'Fairhaven is growing fast and taking market share, and we promote people who help us do it.', blackfen: 'Blackfen is a multi-strategy hedge fund with a small, sharp team and a long record of beating the market.',
     thorne: 'Thorne and Vale advises the leaders of the city’s biggest companies on their hardest problems.', kestrel: 'Kestrel builds the software that runs half the city, used by millions of people every day.', paylane: 'Paylane is rebuilding how the city pays, and we have grown five times over in two years.',
-    whitlock: 'Whitlock and Hale is one of the city’s leading law firms, acting on its largest deals and disputes.', harborfed: 'Harbor Federal has served local families and businesses for ninety years.', calloway: 'Calloway is a boutique advisory firm where small teams lead big deals.', brindle: 'Brindle Advisory helps mid-size companies grow, with partners who still roll up their sleeves.' };
+    whitlock: 'Whitlock and Hale is one of the city’s leading law firms, acting on its largest deals and disputes.', harborfed: 'Harbor Federal has served local families and businesses for ninety years.', calloway: 'Calloway is a boutique advisory firm where small teams lead big deals.', brindle: 'Brindle Advisory helps mid-size companies grow, with partners who still roll up their sleeves.',
+    brightwater: 'Brightwater makes the business software that thousands of companies run on, from payroll to supply chains.', orion: 'Orion designs the phones and laptops people line up for, and the software that makes them work.',
+    cloudpeak: 'Cloudpeak runs the servers behind thousands of apps, and our business has doubled in two years.', lanternfish: 'Lanternfish builds apps and websites for businesses across the city, with a team small enough that everyone sees your work.',
+    ridgeway: 'Ridgeway manages money for families, charities and pension funds across the region, with a long view and a small team.', halden: 'Halden Group is the fastest growing consultancy in the city, and our consultants lead client work years sooner than at the big firms.',
+    pemberton: 'Pemberton Crane is one of the city’s two leading law firms, best known for winning its largest disputes.', delancey: 'Delancey and Marsh is a growing full service law firm, winning clients from the biggest names in town.', rourke: 'Rourke Legal is a small practice advising local businesses on property, contracts and disputes.' };
   const ADROLE = {
     bank: ['You will build models, prepare pitch materials and support live deals from your first week, with structured training and a senior mentor.', 'You will own the analysis on live transactions, check the work of junior analysts and spend real time in front of clients.', 'You will run deal workstreams, manage a small team and become a trusted day to day contact for our clients.', 'You will lead client relationships, originate new mandates and build and develop a team of bankers.'],
     fund: ['You will research companies, build models and pitch ideas at our morning meeting.', 'You will own a coverage list and recommend positions to our portfolio managers.', 'You will run capital, manage risk and build your own track record.', 'You will set strategy, manage portfolio managers and represent the fund to our investors.'],
