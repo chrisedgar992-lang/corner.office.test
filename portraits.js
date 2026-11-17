@@ -365,13 +365,15 @@ function fromLook(L) {
   s.clothRGB = L.top || [90, 90, 94];
   s.hat = L.hatId ? L.hatId : kind === 'police' ? (fem ? 'police_hat_feminine' : 'police_hat_masculine') : L.hat && kind === 'hivis' ? 'hard_hat' : L.hat ? 'baseball_cap' : 'none'; s.hatRGB = L.hatC || [206, 200, 170];
   s.expr = 'neutral'; s.mirror = false;
+  // a face chosen in character creation wins over the seeded one
+  if (L.face) Object.assign(s, L.face);
   L.pr = s; return s;
 }
 const EXPRMAP = { neutral: 'neutral', smile: 'smile', frown: 'annoyed', happy: 'pleased', annoyed: 'annoyed', sceptical: 'sceptical', surprised: 'surprised' };
 // draw a person standing in a box of w by h, feet below the frame, facing right unless flipped
 function paint(g, L, expr, w, h, flip) { const s = fromLook(L), sc = h * 1.02 / H; g.save(); g.translate((w - W * sc) / 2, h - H * sc); draw(g, { ...s, expr: EXPRMAP[expr] || 'neutral' }, sc, !!flip); g.restore(); }
 let ready = false; loadAll().then(() => { ready = true; });
-return { get ready() { return ready; }, fromLook, paint, draw };
+return { get ready() { return ready; }, fromLook, paint, draw, opts: { META, HAIRC, EYEC, ENGSKIN } };
 })();
 // set characters: people with fixed, hand-made portraits instead of generated ones, one full image per expression
 const SETP = {};

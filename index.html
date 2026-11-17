@@ -159,6 +159,19 @@ textarea.io{width:100%;background:var(--btn);color:var(--text);border:1px solid 
 .lplate.stock{display:flex;margin:0 0 8px;padding:10px}.lplate.stock img{max-height:70px;width:auto}
 img.adlogo{display:inline-block;object-fit:cover;padding:0}img.nlogo{display:inline-block;object-fit:cover;border:0}img.nlogo.big{border:0}
 .tico{width:18px;height:18px;border-radius:5px;vertical-align:-4px;margin-right:6px}
+#cc{position:fixed;inset:0;z-index:60;background:radial-gradient(circle at 30% 20%,#2a3442,#12161c 70%);display:grid;place-items:center;overflow:auto;padding:16px;color:#e8ecf1;font:14px system-ui}
+.ccbox{display:flex;gap:22px;max-width:1100px;width:100%;align-items:flex-start}
+.ccl{flex:0 0 340px;display:flex;flex-direction:column;gap:10px}.ccl canvas{width:340px;height:425px;border-radius:14px;background:linear-gradient(#cfd8e2,#9fb0c2)}
+.ccl label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:#aab6c3}.ccl input{font:600 16px system-ui;padding:9px 11px;border-radius:9px;border:1px solid #3a4655;background:#0e1217;color:#fff}
+.ccr{flex:1;min-width:0;background:rgba(20,26,34,.85);border:1px solid #2c3746;border-radius:14px;padding:16px 18px}.ccr h2{margin:0 0 10px;font:700 22px system-ui}
+.cctabs{display:flex;gap:6px;margin-bottom:12px}.cctabs button{padding:7px 14px;border-radius:999px;border:1px solid #3a4655;background:none;color:#cfd8e2;cursor:pointer}.cctabs button.on{background:#e8b04a;border-color:#e8b04a;color:#14181e;font-weight:700}
+.ccpane{max-height:52vh;overflow:auto;padding-right:4px}.ccsec{margin-bottom:14px}.ccsec>b{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#93a2b3;margin-bottom:6px}
+.ccchips{display:flex;flex-wrap:wrap;gap:6px}.ccchips button{padding:6px 11px;border-radius:8px;border:1px solid #344152;background:#18202a;color:#dde4ec;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:6px}.ccchips button.on{border-color:#e8b04a;background:#3a3020;color:#fff}
+.ccchips i{width:12px;height:12px;border-radius:3px;display:inline-block;border:1px solid rgba(255,255,255,.3)}
+.ccsw{display:flex;flex-wrap:wrap;gap:8px}.ccsw button{width:34px;height:34px;border-radius:50%;border:2px solid transparent;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}.ccsw button.on{border-color:#e8b04a;box-shadow:0 0 0 2px #14181e inset}
+.ccnote{font-size:12px;color:#93a2b3;margin:4px 0 0}.ccfoot{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px;border-top:1px solid #2c3746;padding-top:12px}.ccfoot span{font-size:12px;color:#93a2b3}
+#ccgo{padding:10px 26px;border-radius:10px;border:0;background:#e8b04a;color:#14181e;font:700 15px system-ui;cursor:pointer}.ccghost{padding:8px;border-radius:9px;border:1px solid #3a4655;background:none;color:#cfd8e2;cursor:pointer}
+@media (max-width:760px){.ccbox{flex-direction:column;align-items:center}.ccl{flex:none}}
 .nhero.lit{background:#ebe4d6!important;color:#1c262e;border:1px solid #d8cfbd}.nhero.lit em{color:inherit!important}
 .nhero{display:flex;gap:12px;align-items:center;color:#fff;border-radius:8px;padding:14px;margin:0 0 12px}.nhero b{display:block;font:700 17px Georgia,serif}.nhero span{font:12px system-ui;opacity:.9}.nhero em{font-style:normal}.nmore{border-top:2px solid #1d1d1b;margin-top:12px;padding-top:6px}.nmore b{font:700 13px system-ui}.nmore button{display:block;background:none;border:0;border-bottom:1px solid #ddd7c9;width:100%;text-align:left;padding:6px 0;font:600 14px Georgia,serif;color:#1d1d1b;cursor:pointer}.fit{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0}.fitl{flex:0 0 190px;display:flex;flex-direction:column;gap:4px}.fitl canvas{width:190px;height:230px;border-radius:10px;display:block}.fitl b{font-size:14px}.fitl span{font-size:12px;color:var(--muted)}.fitr{flex:1 1 220px;min-width:0}.fittabs{display:flex;gap:4px;margin-bottom:6px}.fittabs button{flex:1;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:none;color:var(--text);cursor:pointer}.fittabs button.on{background:var(--acc,#d6a347);color:#16181c;border-color:transparent}.fitlist{max-height:300px;overflow:auto;display:flex;flex-direction:column;gap:3px}.fitlist button{display:flex;align-items:center;gap:8px;text-align:left;padding:7px 9px;border-radius:8px;border:1px solid transparent;background:rgba(255,255,255,.04);color:var(--text);cursor:pointer;font:13px system-ui}.fitlist button.on{border-color:var(--acc,#d6a347)}.fitlist i{width:14px;height:14px;border-radius:50%;flex:0 0 14px;border:1px solid rgba(255,255,255,.3)}.fitlist span{flex:1}.fitlist em{font-style:normal;font-size:12px;color:var(--muted)}.phrow{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;padding:9px 11px;color:var(--text);font:inherit;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px}
 .phrow span{color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.phrow.on{border-color:var(--acc)}.phrow:hover,.phbtn:hover{border-color:var(--acc)}
@@ -8313,11 +8326,60 @@ window.GAME = (() => {
     feminine: [['pixie_crop_11', 'Pixie crop', 6500], ['chin_bob_12', 'Chin bob', 6500], ['wavy_bob_13', 'Wavy bob', 7000], ['shoulder_wavy_15', 'Shoulder length waves', 7000], ['long_straight_16', 'Long and straight', 6000], ['long_wavy_17', 'Long waves', 7000], ['long_curly_18', 'Long curls', 7500], ['high_ponytail_19', 'High ponytail', 5000], ['braided_bun_20', 'Braided bun', 8000], ['short_curls_05', 'Short curls', 5500], ['rounded_coils_06', 'Rounded coils', 6000], ['tied_back_09', 'Tied back', 5000], ['none', 'Shaved head', 3000]] };
   const SHAVES = [['none', 'Clean shave', 2000], ['stubble_01', 'Stubble, kept short', 1500], ['short_beard_02', 'Short beard, shaped', 2500], ['full_beard_03', 'Full beard, trimmed', 3000], ['moustache_04', 'Moustache', 2000], ['fancy_moustache_05', 'Waxed moustache', 3000]];
   function applyOutfit() { const L = player.L, c = clothFor(S.wearing), G = GARM[c.g] || {}, st = S.style || {};
+    const ch = S.char; if (ch) Object.assign(L, { fem: ch.fem, skin: ch.skin, hairC: ch.hairC, face: ch.face, age: 'young' }); else { L.fem = false; L.face = null; }
     Object.assign(L, { garment: c.g, top: c.top, bot: c.bot, shirt: c.shirt, tie: c.tie, coat: !!G.coat, hood: c.g === 'hoodie', kind: G.jacket && !G.coat ? 'suit' : G.coat ? 'coat' : 'casual', pr: null });
     const h = S.hatOn && WEAR[S.hatOn]; L.hatId = h ? h.id : 'none'; L.hatC = h ? WEARC[h.col] : null; L.hat = !!h;
     const gl = S.glassesOn && WEAR[S.glassesOn]; L.glassesId = gl ? gl.id : 'none'; L.glasses = !!gl;
     if (st.hairId) { L.hairId = st.hairId; L.hair = HAIRSTREET[st.hairId] || 'short'; } if (st.fhId) { L.fhId = st.fhId; L.beard = { stubble_01: 'stubble', short_beard_02: 'beard', full_beard_03: 'full', moustache_04: 'mous', fancy_moustache_05: 'mous' }[st.fhId] || null; } }
   const wearing = () => clothFor(S.wearing);
+  // ---------------- character creation ----------------
+  // Who you are, picked before the game starts. The choices are the same layers the portraits are built from, so your portrait,
+  // your figure on the street and what you wear always match. Hair and facial hair can change later at a barber, clothes at the shops.
+  const CC_HEADS = { average_long: 'Long face', average_round: 'Round face', fit_defined: 'Athletic', fat_full: 'Fuller' };
+  const ccWord = s => { const t = s.replace(/^(feminine|masculine|shared)_/, '').replace(/_/g, ' '); return t[0].toUpperCase() + t.slice(1); };
+  function ccOpts(fem) { const O = window.PORTRAIT && PORTRAIT.opts; if (!O) return null; const M = O.META, g = fem ? 'feminine' : 'masculine';
+    return { heads: Object.keys(CC_HEADS).map(k => [`${g}_${k}`, CC_HEADS[k]]), eyes: [...new Set(M.eyes.filter(e => e.startsWith(g)).map(e => e.replace(/_(open|narrowed)$/, '')))].map(e => [e, ccWord(e)]),
+      eyeCols: Object.entries(O.EYEC).filter(([k]) => k !== 'purple' && k !== 'red').map(([k, n]) => [k, n]), brows: Object.keys(M.brows).filter(b => b.startsWith(g)).map(b => [b, ccWord(b)]),
+      noses: M.noses.map(n => [n, ccWord(n)]), mouths: Object.keys(M.mouths).filter(m => m.startsWith(g) || m.startsWith('shared')).map(m => [m, ccWord(m)]),
+      skins: O.ENGSKIN, hairCols: Object.entries(O.HAIRC), cuts: CUTS[g].map(([id, n]) => [id, n]), shaves: fem ? [] : SHAVES.map(([id, n]) => [id, n]),
+      outfits: Object.values(WEAR).filter(w => w.cat === 'clothes' && w.p <= 9000 && (w.cut === 'b' || (w.cut === 'f') === fem)), glasses: [{ k: '_none', n: 'No glasses' }, ...Object.values(WEAR).filter(w => w.cat === 'glasses' && (w.cut === 'b' || (w.cut === 'f') === fem))] }; }
+  const ccPick = a => a[Math.floor(Math.random() * a.length)];
+  function ccRandom(C, keepFem) { const fem = keepFem ? C.fem : Math.random() < .5, O = ccOpts(fem), tone = 1 + Math.floor(Math.random() * 6);
+    Object.assign(C, { fem, tone, head: ccPick(O.heads.slice(0, 3))[0], eye: ccPick(O.eyes)[0], eyeCol: ccPick(tone >= 4 ? O.eyeCols.filter(([k]) => /brown|black/.test(k)) : O.eyeCols)[0], brow: ccPick(O.brows)[0], nose: ccPick(O.noses)[0], mouth: ccPick(O.mouths)[0],
+      hairId: ccPick(O.cuts.filter(c => c[0] !== 'none'))[0], hairCol: ccPick(O.hairCols.filter(([n]) => n !== 'Gray' && n !== 'White' && (tone < 4 || /Black|brown/i.test(n))))[0], fhId: fem ? 'none' : ccPick(['none', 'none', 'stubble_01', 'short_beard_02']),
+      outfit: ccPick(O.outfits).k, glasses: Math.random() < .2 ? ccPick(O.glasses.slice(1)).k : '_none' }); }
+  // the choices go straight onto the save, so the preview is the real thing
+  function ccApply(C) { const O = PORTRAIT.opts; S.player.name = C.name.trim() || 'Alex';
+    S.char = { fem: C.fem, skin: O.ENGSKIN[C.tone - 1].slice(), hairC: O.HAIRC[C.hairCol].slice(), hairCol: C.hairCol, face: { head: C.head, eye: C.eye, eyeCol: C.eyeCol, brow: C.brow, nose: C.nose, mouth: C.mouth } };
+    S.style = { hairId: C.hairId, fhId: C.fem ? 'none' : C.fhId };
+    S.wardrobe = [...new Set(['open_collar.white', C.outfit, ...(C.glasses !== '_none' ? [C.glasses] : [])])]; S.owned = S.owned || {}; for (const k of S.wardrobe) S.owned[k] = true;
+    S.wearing = C.outfit; S.glassesOn = C.glasses === '_none' ? null : C.glasses; applyOutfit(); }
+  function charCreate(done) { const C = { name: '', tab: 'body' }; ccRandom(C); G.hold = true;
+    const box = document.createElement('div'); box.id = 'cc'; document.body.appendChild(box);
+    const chips = (k, list, val) => `<div class="ccchips">${list.map(([id, n]) => `<button data-cc="${k}:${id}" class="${val === id ? 'on' : ''}">${esc(n)}</button>`).join('')}</div>`;
+    const swatch = (k, list, val) => `<div class="ccsw">${list.map(([id, rgb]) => `<button data-cc="${k}:${id}" class="${String(val) === String(id) ? 'on' : ''}" style="background:rgb(${rgb.join(',')})" title="${esc(String(id))}"></button>`).join('')}</div>`;
+    const sec = (t, h) => `<div class="ccsec"><b>${t}</b>${h}</div>`;
+    function pane() { const O = ccOpts(C.fem);
+      if (C.tab === 'body') return sec('Presentation', chips('fem', [['0', 'Masculine'], ['1', 'Feminine']], C.fem ? '1' : '0')) + sec('Skin tone', swatch('tone', O.skins.map((c, i) => [i + 1, c]), C.tone)) + sec('Face shape', chips('head', O.heads, C.head));
+      if (C.tab === 'face') return sec('Eyes', chips('eye', O.eyes, C.eye)) + sec('Eye color', chips('eyeCol', O.eyeCols, C.eyeCol)) + sec('Eyebrows', chips('brow', O.brows, C.brow)) + sec('Nose', chips('nose', O.noses, C.nose)) + sec('Mouth', chips('mouth', O.mouths, C.mouth));
+      if (C.tab === 'hair') return sec('Hairstyle', chips('hairId', O.cuts, C.hairId)) + sec('Hair color', swatch('hairCol', O.hairCols, C.hairCol)) + (O.shaves.length ? sec('Facial hair', chips('fhId', O.shaves, C.fhId)) : '');
+      return sec('What you wear', `<div class="ccchips">${O.outfits.map(w => `<button data-cc="outfit:${w.k}" class="${C.outfit === w.k ? 'on' : ''}"><i style="background:rgb(${WEARC[w.col].join(',')})"></i>${esc(w.n)}</button>`).join('')}</div>`)
+        + sec('Glasses', chips('glasses', O.glasses.map(w => [w.k, w.n]), C.glasses)) + '<p class="ccnote">You also own a white work shirt. More clothes, hats and glasses are at the shops, and the barber can change your hair.</p>'; }
+    function paintPv() { const cv = box.querySelector('#ccpv'); if (!cv) return; const g = cv.getContext('2d'); g.clearRect(0, 0, cv.width, cv.height);
+      if (!PORTRAIT.ready) return setTimeout(paintPv, 150); player.L.pr = null; PORTRAIT.paint(g, player.L, 'smile', cv.width, cv.height); }
+    function draw() { ccApply(C);
+      box.innerHTML = `<div class="ccbox"><div class="ccl"><canvas id="ccpv" width="440" height="550"></canvas><label>Your name<input id="ccname" maxlength="18" value="${esc(C.name)}" placeholder="Alex"></label><button id="ccrnd" class="ccghost">Surprise me</button></div>
+        <div class="ccr"><h2>Who are you?</h2><div class="cctabs">${[['body', 'Body'], ['face', 'Face'], ['hair', 'Hair'], ['style', 'Clothes']].map(([k, n]) => `<button data-tab="${k}" class="${C.tab === k ? 'on' : ''}">${n}</button>`).join('')}</div>
+        <div class="ccpane">${pane()}</div><div class="ccfoot"><span>You can change your hair and clothes later. Your face is yours for good.</span><button id="ccgo">Start</button></div></div></div>`;
+      paintPv(); const nm = box.querySelector('#ccname'); nm.oninput = () => { C.name = nm.value; }; }
+    box.onclick = e => { const b = e.target.closest('button'); if (!b) return;
+      if (b.dataset.tab) { C.tab = b.dataset.tab; return draw(); }
+      if (b.id === 'ccrnd') { ccRandom(C); return draw(); }
+      if (b.id === 'ccgo') { ccApply(C); box.remove(); G.hold = false; return done(); }
+      const v = b.dataset.cc; if (!v) return; const i = v.indexOf(':'), k = v.slice(0, i); let x = v.slice(i + 1);
+      if (k === 'fem') { const f = x === '1'; if (f !== C.fem) { C.fem = f; ccRandom(C, true); } return draw(); }
+      if (k === 'tone') x = +x; C[k] = x; draw(); };
+    const go = () => { if (!(window.PORTRAIT && PORTRAIT.opts)) return setTimeout(go, 100); ccRandom(C); draw(); }; go(); }
   // the preview: your look with one thing changed
   function previewLook(ch) { const L = JSON.parse(JSON.stringify(player.L)); L.pr = null;
     if (ch.wear) { const w = WEAR[ch.wear]; if (w.cat === 'clothes') { const c = clothFor(ch.wear), G = GARM[c.g] || {}; Object.assign(L, { garment: c.g, top: c.top, bot: c.bot, shirt: c.shirt, tie: c.tie, coat: !!G.coat, hood: c.g === 'hoodie' }); }
@@ -8577,7 +8639,7 @@ window.GAME = (() => {
   function closeTest() { const V = $('testview'); V.hidden = true; V.innerHTML = ''; window.SKIP_RENDER = false; }
   // tests sit beside the page on GitHub; on claude.ai they open as their own artifacts
   function startGame(saved) { titleOpen = false; document.body.classList.remove('titling'); $('title').hidden = true; startSound();
-    if (saved) { load(saved); toast('Welcome back.'); } else { S = upgrade(fresh()); applyOutfit(); startAtHome(); skyForDay(); drawHud(); intro(); } phoneBadge(); }
+    if (saved) { load(saved); toast('Welcome back.'); } else { S = upgrade(fresh()); charCreate(() => { applyOutfit(); startAtHome(); skyForDay(); drawHud(); intro(); }); } phoneBadge(); }
 
   // ---------------- using things ----------------
   let doorNow = null, pedNow = null, cartNow = null, benchNow = null, paperNow = null;
