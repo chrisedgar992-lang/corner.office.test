@@ -303,6 +303,12 @@ function warpToHead(Lyr, head, key) {
     g.putImageData(out, 0, 0); return { c, x: 0, y: 0 }; }); }
 // glasses arms stop where they meet the ear and tuck behind it. The front edge of each head's ear, measured on the art.
 const EARX = { feminine_average_long: 163, feminine_average_round: 156, feminine_fat_full: 149, feminine_fit_defined: 157, feminine_older_soft: 139, feminine_older_sunken: 148, masculine_average_long: 155, masculine_average_round: 151, masculine_fat_full: 144, masculine_fit_defined: 158, masculine_older_soft: 139, masculine_older_sunken: 139 };
+// hair hanging over the face: in this three-quarter view, hair on the far side falls behind the cheek, so below the brows any
+// front hair inside the face outline is taken out. The outline itself keeps a thin edge of hair so the cut is not visible.
+function faceClip(Lyr, head, fy, key) { if (!Lyr) return Lyr; return memo(`fc|${head}|${fy}|${key}`, () => { const c = cv(), g = c.getContext('2d'); g.drawImage(Lyr.c, Lyr.x, Lyr.y);
+  const hd = fullPixels('head/' + head).d.data, img = g.getImageData(0, 0, W, H), d = img.data, y0 = 222 + fy, x0 = 215, er = 3, A = (x, y) => x >= 0 && y >= 0 && x < W && y < H && hd[(y * W + x) * 4 + 3] > 128;
+  for (let y = y0; y < H; y++) for (let x = x0; x < W; x++) { const i = (y * W + x) * 4; if (!d[i + 3] || !A(x, y)) continue; if (!A(x + er, y) || !A(x - er, y) || !A(x, y + er) || !A(x, y - er)) continue; const f = Math.min(1, (y - y0) / 10) * Math.min(1, (x - x0) / 10); d[i + 3] = Math.round(d[i + 3] * (1 - f)); }
+  g.putImageData(img, 0, 0); return { c, x: 0, y: 0 }; }); }
 function glassesLayer(id, head, fy) { return memo(`gl|${id}|${head}|${fy}`, () => { const G = IMG['gl/' + id], c = cv(), g = c.getContext('2d'); g.drawImage(G.im, G.x, G.y + fy);
   const ex = EARX[head] || 150, gr = g.createLinearGradient(ex - 8, 0, ex + 2, 0); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
   g.globalCompositeOperation = 'destination-out'; g.fillStyle = gr; g.fillRect(0, 0, ex + 2, H); return { c, x: 0, y: 0 }; }); }
@@ -324,7 +330,7 @@ function draw(ctx, s, scale = 1, mirror = s.mirror) {
   if (IMG[P.eyeKey]) ctx.drawImage(IMG[P.eyeKey].im, IMG[P.eyeKey].x, IMG[P.eyeKey].y);
   if (IMG[P.browKey]) put(tinted(P.browKey, col));
   ctx.restore();
-  if (s.hair !== 'none' && IMG[fit('hairf/' + s.hair)]) put(wk(underHat(tinted(fit('hairf/' + s.hair), col), s.hat, 'f' + s.head + s.hair + hk, own('hairf/' + s.hair) ? s.head : null), 'hairf/' + s.hair, 'hf' + s.hair + hk + s.hat));
+  if (s.hair !== 'none' && IMG[fit('hairf/' + s.hair)]) put(faceClip(wk(underHat(tinted(fit('hairf/' + s.hair), col), s.hat, 'f' + s.head + s.hair + hk, own('hairf/' + s.hair) ? s.head : null), 'hairf/' + s.hair, 'hf' + s.hair + hk + s.hat), s.head, fy, s.hair + hk + s.hat));
   const nk = `nose/${s.nose}/${s.tone}`; if (IMG[nk]) ctx.drawImage(IMG[nk].im, IMG[nk].x, IMG[nk].y + fy);
   // glasses go over the nose, lenses clear or darkened for sunglasses
   if (s.glasses !== 'none' && IMG['gl/' + s.glasses]) {
