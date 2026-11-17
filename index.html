@@ -172,6 +172,12 @@ img.adlogo{display:inline-block;object-fit:cover;padding:0}img.nlogo{display:inl
 .ccnote{font-size:12px;color:#93a2b3;margin:4px 0 0}.ccfoot{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px;border-top:1px solid #2c3746;padding-top:12px}.ccfoot span{font-size:12px;color:#93a2b3}
 #ccgo{padding:10px 26px;border-radius:10px;border:0;background:#e8b04a;color:#14181e;font:700 15px system-ui;cursor:pointer}.ccghost{padding:8px;border-radius:9px;border:1px solid #3a4655;background:none;color:#cfd8e2;cursor:pointer}
 @media (max-width:760px){.ccbox{flex-direction:column;align-items:center}.ccl{flex:none}}
+#tut{position:fixed;top:58px;left:50%;transform:translateX(-50%);z-index:30;background:rgba(18,22,28,.92);border:1px solid #e8b04a;border-radius:10px;padding:8px 12px;color:#e8ecf1;font:13px system-ui;display:flex;align-items:center;gap:10px;max-width:min(560px,90vw)}
+#tut small{color:#e8b04a;font-size:11px;white-space:nowrap}#tut b{font-weight:600}#tut button{background:none;border:1px solid #3a4655;color:#93a2b3;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px}
+#exam{position:fixed;inset:0;z-index:60;background:rgba(10,12,16,.82);display:grid;place-items:center;padding:16px;font:15px system-ui;color:#1c262e}
+.exbox{background:#f6f2e8;border-radius:12px;max-width:620px;width:100%;padding:20px 22px;box-shadow:0 10px 40px rgba(0,0,0,.4)}.exhead{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:#6a6458;margin-bottom:10px}.exhead b{color:#1c262e}
+.exbox h3{font:600 18px Georgia,serif;margin:0 0 10px}.exhint{font-size:12px;color:#2f6a4a;margin:0 0 10px}.exopts{display:grid;gap:8px}.exopts button{text-align:left;padding:10px 12px;border-radius:8px;border:1px solid #cfc6b4;background:#fff;cursor:pointer;font:14px system-ui;color:#1c262e}
+.exopts button:hover{border-color:#8a7a58}.exopts button.ok{background:#d6ecd8;border-color:#4a8a5a}.exopts button.no{background:#f2d6d2;border-color:#a8564a}.extime{height:5px;background:#e2dccd;border-radius:3px;margin-top:14px;overflow:hidden}.extime i{display:block;height:100%;background:#c8902e;transition:width .1s linear}
 .nhero.lit{background:#ebe4d6!important;color:#1c262e;border:1px solid #d8cfbd}.nhero.lit em{color:inherit!important}
 .nhero{display:flex;gap:12px;align-items:center;color:#fff;border-radius:8px;padding:14px;margin:0 0 12px}.nhero b{display:block;font:700 17px Georgia,serif}.nhero span{font:12px system-ui;opacity:.9}.nhero em{font-style:normal}.nmore{border-top:2px solid #1d1d1b;margin-top:12px;padding-top:6px}.nmore b{font:700 13px system-ui}.nmore button{display:block;background:none;border:0;border-bottom:1px solid #ddd7c9;width:100%;text-align:left;padding:6px 0;font:600 14px Georgia,serif;color:#1d1d1b;cursor:pointer}.fit{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0}.fitl{flex:0 0 190px;display:flex;flex-direction:column;gap:4px}.fitl canvas{width:190px;height:230px;border-radius:10px;display:block}.fitl b{font-size:14px}.fitl span{font-size:12px;color:var(--muted)}.fitr{flex:1 1 220px;min-width:0}.fittabs{display:flex;gap:4px;margin-bottom:6px}.fittabs button{flex:1;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:none;color:var(--text);cursor:pointer}.fittabs button.on{background:var(--acc,#d6a347);color:#16181c;border-color:transparent}.fitlist{max-height:300px;overflow:auto;display:flex;flex-direction:column;gap:3px}.fitlist button{display:flex;align-items:center;gap:8px;text-align:left;padding:7px 9px;border-radius:8px;border:1px solid transparent;background:rgba(255,255,255,.04);color:var(--text);cursor:pointer;font:13px system-ui}.fitlist button.on{border-color:var(--acc,#d6a347)}.fitlist i{width:14px;height:14px;border-radius:50%;flex:0 0 14px;border:1px solid rgba(255,255,255,.3)}.fitlist span{flex:1}.fitlist em{font-style:normal;font-size:12px;color:var(--muted)}.phrow{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;padding:9px 11px;color:var(--text);font:inherit;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px}
 .phrow span{color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.phrow.on{border-color:var(--acc)}.phrow:hover,.phbtn:hover{border-color:var(--acc)}
@@ -1562,7 +1568,7 @@ const PAVE2 = [226, 220, 204], DRIVE2 = [104, 106, 110];
   }
   // the great hall: the largest campus building, with a steep gable and its name over the door
   { const cs = buildings.filter(b => kindOf(b) === 'campus').sort((a, c) => (c.fp.x1 - c.fp.x0) * (c.fp.y1 - c.fp.y0) - (a.fp.x1 - a.fp.x0) * (a.fp.y1 - a.fp.y0)); const gh = cs[0];
-    if (cs[1]) cs[1].name = 'College Library';
+    if (cs[1]) cs[1].name = 'College Library'; if (cs[2]) cs[2].name = 'Lecture Theatre'; if (cs[3]) cs[3].name = 'Residence Hall';
     if (gh) { const w = gh.fp.x1 - gh.fp.x0, d = gh.fp.y1 - gh.fp.y0; gh.name = 'Great Hall'; gh.tiers = [{ ...gh.fp, zb: 0, zt: Math.max(gh.H, 18), mat: MAT.vbrick, pat: 'tallbays' }]; gh.H = Math.max(gh.H, 18); gh.pitched = { h: Math.min(10, Math.min(w, d) * .3), axis: w >= d ? 'x' : 'y' }; gh.roofC = [134, 140, 136]; clearRoof(gh); gh.kit = [];
       const F = gh.F, c = toW(F, 0, gh.fp.y0 - 2), poly = [toW(F, 8, gh.fp.y0 - 4), toW(F, -8, gh.fp.y0 - 4), toW(F, -8, gh.fp.y0), toW(F, 8, gh.fp.y0)]; props.push({ t: 'slab', poly, z: 5, th: 1, col: [150, 158, 150], text: 'GREAT HALL', textCol: [236, 230, 210], posts: false, x: c[0], y: c[1], h: 6, rad: 8 }); } }
   // stores for the shopping update: 24-hour markets in town (never near the estates), supermarkets and gyms in the suburbs
@@ -5294,7 +5300,48 @@ function buildDealer(ox) { const I = vroom('Circuit Prestige Motors', ox, 30, 18
   staff(I, 'dealer', 19.6, 2.4, 0, 1, 'Sales consultant.'); staff(I, 'dealer', 15.2, 2.1, 0, -1, 'Sales manager.');
   browsers(I, 4, [[12, 7], [7, 10], [19, 12], [21, 9], [11, 14], [17, 14.5]], SMART, 131); return I; }
 
-const VBUILD = { cafe: buildCafe, bar: buildBar, lounge: buildLounge, rest: buildRestaurant, slice: buildSlice, club: buildClub, gym: buildGym, market: buildMarket, conv: buildConv, hospital: buildHospital, hall: buildHall, library: buildLibrary, dealer: buildDealer };
+// ---------- the college opening (stand-ins until the college sheets arrive) ----------
+// Lecture theatre, 20 x 16: ten raked rows stepping down to a stage, a lectern, demonstration bench and wide screen, aisles up the middle and sides
+function buildLecture(ox) { const I = vroom('Lecture Theatre', ox, 20, 16, { door: [9.0, 11.0], wh: 6, frontWin: false, wallC: [176, 132, 96], wallTop: [70, 52, 40], floors: [{ x0: 0, y0: 0, x1: 20, y1: 16, m: 'gcarpet' }, { x0: 0, y0: 0, x1: 20, y1: 3.4, m: 'walnut', like: 'oak' }] });
+  for (let r = 0; r < 10; r++) { const y = 4.0 + r * 1.05, c = 70 + r * 6; F(I, 'flat', 10, y + .5, { w: 20, d: 1.0, col: [c, c - 8, c - 16] }); }
+  F(I, 'tall', 10, .12, { w: 10, d: .1, h: 3.6, z0: 1.0, col: [236, 238, 240] }); F(I, 'blk', 10, 2.0, { w: .8, d: .6, h: 1.15, col: [110, 80, 56], top: [140, 104, 72] }); F(I, 'blk', 14.5, 1.8, { w: 3.0, d: .9, h: .95, col: [180, 184, 188], top: [70, 74, 80] });
+  F(I, 'blk', 10, 15.4, { w: 3.0, d: 1.0, h: 1.2, col: [60, 50, 44], top: [90, 80, 70] });
+  I.lectureSeats = [];
+  for (let r = 0; r < 10; r++) { const y = 4.65 + r * 1.05; for (const [x0, x1] of [[2.6, 9.0], [11.0, 17.4]]) for (let x = x0; x <= x1 + .01; x += .71) {
+    const mine = r === 4 && Math.abs(x - 9.0) < .05; if (mine) { svcF(I, 'chair', x, y, { rot: 0, col: [120, 50, 44] }, 'Your seat for the lecture', 'college').ck = 'lecture'; I.mySeat = [x, y]; continue; }
+    F(I, 'chair', x, y, { rot: 0, col: [120, 50, 44] }); } }
+  staff(I, 'lecture', 10, 1.4, 0, 1, 'Professor.');
+  patrons(I, .55, ['casual', 'casual', 'coat']); for (const n of I.npcs) if (n.sit && n.sit.y > 4) n.class = true; return I; }
+// Residence hall, 16 x 12: your shared room with Rob along the back, a kitchenette, and the ground floor lounge
+function buildDorm(ox) { const I = vroom('Residence Hall', ox, 16, 12, { door: [7.2, 8.8], wh: 3.0, wallC: [200, 196, 186], floors: [{ x0: 0, y0: 0, x1: 9, y1: 5.5, m: 'carpet' }, { x0: 9, y0: 0, x1: 16, y1: 5.5, m: 'sand', like: 'tile' }, { x0: 0, y0: 5.5, x1: 16, y1: 12, m: 'latte', like: 'oak' }],
+    wH: [[5.5, 0, 9, [[6.6, 7.8]]]], wV: [[9, 0, 5.5, [[3.2, 4.4]]]] });
+  svcF(I, 'bed', 1.0, 1.6, { col: [70, 84, 110] }, 'Your bed', 'college').ck = 'bed'; F(I, 'bedside', 2.0, .45, { lamp: true });
+  svcF(I, 'desk', 3.4, .45, { laptop: true, w: 1.2 }, 'Your laptop', 'college').ck = 'desk'; F(I, 'chair', 3.4, 1.0, {});
+  svcF(I, 'wardrobe', .7, 4.8, { rot: 1 }, 'Your wardrobe', 'college').ck = 'ward';
+  F(I, 'bed', 8.0, 1.6, { col: [120, 64, 56] }); F(I, 'bedside', 7.0, .45, { lamp: true }); F(I, 'desk', 5.6, .45, { monitor: true, w: 1.2 }); F(I, 'chair', 5.6, 1.0, {}); F(I, 'wardrobe', 8.3, 4.8, { rot: 3 }); F(I, 'rug', 4.5, 3.2, { w: 2.0, d: 1.3, col: [150, 120, 90] });
+  F(I, 'counter', 12.5, .4, { w: 4.0 }); F(I, 'fridge', 15.4, .5, {}); svcF(I, 'stove', 10.8, .4, {}, 'Cook something cheap', 'college').ck = 'cook'; F(I, 'sink', 13.4, .4, {}); F(I, 'table', 12.5, 3.0, { w: 1.6, d: .9 }); pair2(I, 12.5, 3.0, 1.0, [90, 100, 110]);
+  F(I, 'sofa', 4.0, 10.9, { w: 2.6, rot: 0, col: [96, 110, 130] }); F(I, 'tvunit', 4.0, 7.0, { w: 2.0, rot: 2 }); F(I, 'armchair', 1.4, 9.0, { rot: 1, col: [130, 96, 80] }); F(I, 'table', 4.0, 9.0, { w: 1.2, d: .6 });
+  F(I, 'table', 13.0, 8.5, { w: 1.6, d: 1.0 }); four(I, 13.0, 8.5, .8, .45, [150, 120, 90]); F(I, 'plant', 15.4, 11.4); F(I, 'plant', .5, 11.4); F(I, 'shelf', 15.7, 7.5, { rot: 3, w: 1.6 });
+  I.robSeat = { x: 5.6, y: 1.05, z: .48, hx: 0, hy: -1 }; I.myBed = [1.0, 1.6];
+  patrons(I, .35, ['casual', 'casual']); return I; }
+// The Great Hall set for exams: rows of single desks facing the front, an invigilator's table and a clock
+function hallShell(name, ox) { return vroom(name, ox, 30, 20, { door: [13.73, 16.3], wh: 7, wallC: [150, 104, 92], wallTop: [70, 50, 44], gE: [[3.95, 5.57]], winW: [[3, 6], [8, 11], [13, 16]], winE: [[7, 10], [12, 15], [16.5, 18.5]], floors: [{ x0: 0, y0: 0, x1: 30, y1: 20, m: 'walnut', like: 'oak' }] }); }
+function buildHallExam(ox) { const I = hallShell('Great Hall', ox);
+  F(I, 'stage', 15.0, 2.1, { w: 21.9, d: 3.3, col: [120, 90, 66] }); F(I, 'table', 15.0, 2.2, { w: 3.0, d: .9, col: [110, 76, 50] }); F(I, 'blk', 15.0, .12, { w: .7, d: .08, h: .7, z0: 3.2, col: [230, 226, 214] });
+  for (let r = 0; r < 7; r++) for (let c = 0; c < 10; c++) { const x = 4.2 + c * 2.4, y = 5.4 + r * 1.75; if (r === 3 && c === 4) { svcF(I, 'desk', x, y, { w: .8 }, 'Your exam desk', 'college').ck = 'exam'; F(I, 'chair', x, y + .55, { rot: 0, col: [110, 76, 50] }); I.myDesk = [x, y + .55]; continue; }
+    F(I, 'desk', x, y, { w: .8 }); F(I, 'chair', x, y + .55, { rot: 0, col: [110, 76, 50] }); }
+  staff(I, 'hall', 15.0, 1.5, 0, 1, 'Invigilator.'); patrons(I, .8, ['casual', 'casual', 'coat']); for (const n of I.npcs) if (n.patron) n.busy = 0; return I; }
+// The Great Hall set for graduation: a stage with the chancellor's table, graduates in rows at the front, families behind
+function buildHallGrad(ox) { const I = hallShell('Great Hall', ox);
+  F(I, 'stage', 15.0, 2.1, { w: 21.9, d: 3.3, col: [120, 90, 66] }); F(I, 'table', 15.0, 1.4, { w: 6.0, d: .9, col: [110, 76, 50] }); for (const x of [12.6, 14.2, 15.8, 17.4]) F(I, 'chair', x, .7, { rot: 2, col: [120, 60, 50] });
+  F(I, 'blk', 15.0, 3.2, { w: .8, d: .6, h: 1.15, col: [110, 80, 56], top: [140, 104, 72] }); F(I, 'rug', 15.0, 9.0, { w: 2.0, d: 9.0, col: [120, 40, 44] });
+  I.gradSeats = []; for (let r = 0; r < 3; r++) for (const side of [-1, 1]) for (let c = 0; c < 6; c++) { const x = 15 + side * (2.0 + c * .9), y = 6.0 + r * 1.3; F(I, 'chair', x, y, { rot: 0, col: [60, 60, 70] }); I.gradSeats.push([x, y]); }
+  for (let r = 0; r < 4; r++) for (const side of [-1, 1]) for (let c = 0; c < 8; c++) F(I, 'chair', 15 + side * (2.0 + c * .9), 11.5 + r * 1.3, { rot: 0, col: [110, 76, 50] });
+  for (const [x, y] of I.gradSeats) if (y > 6.5) I.npcs.push(roomNPC(I, null, 'casual', { top: [24, 26, 34] }, null, null, { sit: { x, y: y - .05, z: .48, hx: 0, hy: -1 } }));
+  staff(I, 'hall', 15.0, 2.6, 0, 1, 'The chancellor.'); I.guests = []; { const Q = mulberry(4242); for (let r = 0; r < 4; r++) for (const side of [-1, 1]) for (let c = 0; c < 8; c++) { if (Q() < .3) continue; const s = { x: 15 + side * (2.0 + c * .9), y: 11.5 + r * 1.3 - .05, z: .48, hx: 0, hy: -1 }; const p = roomNPC(I, null, Q() < .5 ? 'suit' : 'coat', {}, null, null, { sit: s }); I.npcs.push(p); } }
+  return I; }
+
+const VBUILD = { cafe: buildCafe, bar: buildBar, lounge: buildLounge, rest: buildRestaurant, slice: buildSlice, club: buildClub, gym: buildGym, market: buildMarket, conv: buildConv, hospital: buildHospital, hall: buildHall, library: buildLibrary, dealer: buildDealer, lecture: buildLecture, dorm: buildDorm, hallexam: buildHallExam, hallgrad: buildHallGrad };
 const VORDER = Object.keys(VBUILD);
 const _interiorFor0 = interiorFor;
 interiorFor = function (key) { if (VBUILD[key]) { if (!INTERIORS[key]) INTERIORS[key] = VBUILD[key](24000 + VORDER.indexOf(key) * 1000); return INTERIORS[key]; } return _interiorFor0(key); };
@@ -6829,7 +6876,7 @@ window.GAME = (() => {
   const stat = k => (S.player.skills && S.player.skills[k]) || 0;
   // each point costs more than the last: half an hour at 0, about 1.4 hours at 30, 2.8 at 50, 5.7 at 70, 11 at 90
   const hrsTo = p => 14.427 * (Math.pow(2, p / 20) - 1), ptsFrom = h => 20 * Math.log2(h / 14.427 + 1);
-  function gainSkill(k, hrs, study) { const sk = S.player.skills, p = sk[k] || 0; if (study && p >= STUDY_CAP) return 0; let n = Math.min(100, ptsFrom(hrsTo(p) + hrs)); if (study) n = Math.min(n, STUDY_CAP); sk[k] = n; return n - p; }
+  function gainSkill(k, hrs, study) { if (study && S.mode === 'college') hrs *= .3; const sk = S.player.skills, p = sk[k] || 0; if (study && p >= STUDY_CAP) return 0; let n = Math.min(100, ptsFrom(hrsTo(p) + hrs)); if (study) n = Math.min(n, STUDY_CAP); sk[k] = n; return n - p; }
   const ladOf = co => (S.player.job && S.player.job.co === co && S.player.job.lad) || (coById(co) || COS[0]).lad;
   // prestige sets the bar. The top firms ask for more at every step, the challengers ask the standard amount, the small firms ask less
   // company logos, cut from the brand sheets. Main logo is on white, the icon is a rounded tile. Firms without art keep a colored letter tile
@@ -6911,7 +6958,8 @@ window.GAME = (() => {
     return { next: L[J.level + 1], rows, fr }; }
   // job listings refresh every Monday: one or two openings at some companies, pitched around what you could do
   const bestLevel = J => Math.max(J.best || 0, J.co ? J.level - (coById(J.co).small ? 1 : 0) : 0);
-  function refreshJobs(force) { const d = Math.floor(S.time / 1440), wk = Math.floor((d + 3) / 7); if (!force && S.jobsWk === wk) return; S.jobsWk = wk; const r = rngFor(wk * 131 + 7), J = S.player.job, top = bestLevel(J) + 1;
+  function refreshJobs(force) { const d = Math.floor(S.time / 1440), wk = Math.floor((d + 3) / 7); if (!force && S.jobsWk === wk) return; S.jobsWk = wk;
+    if (S.mode === 'college') { S.jobs = recruiting() ? COS.filter(c => !c.nohire && !c.locked).map(c => ({ id: 'g' + c.id, co: c.id, level: 0, posted: d, closes: d + 7, grad: true })) : []; return; } const r = rngFor(wk * 131 + 7), J = S.player.job, top = bestLevel(J) + 1;
     S.jobs = (S.jobs || []).filter(j => j.closes > d && S.apps.some(a => a.job === j.id));
     for (const c of COS) { if (c.nohire || (c.id === J.co && !r())) continue; const n = c.locked ? (r() < .3 ? 1 : 0) : r() < .55 ? 1 : r() < .75 ? 2 : 0;
       for (let i = 0; i < n; i++) { const L = ladderFor(c.id), lv = c.locked ? 0 : Math.max(0, Math.min(L.length - 2, top - Math.floor(r() * 3))); if (S.jobs.some(q => q.co === c.id && q.level === lv)) continue; S.jobs.push({ id: 'j' + wk + c.id + i, co: c.id, level: lv, posted: d, closes: d + 14 }); } } }
@@ -6943,11 +6991,11 @@ window.GAME = (() => {
   const jobFit = j => { const c = coById(j.co), J = S.player.job, mg = gateMargin(j.co, j.level), exp = bestLevel(J) + (J.co && coById(J.co).small && !c.small ? -1 : 0), d = Math.floor(S.time / 1440);
     let p = .7 + Math.max(-3, Math.min(1, mg / 6)) * .2 - Math.max(0, j.level - 1 - exp) * .35 + ((J.perf || 60) - 60) / 120 - (J.firedAt != null && d - J.firedAt < 60 ? .3 : 0) - (c.small ? -.1 : 0); return clampv(p, .05, .95); };
   function applyJob(id) { const j = (S.jobs || []).find(q => q.id === id); if (!j) return; if (S.apps.some(a => a.co === j.co && ['sent', 'interview', 'offer'].includes(a.status))) return toast('You already have an application in with them.', 3);
-    S.apps.unshift({ id: 'a' + Date.now().toString(36), job: j.id, co: j.co, level: j.level, t: S.time, status: 'sent', reply: S.time + 1440 * (1 + Math.floor(Math.random() * 3)) + Math.round(Math.random() * 400) }); toast(`Application sent to ${coById(j.co).name}. They usually reply within a few days.`, 3.5); }
+    S.apps.unshift({ id: 'a' + Date.now().toString(36), job: j.id, co: j.co, level: j.level, t: S.time, status: 'sent', reply: S.mode === 'college' ? S.time + 1440 * 2 : S.time + 1440 * (1 + Math.floor(Math.random() * 3)) + Math.round(Math.random() * 400) }); toast(S.mode === 'college' ? `Application sent to ${coById(j.co).name}. Replies come in over the week.` : `Application sent to ${coById(j.co).name}. They usually reply within a few days.`, 3.5); }
   // replies arrive by email; an interview is booked before or after work on the next weekday
   function checkApps() { if (!S.apps) return; const d = Math.floor(S.time / 1440);
     for (const a of S.apps) { const c = coById(a.co), L = ladderFor(a.co)[a.level];
-      if (a.status === 'sent' && S.time >= a.reply) { if (Math.random() < jobFit(a)) { let dd = d + 1; while (!tradingDay(dd)) dd++; a.at = dd * 1440 + (Math.random() < .5 ? 480 : 1065); a.status = 'interview';
+      if (a.status === 'sent' && S.time >= a.reply) { if (Math.random() < jobFit(a) + (S.mode === 'college' && gpa() != null ? (gpa() - 3) * .12 : 0)) { let dd = d + 1; while (!tradingDay(dd)) dd++; a.at = dd * 1440 + (Math.random() < .5 ? 480 : 1065); if (S.mode === 'college') { const p0 = CR.parts(S.time); const day0 = p0.dow === 1 && p0.h < 10 ? d : d + ((8 - p0.dow) % 7 || 7), taken = S.apps.filter(q => q !== a && q.status === 'interview' && Math.floor(q.at / 1440) === day0).length; a.at = day0 * 1440 + [11 * 60 + 30, 14 * 60, 16 * 60 + 30, 18 * 60][Math.min(3, taken)]; } a.status = 'interview';
           workMail(`${c.name}: interview`, `Thanks for applying for ${L.t}. Could you come in ${dayWord(a.at)} at ${CR.fmtTime(a.at)}? We are in ${towerName(a.co)}.`); toast(`${c.name} wants to interview you, ${dayWord(a.at)} at ${CR.fmtTime(a.at)}.`, 5); }
         else { a.status = 'rejected'; workMail(`${c.name}: your application`, `Thank you for applying for ${L.t}. We have decided not to take your application further.`); } }
       if (a.status === 'interview' && S.time > a.at + 30) { a.status = 'missed'; workMail(`${c.name}: missed interview`, 'We expected you this morning and did not hear from you. We will not be taking your application further.'); }
@@ -6971,12 +7019,12 @@ window.GAME = (() => {
     const qs = IQ.gen.slice().sort(() => Math.random() - .5).slice(0, 2), tq = IQ[c.lad] || IQ.corp, interviewer = c.boss[0];
     for (const [q, ch] of qs) { const r = await say(interviewer, 'none', q, ch.map(([t, v]) => ({ text: t, then: () => { sc += v; } }))); }
     const good = mg >= 0; await say(interviewer, 'none', tq[0], [{ text: tq[1], then: () => { sc += good ? 14 : 4; } }, { text: 'Admit you would need to look into it', then: () => { sc += 2; } }]);
-    sc += Math.max(-12, Math.min(8, mg / 2)) + wearing().formal + (N.mood - 50) * .1 - (N.energy < 30 ? 6 : 0) - Math.min(20, late * .8) + (Math.random() - .5) * 12;
+    sc += Math.max(-12, Math.min(8, mg / 2)) + wearing().formal + (N.mood - 50) * .1 + (S.mode === 'college' && gpa() != null ? (gpa() - 3) * 8 : 0) - (N.energy < 30 ? 6 : 0) - Math.min(20, late * .8) + (Math.random() - .5) * 12;
     a.status = 'done'; CR.passMinutes(S, 45);
-    if (sc >= 60) { a.status = 'offer'; a.until = S.time + 3 * 1440; await say(interviewer, 'none', `We would like to offer you the role of ${L.t}, at ${salary(L.pay * 100)} a year. Have a think and let us know within three days.`, [{ text: 'Thank you. I will be in touch.' }]); workMail(`${c.name}: offer`, `Offer for ${L.t} at ${salary(L.pay * 100)} a year. Reply within three days in the Jobs app.`); }
+    if (sc >= 60) { const col = S.mode === 'college'; a.status = 'offer'; a.until = col ? S.time + 15 * 1440 : S.time + 3 * 1440; await say(interviewer, 'none', col ? `We would like to offer you a place on our graduate program as ${L.t}, starting in July at ${salary(L.pay * 100)} a year. Let us know within two weeks.` : `We would like to offer you the role of ${L.t}, at ${salary(L.pay * 100)} a year. Have a think and let us know within three days.`, [{ text: 'Thank you. I will be in touch.' }]); workMail(`${c.name}: offer`, `Offer for ${L.t} at ${salary(L.pay * 100)} a year. Reply within three days in the Jobs app.`); }
     else { await say(interviewer, 'none', 'Thanks for coming in. We will be in touch.', [{ text: 'Thank you for your time.' }]); a.status = 'rejected'; workMail(`${c.name}: your interview`, 'Thank you for coming in. On this occasion we have chosen another candidate.'); } }
   // switching: accept an offer and you start at the new place on the next weekday after two days' notice
-  function acceptOffer(id) { const a = S.apps.find(q => q.id === id); if (!a || a.status !== 'offer') return; const J = S.player.job, c = coById(a.co), L = ladderFor(a.co)[a.level]; let d = Math.floor(S.time / 1440) + 3; while (!tradingDay(d)) d++;
+  function acceptOffer(id) { const a = S.apps.find(q => q.id === id); if (!a || a.status !== 'offer') return; const J = S.player.job, c = coById(a.co), L = ladderFor(a.co)[a.level]; let d = Math.floor(S.time / 1440) + 3; while (!tradingDay(d)) d++; if (S.mode === 'college') d = Math.floor(JOBSTART / 1440);
     if (J.co) CR.note(S, `Handed in notice at ${empName()}.`); J.best = bestLevel(J); a.status = 'accepted';
     Object.assign(J, { lad: undefined, pto: 1, leave: [], unplanned: 0, co: a.co, employer: c.name, level: a.level, perf: 60, shiftsAt: 0, since: d, roleSince: d, lastShiftDay: d - 1, miss: 0, warns: [], startDay: d, lastCo: a.co, firedAt: J.firedAt });
     for (const o of S.apps) if (o !== a && ['sent', 'interview', 'offer'].includes(o.status)) o.status = 'withdrawn';
@@ -6996,7 +7044,7 @@ window.GAME = (() => {
   const clashes = d => S.plans.filter(pl => !pl.done && Math.floor(pl.t / 1440) === d && (pl.t % 1440) >= 8.5 * 60 && (pl.t % 1440) < 17.5 * 60);
   const dayNet = () => { const L = LAD()[S.player.job.level], g = Math.round(L.pay * 100 / 260); return [g, Math.round(g * (1 - taxRate(L.pay)))]; };
   function payLeave(why) { const [g, n] = dayNet(); S.player.bank += n; txn(`${empName()}, ${why}, ${money(g)} before tax`, n); }
-  function hrDay(d) { const J = S.player.job; if (!J || !J.co) return; const prev = d - 1, c = coById(J.co);
+  function hrDay(d) { const J = S.player.job; if (!J || !J.co || S.mode === 'college') return; const prev = d - 1, c = coById(J.co);
     if (prev >= (J.startDay || 0)) J.pto = Math.min(c.pto * 1.5, (J.pto == null ? 1 : J.pto) + c.pto / 365); // accrues daily, carries over up to a year and a half
     J.leave = J.leave || []; const booked = J.leave.indexOf(prev);
     if (booked >= 0) { J.leave.splice(booked, 1); if (J.lastShiftDay !== prev) { payLeave('paid leave'); J.burn = Math.max(0, (J.burn || 0) - 8); } else J.pto += 1; return; }
@@ -7012,8 +7060,11 @@ window.GAME = (() => {
   // and Medicare, and a flat 5% for the state. About 20% on a graduate salary, more as you climb.
   const FEDB = [[12400, .10], [50400, .12], [105700, .22], [201775, .24], [256225, .32], [640600, .35], [Infinity, .37]];
   const taxRate = sal => { const ti = Math.max(0, sal - 16100); let fed = 0, lo = 0; for (const [hi, r] of FEDB) { if (ti > lo) fed += (Math.min(ti, hi) - lo) * r; lo = hi; } return (fed + Math.min(sal, 184500) * .062 + sal * .0145 + ti * .05) / sal; };
-  function fresh() {
-    const S = CR.newGame({ name: 'Alex', mode: 'main', start: CR.fromParts(2026, 7, 5, 10, 0), birth: { y: 2004, mo: 3, d: 9 } });
+  function fresh(college) {
+    const S = CR.newGame({ name: 'Alex', mode: college ? 'college' : 'main', start: college ? CR.fromParts(2026, 1, 12, 7, 0) : CR.fromParts(2026, 7, 5, 10, 0), birth: { y: 2004, mo: 3, d: 9 } });
+    if (college) { S.player.cash = 6000; S.player.bank = 120000; S.player.needs = { energy: 85, mood: 70, hunger: 35, health: 90 }; S.player.skills = { finance: 6, strategy: 6, management: 5, coding: 5, persuasion: 7 }; S.player.home = HOME && HOME.id; S.player.car = 'Dobbin';
+      S.player.job = { co: null, lastCo: null, employer: null, level: 0, perf: 60, shifts: 0, shiftsAt: 0, lastShiftDay: -1, miss: 0, warns: [], burn: 0, best: 0 }; S.items = { meals: 0 }; S.rels.rob = { score: 30, met: true, flags: {} }; S.contacts = {}; S.msgs = []; S.plans = []; S.tx = []; S.stereo = { on: false, by: null, day: -1 };
+      CR.note(S, 'Final year at college. Moved back into the residence hall with Rob.'); S.player.location = null; return S; }
     S.mode = 'main'; S.player.cash = 12000; S.player.bank = 240000; S.player.needs = { energy: 82, mood: 68, hunger: 30, health: 90 };
     S.player.skills = { finance: 20, strategy: 12, management: 10, coding: 10, persuasion: 12 }; S.player.home = HOME && HOME.id; S.player.car = 'Dobbin';
     { const d1 = Math.floor(S.time / 1440) + 1; S.player.job = { co: 'meridian', lastCo: 'meridian', employer: EMPLOYER, level: 0, perf: 60, shifts: 0, shiftsAt: 0, lastShiftDay: -1, since: d1, roleSince: d1, startDay: d1, miss: 0, warns: [], burn: 0, best: 0 }; }
@@ -7046,7 +7097,7 @@ window.GAME = (() => {
   function runClock(dt) { carry += dt / SEC_PER_MIN; const m = Math.floor(carry); if (m < 1) return; carry -= m; const before = S.time; CR.passMinutes(S, m); dailyThings(before, S.time); }
   // things that happen when a day turns over: rent on Sunday night, the day's weather
   function dailyThings(t0, t1) { const d0 = Math.floor(t0 / 1440), d1 = Math.floor(t1 / 1440);
-    for (let d = d0 + 1; d <= d1; d++) { const p = CR.parts(d * 1440); hrDay(d); if (p.d === 1) { const bills = [['Power, your half', 4800], ['Internet, your half', 3500], ['Phone plan', 4500], ['Car insurance', 11800]]; for (const [w, c] of bills) { S.player.bank -= c; txn(w, -c); } CR.note(S, 'Monthly bills paid: ' + money(bills.reduce((a, b) => a + b[1], 0)) + '.'); toast('Monthly bills: power, internet, phone and car insurance, ' + money(bills.reduce((a, b) => a + b[1], 0)) + '.', 4); }
+    for (let d = d0 + 1; d <= d1; d++) { const p = CR.parts(d * 1440); hrDay(d); if (S.mode !== 'main') continue; if (p.d === 1) { const bills = [['Power, your half', 4800], ['Internet, your half', 3500], ['Phone plan', 4500], ['Car insurance', 11800]]; for (const [w, c] of bills) { S.player.bank -= c; txn(w, -c); } CR.note(S, 'Monthly bills paid: ' + money(bills.reduce((a, b) => a + b[1], 0)) + '.'); toast('Monthly bills: power, internet, phone and car insurance, ' + money(bills.reduce((a, b) => a + b[1], 0)) + '.', 4); }
       if (p.dow === 1 && (S.km || 0) > .5) { const f = Math.round(S.km * 9); S.km = 0; S.player.bank -= f; txn('Gas for the week', -f); }
       if (p.dow === 1) { const rent = 26000; S.player.bank -= rent; txn('Rent, share house', -rent); CR.note(S, 'Rent paid: ' + money(rent) + ' for the week.'); toast('Weekly rent of ' + money(rent) + ' paid from your bank account.'); } }
     if (d1 > d0) skyForDay(); }
@@ -7069,7 +7120,7 @@ window.GAME = (() => {
     const p = CR.parts(S.time), P0 = S.player, N = P0.needs, J = P0.job, L = J && LAD()[J.level];
     const bar = (n, v, c) => `<div class="need">${n}<i><b style="width:${Math.round(v)}%;background:${c || (v < 25 ? 'var(--bad)' : v < 50 ? 'var(--warn)' : 'var(--good)')}"></b></i></div>`;
     const room = roomKey(), where = room ? roomName(room) : (DNAME[districtAt(player.x, player.y)] || '');
-    let jobLine = ''; if (L) { const h = gHour(); jobLine = J.co ? `${L.t}, ${empName()}` : S.gig ? `${GIGS[S.gig.id].t}, ${S.gig.name}` : 'Unemployed'; if (J.co && isWeekday() && h < 9.25 && J.lastShiftDay !== Math.floor(S.time / 1440) && Math.floor(S.time / 1440) >= (J.startDay || 0) && !(J.leaveUntil > Math.floor(S.time / 1440))) jobLine += ` <span style="color:var(--acc)">· shift at 9:00</span>`; }
+    let jobLine = ''; if (L) { const h = gHour(); jobLine = S.mode === 'college' ? `Final year, week ${S.week || 1} of 12${J.co ? ` · offer from ${empName()}` : ''}` : J.co ? `${L.t}, ${empName()}` : S.gig ? `${GIGS[S.gig.id].t}, ${S.gig.name}` : 'Unemployed'; if (J.co && S.mode !== 'college' && isWeekday() && h < 9.25 && J.lastShiftDay !== Math.floor(S.time / 1440) && Math.floor(S.time / 1440) >= (J.startDay || 0) && !(J.leaveUntil > Math.floor(S.time / 1440))) jobLine += ` <span style="color:var(--acc)">· shift at 9:00</span>`; } tutShow();
     const wx = { clear: 'Clear', rain: 'Rain', snow: 'Snow', fog: 'Fog' }[weather];
     $('ghud').innerHTML = `<div class="t"><span class="clock">${String(p.h).padStart(2, '0')}:${String(p.mi).padStart(2, '0')}</span><span class="date">${CR.fmtDate(S.time)}</span></div>
       <div class="t"><span class="money">${money(P0.cash)}</span><span class="date">Bank ${money(P0.bank)}</span></div>${bar('Energy', N.energy)}${bar('Fed', 100 - N.hunger)}${bar('Mood', N.mood)}${N.health != null && N.health < 85 ? bar('Health', N.health) : ''}
@@ -7456,8 +7507,8 @@ window.GAME = (() => {
   // ---------------- interiors: the share house, the Northgate lobby and the Apogee floor ----------------
   const roomName = r => r === 'house' ? 'Home' : r === 'lobby' ? towerName((S.player.job && S.player.job.co) || 'meridian') : r === 'office' ? `${empName()}, level ${floorOf((S.player.job && S.player.job.co) || 'meridian')}` : (INSIDE && INSIDE.name) || r;
   const roomKey = () => INSIDE ? Object.keys(INTERIORS).find(kq => INTERIORS[kq] === INSIDE) : null;
-  const DOOR_OF = { house: () => homeDoor, lobby: () => empDoor(), office: () => empDoor() };
-  function goIn(key, door, lx, ly) { music.stop(); setTimeout(() => music.refresh(), 0); enterInterior(key, 'street', door); if (lx != null) { player.x = INSIDE.ox + lx; player.y = INSIDE.oy + ly; cx = player.x; cy = player.y; } placeRob(true); }
+  const DOOR_OF = { house: () => homeDoor, lobby: () => empDoor(), office: () => empDoor(), dorm: () => dormDoor, lecture: () => lectureDoor };
+  function goIn(key, door, lx, ly) { if (key === 'dorm') robInDorm(interiorFor('dorm')); music.stop(); setTimeout(() => music.refresh(), 0); enterInterior(key, 'street', door); if (lx != null) { player.x = INSIDE.ox + lx; player.y = INSIDE.oy + ly; cx = player.x; cy = player.y; } placeRob(true); }
   // Rob keeps a routine: in bed overnight, out at work on weekdays, on the sofa in the evening, around the kitchen otherwise
   // Rob is between jobs: he sleeps in, lives on the couch, and goes out on Friday and Saturday nights
   const robWhere = () => { const p = CR.parts(S.time), h = p.h + p.mi / 60, fri = p.dow === 5, sat = p.dow === 6, sun = p.dow === 0, mon = p.dow === 1;
@@ -7524,7 +7575,7 @@ window.GAME = (() => {
     const N = S.player.needs, h = gHour();
     if (f.id === 'lift') { fadeTo('', '', () => { enterInteriorSwap(f.to); }, 250); return; }
     if (f.id === 'npc' && f.n.coll) { const nm = S.player.name || 'you'; f.n.open = f.n.metBefore ? null : f.n.sit ? ['Oh, hi. You are the new graduate, right? Welcome to the floor.', 'Hey. Settling in alright?', 'Hi. Sorry, head down on a deadline. What is up?'] : ['Hey, you are the new one, right? Welcome aboard.', 'Morning. Coffee run, want anything?']; return startTalk(f.n); }
-    if (f.id === 'npc') { const nm = f.n.name; if (nm === 'Rob') { if (robWhere() === 'robroom' || f.n.sleep) return toast('Rob is fast asleep.', 2); return talkRob(); } return say(nm, VOICE.forPerson(nm, f.n.L && f.n.L.fem ? 'f' : 'm', 30), { Jess: ({ desk: ['Hey! I am cramming for a pharmacology exam. Do not let me near the couch.', 'Do you know anything about the kidneys? No? Me neither, apparently.', 'Three more chapters. Then sleep. Then three more chapters.'], kitchen: gHour() < 12 ? ['Morning. Do not talk to me until this coffee kicks in.', 'Clinicals today. Wish me luck.'] : ['Rob burned the rice again. We are eating it anyway.', 'Long day on the wards. I could eat this whole pot.'], couch: ['One episode. Then back to study. Probably.', 'Do not tell my study group I am on the couch.'] }[jessWhere()] || ['Hey!']).sort(() => Math.random() - .5)[0], Grace: 'Good morning. Apogee is on thirty two, the lifts are just behind me.', Tom: 'Lanyard on you? Go on through.' }[nm] || 'Hi there.', [{ text: 'See you later', effects: { need: { mood: 1 } } }], f.n.L); }
+    if (f.id === 'npc') { const nm = f.n.name; if (nm === 'Rob' && roomKey() === 'dorm') return robDorm(); if (nm === 'Rob') { if (robWhere() === 'robroom' || f.n.sleep) return toast('Rob is fast asleep.', 2); return talkRob(); } return say(nm, VOICE.forPerson(nm, f.n.L && f.n.L.fem ? 'f' : 'm', 30), { Jess: ({ desk: ['Hey! I am cramming for a pharmacology exam. Do not let me near the couch.', 'Do you know anything about the kidneys? No? Me neither, apparently.', 'Three more chapters. Then sleep. Then three more chapters.'], kitchen: gHour() < 12 ? ['Morning. Do not talk to me until this coffee kicks in.', 'Clinicals today. Wish me luck.'] : ['Rob burned the rice again. We are eating it anyway.', 'Long day on the wards. I could eat this whole pot.'], couch: ['One episode. Then back to study. Probably.', 'Do not tell my study group I am on the couch.'] }[jessWhere()] || ['Hey!']).sort(() => Math.random() - .5)[0], Grace: 'Good morning. Apogee is on thirty two, the lifts are just behind me.', Tom: 'Lanyard on you? Go on through.' }[nm] || 'Hi there.', [{ text: 'See you later', effects: { need: { mood: 1 } } }], f.n.L); }
     if (f.id === 'svc') return useSvc(f.f);
     if (f.id === 'work') return atWork(f.f); if (f.id === 'coffee') return menu('Office kitchen', 'Free coffee, one of the good things about the job.', [{ t: 'Make a coffee', s: 'Free, energy up', fn: () => { CR.passMinutes(S, 10); need('energy', 10); toast('Strong and bitter.'); closeMenu(); } }]);
     if (f.id === 'sit') { sitDown(f.st); if (f.st.f && f.st.f.t === 'sofa') toast('E to watch TV, or move to get up.', 2.5); return; }
@@ -7563,7 +7614,7 @@ window.GAME = (() => {
   }
 
   // ---------------- saving ----------------
-  function capture() { const I = INSIDE, room = roomKey(); S.player.location = { x: room ? (DOOR_OF[room]() || player).x : player.x, y: room ? (DOOR_OF[room]() || player).y : player.y, driving: player.driving, car: { x: PCAR.x, y: PCAR.y, ang: PCAR.ang }, inside: room, rx: I ? player.x - I.ox : 0, ry: I ? player.y - I.oy : 0 }; }
+  function capture() { const I = INSIDE, room = roomKey(); const dOf = r => (DOOR_OF[r] && DOOR_OF[r]()) || (savedOut && savedOut.door) || player; S.player.location = { x: room ? dOf(room).x : player.x, y: room ? dOf(room).y : player.y, driving: player.driving, car: { x: PCAR.x, y: PCAR.y, ang: PCAR.ang }, inside: room, rx: I ? player.x - I.ox : 0, ry: I ? player.y - I.oy : 0 }; }
   function save(slot) { capture(); try { store.save(slot, S); if (slot !== 'auto') toast('Saved.'); } catch (e) { toast('Could not save: ' + e.message); } }
   function load(s) { S = upgrade(s); applyOutfit(); if (!S.items) S.items = { meals: 0 }; if (INSIDE) { INSIDE = null; LEAN = 84; savedOut = null; }
     player.driving = false; const L = S.player.location;
@@ -8097,7 +8148,7 @@ window.GAME = (() => {
   function phoneBadge() { const n = S ? unread() : 0; $('phoneBtn').innerHTML = `Phone <small style="color:var(--muted)">P</small>${n ? `<em>${n}</em>` : ''}`; }
   // tapping outside the phone, or the bar at the bottom, puts it away
   $('phone').addEventListener('pointerdown', e => { if (e.target === $('phone')) closePhone(); });
-  function openPhone(view) { if (FF || fading) return; phoneOpen = true; G.hold = true; phoneView = [view || 'home']; $('phone').hidden = false; drawPhone(); }
+  function openPhone(view) { if (FF || fading) return; if (S && S.col) setTimeout(() => tutDone('phone'), 0); phoneOpen = true; G.hold = true; phoneView = [view || 'home']; $('phone').hidden = false; drawPhone(); }
   function closePhone() { phoneOpen = false; $('phone').hidden = true; G.hold = !!(modalOpen || dlgOpen || fading || FF); phoneBadge(); }
   $('phhome').onclick = () => back();
   const go = v => { phoneView.push(v); drawPhone(); }, back = () => { if (phoneView.length > 1) { phoneView.pop(); drawPhone(); } else closePhone(); };
@@ -8384,6 +8435,185 @@ window.GAME = (() => {
       if (k === 'fem') { const f = x === '1'; if (f !== C.fem) { C.fem = f; ccRandom(C, true); } return draw(); }
       if (k === 'tone') x = +x; C[k] = x; draw(); };
     const go = () => { if (!(window.PORTRAIT && PORTRAIT.opts)) return setTimeout(go, 100); ccRandom(C); draw(); }; go(); }
+  // ---------------- the college opening: your final year ----------------
+  // Two semesters of six weeks. You play each Monday: a lecture, the library, shifts, Rob, the city. Going to bed ends the week,
+  // and how you spend the rest of it decides what you learn. Midterms in weeks 3 and 9, finals in weeks 6 and 12, in the Great Hall.
+  // Firms recruit on campus from week 4 to week 10. Graduation is in May, and you move into the share house with Rob in July.
+  const COURSES = { finance: ['Corporate Finance', 'Investments and Valuation'], strategy: ['Economics of Strategy', 'Competitive Strategy'], management: ['Organizational Behavior', 'Leading Teams'], coding: ['Intro to Programming', 'Data Structures and Algorithms'], persuasion: ['Public Speaking and Debate', 'Negotiation'] };
+  const DEGREE = { finance: 'Bachelor of Science in Finance', strategy: 'Bachelor of Arts in Economics', management: 'Bachelor of Business Administration', coding: 'Bachelor of Science in Computer Science', persuasion: 'Bachelor of Arts in Political Science' };
+  const EXAMWK = { 3: 'mid', 6: 'final', 9: 'mid', 12: 'final' }, RECRUIT = [4, 10], JOBSTART = CR.fromParts(2026, 7, 6, 9, 0), GRADDAY = CR.fromParts(2026, 5, 16, 9, 0), MOVEIN = CR.fromParts(2026, 7, 5, 10, 0);
+  const isCol = () => S && S.mode === 'college', colSem = () => (S.week || 1) <= 6 ? 1 : 2, course = k => COURSES[k][colSem() - 1];
+  const weekClass = () => { const C = S.col, L = C.classes[colSem() - 1]; return L.length ? L[((S.week || 1) - 1) % L.length] : 'finance'; };
+  const recruiting = () => isCol() && S.week >= RECRUIT[0] && S.week <= RECRUIT[1];
+  // the exam questions: two from each of your three classes, shuffled, answers shuffled
+  const QB = {
+    finance: [['What does a balance sheet show?', 'What a company owns and owes at one point in time', 'Revenue and costs over a year', 'Cash coming in and going out over a quarter', 'The history of the share price'],
+      ['If interest rates rise, what usually happens to the price of existing bonds?', 'It falls', 'It rises', 'It stays the same', 'It doubles'],
+      ['$1,000 is invested at 10% a year, compounded yearly. What is it worth after two years?', '$1,210', '$1,200', '$1,100', '$1,020'],
+      ['What does a P/E ratio compare?', 'The share price with earnings per share', 'Profit with equity', 'Price with expenses', 'Payouts with earnings'],
+      ['Which of these is usually the riskiest for an investor?', 'Shares in a young startup', 'A government bond', 'A savings account', 'A certificate of deposit'],
+      ['What is diversification?', 'Spreading money across many investments to lower risk', 'Putting everything in the best stock', 'Borrowing to invest more', 'Selling shares you do not own'],
+      ['What is a dividend?', 'A share of profit paid out to shareholders', 'A loan to the company', 'A tax on shares', 'The fee a broker charges'],
+      ['What is $110 received in one year worth today, at a 10% discount rate?', '$100', '$110', '$121', '$99'],
+      ['What is working capital?', 'Current assets minus current liabilities', 'Total assets minus total debt', 'Revenue minus costs', 'Cash plus inventory'],
+      ['What does a company’s cost of capital represent?', 'The return investors need to fund it', 'The interest on its overdraft alone', 'The cost of its office buildings', 'The price of one of its shares']],
+    strategy: [['When the price of a good rises and nothing else changes, demand for it usually...', 'Falls', 'Rises', 'Stays the same', 'Doubles'],
+      ['A market with only a few large firms is called...', 'An oligopoly', 'A monopoly', 'Perfect competition', 'A free market'],
+      ['What is opportunity cost?', 'The value of the best option you give up', 'The price you pay in cash', 'The cost of a failed project', 'The cost of borrowing'],
+      ['What are economies of scale?', 'Cost per unit falling as output grows', 'Prices rising as output grows', 'Small firms always being cheaper', 'Costs that never change'],
+      ['A company that competes by being the cheapest producer follows a strategy of...', 'Cost leadership', 'Differentiation', 'Luxury focus', 'Vertical integration'],
+      ['A company buying one of its own suppliers is an example of...', 'Vertical integration', 'Horizontal integration', 'Diversification', 'Outsourcing'],
+      ['What is a barrier to entry?', 'Anything that makes it hard for new competitors to start', 'A tax on imports only', 'A rule against advertising', 'The cost of renting a storefront'],
+      ['Which of these is a sunk cost?', 'Money already spent that cannot be recovered', 'A cost you can still avoid', 'Next year’s rent', 'Interest you have not paid yet'],
+      ['Two products are substitutes. The price of one rises. Demand for the other usually...', 'Rises', 'Falls', 'Stays the same', 'Drops to zero'],
+      ['What does inflation mean?', 'Prices across the economy are rising', 'Prices are falling', 'Interest rates are rising', 'The stock market is rising']],
+    management: [['What makes feedback most useful?', 'Being specific about the behavior and its effect', 'Saving it for the annual review', 'Talking about the person’s character', 'Sending it in a group chat'],
+      ['What does delegating well mean?', 'Giving clear goals and the authority to meet them', 'Handing off only the boring work', 'Checking every step yourself', 'Telling them exactly how to do each task'],
+      ['SMART goals are specific, measurable, achievable, relevant and...', 'Time-bound', 'Simple', 'Shared', 'Strategic'],
+      ['A new team that is still polite and unsure of each other is in which stage?', 'Forming', 'Storming', 'Norming', 'Performing'],
+      ['Two people on your team are in conflict. What is usually the best first step?', 'Hear each of them out privately', 'Back the more senior one', 'Ignore it until it goes away', 'Move one of them to another team'],
+      ['What is a manager’s span of control?', 'The number of people who report to them directly', 'The size of their budget', 'How long they have been in the role', 'The number of projects they run'],
+      ['Micromanaging a capable employee usually...', 'Lowers their motivation', 'Raises their output long term', 'Makes no difference', 'Gets them promoted sooner'],
+      ['What is a one-on-one meeting mainly for?', 'A manager and one report talking about work and growth', 'Announcing company results', 'Disciplining the team', 'Interviewing candidates'],
+      ['What motivates most people at work over the long run?', 'Meaningful work, growth and recognition', 'A free lunch once a month', 'Strict rules', 'Long hours'],
+      ['A project is running late. What should a good manager do first?', 'Find out why and reset the plan with the team', 'Blame the slowest person', 'Hide it from the client', 'Add more meetings']],
+    coding: [['What does a loop do?', 'Repeats a block of code', 'Stores a single value', 'Ends the program', 'Connects to the internet'],
+      ['Which data structure is first in, first out?', 'A queue', 'A stack', 'A tree', 'A hash map'],
+      ['What is a bug?', 'An error that makes code behave wrongly', 'A computer virus', 'A slow internet connection', 'A new feature'],
+      ['Finding a name in a sorted list by checking the middle and halving the list each step is...', 'Binary search', 'Linear search', 'Bubble sort', 'Hashing'],
+      ['What is a variable?', 'A named place that holds a value', 'A kind of loop', 'An error message', 'A file on disk'],
+      ['What does an if statement do?', 'Runs code only when a condition is true', 'Repeats code forever', 'Defines a new function', 'Deletes a variable'],
+      ['Which is usually fastest for looking up a value by its key?', 'A hash map', 'An unsorted list', 'A linked list', 'A text file'],
+      ['What does version control like git keep track of?', 'Changes to code over time', 'Server temperatures', 'User passwords', 'Internet speed'],
+      ['In most programming languages, what is 7 % 3?', '1', '2', '21', '0'],
+      ['A function that calls itself is...', 'Recursive', 'Iterative', 'Asynchronous', 'Compiled']],
+    persuasion: [['In a negotiation, what is your BATNA?', 'Your best alternative if no deal is reached', 'Your opening offer', 'The other side’s lowest price', 'A signed contract'],
+      ['An argument that attacks the person instead of their point is...', 'An ad hominem', 'A straw man', 'A red herring', 'A fair rebuttal'],
+      ['Twisting someone’s argument to make it easier to attack is...', 'A straw man', 'An ad hominem', 'Begging the question', 'An appeal to authority'],
+      ['What is usually the best way to open a speech?', 'A clear hook that tells people why to listen', 'Apologizing for being nervous', 'Reading the first slide word for word', 'A long list of thank yous'],
+      ['What is anchoring in a negotiation?', 'The first number named shaping the rest of the talks', 'Refusing to move at all', 'Bringing a lawyer along', 'Agreeing quickly'],
+      ['Ethos, pathos and logos appeal to credibility, emotion and...', 'Logic', 'Law', 'Loyalty', 'Luck'],
+      ['Which of these is part of active listening?', 'Summarizing what the other person said back to them', 'Planning your reply while they talk', 'Interrupting to agree', 'Checking your phone'],
+      ['When is a concession in a negotiation best given?', 'In exchange for something in return', 'Right at the start, for free', 'Only by email', 'Never'],
+      ['What makes a presentation easiest to follow?', 'Three clear main points', 'Twenty points of equal weight', 'No structure, so it feels natural', 'Long paragraphs on every slide'],
+      ['What is a rebuttal in a debate?', 'Answering the other side’s arguments', 'Repeating your opening', 'Thanking the judges', 'Asking the audience to vote']] };
+  const GRADES = [[3.85, 'A'], [3.5, 'A-'], [3.15, 'B+'], [2.85, 'B'], [2.5, 'B-'], [2.15, 'C+'], [1.85, 'C'], [1.5, 'C-'], [1.0, 'D'], [-1, 'F']], letter = g => GRADES.find(([v]) => g >= v)[1];
+  const gpa = () => { const R = (S.col && S.col.results) || {}, v = Object.values(R).filter(r => r.final != null).map(r => r.mid != null ? r.mid * .4 + r.final * .6 : r.final); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  function startCollege() { const C = S.col = { classes: [[], []], results: {}, att: {}, robTalk: 0 }; S.week = 1; S.mode = 'college'; }
+  // which way the Great Hall is set up: exams on exam mornings, the ceremony on graduation day
+  const hallKey = () => { if (!isCol()) return 'hall'; const p = CR.parts(S.time), h = p.h + p.mi / 60; if (S.col.gradDay && h < 14) return 'hallgrad'; if (EXAMWK[S.week] && p.dow === 1 && h >= 8 && h < 12 && !S.col.examDone) return 'hallexam'; return 'hall'; };
+  // ---------- enrolling for a semester ----------
+  function enrol(then) { const sem = colSem(), pick = [], C = S.col;
+    const draw = () => { menu(`Semester ${sem}: choose your classes`, `Pick three. Each one is a lecture every week and two exams. ${pick.length} of 3 chosen.`, STATS.map(([k, n]) => ({ t: `${course(k)}${pick.includes(k) ? '  ✓' : ''}`, s: `Builds ${n.toLowerCase()}, ${Math.floor(stat(k))} now`, fn: () => { if (pick.includes(k)) pick.splice(pick.indexOf(k), 1); else if (pick.length < 3) pick.push(k); if (pick.length === 3) { closeMenu(); C.classes[sem - 1] = pick.slice(); toast(`Enrolled: ${pick.map(course).join(', ')}.`, 5); CR.note(S, `Semester ${sem} classes: ${pick.map(course).join(', ')}.`); if (then) then(); return; } draw(); } }))); };
+    draw(); }
+  // ---------- the Monday lecture ----------
+  function lecture() { if (!S.col.classes[colSem() - 1].length) return enrol(); const k = weekClass(), p = CR.parts(S.time), h = p.h + p.mi / 60, C = S.col;
+    if (EXAMWK[S.week]) return toast('No lecture this week. Exams are in the Great Hall.', 3);
+    if (C.att[S.week]) return toast('You have been to this week’s lecture.', 2.5);
+    if (p.dow !== 1 || h < 9.5 || h > 10.5) return toast(`${course(k)} is on Mondays at 10:00. ${h > 10.5 ? 'You missed this week’s.' : ''}`, 3);
+    const I = INSIDE, s = I.mySeat; if (h < 10) CR.passMinutes(S, Math.round((10 - h) * 60));
+    C.att[S.week] = true; ffwd(90, { label: `Lecture: ${course(k)}`, pose: poseAt(s[0], s[1], .48, 0, -1, true), each: m => { gainSkill(k, m / 60 * 1.1, true); need('energy', -1.5 * m / 60); } }).then(() => toast(`${course(k)} done. ${STATN[k]} ${Math.floor(stat(k))}.`, 3)); }
+  // ---------- exams ----------
+  async function sitExam() { const C = S.col, kind = EXAMWK[S.week], p = CR.parts(S.time), h = p.h + p.mi / 60;
+    if (!kind || p.dow !== 1) return toast('There is no exam today.', 2); if (C.examDone) return toast('You have sat this one.', 2); if (h > 9.5) return toast('The doors closed at 9:30. You missed the exam.', 3.5);
+    if (h < 9) CR.passMinutes(S, Math.round((9 - h) * 60)); const classes = C.classes[colSem() - 1];
+    const qs = []; for (const k of classes) { const used = C.used = C.used || {}, pool = QB[k].map((q, i) => i).filter(i => !(used[k] || []).includes(i)).sort(() => Math.random() - .5).slice(0, 2); used[k] = [...(used[k] || []), ...pool]; for (const i of pool) qs.push([k, QB[k][i]]); }
+    qs.sort(() => Math.random() - .5); const right = {}; for (const k of classes) right[k] = 0;
+    G.hold = true; const box = document.createElement('div'); box.id = 'exam'; document.body.appendChild(box);
+    for (let i = 0; i < qs.length; i++) { const [k, q] = qs[i], sk = stat(k), keep = sk >= 18 ? 1 : sk >= 10 ? 2 : 3, wrong = q.slice(2).sort(() => Math.random() - .5).slice(0, keep), opts = [q[1], ...wrong].sort(() => Math.random() - .5), secs = Math.round(Math.min(26, 12 + sk * .45));
+      const ok = await new Promise(res => { let left = secs; box.innerHTML = `<div class="exbox"><div class="exhead"><b>${kind === 'mid' ? 'Midterm' : 'Final'} exam</b><span>Question ${i + 1} of ${qs.length} · ${esc(course(k))}</span></div><h3>${esc(q[0])}</h3>${keep < 3 ? `<p class="exhint">${keep === 1 ? 'You know this one cold from class.' : 'You remember enough to rule one out.'}</p>` : ''}<div class="exopts">${opts.map((o, j) => `<button data-i="${j}">${esc(o)}</button>`).join('')}</div><div class="extime"><i style="width:100%"></i></div></div>`;
+        const bar = box.querySelector('.extime i'), t = setInterval(() => { left -= .1; bar.style.width = Math.max(0, left / secs * 100) + '%'; if (left <= 0) { clearInterval(t); res(false); } }, 100);
+        box.querySelectorAll('[data-i]').forEach(b => b.onclick = () => { clearInterval(t); const good = opts[+b.dataset.i] === q[1]; b.classList.add(good ? 'ok' : 'no'); setTimeout(() => res(good), 450); }); });
+      if (ok) right[k]++; }
+    box.remove(); C.examDone = true; CR.passMinutes(S, 120);
+    const out = []; for (const k of classes) { const g = Math.max(0, Math.min(4, (right[k] / 2) * 4 * .6 + Math.min(1, stat(k) / 20) * 4 * .4)), key = course(k), R = C.results[key] = C.results[key] || { k };
+      R[kind] = g; out.push(`${key}: ${letter(g)}`); }
+    G.hold = false; await say('Invigilator', 'none', `Pens down. Results: ${out.join(', ')}.`, [{ text: 'Hand in the paper' }]); CR.note(S, `${kind === 'mid' ? 'Midterm' : 'Final'} exams, semester ${colSem()}: ${out.join(', ')}.`); }
+  // ---------- the end of the week ----------
+  function colBed() { const C = S.col, hasGig = !!S.gig, classes = C.classes[colSem() - 1];
+    if (!classes.length) return enrol();
+    const go = (o) => () => { closeMenu(); endWeek(o); };
+    menu('Your bed', `Week ${S.week} of 12. How do you spend the rest of the week?`, [
+      { t: 'Study hard', s: 'Every class and evenings in the library. The most learning, mood down', fn: go({ hrs: 7, mood: -8 }) },
+      { t: 'Keep a balance', s: 'Classes, some study, a night out', fn: go({ hrs: 4, mood: 2 }) },
+      { t: 'Make the most of college', s: 'Parties, games and late nights with Rob. Mood up, less learning', fn: go({ hrs: 1.5, mood: 10, rob: 4 }) },
+      ...(hasGig ? [{ t: 'Pick up extra shifts', s: `More hours as ${GIGS[S.gig.id].t.toLowerCase()}, less study`, fn: go({ hrs: 2, mood: -3, shifts: 3 }) }] : [])]); }
+  async function endWeek(o) { const C = S.col, classes = C.classes[colSem() - 1], wk = S.week;
+    await fadeTo(wk === 12 ? 'Finals are done' : 'The rest of the week', wk === 12 ? 'Graduation is in May' : `Week ${wk + 1}${wk === 6 ? ' after the break' : ''}`, () => {
+      for (const k of classes) gainSkill(k, o.hrs + (C.att[wk] ? 1 : .4), true); need('mood', o.mood || 0); if (o.rob) S.rels.rob.score = Math.min(100, S.rels.rob.score + o.rob);
+      if (o.shifts && S.gig) { const G2 = GIGS[S.gig.id], pay = Math.round(G2.rate * 5 * o.shifts + (G2.tips[0] + G2.tips[1]) / 2 * o.shifts); S.player.bank += pay; txn(`${G2.t} shifts`, pay); S.gig.shifts += o.shifts; S.gig.earned += pay; }
+      S.player.bank += 15000; txn('Allowance from home', 15000);
+      const t0 = S.time; if (wk === 12) { CR.passMinutes(S, GRADDAY - S.time, { asleep: true, drift: false }); C.gradDay = true; } else { CR.sleep(S); if (wk === 6) CR.passMinutes(S, 14 * 1440, { asleep: true, drift: false }); }
+      dailyThings(t0, S.time); C.examDone = false; checkApps(); placeRob(true); if (INSIDE && INSIDE.myBed) { player.x = INSIDE.ox + INSIDE.myBed[0] + 1.0; player.y = INSIDE.oy + INSIDE.myBed[1]; } }, 1400);
+    save('auto'); weekStart(); }
+  // Monday morning: what is on this week
+  function weekStart() { const C = S.col; if (C.gradDay) return toast('Graduation day. The ceremony starts at 11 in the Great Hall. Gowns are at the door.', 8);
+    if (S.week === 7 && !C.classes[1].length) return enrol(weekStart);
+    const k = weekClass(), ex = EXAMWK[S.week];
+    let t = ex ? `${ex === 'mid' ? 'Midterms' : 'Finals'} this morning at 9 in the Great Hall.` : `Week ${S.week}. ${course(k)} at 10 in the Lecture Theatre.`;
+    if (S.week === RECRUIT[0]) t += ' Graduate recruiting has opened. Firms are taking applications on the Jobs app.'; else if (S.week === RECRUIT[1]) t += ' Last week for graduate applications.';
+    toast(t, 8); }
+  // ---------- Rob, your roommate ----------
+  const ROBCOL = ['Did you do the reading? Me neither. We are a team.', 'I signed up for an improv class. Do not come.', 'If I fail statistics, I am telling my mom it was a scheduling issue.', 'The dining hall did tacos. Best day of the semester.', 'Big question. Is cereal a soup?',
+    'I applied for a sales job. The ad said “must love talking”. I am a lock.', 'Your side of the room is way too clean. It is freaking me out.', 'Everyone keeps asking what I am doing after graduation. I am doing graduation.', 'There is a party on the third floor Friday. You are coming, I already said you were.'];
+  function robDorm() { const C = S.col, nm = S.player.name; const line = C.robTalk === 0 ? `${nm}! Final year, roomie. We are basically adults now. Terrifying.` : ROBCOL[(C.robTalk + S.week) % ROBCOL.length]; C.robTalk++;
+    return say('Rob', VOICES.rob, line, [{ text: 'Ha. Fair enough.', effects: { rel: { rob: 2 } } }, { text: 'I have to get going.' }]); }
+  function robInDorm(I) { if (I.npcs.some(n => n.name === 'Rob')) return; const H = interiorFor('house'), rob = H && H.npcs.find(n => n.name === 'Rob'); const look = rob ? { ...rob.L } : { fem: false, hair: 'bob', hairC: [86, 56, 38], skin: SKIN[1], top: [222, 214, 200], beard: 'beard', set: 'rob' };
+    I.npcs.push(roomNPC(I, 'Rob', 'casual', look, null, 'Roommate. Final year, Communications.', I.npcs.length && I.npcs[0].placed ? { sit: { ...I.robSeat, x: I.ox + I.robSeat.x, y: I.oy + I.robSeat.y }, placed: true } : { sit: { ...I.robSeat } })); }
+  // ---------- graduation ----------
+  const majorOf = () => { const best = STATS.map(([k]) => [k, stat(k)]).sort((a, b) => b[1] - a[1])[0]; return best[1] >= 20 ? best[0] : null; };
+  const degreeOf = () => { const m = majorOf(); return m ? DEGREE[m] : 'Bachelor of Arts in Communications'; };
+  const GRADNAMES = ['Abigail Moreno', 'Benjamin Clarke', 'Chloe Whitaker', 'Daniel Osei', 'Emily Fitzgerald', 'Gabriel Santos', 'Hannah Lowell', 'Isaac Brennan', 'Jasmine Patel', 'Kevin Doyle', 'Lauren Kim', 'Marcus Webb'];
+  async function ceremony() { const I = INSIDE, C = S.col; if (C.graduated) return; C.graduated = true; G.hold = true; if (seated) standUp();
+    // seven graduates in the front row, you fourth; each walks the aisle, stops for the diploma and returns
+    const row = I.gradSeats.filter(q => q[1] === I.gradSeats[0][1]).sort((a, b) => a[0] - b[0]), seats = [...row.filter(q => q[0] < 15).slice(-4), ...row.filter(q => q[0] > 15).slice(0, 3)], me = 3, nm = S.player.name || 'Alex', deg = degreeOf(), g = gpa(), honors = g >= 3.7 ? ', summa cum laude' : g >= 3.5 ? ', magna cum laude' : g >= 3.3 ? ', cum laude' : '';
+    const people = seats.map((q, i) => i === me ? null : Object.assign(roomNPC(I, null, 'casual', { top: [24, 26, 34] }, null, null, { sit: { x: I.ox + q[0], y: I.oy + q[1] - .05, z: .48, hx: 0, hy: -1 }, placed: true }), { grad: true, speed: 2.4 }));
+    for (const n of people) if (n) I.npcs.push(n);
+    const [mx, my] = seats[me]; player.x = I.ox + mx; player.y = I.oy + my; player.sit = { x: player.x, y: player.y, z: .48, hx: 0, hy: -1 }; player.hx = 0; player.hy = -1; cx = player.x; cy = player.y;
+    const path = (x0, y0, x1, y1) => navPath(I, x0, y0, x1, y1) || [[x1, y1]];
+    const walkNPC = (n, tx, ty) => new Promise(res => { n.sit = null; n.idle = 0; n.pts = null; n.route = path(n.x, n.y, tx, ty); n.arrive = () => res(); });
+    const walkMe = (tx, ty) => new Promise(res => { const R = path(player.x, player.y, tx, ty); let last = performance.now(); const step = now => { const dt = Math.min(.05, (now - last) / 1000); last = now; if (!R.length) { player.moving = false; return res(); } const [qx, qy] = R[0], dx = qx - player.x, dy = qy - player.y, d = Math.hypot(dx, dy); if (d < .08) { R.shift(); return requestAnimationFrame(step); } const v = Math.min(d, 2.2 * dt); player.x += dx / d * v; player.y += dy / d * v; player.hx = dx / d; player.hy = dy / d; player.moving = true; cx = player.x; cy = player.y; requestAnimationFrame(step); }; requestAnimationFrame(step); });
+    const names = GRADNAMES.slice(0, seats.length - 1); names.splice(me, 0, nm); const stage = [I.ox + 15.0, I.oy + 4.2];
+    await say('The chancellor', 'none', 'Graduates, family and friends, welcome. Please hold your applause until every name has been read.', [{ text: 'Continue' }]);
+    for (let i = 0; i < seats.length; i++) { const q = seats[i], sx = I.ox + q[0], sy = I.oy + q[1], mine = i === me, n = people[i];
+      toast(mine ? `${nm}, ${deg}${honors}` : `${names[i]}, ${DEGREE[STATS[(i * 2) % 5][0]]}`, 30);
+      if (mine) { player.sit = null; await walkMe(stage[0], stage[1]); player.hx = 0; player.hy = -1; await new Promise(r => setTimeout(r, 1800)); await walkMe(sx, sy); player.sit = { x: sx, y: sy, z: .48, hx: 0, hy: -1 }; player.hx = 0; player.hy = -1; }
+      else { await walkNPC(n, stage[0], stage[1]); n.hx = 0; n.hy = -1; await new Promise(r => setTimeout(r, 900)); await walkNPC(n, sx, sy + .1); n.sit = { x: sx, y: sy - .05, z: .48, hx: 0, hy: -1 }; } }
+    toast('', 0); await say('The chancellor', 'none', 'Ladies and gentlemen, the graduating class. Congratulations.', [{ text: 'Throw your cap in the air' }]);
+    player.sit = null; S.player.degree = deg; S.player.gpa = g; CR.note(S, `Graduated: ${deg}${honors}${g != null ? `, GPA ${g.toFixed(2)}` : ''}.`);
+    const off = (S.apps || []).find(a => a.status === 'accepted');
+    await say('Rob', VOICES.rob, off ? `We did it! And you have a job lined up at ${coById(off.co).name}. Show off. July, share house, you and me. It is happening.` : 'We did it! No idea what comes next, but the share house is ours from July. We will figure it out.', [{ text: 'Share house, July. Let’s go.' }]);
+    G.hold = false; moveToShareHouse(); }
+  async function moveToShareHouse() { await fadeTo('Seven weeks later', 'July. Moving day.', () => {
+      S.mode = 'main'; const C = S.col; C.gradDay = false; CR.passMinutes(S, Math.max(0, MOVEIN - S.time), { asleep: false, drift: false }); dailyThings(MOVEIN - 1440, S.time);
+      const N = S.player.needs; Object.assign(N, { energy: 82, mood: 68, hunger: 30 }); if (INSIDE) leaveInterior(); startAtHome(); skyForDay(); drawHud(); }, 1800);
+    save('auto'); intro(); }
+  // ---------- Rob shows you the basics in week 1 ----------
+  // Only the things you use for the whole game: your phone, the laptop, eating, studying and sleeping. The college parts explain themselves.
+  const TUT = [['phone', 'Open your phone with P', 'Phones out, first things first. Press P. Messages, the bank, the Jobs app, a taxi when you need one. Everything lives in there.'],
+    ['laptop', 'Use the laptop on your desk (walk up and press E)', 'Your laptop is on your desk. Study apps, the news, the stock market. Later on your work portal lives there too.'],
+    ['eat', 'Cook something in the kitchenette', 'You look hungry. Hunger creeps up all day and a hungry you is a grumpy you. The stove in the kitchenette does a cheap meal.'],
+    ['study', 'Study at the College Library', 'Want to get good at something? The library. Every stat grows with study, and it sticks better there than anywhere else. Press M for the map.'],
+    ['sleep', 'Sleep in your bed to end the week', 'Energy runs down as you go. Bed puts it back. Here at college, a night in your own bed is the end of the week, so do what you want done first.']];
+  function tutStep() { const C = S && S.col; return C && C.tut != null && C.tut < TUT.length ? TUT[C.tut] : null; }
+  function tutShow() { let b = $('tut'); const st = tutStep(); if (!st || !isCol()) { if (b) b.hidden = true; return; }
+    if (!b) { b = document.createElement('div'); b.id = 'tut'; document.body.appendChild(b); b.onclick = e => { if (e.target.dataset.skip != null) { S.col.tut = TUT.length; tutShow(); toast('Tutorial skipped.', 2); } }; }
+    b.hidden = false; b.innerHTML = `<small>With Rob · ${S.col.tut + 1} of ${TUT.length}</small><b>${esc(st[1])}</b><button data-skip>Skip</button>`; }
+  function tutRob() { const st = tutStep(); if (!st) return; if (roomKey() === 'dorm') say('Rob', VOICES.rob, st[2], [{ text: 'Got it.' }]); else toast(`Rob texts: ${st[2]}`, 9); }
+  // the furniture you use at college
+  function colSvc(f) { const k = f.ck;
+    if (k === 'lecture') return lecture(); if (k === 'exam') return sitExam();
+    if (k === 'bed') { if (!isCol()) return toast('Not your room any more.', 2); tutDone('sleep'); return colBed(); }
+    if (k === 'desk') { tutDone('laptop'); return openLaptop(); }
+    if (k === 'ward') return fitRoom('wardrobe', 'clothes');
+    if (k === 'cook') return menu('Kitchenette', 'Two burners, one pan, and someone else’s dishes.', [{ t: 'Pasta and sauce', s: '$3, 25 minutes, fills you up', fn: () => { buy(300, 25, { need: { hunger: -40 } }, 'Pasta and sauce.')(); tutDone('eat'); } }, { t: 'Instant noodles', s: '$1, 5 minutes', fn: () => { buy(100, 5, { need: { hunger: -18 } }, 'Instant noodles.')(); tutDone('eat'); } }]); }
+  function startAtDorm() { if (!dormDoor) return startAtHome(); const pk = kerbPark(dormDoor.x, dormDoor.y); Object.assign(PCAR, pk, { speed: 0 }); player.x = dormDoor.x; player.y = dormDoor.y; cx = player.x; cy = player.y; goIn('dorm', dormDoor, 2.2, 2.6); INSIDE.name = dormDoor.name; crowd(); }
+  // the first morning: Rob, then enrolment, then the basics
+  function collegeIntro() { const t0 = performance.now(); const go = () => { if (!window.PORTRAITS_READY && performance.now() - t0 < 8000) return setTimeout(go, 100);
+      say('Rob', VOICES.rob, `${S.player.name || 'Alex'}! Final year, roomie. Last semester we said we would be organized. How are we feeling about that?`, [{ text: 'Optimistic.', effects: { rel: { rob: 2 } }, reply: 'Love it. Step one, enroll in your classes before they fill up. Step two, I show you how not to starve.' }], robLook(), 'happy')
+        .then(() => enrol(() => { S.col.tut = 0; tutShow(); setTimeout(tutRob, 600); weekStart(); })); };
+    setTimeout(go, 600); }
+  function tutDone(k) { const st = tutStep(); if (!st || st[0] !== k) return; S.col.tut++; tutShow(); if (tutStep()) setTimeout(tutRob, 1200); else toast('That is the basics. The rest of the year is yours.', 5); }
   // the preview: your look with one thing changed
   function previewLook(ch) { const L = JSON.parse(JSON.stringify(player.L)); L.pr = null;
     if (ch.wear) { const w = WEAR[ch.wear]; if (w.cat === 'clothes') { const c = clothFor(ch.wear), G = GARM[c.g] || {}; Object.assign(L, { garment: c.g, top: c.top, bot: c.bot, shirt: c.shirt, tie: c.tie, coat: !!G.coat, hood: c.g === 'hoodie' }); }
@@ -8447,21 +8677,23 @@ window.GAME = (() => {
   const hospDoor = placeDoor(buildings.find(b => b.name === 'City General Hospital'), { k: 'place', to: 'hospital', name: 'City General Hospital', sub: 'Main entrance, open 24 hours' });
   placeDoor(buildings.find(b => b.name === 'Great Hall'), { k: 'place', to: 'hall', name: 'Great Hall', sub: 'College dining hall', front: true });
   placeDoor(buildings.find(b => b.name === 'College Library'), { k: 'place', to: 'library', name: 'College Library', sub: 'Open 7 am to 11 pm' });
+  const lectureDoor = placeDoor(buildings.find(b => b.name === 'Lecture Theatre'), { k: 'place', to: 'lecture', name: 'Lecture Theatre', sub: 'Lectures on Mondays at 10' });
+  const dormDoor = placeDoor(buildings.find(b => b.name === 'Residence Hall'), { k: 'place', to: 'dorm', name: 'Residence Hall', sub: 'Residents only' });
   // which inside a door leads to, whether it is open, and how busy it is at this hour
-  const intKey = d => d.k === 'venue' ? ({ cafe: 'cafe', bar: 'bar', lounge: 'lounge', restaurant: 'rest', takeout: 'slice', club: 'club' })[d.vk] : d.k === 'store' ? ({ gym: 'gym', super: 'market', conv: 'conv' })[d.sk] : d.k === 'dealer' ? 'dealer' : d.k === 'place' ? d.to : null;
+  const intKey = d => d.k === 'venue' ? ({ cafe: 'cafe', bar: 'bar', lounge: 'lounge', restaurant: 'rest', takeout: 'slice', club: 'club' })[d.vk] : d.k === 'store' ? ({ gym: 'gym', super: 'market', conv: 'conv' })[d.sk] : d.k === 'dealer' ? 'dealer' : d.k === 'place' ? (d.to === 'hall' ? hallKey() : d.to) : null;
   const placeOpen = d => { const h = gHour(), vk = d.vk; if (d.k === 'venue') return vk === 'club' ? (h >= 21 || h < 3) : vk === 'cafe' ? (h >= 6 && h < 17) : (vk === 'bar' || vk === 'lounge') ? (h >= 11 || h < 1) : (h >= 11 && h < 23);
-    if (d.k === 'store') return STORE[d.sk].open(h); if (d.k === 'dealer') return h >= 9 && h < 19; if (d.to === 'library') return h >= 7 && h < 23; if (d.to === 'hall') return h >= 7 && h < 21; return true; };
+    if (d.k === 'store') return STORE[d.sk].open(h); if (d.k === 'dealer') return h >= 9 && h < 19; if (d.to === 'library') return h >= 7 && h < 23; if (d.to === 'hall') return h >= 7 && h < 21; if (d.to === 'lecture') return h >= 7 && h < 21; if (d.to === 'dorm') return S.mode === 'college'; return true; };
   const BUSY = { cafe: h => h >= 7 && h < 10 ? .85 : h >= 12 && h < 14 ? .7 : .4, bar: h => h >= 17 || h < 1 ? .85 : .3, lounge: h => h >= 19 || h < 1 ? .8 : .35, rest: h => h >= 12 && h < 14 ? .7 : h >= 18 && h < 22 ? .9 : .25,
     slice: h => h >= 21 || h < 3 ? .85 : h >= 11 && h < 14 ? .65 : .3, club: h => h >= 22 || h < 2 ? .95 : .45, gym: h => h >= 6 && h < 9 ? .75 : h >= 17 && h < 20 ? .85 : .35, market: h => h >= 17 && h < 19 ? .85 : h >= 10 && h < 17 ? .6 : .3,
-    conv: h => h >= 7 && h < 22 ? .55 : .2, hospital: () => .65, hall: h => (h >= 7.5 && h < 9) || (h >= 12 && h < 14) || (h >= 18 && h < 20) ? .8 : .15, library: h => h >= 9 && h < 22 ? .6 : .2, dealer: h => h >= 10 && h < 17 ? .55 : .3 };
+    conv: h => h >= 7 && h < 22 ? .55 : .2, hospital: () => .65, hall: h => (h >= 7.5 && h < 9) || (h >= 12 && h < 14) || (h >= 18 && h < 20) ? .8 : .15, library: h => h >= 9 && h < 22 ? .6 : .2, dealer: h => h >= 10 && h < 17 ? .55 : .3, lecture: h => CR.parts(S.time).dow === 1 && h >= 9.5 && h < 11.6 ? .95 : .08, dorm: h => h >= 8 && h < 23 ? .5 : .15, hallexam: () => 1, hallgrad: () => 1 };
   function crowd() { const I = INSIDE, room = roomKey(); if (!I || !BUSY[room]) return; const b = BUSY[room](gHour());
     for (const n of I.npcs) { if (!n.patron || (talk && talk.p === n)) continue; const want = n.busy > b; if (n.pts && !n.pts0) n.pts0 = n.pts;
       if (want && !n.hidden) { n.hidden = true; if (n.pts0) { n.pts = null; n.route = []; } } else if (!want && n.hidden) { n.hidden = false; if (n.pts0) { n.pts = n.pts0; n.route = []; n.idle = Math.random() * 3; } } } }
   function enterPlace(d) { const key = intKey(d); if (!key) return false;
-    if (!placeOpen(d)) { if (d.k === 'venue') venue(d); else if (d.k === 'store') storeMenu(d); else toast(`${d.name} is closed right now.`, 2.5); return true; }
-    fadeTo('', '', () => { goIn(key, d); INSIDE.name = d.name; crowd(); }, 200).then(() => { if (d.k === 'venue') { music.venue(d.vk); const due = planHere(d); if (due) meetup(due, d); } }); return true; }
+    if (!placeOpen(d)) { if (d.k === 'venue') venue(d); else if (d.k === 'store') storeMenu(d); else toast(d.to === 'dorm' ? 'Residents only. You moved out after graduation.' : `${d.name} is closed right now.`, 2.5); return true; }
+    fadeTo('', '', () => { goIn(key, d); INSIDE.name = d.name; crowd(); }, 200).then(() => { if (d.k === 'venue') { music.venue(d.vk); const due = planHere(d); if (due) meetup(due, d); } if (key === 'hallgrad' && S.col && S.col.gradDay) ceremony(); }); return true; }
   // the service points inside: counters, the bar, the pool table, the triage desk, the carrels
-  function useSvc(f) { const d = savedOut && savedOut.door, N = S.player.needs; if (!d) return;
+  function useSvc(f) { const d = savedOut && savedOut.door, N = S.player.needs; if (!d) return; if (f.sk === 'college') return colSvc(f);
     if ((f.sk === 'venue' || f.sk === 'store') && ['counter2', 'display', 'checkout'].includes(f.t) && gigMenu(d)) return;
     if (f.sk === 'venue') return venue(d); if (f.sk === 'store') return storeMenu(d); if (f.sk === 'dealer') return dealer(d);
     if (f.sk === 'pool') return menu('Pool table', 'Coins on the rail, winner stays on.', [{ t: 'Play a game', s: '$2, half an hour, mood up', fn: buy(200, 30, { need: { mood: 8 } }, 'You sink the black. Just.') }]);
@@ -8475,7 +8707,7 @@ window.GAME = (() => {
       return menu('Reception and triage', hl >= 90 ? 'The triage nurse looks you over. You are fine.' : `The triage nurse looks you over. Health ${Math.round(hl)} of 100.`, hl >= 90 ? [{ t: 'Nothing wrong with you', s: 'Come back if that changes', off: true }] : [{ t: 'See a doctor', s: '$150 after insurance, about two hours, health back to full', fn: () => { if (!spend(15000, 'Hospital visit')) return toast('You cannot cover the bill.'); const t0 = S.time; CR.passMinutes(S, 120); dailyThings(t0, S.time); N.health = 100; closeMenu(); toast('Bloods, a drip and a lecture about eating properly. You feel human again.', 4); } }]); }
     if (f.sk === 'study') { const I = INSIDE; let st = null, bd = 9; for (const g of I.furn) { if (g.t !== 'chair' && g.t !== 'carrel') continue; const s2 = g.t === 'carrel' ? { x: g.x - .55, y: g.y, z: .48, hx: 1, hy: 0 } : seatsOf(g)[0]; const dd = Math.hypot(I.ox + s2.x - player.x, I.oy + s2.y - player.y); if (dd < bd && !I.npcs.some(n => n.sit && !n.hidden && Math.hypot(n.sit.x - I.ox - s2.x, n.sit.y - I.oy - s2.y) < .4)) { bd = dd; st = s2; } }
       if (!st) return toast('Every seat nearby is taken.', 2);
-      const go = (sk3, hrs) => () => { closeMenu(); if (stat(sk3) >= STUDY_CAP) return toast(`${STATN[sk3]} is past what books can teach. It grows on the job now.`, 3); ffwd(hrs * 60, { label: `Studying ${STATN[sk3].toLowerCase()} at the library`, pose: poseAt(st.x, st.y, st.z, st.hx, st.hy, true), each: m => { gainSkill(sk3, m / 60 * 1.15, true); need('energy', -3.5 * m / 60); } }); };
+      const go = (sk3, hrs) => () => { closeMenu(); if (stat(sk3) >= STUDY_CAP) return toast(`${STATN[sk3]} is past what books can teach. It grows on the job now.`, 3); ffwd(hrs * 60, { label: `Studying ${STATN[sk3].toLowerCase()} at the library`, pose: poseAt(st.x, st.y, st.z, st.hx, st.hy, true), each: m => { gainSkill(sk3, m / 60 * 1.15, true); need('energy', -3.5 * m / 60); } }).then(() => tutDone('study')); };
       return menu('Study for two hours', 'Quiet, warm and nobody asking you for anything. Study goes about 15% further here than at home.', STATS.map(([k, n]) => ({ t: n, s: stat(k) >= STUDY_CAP ? 'Past what study can teach' : `${Math.floor(stat(k))} now, energy down`, off: stat(k) >= STUDY_CAP, fn: go(k, 2) }))); } }
   // you come round in the hospital's ward, by the window bed
   function wakeInWard() { if (!hospDoor) return toHospital(); if (seated) standUp(); if (player.driving) toggleCar(); if (INSIDE) leaveInterior(); goIn('hospital', hospDoor); INSIDE.name = hospDoor.name; crowd();
@@ -8633,17 +8865,17 @@ window.GAME = (() => {
   const TESTS = [['prototype', 'Corner Office prototype', 'The first playable build'], ['portraits', 'Portrait Creator', 'Faces, hair and clothes'], ['car-designer', 'Car Designer', 'Car models and handling'], ['brand-studio', 'Brand Studio', 'Logos and signage styles'], ['track-designer', 'Grand Prix Track Designer', 'Race circuit layouts'], ['engine.html#lookout', 'Lookout view', 'The skyline from The Ranges. T moves the clock on']];
   let titleOpen = false, testBase = 'tests/';
   function showTitle() { titleOpen = true; document.body.classList.add('titling'); const last = store.load('auto'), T = $('title');
-    T.innerHTML = `<div class="tbox"><h1>Corner Office</h1><p class="tsub">Test build</p><div class="tmain">${last ? `<button id="tCont"><b>Continue</b><span>${esc(CR.fmtDate(last.time))}, ${esc(CR.fmtTime(last.time))}</span></button>` : ''}<button id="tNew"><b>New game</b><span>Move into the share house with Rob</span></button><button data-open="engine.html|Engine sandbox"><b>Engine sandbox</b><span>The city with the full debug menu, art and sound tests included</span></button></div>
+    T.innerHTML = `<div class="tbox"><h1>Corner Office</h1><p class="tsub">Test build</p><div class="tmain">${last ? `<button id="tCont"><b>Continue</b><span>${esc(CR.fmtDate(last.time))}, ${esc(CR.fmtTime(last.time))}</span></button>` : ''}<button id="tNew"><b>New game</b><span>Your final year at college, then the city</span></button><button id="tQuick"><b>Skip college</b><span>Start in July as a graduate at Apogee</span></button><button data-open="engine.html|Engine sandbox"><b>Engine sandbox</b><span>The city with the full debug menu, art and sound tests included</span></button></div>
       <h2>Design studios and tests</h2><div class="tgrid">${TESTS.map(([slug, n, d]) => `<button data-open="${slug.includes('.html') ? slug : testBase + slug + '.html'}|${n}"><b>${n}</b><span>${d}</span></button>`).join('')}</div><p class="tfoot">Sound starts after your first key press or click.</p></div>`;
-    T.hidden = false; if ($('tCont')) $('tCont').onclick = () => startGame(store.load('auto')); $('tNew').onclick = () => { if (last && !$('tNew').dataset.sure) { $('tNew').dataset.sure = 1; $('tNew').querySelector('span').textContent = 'This replaces your autosave. Click again to start over'; return; } startGame(null); };
+    T.hidden = false; if ($('tCont')) $('tCont').onclick = () => startGame(store.load('auto')); $('tNew').onclick = () => { if (last && !$('tNew').dataset.sure) { $('tNew').dataset.sure = 1; $('tNew').querySelector('span').textContent = 'This replaces your autosave. Click again to start over'; return; } startGame(null); }; $('tQuick').onclick = () => startGame(null, true);
     for (const b of T.querySelectorAll('[data-open]')) b.onclick = () => { const [src, name] = b.dataset.open.split('|'); openTest(src, name); }; }
   // a test or the sandbox opens over the menu in this same tab; the city behind stops drawing while it is up
   function openTest(src, name) { const V = $('testview'); V.innerHTML = `<div class="tvbar"><button id="tvBack">‹ Main menu</button><b>${esc(name)}</b></div><iframe src="${src}" title="${esc(name)}" allow="autoplay; fullscreen"></iframe>`; V.hidden = false; window.SKIP_RENDER = true; if (AU.on) auStop();
     $('tvBack').onclick = closeTest; setTimeout(() => { try { V.querySelector('iframe').focus(); } catch (e) { } }, 300); }
   function closeTest() { const V = $('testview'); V.hidden = true; V.innerHTML = ''; window.SKIP_RENDER = false; }
   // tests sit beside the page on GitHub; on claude.ai they open as their own artifacts
-  function startGame(saved) { titleOpen = false; document.body.classList.remove('titling'); $('title').hidden = true; startSound();
-    if (saved) { load(saved); toast('Welcome back.'); } else { S = upgrade(fresh()); charCreate(() => { applyOutfit(); startAtHome(); skyForDay(); drawHud(); intro(); }); } phoneBadge(); }
+  function startGame(saved, quick) { titleOpen = false; document.body.classList.remove('titling'); $('title').hidden = true; startSound();
+    if (saved) { load(saved); toast('Welcome back.'); } else { S = upgrade(fresh(!quick)); charCreate(() => { applyOutfit(); if (quick) { startAtHome(); skyForDay(); drawHud(); intro(); return; } startCollege(); startAtDorm(); skyForDay(); drawHud(); collegeIntro(); }); } phoneBadge(); }
 
   // ---------------- using things ----------------
   let doorNow = null, pedNow = null, cartNow = null, benchNow = null, paperNow = null;
@@ -8730,10 +8962,10 @@ window.GAME = (() => {
     const N = S.player.needs; if (!paused && N.energy < 8 && !tick.warned) { tick.warned = true; toast('You are exhausted. Find your bed or a coffee.', 5); } if (N.energy > 20) tick.warned = false;
   }
   function intro() { const t0 = performance.now(); const go = () => { if (!window.PORTRAITS_READY && performance.now() - t0 < 8000) return setTimeout(go, 100); introSay(); }; setTimeout(go, 600); }
-  function introSay() { setTimeout(() => say('Rob', VOICES.rob, 'Welcome home, roomie! Your room is the big one at the back, past the kitchen. Big first day at Apogee tomorrow, huh?', [{ text: 'Nine o clock sharp. Wish me luck.', effects: { rel: { rob: 3 } }, reply: 'You will smash it. Get an early night tonight, I will keep the music down. Probably.' }], robLook(), 'happy'), 0); }
+  function introSay() { setTimeout(() => say('Rob', VOICES.rob, S.player.job.co ? `Welcome home, roomie! Your room is the big one at the back, past the kitchen. Big first day at ${empName()} tomorrow, huh?` : 'Welcome home, roomie! Your room is the big one at the back, past the kitchen. No job yet? Me neither. The Jobs app on your phone, that is where it starts.', [S.player.job.co ? { text: 'Nine o clock sharp. Wish me luck.', effects: { rel: { rob: 3 } }, reply: 'You will smash it. Get an early night tonight, I will keep the music down. Probably.' } : { text: 'Job hunting starts tomorrow.', effects: { rel: { rob: 3 } }, reply: 'That is the spirit. I will start the day after.' }], robLook(), 'happy'), 0); }
 
   // ---------------- start ----------------
-  const G = { hold: false, key, tick, say, get S() { return S; }, music, HOME, WORK, homeDoor, workDoor, save, load, interact, roomKey, openPhone, closePhone, openLaptop, closeLaptop, startGame, ffwd, get FF() { return FF; }, get phoneOpen() { return phoneOpen; }, use: f => useRoom(f), dev: { dailyThings: (a, b) => dailyThings(a, b), bookLeave, WORK_EVENTS, setForce: id => { forceEvent = id; }, stat, gainSkill, gateText, gateMargin, ladderFor, promoGaps, workXP, pauseMenu, hrsTo, ptsFrom }, get busy() { return !!(modalOpen || dlgOpen || FF || fading); } };
+  const G = { hold: false, key, tick, say, get S() { return S; }, music, HOME, WORK, homeDoor, workDoor, save, load, interact, roomKey, openPhone, closePhone, openLaptop, closeLaptop, startGame, ffwd, get FF() { return FF; }, get phoneOpen() { return phoneOpen; }, use: f => useRoom(f), dev: { col: { colSvc, lecture, sitExam, endWeek, ceremony, tutDone, gpa, degreeOf, enterDoor: k => enterPlace(k === 'dorm' ? dormDoor : k === 'lecture' ? lectureDoor : DOORS.find(d => d.to === k)), refreshJobs, applyJob, acceptOffer, interview: () => { const a = S.apps.find(q => q.status === 'interview'); return a && interview(a, DOORS.find(d => d.k === 'hq' && d.co === a.co)); }, weekStart }, dailyThings: (a, b) => dailyThings(a, b), bookLeave, WORK_EVENTS, setForce: id => { forceEvent = id; }, stat, gainSkill, gateText, gateMargin, ladderFor, promoGaps, workXP, pauseMenu, hrsTo, ptsFrom }, get busy() { return !!(modalOpen || dlgOpen || FF || fading); } };
   setTimeout(showTitle, 0);
   return G;
 })();

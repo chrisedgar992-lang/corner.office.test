@@ -1411,7 +1411,7 @@ const PAVE2 = [226, 220, 204], DRIVE2 = [104, 106, 110];
   }
   // the great hall: the largest campus building, with a steep gable and its name over the door
   { const cs = buildings.filter(b => kindOf(b) === 'campus').sort((a, c) => (c.fp.x1 - c.fp.x0) * (c.fp.y1 - c.fp.y0) - (a.fp.x1 - a.fp.x0) * (a.fp.y1 - a.fp.y0)); const gh = cs[0];
-    if (cs[1]) cs[1].name = 'College Library';
+    if (cs[1]) cs[1].name = 'College Library'; if (cs[2]) cs[2].name = 'Lecture Theatre'; if (cs[3]) cs[3].name = 'Residence Hall';
     if (gh) { const w = gh.fp.x1 - gh.fp.x0, d = gh.fp.y1 - gh.fp.y0; gh.name = 'Great Hall'; gh.tiers = [{ ...gh.fp, zb: 0, zt: Math.max(gh.H, 18), mat: MAT.vbrick, pat: 'tallbays' }]; gh.H = Math.max(gh.H, 18); gh.pitched = { h: Math.min(10, Math.min(w, d) * .3), axis: w >= d ? 'x' : 'y' }; gh.roofC = [134, 140, 136]; clearRoof(gh); gh.kit = [];
       const F = gh.F, c = toW(F, 0, gh.fp.y0 - 2), poly = [toW(F, 8, gh.fp.y0 - 4), toW(F, -8, gh.fp.y0 - 4), toW(F, -8, gh.fp.y0), toW(F, 8, gh.fp.y0)]; props.push({ t: 'slab', poly, z: 5, th: 1, col: [150, 158, 150], text: 'GREAT HALL', textCol: [236, 230, 210], posts: false, x: c[0], y: c[1], h: 6, rad: 8 }); } }
   // stores for the shopping update: 24-hour markets in town (never near the estates), supermarkets and gyms in the suburbs
@@ -5143,7 +5143,48 @@ function buildDealer(ox) { const I = vroom('Circuit Prestige Motors', ox, 30, 18
   staff(I, 'dealer', 19.6, 2.4, 0, 1, 'Sales consultant.'); staff(I, 'dealer', 15.2, 2.1, 0, -1, 'Sales manager.');
   browsers(I, 4, [[12, 7], [7, 10], [19, 12], [21, 9], [11, 14], [17, 14.5]], SMART, 131); return I; }
 
-const VBUILD = { cafe: buildCafe, bar: buildBar, lounge: buildLounge, rest: buildRestaurant, slice: buildSlice, club: buildClub, gym: buildGym, market: buildMarket, conv: buildConv, hospital: buildHospital, hall: buildHall, library: buildLibrary, dealer: buildDealer };
+// ---------- the college opening (stand-ins until the college sheets arrive) ----------
+// Lecture theatre, 20 x 16: ten raked rows stepping down to a stage, a lectern, demonstration bench and wide screen, aisles up the middle and sides
+function buildLecture(ox) { const I = vroom('Lecture Theatre', ox, 20, 16, { door: [9.0, 11.0], wh: 6, frontWin: false, wallC: [176, 132, 96], wallTop: [70, 52, 40], floors: [{ x0: 0, y0: 0, x1: 20, y1: 16, m: 'gcarpet' }, { x0: 0, y0: 0, x1: 20, y1: 3.4, m: 'walnut', like: 'oak' }] });
+  for (let r = 0; r < 10; r++) { const y = 4.0 + r * 1.05, c = 70 + r * 6; F(I, 'flat', 10, y + .5, { w: 20, d: 1.0, col: [c, c - 8, c - 16] }); }
+  F(I, 'tall', 10, .12, { w: 10, d: .1, h: 3.6, z0: 1.0, col: [236, 238, 240] }); F(I, 'blk', 10, 2.0, { w: .8, d: .6, h: 1.15, col: [110, 80, 56], top: [140, 104, 72] }); F(I, 'blk', 14.5, 1.8, { w: 3.0, d: .9, h: .95, col: [180, 184, 188], top: [70, 74, 80] });
+  F(I, 'blk', 10, 15.4, { w: 3.0, d: 1.0, h: 1.2, col: [60, 50, 44], top: [90, 80, 70] });
+  I.lectureSeats = [];
+  for (let r = 0; r < 10; r++) { const y = 4.65 + r * 1.05; for (const [x0, x1] of [[2.6, 9.0], [11.0, 17.4]]) for (let x = x0; x <= x1 + .01; x += .71) {
+    const mine = r === 4 && Math.abs(x - 9.0) < .05; if (mine) { svcF(I, 'chair', x, y, { rot: 0, col: [120, 50, 44] }, 'Your seat for the lecture', 'college').ck = 'lecture'; I.mySeat = [x, y]; continue; }
+    F(I, 'chair', x, y, { rot: 0, col: [120, 50, 44] }); } }
+  staff(I, 'lecture', 10, 1.4, 0, 1, 'Professor.');
+  patrons(I, .55, ['casual', 'casual', 'coat']); for (const n of I.npcs) if (n.sit && n.sit.y > 4) n.class = true; return I; }
+// Residence hall, 16 x 12: your shared room with Rob along the back, a kitchenette, and the ground floor lounge
+function buildDorm(ox) { const I = vroom('Residence Hall', ox, 16, 12, { door: [7.2, 8.8], wh: 3.0, wallC: [200, 196, 186], floors: [{ x0: 0, y0: 0, x1: 9, y1: 5.5, m: 'carpet' }, { x0: 9, y0: 0, x1: 16, y1: 5.5, m: 'sand', like: 'tile' }, { x0: 0, y0: 5.5, x1: 16, y1: 12, m: 'latte', like: 'oak' }],
+    wH: [[5.5, 0, 9, [[6.6, 7.8]]]], wV: [[9, 0, 5.5, [[3.2, 4.4]]]] });
+  svcF(I, 'bed', 1.0, 1.6, { col: [70, 84, 110] }, 'Your bed', 'college').ck = 'bed'; F(I, 'bedside', 2.0, .45, { lamp: true });
+  svcF(I, 'desk', 3.4, .45, { laptop: true, w: 1.2 }, 'Your laptop', 'college').ck = 'desk'; F(I, 'chair', 3.4, 1.0, {});
+  svcF(I, 'wardrobe', .7, 4.8, { rot: 1 }, 'Your wardrobe', 'college').ck = 'ward';
+  F(I, 'bed', 8.0, 1.6, { col: [120, 64, 56] }); F(I, 'bedside', 7.0, .45, { lamp: true }); F(I, 'desk', 5.6, .45, { monitor: true, w: 1.2 }); F(I, 'chair', 5.6, 1.0, {}); F(I, 'wardrobe', 8.3, 4.8, { rot: 3 }); F(I, 'rug', 4.5, 3.2, { w: 2.0, d: 1.3, col: [150, 120, 90] });
+  F(I, 'counter', 12.5, .4, { w: 4.0 }); F(I, 'fridge', 15.4, .5, {}); svcF(I, 'stove', 10.8, .4, {}, 'Cook something cheap', 'college').ck = 'cook'; F(I, 'sink', 13.4, .4, {}); F(I, 'table', 12.5, 3.0, { w: 1.6, d: .9 }); pair2(I, 12.5, 3.0, 1.0, [90, 100, 110]);
+  F(I, 'sofa', 4.0, 10.9, { w: 2.6, rot: 0, col: [96, 110, 130] }); F(I, 'tvunit', 4.0, 7.0, { w: 2.0, rot: 2 }); F(I, 'armchair', 1.4, 9.0, { rot: 1, col: [130, 96, 80] }); F(I, 'table', 4.0, 9.0, { w: 1.2, d: .6 });
+  F(I, 'table', 13.0, 8.5, { w: 1.6, d: 1.0 }); four(I, 13.0, 8.5, .8, .45, [150, 120, 90]); F(I, 'plant', 15.4, 11.4); F(I, 'plant', .5, 11.4); F(I, 'shelf', 15.7, 7.5, { rot: 3, w: 1.6 });
+  I.robSeat = { x: 5.6, y: 1.05, z: .48, hx: 0, hy: -1 }; I.myBed = [1.0, 1.6];
+  patrons(I, .35, ['casual', 'casual']); return I; }
+// The Great Hall set for exams: rows of single desks facing the front, an invigilator's table and a clock
+function hallShell(name, ox) { return vroom(name, ox, 30, 20, { door: [13.73, 16.3], wh: 7, wallC: [150, 104, 92], wallTop: [70, 50, 44], gE: [[3.95, 5.57]], winW: [[3, 6], [8, 11], [13, 16]], winE: [[7, 10], [12, 15], [16.5, 18.5]], floors: [{ x0: 0, y0: 0, x1: 30, y1: 20, m: 'walnut', like: 'oak' }] }); }
+function buildHallExam(ox) { const I = hallShell('Great Hall', ox);
+  F(I, 'stage', 15.0, 2.1, { w: 21.9, d: 3.3, col: [120, 90, 66] }); F(I, 'table', 15.0, 2.2, { w: 3.0, d: .9, col: [110, 76, 50] }); F(I, 'blk', 15.0, .12, { w: .7, d: .08, h: .7, z0: 3.2, col: [230, 226, 214] });
+  for (let r = 0; r < 7; r++) for (let c = 0; c < 10; c++) { const x = 4.2 + c * 2.4, y = 5.4 + r * 1.75; if (r === 3 && c === 4) { svcF(I, 'desk', x, y, { w: .8 }, 'Your exam desk', 'college').ck = 'exam'; F(I, 'chair', x, y + .55, { rot: 0, col: [110, 76, 50] }); I.myDesk = [x, y + .55]; continue; }
+    F(I, 'desk', x, y, { w: .8 }); F(I, 'chair', x, y + .55, { rot: 0, col: [110, 76, 50] }); }
+  staff(I, 'hall', 15.0, 1.5, 0, 1, 'Invigilator.'); patrons(I, .8, ['casual', 'casual', 'coat']); for (const n of I.npcs) if (n.patron) n.busy = 0; return I; }
+// The Great Hall set for graduation: a stage with the chancellor's table, graduates in rows at the front, families behind
+function buildHallGrad(ox) { const I = hallShell('Great Hall', ox);
+  F(I, 'stage', 15.0, 2.1, { w: 21.9, d: 3.3, col: [120, 90, 66] }); F(I, 'table', 15.0, 1.4, { w: 6.0, d: .9, col: [110, 76, 50] }); for (const x of [12.6, 14.2, 15.8, 17.4]) F(I, 'chair', x, .7, { rot: 2, col: [120, 60, 50] });
+  F(I, 'blk', 15.0, 3.2, { w: .8, d: .6, h: 1.15, col: [110, 80, 56], top: [140, 104, 72] }); F(I, 'rug', 15.0, 9.0, { w: 2.0, d: 9.0, col: [120, 40, 44] });
+  I.gradSeats = []; for (let r = 0; r < 3; r++) for (const side of [-1, 1]) for (let c = 0; c < 6; c++) { const x = 15 + side * (2.0 + c * .9), y = 6.0 + r * 1.3; F(I, 'chair', x, y, { rot: 0, col: [60, 60, 70] }); I.gradSeats.push([x, y]); }
+  for (let r = 0; r < 4; r++) for (const side of [-1, 1]) for (let c = 0; c < 8; c++) F(I, 'chair', 15 + side * (2.0 + c * .9), 11.5 + r * 1.3, { rot: 0, col: [110, 76, 50] });
+  for (const [x, y] of I.gradSeats) if (y > 6.5) I.npcs.push(roomNPC(I, null, 'casual', { top: [24, 26, 34] }, null, null, { sit: { x, y: y - .05, z: .48, hx: 0, hy: -1 } }));
+  staff(I, 'hall', 15.0, 2.6, 0, 1, 'The chancellor.'); I.guests = []; { const Q = mulberry(4242); for (let r = 0; r < 4; r++) for (const side of [-1, 1]) for (let c = 0; c < 8; c++) { if (Q() < .3) continue; const s = { x: 15 + side * (2.0 + c * .9), y: 11.5 + r * 1.3 - .05, z: .48, hx: 0, hy: -1 }; const p = roomNPC(I, null, Q() < .5 ? 'suit' : 'coat', {}, null, null, { sit: s }); I.npcs.push(p); } }
+  return I; }
+
+const VBUILD = { cafe: buildCafe, bar: buildBar, lounge: buildLounge, rest: buildRestaurant, slice: buildSlice, club: buildClub, gym: buildGym, market: buildMarket, conv: buildConv, hospital: buildHospital, hall: buildHall, library: buildLibrary, dealer: buildDealer, lecture: buildLecture, dorm: buildDorm, hallexam: buildHallExam, hallgrad: buildHallGrad };
 const VORDER = Object.keys(VBUILD);
 const _interiorFor0 = interiorFor;
 interiorFor = function (key) { if (VBUILD[key]) { if (!INTERIORS[key]) INTERIORS[key] = VBUILD[key](24000 + VORDER.indexOf(key) * 1000); return INTERIORS[key]; } return _interiorFor0(key); };
