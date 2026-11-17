@@ -3817,7 +3817,7 @@ function drawPerson3D(p, isPlayer, umb) {
     const gl = L.glassesId || (L.glasses ? 'medium_rectangular_02' : 'none');
     if (gl !== 'none') { ctx.strokeStyle = 'rgba(14,14,16,.9)'; ctx.lineWidth = Math.max(.8, k * (gl === 'bold_square_03' ? .009 : .005));
       for (const s2 of [-1, 1]) { const e = atH(s2 * .032, .092), q = PP(e[0], e[1], hz + .015, p.x, p.y), r = Math.max(1.6, k * .019); ctx.beginPath();
-        if (gl === 'thin_round_01') ctx.arc(q[0], q[1], r, 0, TAU); else if (gl === 'cat_eye_04') { ctx.moveTo(q[0] - r, q[1] - r * .4); ctx.lineTo(q[0] + r * 1.1, q[1] - r * .9); ctx.lineTo(q[0] + r, q[1] + r * .6); ctx.lineTo(q[0] - r, q[1] + r * .6); ctx.closePath(); } else ctx.rect(q[0] - r, q[1] - r * .7, r * 2, r * 1.4); ctx.stroke(); } }
+        if (gl === 'thin_round_01') ctx.arc(q[0], q[1], r, 0, TAU); else if (gl === 'cat_eye_04') { ctx.moveTo(q[0] - r, q[1] - r * .4); ctx.lineTo(q[0] + r * 1.1, q[1] - r * .9); ctx.lineTo(q[0] + r, q[1] + r * .6); ctx.lineTo(q[0] - r, q[1] + r * .6); ctx.closePath(); } else ctx.rect(q[0] - r, q[1] - r * .7, r * 2, r * 1.4); const LT = { black: 'rgba(20,22,26,.85)', brown: 'rgba(110,70,36,.5)', blue: 'rgba(40,90,190,.4)', red: 'rgba(190,40,40,.4)', yellow: 'rgba(225,190,40,.4)' }[L.lens]; if (LT) { ctx.fillStyle = LT; ctx.fill(); } ctx.stroke(); } }
   }
   const hid = L.hatId || (L.beanie ? 'beanie' : L.hat ? (L.cop ? 'police' : 'baseball_cap') : 'none'), hc2 = t(L.hatC || L.beanie || [206, 200, 170], hz);
   if (hid === 'beanie') capsule(B, { x: h0[0], y: h0[1], z: hz - .01, rr: .088, rf: .1 }, { x: h0[0], y: h0[1], z: hz + .1, rr: .06, rf: .065 }, hc2, out);
@@ -7033,6 +7033,8 @@ window.GAME = (() => {
   function upgradeClothes(s) { s.owned = s.owned || {};
     if (!s.wardrobe) { s.wardrobe = ['shirt_white', 'tee']; if (s.owned.shirt) s.wardrobe.push('shirt_blue'); if (s.owned.suit) s.wardrobe.push('suit'); s.wearing = s.owned.suit ? 'suit' : 'shirt_white'; }
     s.wardrobe = [...new Set(s.wardrobe.map(k => OLDK[k] || k))]; s.wearing = OLDK[s.wearing] || s.wearing || 'open_collar.white'; for (const k of s.wardrobe) s.owned[k] = true;
+    const glk = k => /^(thin_round_01|medium_rectangular_02|bold_square_03|cat_eye_04)\.black$/.test(k) && !s.lensV ? k.replace('.black', '.clear') : k;
+    s.wardrobe = s.wardrobe.map(glk); if (s.glassesOn) s.glassesOn = glk(s.glassesOn); for (const k of Object.keys(s.owned)) if (glk(k) !== k) { s.owned[glk(k)] = true; delete s.owned[k]; } s.lensV = 1;
     s.style = s.style || { hairId: 'short_side_part_02', fhId: 'none' }; }
   const upgrade = s => { upgradeStats(s); upgradeClothes(s); s.contacts = s.contacts || {}; s.msgs = s.msgs || []; s.plans = s.plans || []; s.tx = s.tx || []; s.stereo = s.stereo || { on: false, by: null, day: -1 }; s.fines = s.fines || []; s.cart = s.cart || {}; s.orders = s.orders || []; s.owned = s.owned || {}; s.items = s.items || { meals: 0 }; s.port = s.port || {}; if (s.player && s.player.job && !('co' in s.player.job)) { const d = Math.floor(s.time / 1440); Object.assign(s.player.job, { co: 'meridian', lastCo: 'meridian', since: d - Math.round((s.player.job.shifts || 0) * 1.4), roleSince: d - Math.round((s.player.job.shiftsAt || 0) * 1.4), startDay: 0, miss: 0, warns: [], burn: 0, best: s.player.job.level || 0 }); } s.apps = s.apps || []; s.jobs = s.jobs || []; s.mail = s.mail || [];
     if (!s.mkt && s.time != null) initMarket(s); else if (s.mkt) migrateMarket(s); return s; };
@@ -8306,14 +8308,16 @@ window.GAME = (() => {
   const WEARC = { white: [228, 228, 222], paleblue: [190, 206, 226], pink: [226, 196, 200], navy: [36, 44, 66], charcoal: [58, 60, 64], black: [28, 28, 30], grey: [120, 122, 126], camel: [158, 124, 86], olive: [80, 90, 60], burgundy: [110, 36, 44], red: [160, 52, 46], tan: [176, 146, 104], brown: [92, 66, 48], denim: [62, 86, 120], darkdenim: [40, 52, 76], cream: [222, 214, 196], forest: [44, 70, 56], tweed: [110, 100, 86] };
   const CN = k => ({ paleblue: 'pale blue', darkdenim: 'dark denim' })[k] || k;
   // [garment or item, name, price in cents, colours, how smart it is, who it is cut for (m, f or both)]
+  // glasses come with a choice of lens: clear, dark sunglass lenses or a light colored tint
+  const LENSES = ['clear', 'black', 'brown', 'blue', 'red', 'yellow'], LENSN = { clear: 'clear lenses', black: 'sunglass lenses', brown: 'brown tint', blue: 'blue tint', red: 'rose tint', yellow: 'yellow tint' }, LENSC = { clear: [214, 228, 236], black: [24, 26, 30], brown: [130, 86, 46], blue: [70, 110, 200], red: [200, 80, 80], yellow: [228, 196, 60] };
   const WEARDEF = {
     clothes: [['open_collar', 'Work shirt', 5500, ['white', 'paleblue', 'pink'], 3, 'b'], ['suit_tie', 'Tailored suit', 42000, ['navy', 'charcoal', 'black'], 6, 'm'], ['feminine_blazer', 'Fitted blazer', 32000, ['navy', 'charcoal', 'black', 'camel'], 6, 'f'],
       ['wool_coat', 'Wool overcoat', 26000, ['camel', 'charcoal', 'navy'], 4, 'b'], ['collared_shirt_puffer_vest', 'Shirt and puffer vest', 14000, ['navy', 'olive', 'grey'], 2, 'm'], ['masculine_three_quarter_zip', 'Three-quarter zip', 6500, ['navy', 'grey', 'burgundy'], 1, 'm'],
       ['feminine_wrap_blouse', 'Wrap blouse', 6000, ['cream', 'burgundy', 'navy'], 3, 'f'], ['feminine_mock_neck', 'Ribbed mock neck', 5000, ['black', 'cream', 'camel'], 2, 'f'], ['feminine_cardigan', 'Cardigan and shell', 7500, ['grey', 'camel', 'forest'], 2, 'f'], ['feminine_square_neck', 'Square-neck top', 4500, ['black', 'white', 'red'], 1, 'f'],
       ['crew_neck_tee', 'Crew-neck tee', 2000, ['white', 'grey', 'black', 'navy'], 0, 'b'], ['denim_jacket', 'Denim jacket', 9000, ['denim', 'darkdenim'], 0, 'b'], ['hoodie', 'Hoodie', 4500, ['charcoal', 'grey', 'navy', 'burgundy'], -1, 'b']],
     hats: [['baseball_cap', 'Baseball cap', 2500, ['navy', 'black', 'red', 'tan'], -1, 'b'], ['backwards_cap', 'Cap, worn backwards', 2500, ['black', 'red', 'navy'], -2, 'b'], ['beanie', 'Beanie', 2000, ['charcoal', 'burgundy', 'navy', 'cream'], -1, 'b'], ['flat_cap', 'Flat cap', 4500, ['tweed', 'grey', 'brown'], 0, 'b'], ['brimmed_hat', 'Brimmed hat', 7000, ['tan', 'black', 'brown'], 0, 'b']],
-    glasses: [['thin_round_01', 'Thin round frames', 15000, ['black'], 0, 'b'], ['medium_rectangular_02', 'Rectangular frames', 15000, ['black'], 0, 'b'], ['bold_square_03', 'Bold square frames', 18000, ['black'], 0, 'b'], ['cat_eye_04', 'Cat-eye frames', 18000, ['black'], 0, 'f']] };
-  const WEAR = {}; for (const [cat, list] of Object.entries(WEARDEF)) for (const [id, n, p, cols, formal, cut] of list) for (const c of cols) WEAR[`${id}.${c}`] = { k: `${id}.${c}`, cat, id, n: cat === 'glasses' ? n : `${n}, ${CN(c)}`, base: n, col: c, p, formal, cut };
+    glasses: [['thin_round_01', 'Thin round frames', 15000, LENSES, 0, 'b'], ['medium_rectangular_02', 'Rectangular frames', 15000, LENSES, 0, 'b'], ['bold_square_03', 'Bold square frames', 18000, LENSES, 0, 'b'], ['cat_eye_04', 'Cat-eye frames', 18000, LENSES, 0, 'f']] };
+  const WEAR = {}; for (const [cat, list] of Object.entries(WEARDEF)) for (const [id, n, p, cols, formal, cut] of list) for (const c of cols) WEAR[`${id}.${c}`] = { k: `${id}.${c}`, cat, id, n: cat === 'glasses' ? `${n}, ${LENSN[c]}` : `${n}, ${CN(c)}`, base: n, col: c, p, formal, cut };
   // the older wardrobe keys still work
   const OLDWEAR = { shirt_white: 'open_collar.white', shirt_blue: 'open_collar.paleblue', tee: 'crew_neck_tee.grey', suit: 'suit_tie.navy', suit_char: 'suit_tie.charcoal', coat: 'wool_coat.camel', vest: 'collared_shirt_puffer_vest.navy', zip: 'masculine_three_quarter_zip.navy', denim: 'denim_jacket.denim', hoodie: 'hoodie.charcoal' };
   for (const [o, n] of Object.entries(OLDWEAR)) if (CATALOG.find(c => c.k === o)) CATALOG.splice(CATALOG.findIndex(c => c.k === o), 1);
@@ -8329,7 +8333,7 @@ window.GAME = (() => {
     const ch = S.char; if (ch) Object.assign(L, { fem: ch.fem, skin: ch.skin, hairC: ch.hairC, face: ch.face, age: 'young' }); else { L.fem = false; L.face = null; }
     Object.assign(L, { garment: c.g, top: c.top, bot: c.bot, shirt: c.shirt, tie: c.tie, coat: !!G.coat, hood: c.g === 'hoodie', kind: G.jacket && !G.coat ? 'suit' : G.coat ? 'coat' : 'casual', pr: null });
     const h = S.hatOn && WEAR[S.hatOn]; L.hatId = h ? h.id : 'none'; L.hatC = h ? WEARC[h.col] : null; L.hat = !!h;
-    const gl = S.glassesOn && WEAR[S.glassesOn]; L.glassesId = gl ? gl.id : 'none'; L.glasses = !!gl;
+    const gl = S.glassesOn && WEAR[S.glassesOn]; L.glassesId = gl ? gl.id : 'none'; L.glasses = !!gl; L.lens = gl ? gl.col : 'clear';
     if (st.hairId) { L.hairId = st.hairId; L.hair = HAIRSTREET[st.hairId] || 'short'; } if (st.fhId) { L.fhId = st.fhId; L.beard = { stubble_01: 'stubble', short_beard_02: 'beard', full_beard_03: 'full', moustache_04: 'mous', fancy_moustache_05: 'mous' }[st.fhId] || null; } }
   const wearing = () => clothFor(S.wearing);
   // ---------------- character creation ----------------
@@ -8342,19 +8346,19 @@ window.GAME = (() => {
       eyeCols: Object.entries(O.EYEC).filter(([k]) => k !== 'purple' && k !== 'red').map(([k, n]) => [k, n]), brows: Object.keys(M.brows).filter(b => b.startsWith(g)).map(b => [b, ccWord(b)]),
       noses: M.noses.map(n => [n, ccWord(n)]), mouths: Object.keys(M.mouths).filter(m => m.startsWith(g) || m.startsWith('shared')).map(m => [m, ccWord(m)]),
       skins: O.ENGSKIN, hairCols: Object.entries(O.HAIRC), cuts: CUTS[g].map(([id, n]) => [id, n]), shaves: fem ? [] : SHAVES.map(([id, n]) => [id, n]),
-      outfits: Object.values(WEAR).filter(w => w.cat === 'clothes' && w.p <= 9000 && (w.cut === 'b' || (w.cut === 'f') === fem)), glasses: [{ k: '_none', n: 'No glasses' }, ...Object.values(WEAR).filter(w => w.cat === 'glasses' && (w.cut === 'b' || (w.cut === 'f') === fem))] }; }
+      outfits: Object.values(WEAR).filter(w => w.cat === 'clothes' && w.p <= 9000 && (w.cut === 'b' || (w.cut === 'f') === fem)), frames: [['_none', 'No glasses'], ...WEARDEF.glasses.filter(w => w[5] === 'b' || (w[5] === 'f') === fem).map(w => [w[0], w[1]])], lenses: LENSES.map(l => [l, LENSN[l][0].toUpperCase() + LENSN[l].slice(1)]) }; }
   const ccPick = a => a[Math.floor(Math.random() * a.length)];
   function ccRandom(C, keepFem) { const fem = keepFem ? C.fem : Math.random() < .5, O = ccOpts(fem), tone = 1 + Math.floor(Math.random() * 6);
     Object.assign(C, { fem, tone, head: ccPick(O.heads.slice(0, 3))[0], eye: ccPick(O.eyes)[0], eyeCol: ccPick(tone >= 4 ? O.eyeCols.filter(([k]) => /brown|black/.test(k)) : O.eyeCols)[0], brow: ccPick(O.brows)[0], nose: ccPick(O.noses)[0], mouth: ccPick(O.mouths)[0],
       hairId: ccPick(O.cuts.filter(c => c[0] !== 'none'))[0], hairCol: ccPick(O.hairCols.filter(([n]) => n !== 'Gray' && n !== 'White' && (tone < 4 || /Black|brown/i.test(n))))[0], fhId: fem ? 'none' : ccPick(['none', 'none', 'stubble_01', 'short_beard_02']),
-      outfit: ccPick(O.outfits).k, glasses: Math.random() < .2 ? ccPick(O.glasses.slice(1)).k : '_none' }); }
+      outfit: ccPick(O.outfits).k, frame: Math.random() < .2 ? ccPick(O.frames.slice(1))[0] : '_none', lens: 'clear' }); }
   // the choices go straight onto the save, so the preview is the real thing
-  function ccApply(C) { const O = PORTRAIT.opts; S.player.name = C.name.trim() || 'Alex';
+  function ccApply(C) { const O = PORTRAIT.opts; S.player.name = C.name.trim() || 'Alex'; if (!ccOpts(C.fem).frames.some(f => f[0] === C.frame)) C.frame = '_none'; C.glasses = C.frame === '_none' ? '_none' : `${C.frame}.${C.lens}`;
     S.char = { fem: C.fem, skin: O.ENGSKIN[C.tone - 1].slice(), hairC: O.HAIRC[C.hairCol].slice(), hairCol: C.hairCol, face: { head: C.head, eye: C.eye, eyeCol: C.eyeCol, brow: C.brow, nose: C.nose, mouth: C.mouth } };
     S.style = { hairId: C.hairId, fhId: C.fem ? 'none' : C.fhId };
     S.wardrobe = [...new Set(['open_collar.white', C.outfit, ...(C.glasses !== '_none' ? [C.glasses] : [])])]; S.owned = S.owned || {}; for (const k of S.wardrobe) S.owned[k] = true;
     S.wearing = C.outfit; S.glassesOn = C.glasses === '_none' ? null : C.glasses; applyOutfit(); }
-  function charCreate(done) { const C = { name: '', tab: 'body' }; ccRandom(C); G.hold = true;
+  function charCreate(done) { const C = { name: '', tab: 'body', frame: '_none', lens: 'clear' }; ccRandom(C); G.hold = true;
     const box = document.createElement('div'); box.id = 'cc'; document.body.appendChild(box);
     const chips = (k, list, val) => `<div class="ccchips">${list.map(([id, n]) => `<button data-cc="${k}:${id}" class="${val === id ? 'on' : ''}">${esc(n)}</button>`).join('')}</div>`;
     const swatch = (k, list, val) => `<div class="ccsw">${list.map(([id, rgb]) => `<button data-cc="${k}:${id}" class="${String(val) === String(id) ? 'on' : ''}" style="background:rgb(${rgb.join(',')})" title="${esc(String(id))}"></button>`).join('')}</div>`;
@@ -8364,7 +8368,7 @@ window.GAME = (() => {
       if (C.tab === 'face') return sec('Eyes', chips('eye', O.eyes, C.eye)) + sec('Eye color', chips('eyeCol', O.eyeCols, C.eyeCol)) + sec('Eyebrows', chips('brow', O.brows, C.brow)) + sec('Nose', chips('nose', O.noses, C.nose)) + sec('Mouth', chips('mouth', O.mouths, C.mouth));
       if (C.tab === 'hair') return sec('Hairstyle', chips('hairId', O.cuts, C.hairId)) + sec('Hair color', swatch('hairCol', O.hairCols, C.hairCol)) + (O.shaves.length ? sec('Facial hair', chips('fhId', O.shaves, C.fhId)) : '');
       return sec('What you wear', `<div class="ccchips">${O.outfits.map(w => `<button data-cc="outfit:${w.k}" class="${C.outfit === w.k ? 'on' : ''}"><i style="background:rgb(${WEARC[w.col].join(',')})"></i>${esc(w.n)}</button>`).join('')}</div>`)
-        + sec('Glasses', chips('glasses', O.glasses.map(w => [w.k, w.n]), C.glasses)) + '<p class="ccnote">You also own a white work shirt. More clothes, hats and glasses are at the shops, and the barber can change your hair.</p>'; }
+        + sec('Glasses', chips('frame', O.frames, C.frame)) + (C.frame !== '_none' ? sec('Lenses', chips('lens', O.lenses, C.lens)) : '') + '<p class="ccnote">You also own a white work shirt. More clothes, hats and glasses are at the shops, and the barber can change your hair.</p>'; }
     function paintPv() { const cv = box.querySelector('#ccpv'); if (!cv) return; const g = cv.getContext('2d'); g.clearRect(0, 0, cv.width, cv.height);
       if (!PORTRAIT.ready) return setTimeout(paintPv, 150); player.L.pr = null; PORTRAIT.paint(g, player.L, 'smile', cv.width, cv.height); }
     function draw() { ccApply(C);
@@ -8383,7 +8387,7 @@ window.GAME = (() => {
   // the preview: your look with one thing changed
   function previewLook(ch) { const L = JSON.parse(JSON.stringify(player.L)); L.pr = null;
     if (ch.wear) { const w = WEAR[ch.wear]; if (w.cat === 'clothes') { const c = clothFor(ch.wear), G = GARM[c.g] || {}; Object.assign(L, { garment: c.g, top: c.top, bot: c.bot, shirt: c.shirt, tie: c.tie, coat: !!G.coat, hood: c.g === 'hoodie' }); }
-      else if (w.cat === 'hats') { L.hatId = w.id; L.hatC = WEARC[w.col]; } else { L.glassesId = w.id; } }
+      else if (w.cat === 'hats') { L.hatId = w.id; L.hatC = WEARC[w.col]; } else { L.glassesId = w.id; L.lens = w.col; } }
     if (ch.noHat) L.hatId = 'none'; if (ch.noGlasses) L.glassesId = 'none'; if (ch.hairId) { L.hairId = ch.hairId; L.hatId = 'none'; } if (ch.fhId) L.fhId = ch.fhId; return L; }
   // the fitting room panel, used by the shop, your wardrobe and the barber
   let FIT = null;
@@ -8394,7 +8398,7 @@ window.GAME = (() => {
       items = (FIT.tab === 'cuts' ? CUTS[fem ? 'feminine' : 'masculine'] : fem ? [] : SHAVES).map(([id, n, p]) => ({ key: id, n, p, cur: id === cur, ch: FIT.tab === 'cuts' ? { hairId: id } : { fhId: id } })); }
     else { const list = Object.values(WEAR).filter(w => w.cat === FIT.tab && fitsMe(w) && (mode === 'shop' || own.includes(w.k)));
       const on = FIT.tab === 'clothes' ? S.wearing : FIT.tab === 'hats' ? S.hatOn : S.glassesOn;
-      items = list.map(w => ({ key: w.k, n: w.n, p: w.p, cur: on === w.k, owned: own.includes(w.k), inCart: !!S.cart[w.k], sw: WEARC[w.col], formal: w.formal, ch: { wear: w.k } }));
+      items = list.map(w => ({ key: w.k, n: w.n, p: w.p, cur: on === w.k, owned: own.includes(w.k), inCart: !!S.cart[w.k], sw: w.cat === 'glasses' ? LENSC[w.col] : WEARC[w.col], formal: w.formal, ch: { wear: w.k } }));
       if (mode === 'wardrobe' && FIT.tab !== 'clothes') items.unshift({ key: '_none', n: FIT.tab === 'hats' ? 'No hat' : 'No glasses', cur: !on, ch: FIT.tab === 'hats' ? { noHat: true } : { noGlasses: true } }); }
     const sel = items.find(i => i.key === FIT.sel) || items.find(i => i.cur) || items[0];
     const smart = f => f >= 5 ? 'Best at work' : f >= 3 ? 'Good for work' : f >= 1 ? 'Smart casual' : f <= -1 ? 'Too casual for work' : 'Casual';

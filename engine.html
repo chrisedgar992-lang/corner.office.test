@@ -3666,7 +3666,7 @@ function drawPerson3D(p, isPlayer, umb) {
     const gl = L.glassesId || (L.glasses ? 'medium_rectangular_02' : 'none');
     if (gl !== 'none') { ctx.strokeStyle = 'rgba(14,14,16,.9)'; ctx.lineWidth = Math.max(.8, k * (gl === 'bold_square_03' ? .009 : .005));
       for (const s2 of [-1, 1]) { const e = atH(s2 * .032, .092), q = PP(e[0], e[1], hz + .015, p.x, p.y), r = Math.max(1.6, k * .019); ctx.beginPath();
-        if (gl === 'thin_round_01') ctx.arc(q[0], q[1], r, 0, TAU); else if (gl === 'cat_eye_04') { ctx.moveTo(q[0] - r, q[1] - r * .4); ctx.lineTo(q[0] + r * 1.1, q[1] - r * .9); ctx.lineTo(q[0] + r, q[1] + r * .6); ctx.lineTo(q[0] - r, q[1] + r * .6); ctx.closePath(); } else ctx.rect(q[0] - r, q[1] - r * .7, r * 2, r * 1.4); ctx.stroke(); } }
+        if (gl === 'thin_round_01') ctx.arc(q[0], q[1], r, 0, TAU); else if (gl === 'cat_eye_04') { ctx.moveTo(q[0] - r, q[1] - r * .4); ctx.lineTo(q[0] + r * 1.1, q[1] - r * .9); ctx.lineTo(q[0] + r, q[1] + r * .6); ctx.lineTo(q[0] - r, q[1] + r * .6); ctx.closePath(); } else ctx.rect(q[0] - r, q[1] - r * .7, r * 2, r * 1.4); const LT = { black: 'rgba(20,22,26,.85)', brown: 'rgba(110,70,36,.5)', blue: 'rgba(40,90,190,.4)', red: 'rgba(190,40,40,.4)', yellow: 'rgba(225,190,40,.4)' }[L.lens]; if (LT) { ctx.fillStyle = LT; ctx.fill(); } ctx.stroke(); } }
   }
   const hid = L.hatId || (L.beanie ? 'beanie' : L.hat ? (L.cop ? 'police' : 'baseball_cap') : 'none'), hc2 = t(L.hatC || L.beanie || [206, 200, 170], hz);
   if (hid === 'beanie') capsule(B, { x: h0[0], y: h0[1], z: hz - .01, rr: .088, rf: .1 }, { x: h0[0], y: h0[1], z: hz + .1, rr: .06, rf: .065 }, hc2, out);

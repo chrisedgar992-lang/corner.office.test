@@ -254,14 +254,15 @@ function hatCut(id) {
     const d = fullPixels(hatAsset(id)).d.data, bot = new Array(W).fill(-1);
     for (let x = 0; x < W; x++) for (let y = H - 1; y >= 0; y--) if (d[(y * W + x) * 4 + 3] > 100) { bot[x] = y; break; }
     let a = bot.findIndex(v => v >= 0), b = W - 1 - [...bot].reverse().findIndex(v => v >= 0);
-    for (let x = 0; x < a; x++) bot[x] = bot[a]; for (let x = b + 1; x < W; x++) bot[x] = bot[b];
+    // past the hat's edge the cut tapers away, so hair behind the brim is hidden but a ponytail below it still hangs out
+    for (let x = 0; x < a; x++) bot[x] = Math.round(bot[a] - (a - x) * 2.5); for (let x = b + 1; x < W; x++) bot[x] = Math.round(bot[b] - (x - b) * 2.5);
     const c = cv(), g = c.getContext('2d'); g.fillStyle = '#000'; for (let x = 0; x < W; x++) g.fillRect(x, 0, 1, Math.max(0, bot[x] - 6));
     return c;
   });
 }
-function underHat(L, id, key) {
+function underHat(L, id, key, head) {
   if (!L || id === 'none') return L;
-  return memo(`uh|${key}|${id}`, () => { const c = cv(), g = c.getContext('2d'); g.drawImage(L.c, L.x, L.y); g.globalCompositeOperation = 'destination-out'; g.drawImage(hatCut(id), 0, 0); return { c, x: 0, y: 0 }; });
+  return memo(`uh|${key}|${id}|${head || ''}`, () => { const c = cv(), g = c.getContext('2d'); g.drawImage(L.c, L.x, L.y); g.globalCompositeOperation = 'destination-out'; g.drawImage(head ? warpToHead({ c: hatCut(id), x: 0, y: 0 }, head, 'hcut' + id).c : hatCut(id), 0, 0); return { c, x: 0, y: 0 }; });
 }
 
 // lens tints: black is near opaque for sunglasses, colours are a light tint
@@ -283,31 +284,55 @@ function partsFor(s) {
   const eyeKey = `eye/${s.eye}_${e.eye}/${s.eyeCol}`, browKey = `brow/${s.brow}/${e.brow}`, mouthKey = `mouth/${s.mouth}/${e.mouth}`;
   return { eyeKey, browKey, mouthKey };
 }
+// ---------- fitting hair, hats and glasses to every head ----------
+// The hair and hat art is drawn for the masculine average round head. Other heads are narrower, wider, taller or shorter, so
+// each layer is warped row by row from that head's skull outline onto the target's. Heads with hand-fitted art keep it.
+const REFHEAD = 'masculine_average_round', HEADM = {};
+function headM(head) { if (HEADM[head]) return HEADM[head]; const d = fullPixels('head/' + head).d.data, A = (x, y) => d[(y * W + x) * 4 + 3] > 128;
+  let top = 0; for (let y = 0; y < H && !top; y++) for (let x = 0; x < W; x++) if (A(x, y)) { top = y; break; }
+  const L = [], R = []; for (let k = 0; k <= 160; k++) { const y = top + k; let l = -1, r = -1; for (let x = 0; x < W; x++) if (A(x, y)) { if (l < 0) l = x; r = x; } L.push(l); R.push(r); }
+  return HEADM[head] = { top, L, R }; }
+const smooth = (t, a, b) => t <= a ? 1 : t >= b ? 0 : 1 - (t - a) / (b - a);
+function warpToHead(Lyr, head, key) {
+  if (!Lyr || head === REFHEAD || !IMG['head/' + head]) return Lyr;
+  return memo(`wp|${head}|${key}`, () => { const src = cv(); src.getContext('2d').drawImage(Lyr.c, Lyr.x, Lyr.y); const sd = src.getContext('2d').getImageData(0, 0, W, H).data;
+    const c = cv(), g = c.getContext('2d'), out = g.createImageData(W, H), od = out.data, T = headM(head), Rf = headM(REFHEAD), dy = T.top - Rf.top;
+    for (let y = 0; y < H; y++) { const k = y - T.top, w = smooth(k, 170, 330), kl = Math.max(16, Math.min(96, k)), kr = Math.max(16, Math.min(150, k)), Lt = T.L[kl], Rt = T.R[kr], Lr = Rf.L[kl], Rr = Rf.R[kr], sc = (Rr - Lr) / Math.max(1, Rt - Lt), sy = y - dy * smooth(k, 200, 360);
+      if (sy < 0 || sy > H - 1) continue;
+      for (let x = 0; x < W; x++) { const sx = x + (Lr + (x - Lt) * sc - x) * w; if (sx < 0 || sx > W - 1) continue; fitSample(sd, sx, sy, od, (y * W + x) * 4); } }
+    g.putImageData(out, 0, 0); return { c, x: 0, y: 0 }; }); }
+// glasses arms stop where they meet the ear and tuck behind it. The front edge of each head's ear, measured on the art.
+const EARX = { feminine_average_long: 163, feminine_average_round: 156, feminine_fat_full: 149, feminine_fit_defined: 157, feminine_older_soft: 139, feminine_older_sunken: 148, masculine_average_long: 155, masculine_average_round: 151, masculine_fat_full: 144, masculine_fit_defined: 158, masculine_older_soft: 139, masculine_older_sunken: 139 };
+function glassesLayer(id, head, fy) { return memo(`gl|${id}|${head}|${fy}`, () => { const G = IMG['gl/' + id], c = cv(), g = c.getContext('2d'); g.drawImage(G.im, G.x, G.y + fy);
+  const ex = EARX[head] || 150, gr = g.createLinearGradient(ex - 8, 0, ex + 2, 0); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+  g.globalCompositeOperation = 'destination-out'; g.fillStyle = gr; g.fillRect(0, 0, ex + 2, H); return { c, x: 0, y: 0 }; }); }
+
 function draw(ctx, s, scale = 1, mirror = s.mirror) {
   const col = s.hairRGB || HAIRC[s.hairCol] || HAIRC.Brown, hk = s.hairRGB ? s.hairRGB.join() : s.hairCol, P = partsFor(s);
   ctx.save(); ctx.scale(scale, scale); if (mirror) { ctx.translate(W, 0); ctx.scale(-1, 1); }
   const put = L => { if (L) ctx.drawImage(L.c, L.x, L.y); };
   // the fat heads have their own hair and beard fitted to their wider outline
   const fit = k => IMG['fit/' + s.head + '/' + k] ? 'fit/' + s.head + '/' + k : k;
-  if (IMG['hairb/' + s.hair]) put(underHat(tinted(fit('hairb/' + s.hair), col), s.hat, 'b' + s.head + s.hair + hk));
+  const own = k => !!IMG['fit/' + s.head + '/' + k], wk = (Lyr, k, key) => own(k) ? Lyr : warpToHead(Lyr, s.head, key);
+  if (IMG['hairb/' + s.hair]) put(wk(underHat(tinted(fit('hairb/' + s.hair), col), s.hat, 'b' + s.head + s.hair + hk, own('hairb/' + s.hair) ? s.head : null), 'hairb/' + s.hair, 'hb' + s.hair + hk + s.hat));
   put(headLayer(s.head, s.tone));
   if (s.cloth.startsWith('sp:')) put(sportLayer(s.head, s.cloth.slice(3), s.team, s.num)); else put(clothingLayer(s.head, s.cloth, s.clothRGB || CLOTHC[s.clothCol]));
   // the older heads have jowls and folds painted lower, so their features sit a little lower
   const fy = FACEDY[s.head] ?? FACE_DOWN; ctx.save(); ctx.translate(0, fy);
   if (IMG[P.mouthKey]) put(lipLayer(P.mouthKey, s.tone));
-  if (s.fh !== 'none' && IMG['fh/' + s.fh]) { const fk = fit('fh/' + s.fh), L = tinted(fk, col); put(mouthGap(/stubble|short_beard/.test(s.fh) ? clippedTo(L, s.head, fk + col, fy) : L, P.mouthKey, fk + col + s.head)); }
+  if (s.fh !== 'none' && IMG['fh/' + s.fh]) { const fk = fit('fh/' + s.fh), L = tinted(fk, col); const L2 = own('fh/' + s.fh) ? L : warpToHead(L, s.head, 'fh' + s.fh + col); put(mouthGap(/stubble|short_beard/.test(s.fh) ? clippedTo(L2, s.head, fk + col + 'w', fy) : L2, P.mouthKey, fk + col + s.head)); }
   if (IMG[P.eyeKey]) ctx.drawImage(IMG[P.eyeKey].im, IMG[P.eyeKey].x, IMG[P.eyeKey].y);
   if (IMG[P.browKey]) put(tinted(P.browKey, col));
   ctx.restore();
-  if (s.hair !== 'none' && IMG[fit('hairf/' + s.hair)]) put(underHat(tinted(fit('hairf/' + s.hair), col), s.hat, 'f' + s.head + s.hair + hk));
+  if (s.hair !== 'none' && IMG[fit('hairf/' + s.hair)]) put(wk(underHat(tinted(fit('hairf/' + s.hair), col), s.hat, 'f' + s.head + s.hair + hk, own('hairf/' + s.hair) ? s.head : null), 'hairf/' + s.hair, 'hf' + s.hair + hk + s.hat));
   const nk = `nose/${s.nose}/${s.tone}`; if (IMG[nk]) ctx.drawImage(IMG[nk].im, IMG[nk].x, IMG[nk].y + fy);
   // glasses go over the nose, lenses clear or darkened for sunglasses
   if (s.glasses !== 'none' && IMG['gl/' + s.glasses]) {
     if (s.lens !== 'clear') put({ ...lensLayer(s.glasses, s.lens), y: lensLayer(s.glasses, s.lens).y + fy });
-    const G = IMG['gl/' + s.glasses]; ctx.drawImage(G.im, G.x, G.y + fy);
+    put(glassesLayer(s.glasses, s.head, fy));
   }
   if (s.hat.startsWith('sp:')) { const k = kitArt(s.hat.slice(3), s.team, null); put({ c: k.c, x: 0, y: 0 }); }
-  else if (s.hat !== 'none' && IMG['hw/' + s.hat]) put(hatLayer(s.hat, s.hatRGB || HATC[s.hatCol]));
+  else if (s.hat !== 'none' && IMG['hw/' + s.hat]) { const hc = s.hatRGB || HATC[s.hatCol]; put(warpToHead(hatLayer(s.hat, hc), s.head, 'hat' + s.hat + hc)); }
   ctx.restore();
 }
 
@@ -356,7 +381,7 @@ function fromLook(L) {
   if (typeof assignGarment === 'function' && !L.set) assignGarment(L);
   s.hairRGB = hc; s.hair = L.hairId || pk((HAIRMAP[g][L.hair] || HAIRMAP[g][g === 'feminine' ? 'long' : 'short']));
   s.fh = L.fhId ? L.fhId : L.fem ? 'none' : L.beard === 'stubble' ? 'stubble_01' : L.beard === 'beard' ? pk(['short_beard_02', 'full_beard_03']) : L.beard === 'mous' ? 'moustache_04' : 'none';
-  s.glasses = L.glassesId ? L.glassesId : L.glasses ? pk(META.glasses) : 'none'; s.lens = 'clear';
+  s.glasses = L.glassesId ? L.glassesId : L.glasses ? pk(META.glasses) : 'none'; s.lens = L.lens && LENS[L.lens] ? L.lens : 'clear';
   const fem = L.fem, kind = L.cop ? 'police' : L.kind;
   if (typeof assignGarment === 'function' && !L.set) assignGarment(L);
   s.cloth = L.garment ? L.garment : kind === 'police' ? (fem ? 'police_feminine' : 'police_masculine') : kind === 'suit' ? (fem ? 'feminine_blazer' : L.tie ? 'suit_tie' : 'open_collar') : kind === 'coat' ? 'wool_coat' : kind === 'hivis' ? 'hi_vis_vest'
