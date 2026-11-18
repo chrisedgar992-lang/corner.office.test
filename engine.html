@@ -3721,7 +3721,7 @@ function drawCityMap(g, ox, oy, sc, rot, w, h, opts = {}) {
   if (filterOn('parking') && C.PARKING && (opts.big ? sc > .3 : true)) for (const [x, y] of C.PARKING) { if (x < vw.x0 || x > vw.x1 || y < vw.y0 || y > vw.y1) continue; g.save(); g.translate(x, y); g.rotate(-rot); g.scale(1 / sc, 1 / sc); drawMapIcon(g, 'parking', opts.big ? 7 : 6); g.restore(); }
   // places you can go in, each with its type's symbol
   const isz = opts.big ? (sc > .9 ? 11 : sc > .45 ? 8 : 0) : 7;
-  for (const d of DOORS) { if (d.x < vw.x0 || d.x > vw.x1 || d.y < vw.y0 || d.y > vw.y1) continue; const cat = doorCat(d), main = cat === 'home' || cat === 'work';
+  for (const d of DOORS) { if (d.x < vw.x0 || d.x > vw.x1 || d.y < vw.y0 || d.y > vw.y1) continue; const cat = doorCat(d), main = cat === 'home' || cat === 'work'; if (cat === 'none') continue;
     if (!filterOn(cat)) continue;
     g.save(); g.translate(d.x, d.y); g.rotate(-rot); g.scale(1 / sc, 1 / sc);
     if (isz || main) drawMapIcon(g, cat, main ? Math.max(isz, 9) + 2 : isz); else { g.fillStyle = MAPCAT[cat].c; g.beginPath(); g.arc(0, 0, 2.2, 0, TAU); g.fill(); }
@@ -3736,8 +3736,9 @@ function drawCityMap(g, ox, oy, sc, rot, w, h, opts = {}) {
   const lab = (t, x, y, s) => { g.save(); g.translate(x, y); g.rotate(-rot); g.scale(1 / sc, 1 / sc); g.font = `600 ${s}px system-ui,sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 3; g.strokeStyle = 'rgba(10,12,14,.75)'; g.strokeText(t, 0, 0); g.fillText(t, 0, 0); g.restore(); };
   if (opts.big) {
     for (const l of C.labels) { if (l.kind === 'small' && sc < .3) continue; g.fillStyle = l.kind === 'park' ? 'rgba(160,210,160,.9)' : 'rgba(230,232,236,.8)'; lab(l.t, l.x, l.y, Math.max(9, (l.size || 11) * .8)); }
-    g.fillStyle = '#f0c46a'; for (const d of DOORS) if (d.to) lab(d.to === 'house' ? 'HOME' : 'WORK', d.x, d.y - 22 / sc, 11);
-    if (sc > 1.1) { g.fillStyle = 'rgba(230,232,236,.85)'; for (const d of DOORS) { if (d.x < vw.x0 || d.x > vw.x1 || d.y < vw.y0 || d.y > vw.y1 || d.to || !filterOn(doorCat(d))) continue; lab(d.name, d.x, d.y + 17 / sc, 10); } }
+    // the game says where home and work are now. The engine on its own marks its demo doors
+    g.fillStyle = '#f0c46a'; for (const p of (window.mapPins ? window.mapPins() : DOORS.filter(d => d.to === 'house' || d.to === 'lobby').map(d => ({ t: d.to === 'house' ? 'HOME' : 'WORK', x: d.x, y: d.y })))) lab(p.t, p.x, p.y - 22 / sc, 11);
+    if (sc > 1.1) { g.fillStyle = 'rgba(230,232,236,.85)'; for (const d of DOORS) { if (d.x < vw.x0 || d.x > vw.x1 || d.y < vw.y0 || d.y > vw.y1 || d.to === 'house' || d.to === 'lobby' || ['home', 'work', 'none'].includes(doorCat(d)) || !filterOn(doorCat(d))) continue; lab(d.name, d.x, d.y + 17 / sc, 10); } }
     g.restore(); g.save();
     const SB = [50, 100, 200, 500, 1000].find(m => m * sc > 90) || 1000, bx = 24, by = h - 24, L = SB * sc; g.strokeStyle = '#cfd4da'; g.lineWidth = 2; g.beginPath(); g.moveTo(bx, by - 5); g.lineTo(bx, by); g.lineTo(bx + L, by); g.lineTo(bx + L, by - 5); g.stroke();
     g.fillStyle = '#cfd4da'; g.font = '11px system-ui,sans-serif'; g.textAlign = 'center'; g.fillText(SB >= 1000 ? '1 km' : SB + ' m', bx + L / 2, by - 8);
@@ -3790,7 +3791,7 @@ const MAPCAT = {
   home: { c: '#5aa05a', t: 'Home' }, work: { c: '#d6a347', t: 'Work' }, cafe: { c: '#9a6a44', t: 'Cafe' }, bar: { c: '#c78a2c', t: 'Bar' }, lounge: { c: '#8a5cb8', t: 'Cocktail and wine bar' },
   restaurant: { c: '#c0504a', t: 'Restaurant' }, takeout: { c: '#e07b2e', t: 'Takeout' }, club: { c: '#c8458e', t: 'Nightclub' }, dealer: { c: '#3f7fc4', t: 'Car dealer' }, parking: { c: '#2f6fd0', t: 'Parking' }, shop: { c: '#3a9a8a', t: 'Shop, opens later' } };
 const VK2 = { cafe: 'cafe', bar: 'bar', studentbar: 'bar', sportsbar: 'bar', cocktail: 'lounge', winebar: 'lounge', restaurant: 'restaurant', fine: 'restaurant', seafood: 'restaurant', cheapeats: 'takeout', takeout: 'takeout', foodcourt: 'takeout', fastfood: 'takeout', nightclub: 'club', club: 'club' };
-function doorCat(d) { if (d.k === 'home' || d.to === 'house') return 'home'; if (d.k === 'work' || d.to === 'lobby') return 'work'; if (d.k === 'dealer' || d.dealer) return 'dealer'; return d.vk || VK2[d.use || d.venue] || 'shop'; }
+function doorCat(d) { if (window.mapRole) { const r = window.mapRole(d); if (r) return r; if (d.k === 'home' || d.to === 'house' || d.k === 'work' || d.to === 'lobby') return 'none'; } if (d.k === 'home' || d.to === 'house') return 'home'; if (d.k === 'work' || d.to === 'lobby') return 'work'; if (d.k === 'dealer' || d.dealer) return 'dealer'; return d.vk || VK2[d.use || d.venue] || 'shop'; }
 const MAPOFF = new Set(); const filterOn = cat => !MAPOFF.has(cat);
 // a white symbol on a coloured disc, drawn at the origin, s = radius in pixels
 function drawMapIcon(g, cat, s) {
@@ -5852,7 +5853,7 @@ function frameBody(now) {
     if (player.driving) { cx = tx; cy = ty; } else { cx += (tx - cx) * Math.min(1, dt * 4); cy += (ty - cy) * Math.min(1, dt * 4); }
   }
   k = PXM * zoom; CT = Math.cos(ROT); ST = Math.sin(ROT);
-  const t0 = performance.now(); if ((typeof LOOKOUT !== 'undefined' && LOOKOUT.open) || window.SKIP_RENDER) return; if (INSIDE) renderInterior(); else renderScene(); renderMs = renderMs * .9 + (performance.now() - t0) * .1;
+  const t0 = performance.now(); if ((typeof LOOKOUT !== 'undefined' && LOOKOUT.open) || window.SKIP_RENDER) return; if (INSIDE) renderInterior(); else renderScene(); if (window.GAME && GAME.drawOver) { ctx.setTransform(DPR, 0, 0, DPR, 0, 0); GAME.drawOver(ctx); } renderMs = renderMs * .9 + (performance.now() - t0) * .1;
   const hh = Math.floor(hour) % 24, mm = Math.floor((hour - Math.floor(hour)) * 60);
   ctEl.textContent = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
   cwEl.textContent = { clear: 'Clear', rain: 'Rain', snow: 'Snow', fog: 'Fog' }[weather] + ' · ' + { spring: 'Spring', summer: 'Summer', autumn: 'Autumn', winter: 'Winter' }[season] + (event === 'halloween' ? ' · Halloween' : event === 'december' ? ' · Holidays' : event === 'nye' ? " · New Year's Eve" : '');

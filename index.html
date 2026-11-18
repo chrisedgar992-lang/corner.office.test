@@ -3878,7 +3878,7 @@ function drawCityMap(g, ox, oy, sc, rot, w, h, opts = {}) {
   if (filterOn('parking') && C.PARKING && (opts.big ? sc > .3 : true)) for (const [x, y] of C.PARKING) { if (x < vw.x0 || x > vw.x1 || y < vw.y0 || y > vw.y1) continue; g.save(); g.translate(x, y); g.rotate(-rot); g.scale(1 / sc, 1 / sc); drawMapIcon(g, 'parking', opts.big ? 7 : 6); g.restore(); }
   // places you can go in, each with its type's symbol
   const isz = opts.big ? (sc > .9 ? 11 : sc > .45 ? 8 : 0) : 7;
-  for (const d of DOORS) { if (d.x < vw.x0 || d.x > vw.x1 || d.y < vw.y0 || d.y > vw.y1) continue; const cat = doorCat(d), main = cat === 'home' || cat === 'work';
+  for (const d of DOORS) { if (d.x < vw.x0 || d.x > vw.x1 || d.y < vw.y0 || d.y > vw.y1) continue; const cat = doorCat(d), main = cat === 'home' || cat === 'work'; if (cat === 'none') continue;
     if (!filterOn(cat)) continue;
     g.save(); g.translate(d.x, d.y); g.rotate(-rot); g.scale(1 / sc, 1 / sc);
     if (isz || main) drawMapIcon(g, cat, main ? Math.max(isz, 9) + 2 : isz); else { g.fillStyle = MAPCAT[cat].c; g.beginPath(); g.arc(0, 0, 2.2, 0, TAU); g.fill(); }
@@ -3893,8 +3893,9 @@ function drawCityMap(g, ox, oy, sc, rot, w, h, opts = {}) {
   const lab = (t, x, y, s) => { g.save(); g.translate(x, y); g.rotate(-rot); g.scale(1 / sc, 1 / sc); g.font = `600 ${s}px system-ui,sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 3; g.strokeStyle = 'rgba(10,12,14,.75)'; g.strokeText(t, 0, 0); g.fillText(t, 0, 0); g.restore(); };
   if (opts.big) {
     for (const l of C.labels) { if (l.kind === 'small' && sc < .3) continue; g.fillStyle = l.kind === 'park' ? 'rgba(160,210,160,.9)' : 'rgba(230,232,236,.8)'; lab(l.t, l.x, l.y, Math.max(9, (l.size || 11) * .8)); }
-    g.fillStyle = '#f0c46a'; for (const d of DOORS) if (d.to) lab(d.to === 'house' ? 'HOME' : 'WORK', d.x, d.y - 22 / sc, 11);
-    if (sc > 1.1) { g.fillStyle = 'rgba(230,232,236,.85)'; for (const d of DOORS) { if (d.x < vw.x0 || d.x > vw.x1 || d.y < vw.y0 || d.y > vw.y1 || d.to || !filterOn(doorCat(d))) continue; lab(d.name, d.x, d.y + 17 / sc, 10); } }
+    // the game says where home and work are now. The engine on its own marks its demo doors
+    g.fillStyle = '#f0c46a'; for (const p of (window.mapPins ? window.mapPins() : DOORS.filter(d => d.to === 'house' || d.to === 'lobby').map(d => ({ t: d.to === 'house' ? 'HOME' : 'WORK', x: d.x, y: d.y })))) lab(p.t, p.x, p.y - 22 / sc, 11);
+    if (sc > 1.1) { g.fillStyle = 'rgba(230,232,236,.85)'; for (const d of DOORS) { if (d.x < vw.x0 || d.x > vw.x1 || d.y < vw.y0 || d.y > vw.y1 || d.to === 'house' || d.to === 'lobby' || ['home', 'work', 'none'].includes(doorCat(d)) || !filterOn(doorCat(d))) continue; lab(d.name, d.x, d.y + 17 / sc, 10); } }
     g.restore(); g.save();
     const SB = [50, 100, 200, 500, 1000].find(m => m * sc > 90) || 1000, bx = 24, by = h - 24, L = SB * sc; g.strokeStyle = '#cfd4da'; g.lineWidth = 2; g.beginPath(); g.moveTo(bx, by - 5); g.lineTo(bx, by); g.lineTo(bx + L, by); g.lineTo(bx + L, by - 5); g.stroke();
     g.fillStyle = '#cfd4da'; g.font = '11px system-ui,sans-serif'; g.textAlign = 'center'; g.fillText(SB >= 1000 ? '1 km' : SB + ' m', bx + L / 2, by - 8);
@@ -3947,7 +3948,7 @@ const MAPCAT = {
   home: { c: '#5aa05a', t: 'Home' }, work: { c: '#d6a347', t: 'Work' }, cafe: { c: '#9a6a44', t: 'Cafe' }, bar: { c: '#c78a2c', t: 'Bar' }, lounge: { c: '#8a5cb8', t: 'Cocktail and wine bar' },
   restaurant: { c: '#c0504a', t: 'Restaurant' }, takeout: { c: '#e07b2e', t: 'Takeout' }, club: { c: '#c8458e', t: 'Nightclub' }, dealer: { c: '#3f7fc4', t: 'Car dealer' }, parking: { c: '#2f6fd0', t: 'Parking' }, shop: { c: '#3a9a8a', t: 'Shop, opens later' } };
 const VK2 = { cafe: 'cafe', bar: 'bar', studentbar: 'bar', sportsbar: 'bar', cocktail: 'lounge', winebar: 'lounge', restaurant: 'restaurant', fine: 'restaurant', seafood: 'restaurant', cheapeats: 'takeout', takeout: 'takeout', foodcourt: 'takeout', fastfood: 'takeout', nightclub: 'club', club: 'club' };
-function doorCat(d) { if (d.k === 'home' || d.to === 'house') return 'home'; if (d.k === 'work' || d.to === 'lobby') return 'work'; if (d.k === 'dealer' || d.dealer) return 'dealer'; return d.vk || VK2[d.use || d.venue] || 'shop'; }
+function doorCat(d) { if (window.mapRole) { const r = window.mapRole(d); if (r) return r; if (d.k === 'home' || d.to === 'house' || d.k === 'work' || d.to === 'lobby') return 'none'; } if (d.k === 'home' || d.to === 'house') return 'home'; if (d.k === 'work' || d.to === 'lobby') return 'work'; if (d.k === 'dealer' || d.dealer) return 'dealer'; return d.vk || VK2[d.use || d.venue] || 'shop'; }
 const MAPOFF = new Set(); const filterOn = cat => !MAPOFF.has(cat);
 // a white symbol on a coloured disc, drawn at the origin, s = radius in pixels
 function drawMapIcon(g, cat, s) {
@@ -6009,7 +6010,7 @@ function frameBody(now) {
     if (player.driving) { cx = tx; cy = ty; } else { cx += (tx - cx) * Math.min(1, dt * 4); cy += (ty - cy) * Math.min(1, dt * 4); }
   }
   k = PXM * zoom; CT = Math.cos(ROT); ST = Math.sin(ROT);
-  const t0 = performance.now(); if ((typeof LOOKOUT !== 'undefined' && LOOKOUT.open) || window.SKIP_RENDER) return; if (INSIDE) renderInterior(); else renderScene(); renderMs = renderMs * .9 + (performance.now() - t0) * .1;
+  const t0 = performance.now(); if ((typeof LOOKOUT !== 'undefined' && LOOKOUT.open) || window.SKIP_RENDER) return; if (INSIDE) renderInterior(); else renderScene(); if (window.GAME && GAME.drawOver) { ctx.setTransform(DPR, 0, 0, DPR, 0, 0); GAME.drawOver(ctx); } renderMs = renderMs * .9 + (performance.now() - t0) * .1;
   const hh = Math.floor(hour) % 24, mm = Math.floor((hour - Math.floor(hour)) * 60);
   ctEl.textContent = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
   cwEl.textContent = { clear: 'Clear', rain: 'Rain', snow: 'Snow', fog: 'Fog' }[weather] + ' · ' + { spring: 'Spring', summer: 'Summer', autumn: 'Autumn', winter: 'Winter' }[season] + (event === 'halloween' ? ' · Halloween' : event === 'december' ? ' · Holidays' : event === 'nye' ? " · New Year's Eve" : '');
@@ -8093,8 +8094,8 @@ window.GAME = (() => {
     return best; }
   const taxiDests = () => { const out = [], J = S.player.job;
     if (typeof ROUTE !== 'undefined' && ROUTE) out.push({ key: 'pin', name: 'Your map pin', sub: DNAME[districtAt(ROUTE.dest[0], ROUTE.dest[1])] || '', x: ROUTE.dest[0], y: ROUTE.dest[1] });
-    if (homeDoor) out.push({ key: doorKey(homeDoor), name: 'Home', sub: homeDoor.sub, x: homeDoor.x, y: homeDoor.y });
-    const wd = J.co && DOORS.find(d => d.k === 'hq' && d.co === J.co); if (wd) out.push({ key: doorKey(wd), name: 'Work', sub: wd.name, x: wd.x, y: wd.y });
+    { const hd = homeNow(); if (hd) out.push({ key: doorKey(hd), name: 'Home', sub: hd === dormDoor ? 'Residence Hall' : hd.sub, x: hd.x, y: hd.y }); }
+    const wd = J.co && S.mode !== 'college' && DOORS.find(d => d.k === 'hq' && d.co === J.co); if (wd) out.push({ key: doorKey(wd), name: 'Work', sub: wd.name, x: wd.x, y: wd.y });
     for (const a of S.apps || []) if (a.status === 'interview' && a.at > S.time) { const d = DOORS.find(q => q.k === 'hq' && q.co === a.co); if (d) out.push({ key: doorKey(d), name: 'Interview, ' + coById(a.co).name, sub: d.name + ', ' + CR.fmtTime(a.at), x: d.x, y: d.y }); }
     { const b = buildings.find(q => q.name === 'City General Hospital'); if (b && b.entrance) out.push({ key: 'hosp', name: 'City General Hospital', sub: 'Main entrance', x: b.entrance[0], y: b.entrance[1] }); }
     const seen = new Set(out.map(o => o.key)), rest = DOORS.filter(d => ['venue', 'store', 'dealer', 'hq', 'place', 'barber'].includes(d.k) && !seen.has(doorKey(d))).map(d => ({ key: doorKey(d), name: d.name, sub: d.sub || '', x: d.x, y: d.y, dist: Math.hypot(d.x - player.x, d.y - player.y) }));
@@ -8612,18 +8613,23 @@ window.GAME = (() => {
       S.mode = 'main'; const C = S.col; C.gradDay = false; CR.passMinutes(S, Math.max(0, MOVEIN - S.time), { asleep: false, drift: false }); dailyThings(MOVEIN - 1440, S.time);
       const N = S.player.needs; Object.assign(N, { energy: 82, mood: 68, hunger: 30 }); if (INSIDE) leaveInterior(); startAtHome(); skyForDay(); drawHud(); }, 1800);
     save('auto'); intro(); }
-  // ---------- Rob shows you the basics in week 1 ----------
-  // Only the things you use for the whole game: your phone, the laptop, eating, studying and sleeping. The college parts explain themselves.
-  const TUT = [['phone', 'Open your phone with P', 'Phones out, first things first. Press P. Messages, the bank, the Jobs app, a taxi when you need one. Everything lives in there.'],
-    ['laptop', 'Use the laptop on your desk (walk up and press E)', 'Your laptop is on your desk. Study apps, the news, the stock market. Later on your work portal lives there too.'],
-    ['eat', 'Cook something in the kitchenette', 'You look hungry. Hunger creeps up all day and a hungry you is a grumpy you. The stove in the kitchenette does a cheap meal.'],
-    ['study', 'Study at the College Library', 'Want to get good at something? The library. Every stat grows with study, and so does your prep for finals. Skip class and the library and it slides. Turn up to a final with none and the paper may as well be in another language. Press M for the map.'],
-    ['sleep', 'Sleep in your bed to end the week', 'Energy runs down as you go. Bed puts it back. Here at college, a night in your own bed is the end of the week, so do what you want done first.']];
-  function tutStep() { const C = S && S.col; return C && C.tut != null && C.tut < TUT.length ? TUT[C.tut] : null; }
-  function tutShow() { let b = $('tut'); const st = tutStep(); if (!st || !isCol()) { if (b) b.hidden = true; return; }
-    if (!b) { b = document.createElement('div'); b.id = 'tut'; document.body.appendChild(b); b.onclick = e => { if (e.target.dataset.skip != null) { S.col.tut = TUT.length; tutShow(); toast('Tutorial skipped.', 2); } }; }
-    b.hidden = false; b.innerHTML = `<small>With Rob · ${S.col.tut + 1} of ${TUT.length}</small><b>${esc(st[1])}</b><button data-skip>Skip</button>`; }
-  function tutRob() { const st = tutStep(); if (!st) return; if (roomKey() === 'dorm') say('Rob', VOICES.rob, st[2], [{ text: 'Got it.' }]); else toast(`Rob texts: ${st[2]}`, 9); }
+  // ---------- Rob shows you the basics, as they come up ----------
+  // No checklist. Each tip fires once, in the moment it matters: hungry, near your laptop, after your first lecture, late at night.
+  // In the dorm Rob says it, anywhere else he texts. A tip for something you have already done never appears.
+  const TIPS = {
+    phone: { when: () => S.time - (S.col.t0 || S.time) > 20, rob: 'Text me if you get lost. Campus is a maze and half the signs are wrong.', key: 'P opens your phone' },
+    eat: { when: () => S.player.needs.hunger >= 55, rob: 'Was that your stomach? There is pasta in the kitchenette, and nobody has stolen it yet.', text: 'You eaten? There is pasta back at the dorm if you are broke.', key: 'The stove in the kitchenette cooks a cheap meal' },
+    laptop: { when: () => roomKey() === 'dorm' && INSIDE && (() => { const f = INSIDE.furn.find(q => q.ck === 'desk'); return f && Math.hypot(player.x - (INSIDE.ox + f.x), player.y - (INSIDE.oy + f.y)) < 1.8; })(), rob: 'That laptop has been asleep all break. The study apps still work, apparently.', key: 'Walk up to your desk and press E' },
+    study: { when: () => Object.keys(S.col.att).length > 0 && CR.parts(S.time).h < 20, rob: 'Library later? Finals sneak up on you.', text: 'Library later? Finals sneak up on you. Trust me, I am the expert on being surprised.', key: 'Study at the College Library. M opens the map' },
+    sleep: { when: () => S.player.needs.energy < 35 || CR.parts(S.time).h >= 22, rob: 'You look wrecked. Go to bed, the week is not going anywhere.', text: 'Do not stay out all night. Your bed misses you. I do not, but your bed does.', key: 'Sleeping in your bed ends the week' } };
+  function tutShow() { const b = $('tut'); if (b) b.hidden = true; }
+  function tutTick() { if (S && dormDoor) dormDoor.sub = S.mode === 'college' ? 'Your room with Rob' : 'Residents only'; const C = S && S.col; if (!C || C.tut == null || !isCol() || G.hold || FF || fading || !$('modal').hidden || !$('dlg').hidden) return; C.tips = C.tips || {};
+    if (C.tipAt && S.time - C.tipAt < 25) return;
+    for (const [k, T] of Object.entries(TIPS)) { if (C.tips[k]) continue; let ok = false; try { ok = T.when(); } catch (e) { } if (!ok) continue;
+      C.tips[k] = 'shown'; C.tipAt = S.time; const inDorm = roomKey() === 'dorm';
+      if (inDorm) say('Rob', VOICES.rob, T.rob, [{ text: 'Got it.' }]).then(() => toast(T.key, 4)); else toast(`Rob: ${T.text || T.rob}  ·  ${T.key}`, 7); return; } }
+  function tutRob() { }
+  function tutDone(k) { const C = S && S.col; if (!C) return; C.tips = C.tips || {}; C.tips[k] = 'done'; }
   // the furniture you use at college
   function colSvc(f) { const k = f.ck;
     if (k === 'lecture') return lecture(); if (k === 'exam') return sitExam();
@@ -8634,10 +8640,9 @@ window.GAME = (() => {
   function startAtDorm() { if (!dormDoor) return startAtHome(); const pk = kerbPark(dormDoor.x, dormDoor.y); Object.assign(PCAR, pk, { speed: 0 }); player.x = dormDoor.x; player.y = dormDoor.y; cx = player.x; cy = player.y; goIn('dorm', dormDoor, 2.2, 2.6); INSIDE.name = dormDoor.name; crowd(); }
   // the first morning: Rob, then enrolment, then the basics
   function collegeIntro() { const t0 = performance.now(); const go = () => { if (!window.PORTRAITS_READY && performance.now() - t0 < 8000) return setTimeout(go, 100);
-      say('Rob', VOICES.rob, `${S.player.name || 'Alex'}! Final year, roomie. Last semester we said we would be organized. How are we feeling about that?`, [{ text: 'Optimistic.', effects: { rel: { rob: 2 } }, reply: 'Love it. Step one, enroll in your classes before they fill up. Step two, I show you how not to starve.' }], robLook(), 'happy')
-        .then(() => enrol(() => { S.col.tut = 0; tutShow(); setTimeout(tutRob, 600); weekStart(); })); };
+      say('Rob', VOICES.rob, `${S.player.name || 'Alex'}! Final year, roomie. Last semester we said we would be organized. How are we feeling about that?`, [{ text: 'Optimistic.', effects: { rel: { rob: 2 } }, reply: 'Love it. Enroll before the good classes fill up. I already did. Basket weaving.' }], robLook(), 'happy')
+        .then(() => enrol(() => { S.col.tut = 0; S.col.t0 = S.time; weekStart(); })); };
     setTimeout(go, 600); }
-  function tutDone(k) { const st = tutStep(); if (!st || st[0] !== k) return; S.col.tut++; tutShow(); if (tutStep()) setTimeout(tutRob, 1200); else toast('That is the basics. The rest of the year is yours.', 5); }
   // the preview: your look with one thing changed
   function previewLook(ch) { const L = JSON.parse(JSON.stringify(player.L)); L.pr = null;
     if (ch.wear) { const w = WEAR[ch.wear]; if (w.cat === 'clothes') { const c = clothFor(ch.wear), G = GARM[c.g] || {}; Object.assign(L, { garment: c.g, top: c.top, bot: c.bot, shirt: c.shirt, tie: c.tie, coat: !!G.coat, hood: c.g === 'hoodie' }); }
@@ -8699,10 +8704,42 @@ window.GAME = (() => {
     else { const s2 = ['N', 'S', 'E', 'W'].find(q => b.st && b.st[q]) || 'S', f = faceW(b, b.tiers[0], s2), wx = (f.ax + f.bx) / 2, wy = (f.ay + f.by) / 2; d = { x: wx + f.nx * .9, y: wy + f.ny * .9, nx: f.nx, ny: f.ny }; }
     delete o.front; Object.assign(d, { b, side: 'S', sign: '' }, o); b.door = d; DOORS.push(d); return d; };
   const hospDoor = placeDoor(buildings.find(b => b.name === 'City General Hospital'), { k: 'place', to: 'hospital', name: 'City General Hospital', sub: 'Main entrance, open 24 hours' });
-  placeDoor(buildings.find(b => b.name === 'Great Hall'), { k: 'place', to: 'hall', name: 'Great Hall', sub: 'College dining hall', front: true });
-  placeDoor(buildings.find(b => b.name === 'College Library'), { k: 'place', to: 'library', name: 'College Library', sub: 'Open 7 am to 11 pm' });
+  const hallDoor = placeDoor(buildings.find(b => b.name === 'Great Hall'), { k: 'place', to: 'hall', name: 'Great Hall', sub: 'College dining hall', front: true });
+  const libraryDoor = placeDoor(buildings.find(b => b.name === 'College Library'), { k: 'place', to: 'library', name: 'College Library', sub: 'Open 7 am to 11 pm' });
   const lectureDoor = placeDoor(buildings.find(b => b.name === 'Lecture Theatre'), { k: 'place', to: 'lecture', name: 'Lecture Theatre', sub: 'Lectures on Mondays at 10' });
   const dormDoor = placeDoor(buildings.find(b => b.name === 'Residence Hall'), { k: 'place', to: 'dorm', name: 'Residence Hall', sub: 'Residents only' });
+
+  // ---------- where to go next: the objective marker ----------
+  // Worked out from what is on right now, not stored: a lecture, a final, graduation, an interview, the library after Rob suggests it,
+  // your first day at work. Outside, a gold marker floats over the door with the distance, and slides to the screen edge as an arrow
+  // when the door is off screen. The minimap gets a route to it. Inside, it waits until you are back out.
+  function objective() { if (!S) return null; const p = CR.parts(S.time), h = p.h + p.mi / 60, C = S.col, J = S.player.job;
+    for (const a of S.apps || []) if (a.status === 'interview' && a.at > S.time - 20 && a.at - S.time < 180) { const d = DOORS.find(q => q.k === 'hq' && q.co === a.co); if (d) return { d, t: `Interview at ${coById(a.co).name}, ${CR.fmtTime(a.at)}` }; }
+    if (S.mode === 'college' && C) {
+      if (C.gradDay && !C.graduated && h < 14) return hallDoor && { d: hallDoor, t: 'Graduation, 11:00' };
+      if (EXAMWK[S.week] && p.dow === 1 && h < 9.5 && !C.examDone) return hallDoor && { d: hallDoor, t: 'Final exam, 9:00' };
+      if (!EXAMWK[S.week] && p.dow === 1 && h < 10.5 && !C.att[S.week] && C.classes[colSem() - 1].length) return lectureDoor && { d: lectureDoor, t: 'Lecture, 10:00' };
+      if (C.tips && C.tips.study === 'shown' && h >= 7 && h < 22) return libraryDoor && { d: libraryDoor, t: 'College Library' }; }
+    if (S.mode === 'main' && J && J.co && !J.shifts && isWeekday() && h >= 6 && h < 9.25 && Math.floor(S.time / 1440) >= (J.startDay || 0)) { const d = empDoor(); if (d) return { d, t: `First day at ${empName()}, 9:00` }; }
+    return null; }
+  let objWas = null;
+  function drawObjective(g) { const o = objective(); if (!o || INSIDE || FF) { if (!o) objWas = null; return; }
+    if (objWas !== o.d && typeof setRoute === 'function') { objWas = o.d; try { setRoute(o.d.x, o.d.y); } catch (e) { } }
+    const me = player.driving ? PCAR : player, dist = Math.hypot(o.d.x - me.x, o.d.y - me.y); if (dist < 3) return;
+    const [x, y] = P(o.d.x, o.d.y, 6), vw = innerWidth, vh = innerHeight, m = 46, on = x > m && x < vw - m && y > m && y < vh - m, bob = Math.sin(performance.now() / 300) * 4;
+    const label = `${o.t} · ${dist < 1000 ? Math.round(dist / 10) * 10 + ' m' : (dist / 1000).toFixed(1) + ' km'}`;
+    g.save(); g.font = '600 13px system-ui,sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    if (on) { g.translate(x, y + bob); g.fillStyle = '#e8b04a'; g.strokeStyle = 'rgba(20,18,14,.8)'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(0, 0); g.lineTo(-11, -16); g.lineTo(0, -12); g.lineTo(11, -16); g.closePath(); g.stroke(); g.fill();
+      g.beginPath(); g.arc(0, -30, 9, 0, Math.PI * 2); g.stroke(); g.fill(); g.lineWidth = 3; g.strokeText(label, 0, -52); g.fillStyle = '#fff'; g.fillText(label, 0, -52); }
+    else { const cxs = vw / 2, cys = vh / 2, a = Math.atan2(y - cys, x - cxs), r = Math.min((vw / 2 - m) / Math.abs(Math.cos(a) || 1e-6), (vh / 2 - m) / Math.abs(Math.sin(a) || 1e-6)), ex = cxs + Math.cos(a) * r, ey = cys + Math.sin(a) * r;
+      g.translate(ex, ey); g.save(); g.rotate(a); g.fillStyle = '#e8b04a'; g.strokeStyle = 'rgba(20,18,14,.8)'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(16, 0); g.lineTo(-8, -11); g.lineTo(-3, 0); g.lineTo(-8, 11); g.closePath(); g.stroke(); g.fill(); g.restore();
+      const ty = Math.sin(a) > .5 ? -24 : 24, tx = Math.max(-vw / 2 + 120, Math.min(vw / 2 - 120, 0)); g.lineWidth = 3; g.strokeStyle = 'rgba(20,18,14,.8)'; g.strokeText(label, Math.cos(a) > .6 ? -90 : Math.cos(a) < -.6 ? 90 : tx, ty); g.fillStyle = '#fff'; g.fillText(label, Math.cos(a) > .6 ? -90 : Math.cos(a) < -.6 ? 90 : tx, ty); }
+    g.restore(); }
+  // the map marks where you live and work now: the dorm at college, then whichever home you have, and your employer's tower once you have started
+  const homeNow = () => !S ? null : S.mode === 'college' ? dormDoor : (S.player.home && DOORAT.get(S.player.home)) || homeDoor;
+  const workNow = () => S && S.mode !== 'college' && S.player.job && S.player.job.co ? empDoor() : null;
+  window.mapRole = d => d === homeNow() ? 'home' : d === workNow() ? 'work' : null;
+  window.mapPins = () => [[homeNow(), 'HOME'], [workNow(), 'WORK']].filter(([d]) => d).map(([d, t]) => ({ t, x: d.x, y: d.y }));
   // which inside a door leads to, whether it is open, and how busy it is at this hour
   const intKey = d => d.k === 'venue' ? ({ cafe: 'cafe', bar: 'bar', lounge: 'lounge', restaurant: 'rest', takeout: 'slice', club: 'club' })[d.vk] : d.k === 'store' ? ({ gym: 'gym', super: 'market', conv: 'conv' })[d.sk] : d.k === 'dealer' ? 'dealer' : d.k === 'place' ? (d.to === 'hall' ? hallKey() : d.to) : null;
   const placeOpen = d => { const h = gHour(), vk = d.vk; if (d.k === 'venue') return vk === 'club' ? (h >= 21 || h < 3) : vk === 'cafe' ? (h >= 6 && h < 17) : (vk === 'bar' || vk === 'lounge') ? (h >= 11 || h < 1) : (h >= 11 && h < 23);
@@ -8911,6 +8948,7 @@ window.GAME = (() => {
     if (LOOKOUT.near(player.x, player.y)) { LOOKOUT.show({ L: player.L, sync: lookoutSync, onClose: () => { G.hold = !!(modalOpen || dlgOpen || fading); } }); G.hold = true; return; }
     if (taxiNear()) return rideTaxi();
     if (doorNow) { const d = doorNow;
+      if (d.k === 'home' && S.mode === 'college') return toast('A share house. Somebody else lives here for now.', 2.5);
       if (d.k === 'home') { fadeTo('', '', () => { goIn('house', d); collectParcels(); }, 200).then(robDropsBy); return; }
       if (d.k === 'work' || d.k === 'hq') return hqDoor(d);
       if (d.k === 'barber') { const h = gHour(); if (h < 8 || h >= 19) return toast(`${d.name} opens at 8 am.`, 2.5); FIT = { mode: 'barber', door: d, tab: 'cuts', sel: null }; return fitRoom('barber'); }
@@ -8952,7 +8990,8 @@ window.GAME = (() => {
 
   // ---------------- the loop: called by the engine every frame ----------------
   let hudT = 0, promptT = 0;
-  function tick(dt) {
+  let tipClock = 0;
+  function tick(dt) { if ((tipClock += dt) > 1.5) { tipClock = 0; try { tutTick(); } catch (e) { } }
     if (titleOpen || !S) { if (titleOpen && typeof ROT !== 'undefined') ROT += dt * .03; return; }
     gameDay = Math.floor(S.time / 1440);
     if (FF) ffTick(dt);
@@ -8989,7 +9028,7 @@ window.GAME = (() => {
   function introSay() { setTimeout(() => say('Rob', VOICES.rob, S.player.job.co ? `Welcome home, roomie! Your room is the big one at the back, past the kitchen. Big first day at ${empName()} tomorrow, huh?` : 'Welcome home, roomie! Your room is the big one at the back, past the kitchen. No job yet? Me neither. The Jobs app on your phone, that is where it starts.', [S.player.job.co ? { text: 'Nine o clock sharp. Wish me luck.', effects: { rel: { rob: 3 } }, reply: 'You will smash it. Get an early night tonight, I will keep the music down. Probably.' } : { text: 'Job hunting starts tomorrow.', effects: { rel: { rob: 3 } }, reply: 'That is the spirit. I will start the day after.' }], robLook(), 'happy'), 0); }
 
   // ---------------- start ----------------
-  const G = { hold: false, key, tick, say, get S() { return S; }, music, HOME, WORK, homeDoor, workDoor, save, load, interact, roomKey, openPhone, closePhone, openLaptop, closeLaptop, startGame, ffwd, get FF() { return FF; }, get phoneOpen() { return phoneOpen; }, use: f => useRoom(f), dev: { col: { colSvc, lecture, sitExam, endWeek, ceremony, tutDone, gpa, degreeOf, enterDoor: k => enterPlace(k === 'dorm' ? dormDoor : k === 'lecture' ? lectureDoor : DOORS.find(d => d.to === k)), refreshJobs, applyJob, acceptOffer, interview: () => { const a = S.apps.find(q => q.status === 'interview'); return a && interview(a, DOORS.find(d => d.k === 'hq' && d.co === a.co)); }, weekStart }, dailyThings: (a, b) => dailyThings(a, b), bookLeave, WORK_EVENTS, setForce: id => { forceEvent = id; }, stat, gainSkill, gateText, gateMargin, ladderFor, promoGaps, workXP, pauseMenu, hrsTo, ptsFrom }, get busy() { return !!(modalOpen || dlgOpen || FF || fading); } };
+  const G = { hold: false, key, tick, say, drawOver: g => { try { drawObjective(g); } catch (e) { } }, get S() { return S; }, music, HOME, WORK, homeDoor, workDoor, save, load, interact, roomKey, openPhone, closePhone, openLaptop, closeLaptop, startGame, ffwd, get FF() { return FF; }, get phoneOpen() { return phoneOpen; }, use: f => useRoom(f), dev: { col: { colSvc, lecture, sitExam, endWeek, ceremony, tutDone, gpa, degreeOf, enterDoor: k => enterPlace(k === 'dorm' ? dormDoor : k === 'lecture' ? lectureDoor : DOORS.find(d => d.to === k)), refreshJobs, applyJob, acceptOffer, interview: () => { const a = S.apps.find(q => q.status === 'interview'); return a && interview(a, DOORS.find(d => d.k === 'hq' && d.co === a.co)); }, weekStart }, dailyThings: (a, b) => dailyThings(a, b), bookLeave, WORK_EVENTS, setForce: id => { forceEvent = id; }, stat, gainSkill, gateText, gateMargin, ladderFor, promoGaps, workXP, pauseMenu, hrsTo, ptsFrom }, get busy() { return !!(modalOpen || dlgOpen || FF || fading); } };
   setTimeout(showTitle, 0);
   return G;
 })();
