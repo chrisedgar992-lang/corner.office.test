@@ -7120,7 +7120,7 @@ window.GAME = (() => {
     const p = CR.parts(S.time), P0 = S.player, N = P0.needs, J = P0.job, L = J && LAD()[J.level];
     const bar = (n, v, c) => `<div class="need">${n}<i><b style="width:${Math.round(v)}%;background:${c || (v < 25 ? 'var(--bad)' : v < 50 ? 'var(--warn)' : 'var(--good)')}"></b></i></div>`;
     const room = roomKey(), where = room ? roomName(room) : (DNAME[districtAt(player.x, player.y)] || '');
-    let jobLine = ''; if (L) { const h = gHour(); jobLine = S.mode === 'college' ? `Final year, week ${S.week || 1} of 12 · exam prep ${Math.round(S.player.study || 0)}${J.co ? ` · offer from ${empName()}` : ''}` : J.co ? `${L.t}, ${empName()}` : S.gig ? `${GIGS[S.gig.id].t}, ${S.gig.name}` : 'Unemployed'; if (J.co && S.mode !== 'college' && isWeekday() && h < 9.25 && J.lastShiftDay !== Math.floor(S.time / 1440) && Math.floor(S.time / 1440) >= (J.startDay || 0) && !(J.leaveUntil > Math.floor(S.time / 1440))) jobLine += ` <span style="color:var(--acc)">· shift at 9:00</span>`; } tutShow();
+    let jobLine = ''; if (L) { const h = gHour(); jobLine = S.mode === 'college' ? `Final year, week ${S.week || 1} of 12 · study ${Math.round(S.player.study || 0)}${J.co ? ` · offer from ${empName()}` : ''}` : J.co ? `${L.t}, ${empName()}` : S.gig ? `${GIGS[S.gig.id].t}, ${S.gig.name}` : 'Unemployed'; if (J.co && S.mode !== 'college' && isWeekday() && h < 9.25 && J.lastShiftDay !== Math.floor(S.time / 1440) && Math.floor(S.time / 1440) >= (J.startDay || 0) && !(J.leaveUntil > Math.floor(S.time / 1440))) jobLine += ` <span style="color:var(--acc)">· shift at 9:00</span>`; } tutShow();
     const wx = { clear: 'Clear', rain: 'Rain', snow: 'Snow', fog: 'Fog' }[weather];
     $('ghud').innerHTML = `<div class="t"><span class="clock">${String(p.h).padStart(2, '0')}:${String(p.mi).padStart(2, '0')}</span><span class="date">${CR.fmtDate(S.time)}</span></div>
       <div class="t"><span class="money">${money(P0.cash)}</span><span class="date">Bank ${money(P0.bank)}</span></div>${bar('Energy', N.energy)}${bar('Fed', 100 - N.hunger)}${bar('Mood', N.mood)}${N.health != null && N.health < 85 ? bar('Health', N.health) : ''}
@@ -8437,76 +8437,92 @@ window.GAME = (() => {
     const go = () => { if (!(window.PORTRAIT && PORTRAIT.opts)) return setTimeout(go, 100); ccRandom(C); draw(); }; go(); }
   // ---------------- the college opening: your final year ----------------
   // Two semesters of six weeks. You play each Monday: a lecture, the library, shifts, Rob, the city. Going to bed ends the week,
-  // and how you spend the rest of it decides what you learn. Midterms in weeks 3 and 9, finals in weeks 6 and 12, in the Great Hall.
+  // and how you spend the rest of it decides what you learn. Finals end each semester, in weeks 6 and 12, in the Great Hall.
   // Firms recruit on campus from week 4 to week 10. Graduation is in May, and you move into the share house with Rob in July.
   const COURSES = { finance: ['Corporate Finance', 'Investments and Valuation'], strategy: ['Economics of Strategy', 'Competitive Strategy'], management: ['Organizational Behavior', 'Leading Teams'], coding: ['Intro to Programming', 'Data Structures and Algorithms'], persuasion: ['Public Speaking and Debate', 'Negotiation'] };
   const DEGREE = { finance: 'Bachelor of Science in Finance', strategy: 'Bachelor of Arts in Economics', management: 'Bachelor of Business Administration', coding: 'Bachelor of Science in Computer Science', persuasion: 'Bachelor of Arts in Political Science' };
-  const EXAMWK = { 3: 'mid', 6: 'final', 9: 'mid', 12: 'final' }, RECRUIT = [4, 10], JOBSTART = CR.fromParts(2026, 7, 6, 9, 0), GRADDAY = CR.fromParts(2026, 5, 16, 9, 0), MOVEIN = CR.fromParts(2026, 7, 5, 10, 0);
-  // exam prep is the study stat, 0 to 100. Lectures, the library and a hard week of study build it. Each exam uses it up
+  const EXAMWK = { 6: 'final', 12: 'final' }, RECRUIT = [4, 10], JOBSTART = CR.fromParts(2026, 7, 6, 9, 0), GRADDAY = CR.fromParts(2026, 5, 16, 9, 0), MOVEIN = CR.fromParts(2026, 7, 5, 10, 0);
+  // the study stat, 0 to 100, is your preparation for finals. Class and study raise it, and skipping them lets it slide
   const prep = v => { S.player.study = Math.max(0, Math.min(100, (S.player.study || 0) + v)); };
   const isCol = () => S && S.mode === 'college', colSem = () => (S.week || 1) <= 6 ? 1 : 2, course = k => COURSES[k][colSem() - 1];
   const weekClass = () => { const C = S.col, L = C.classes[colSem() - 1]; return L.length ? L[((S.week || 1) - 1) % L.length] : 'finance'; };
   const recruiting = () => isCol() && S.week >= RECRUIT[0] && S.week <= RECRUIT[1];
-  // the exam questions: two from each of your three classes, shuffled, answers shuffled
+  // the exam bank: six topics per subject, each with an easy recall question and a hard applied one on the same idea.
+  // Topics are the game's own business and money basics, so what you learn here is what the main game uses. Correct answer first.
   const QB = {
-    finance: [['What does a balance sheet show?', 'What a company owns and owes at one point in time', 'Revenue and costs over a year', 'Cash coming in and going out over a quarter', 'The history of the share price'],
-      ['If interest rates rise, what usually happens to the price of existing bonds?', 'It falls', 'It rises', 'It stays the same', 'It doubles'],
-      ['$1,000 is invested at 10% a year, compounded yearly. What is it worth after two years?', '$1,210', '$1,200', '$1,100', '$1,020'],
-      ['What does a P/E ratio compare?', 'The share price with earnings per share', 'Profit with equity', 'Price with expenses', 'Payouts with earnings'],
-      ['Which of these is usually the riskiest for an investor?', 'Shares in a young startup', 'A government bond', 'A savings account', 'A certificate of deposit'],
-      ['What is diversification?', 'Spreading money across many investments to lower risk', 'Putting everything in the best stock', 'Borrowing to invest more', 'Selling shares you do not own'],
-      ['What is a dividend?', 'A share of profit paid out to shareholders', 'A loan to the company', 'A tax on shares', 'The fee a broker charges'],
-      ['What is $110 received in one year worth today, at a 10% discount rate?', '$100', '$110', '$121', '$99'],
-      ['What is working capital?', 'Current assets minus current liabilities', 'Total assets minus total debt', 'Revenue minus costs', 'Cash plus inventory'],
-      ['What does a company’s cost of capital represent?', 'The return investors need to fund it', 'The interest on its overdraft alone', 'The cost of its office buildings', 'The price of one of its shares']],
-    strategy: [['When the price of a good rises and nothing else changes, demand for it usually...', 'Falls', 'Rises', 'Stays the same', 'Doubles'],
-      ['A market with only a few large firms is called...', 'An oligopoly', 'A monopoly', 'Perfect competition', 'A free market'],
-      ['What is opportunity cost?', 'The value of the best option you give up', 'The price you pay in cash', 'The cost of a failed project', 'The cost of borrowing'],
-      ['What are economies of scale?', 'Cost per unit falling as output grows', 'Prices rising as output grows', 'Small firms always being cheaper', 'Costs that never change'],
-      ['A company that competes by being the cheapest producer follows a strategy of...', 'Cost leadership', 'Differentiation', 'Luxury focus', 'Vertical integration'],
-      ['A company buying one of its own suppliers is an example of...', 'Vertical integration', 'Horizontal integration', 'Diversification', 'Outsourcing'],
-      ['What is a barrier to entry?', 'Anything that makes it hard for new competitors to start', 'A tax on imports only', 'A rule against advertising', 'The cost of renting a storefront'],
-      ['Which of these is a sunk cost?', 'Money already spent that cannot be recovered', 'A cost you can still avoid', 'Next year’s rent', 'Interest you have not paid yet'],
-      ['Two products are substitutes. The price of one rises. Demand for the other usually...', 'Rises', 'Falls', 'Stays the same', 'Drops to zero'],
-      ['What does inflation mean?', 'Prices across the economy are rising', 'Prices are falling', 'Interest rates are rising', 'The stock market is rising']],
-    management: [['What makes feedback most useful?', 'Being specific about the behavior and its effect', 'Saving it for the annual review', 'Talking about the person’s character', 'Sending it in a group chat'],
-      ['What does delegating well mean?', 'Giving clear goals and the authority to meet them', 'Handing off only the boring work', 'Checking every step yourself', 'Telling them exactly how to do each task'],
-      ['SMART goals are specific, measurable, achievable, relevant and...', 'Time-bound', 'Simple', 'Shared', 'Strategic'],
-      ['A new team that is still polite and unsure of each other is in which stage?', 'Forming', 'Storming', 'Norming', 'Performing'],
-      ['Two people on your team are in conflict. What is usually the best first step?', 'Hear each of them out privately', 'Back the more senior one', 'Ignore it until it goes away', 'Move one of them to another team'],
-      ['What is a manager’s span of control?', 'The number of people who report to them directly', 'The size of their budget', 'How long they have been in the role', 'The number of projects they run'],
-      ['Micromanaging a capable employee usually...', 'Lowers their motivation', 'Raises their output long term', 'Makes no difference', 'Gets them promoted sooner'],
-      ['What is a one-on-one meeting mainly for?', 'A manager and one report talking about work and growth', 'Announcing company results', 'Disciplining the team', 'Interviewing candidates'],
-      ['What motivates most people at work over the long run?', 'Meaningful work, growth and recognition', 'A free lunch once a month', 'Strict rules', 'Long hours'],
-      ['A project is running late. What should a good manager do first?', 'Find out why and reset the plan with the team', 'Blame the slowest person', 'Hide it from the client', 'Add more meetings']],
-    coding: [['What does a loop do?', 'Repeats a block of code', 'Stores a single value', 'Ends the program', 'Connects to the internet'],
-      ['Which data structure is first in, first out?', 'A queue', 'A stack', 'A tree', 'A hash map'],
-      ['What is a bug?', 'An error that makes code behave wrongly', 'A computer virus', 'A slow internet connection', 'A new feature'],
-      ['Finding a name in a sorted list by checking the middle and halving the list each step is...', 'Binary search', 'Linear search', 'Bubble sort', 'Hashing'],
-      ['What is a variable?', 'A named place that holds a value', 'A kind of loop', 'An error message', 'A file on disk'],
-      ['What does an if statement do?', 'Runs code only when a condition is true', 'Repeats code forever', 'Defines a new function', 'Deletes a variable'],
-      ['Which is usually fastest for looking up a value by its key?', 'A hash map', 'An unsorted list', 'A linked list', 'A text file'],
-      ['What does version control like git keep track of?', 'Changes to code over time', 'Server temperatures', 'User passwords', 'Internet speed'],
-      ['In most programming languages, what is 7 % 3?', '1', '2', '21', '0'],
-      ['A function that calls itself is...', 'Recursive', 'Iterative', 'Asynchronous', 'Compiled']],
-    persuasion: [['In a negotiation, what is your BATNA?', 'Your best alternative if no deal is reached', 'Your opening offer', 'The other side’s lowest price', 'A signed contract'],
-      ['An argument that attacks the person instead of their point is...', 'An ad hominem', 'A straw man', 'A red herring', 'A fair rebuttal'],
-      ['Twisting someone’s argument to make it easier to attack is...', 'A straw man', 'An ad hominem', 'Begging the question', 'An appeal to authority'],
-      ['What is usually the best way to open a speech?', 'A clear hook that tells people why to listen', 'Apologizing for being nervous', 'Reading the first slide word for word', 'A long list of thank yous'],
-      ['What is anchoring in a negotiation?', 'The first number named shaping the rest of the talks', 'Refusing to move at all', 'Bringing a lawyer along', 'Agreeing quickly'],
-      ['Ethos, pathos and logos appeal to credibility, emotion and...', 'Logic', 'Law', 'Loyalty', 'Luck'],
-      ['Which of these is part of active listening?', 'Summarizing what the other person said back to them', 'Planning your reply while they talk', 'Interrupting to agree', 'Checking your phone'],
-      ['When is a concession in a negotiation best given?', 'In exchange for something in return', 'Right at the start, for free', 'Only by email', 'Never'],
-      ['What makes a presentation easiest to follow?', 'Three clear main points', 'Twenty points of equal weight', 'No structure, so it feels natural', 'Long paragraphs on every slide'],
-      ['What is a rebuttal in a debate?', 'Answering the other side’s arguments', 'Repeating your opening', 'Thanking the judges', 'Asking the audience to vote']] };
+    finance: [
+      [['What does EBITDA stand for?', 'Earnings before interest, taxes, depreciation and amortization', 'Earnings before income, tax, debt and assets', 'Expenses before interest, tax, dividends and assets', 'Equity before investment, tax, debt and amortization'],
+       ['A company has revenue of $500, operating costs of $300 before depreciation, depreciation of $50, interest of $20 and tax of $30. What is its EBITDA?', '$200', '$150', '$130', '$100']],
+      [['What does a P/E ratio compare?', 'The share price with earnings per share', 'Profit with equity', 'Price with expenses', 'Payouts with earnings'],
+       ['A share trades at $40 and the company earned $2 a share. What is its P/E?', '20', '80', '0.05', '42']],
+      [['What is compound interest?', 'Interest earned on the original amount and on past interest', 'Interest on the original amount only', 'A fee for paying a loan early', 'Interest that falls each year'],
+       ['$1,000 is invested at 10% a year, compounded yearly. What is it worth after two years?', '$1,210', '$1,200', '$1,100', '$1,020']],
+      [['If interest rates rise, what usually happens to the price of existing bonds?', 'It falls', 'It rises', 'It stays the same', 'It doubles'],
+       ['A bond pays $50 a year forever, and market rates are 5%. What is it worth?', '$1,000', '$500', '$250', '$5,000']],
+      [['What is a dividend?', 'A share of profit paid out to shareholders', 'A loan to the company', 'A tax on shares', 'The fee a broker charges'],
+       ['A stock costs $50 and pays a $2 dividend each year. What is its dividend yield?', '4%', '2%', '25%', '0.4%']],
+      [['What does present value tell you?', 'What a future amount of money is worth today', 'Today’s share price', 'The total of all future payments', 'What an asset is worth after depreciation'],
+       ['What is $110 received in one year worth today, at a 10% discount rate?', '$100', '$110', '$121', '$99']]],
+    strategy: [
+      [['When the price of a good rises and nothing else changes, demand for it usually...', 'Falls', 'Rises', 'Stays the same', 'Doubles'],
+       ['A cafe raises its coffee price by 10% and sells 20% fewer cups. What does that say about demand for its coffee?', 'It is elastic, so revenue falls', 'It is inelastic, so revenue rises', 'It does not change with price', 'It is perfectly fixed']],
+      [['What is opportunity cost?', 'The value of the best option you give up', 'The price you pay in cash', 'The cost of a failed project', 'The cost of borrowing'],
+       ['You turn down a $60,000 job to start a business that makes $40,000 in its first year. What was your opportunity cost?', '$60,000', '$40,000', '$20,000', '$100,000']],
+      [['What are economies of scale?', 'Cost per unit falling as output grows', 'Prices rising as output grows', 'Small firms always being cheaper', 'Costs that never change'],
+       ['A factory has fixed costs of $10,000 and each unit costs $5 to make. What does each unit cost at 1,000 units?', '$15', '$5', '$10', '$10,005']],
+      [['A market with only a few large firms is called...', 'An oligopoly', 'A monopoly', 'Perfect competition', 'A free market'],
+       ['Three airlines control a route, and when one raises fares the other two follow within days. This is typical of...', 'An oligopoly', 'Perfect competition', 'A monopoly', 'A free market']],
+      [['Which of these is a sunk cost?', 'Money already spent that cannot be recovered', 'A cost you can still avoid', 'Next year’s rent', 'Interest you have not paid yet'],
+       ['You have spent $2 million on a project. It needs $1 million more and will only return $500,000. What should you do?', 'Stop, since the $2 million is gone either way', 'Finish it to save the $2 million', 'Spend more to win the money back', 'Double the budget']],
+      [['A company that competes by being the cheapest producer follows a strategy of...', 'Cost leadership', 'Differentiation', 'Luxury focus', 'Vertical integration'],
+       ['A coffee chain charges more than its rivals for the same coffee and keeps its customers through design and service. Its strategy is...', 'Differentiation', 'Cost leadership', 'Vertical integration', 'A price war']]],
+    management: [
+      [['SMART goals are specific, measurable, achievable, relevant and...', 'Time-bound', 'Simple', 'Shared', 'Strategic'],
+       ['Which of these is a SMART goal?', 'Raise customer ratings from 4.1 to 4.4 by June', 'Make customers happier', 'Be the best team in the company', 'Work harder this year']],
+      [['A new team that is still polite and unsure of each other is in which stage?', 'Forming', 'Storming', 'Norming', 'Performing'],
+       ['Your team argues openly about roles and who decides what. Which stage is it in, and what helps?', 'Storming, so set clear roles and ground rules', 'Performing, so leave it alone', 'Forming, so plan a team lunch', 'Norming, so add more people']],
+      [['What makes feedback most useful?', 'Being specific about the behavior and its effect', 'Saving it for the annual review', 'Talking about the person’s character', 'Sending it in a group chat'],
+       ['Which of these is the most useful feedback?', 'Your numbers in Tuesday’s deck were wrong and the client noticed. Check them before you send', 'You need to be more careful', 'Good job overall', 'Everyone has noticed you are sloppy']],
+      [['What does delegating well mean?', 'Giving clear goals and the authority to meet them', 'Handing off only the boring work', 'Checking every step yourself', 'Telling them exactly how to do each task'],
+       ['You hand a report to a capable analyst. What should you give them?', 'The goal, the deadline and the authority to decide how', 'Step by step instructions for every page', 'Nothing, let them work it out', 'Only the boring sections']],
+      [['What is a manager’s span of control?', 'The number of people who report to them directly', 'The size of their budget', 'How long they have been in the role', 'The number of projects they run'],
+       ['One manager has 25 direct reports and none of them get time with her. What is the best fix?', 'Add team leads so each manager oversees fewer people', 'Hire ten more reports', 'Cancel the one-on-ones', 'Have her work weekends']],
+      [['What motivates most people at work over the long run?', 'Meaningful work, growth and recognition', 'A free lunch once a month', 'Strict rules', 'Long hours'],
+       ['Your best engineer is bored and thinking of leaving. What is most likely to keep her?', 'Harder projects and a clear path to grow', 'A free lunch once a month', 'Stricter hours', 'More status meetings']]],
+    coding: [
+      [['What does a loop do?', 'Repeats a block of code', 'Stores a single value', 'Ends the program', 'Connects to the internet'],
+       ['How many times does this print? for (i = 0; i < 5; i++) print(i)', '5', '4', '6', '0']],
+      [['Which data structure is first in, first out?', 'A queue', 'A stack', 'A tree', 'A hash map'],
+       ['Support tickets must be answered in the order they arrive. Which structure fits best?', 'A queue', 'A stack', 'A tree', 'A set']],
+      [['What is binary search?', 'Finding an item in a sorted list by halving it each step', 'Checking every item in turn', 'Sorting a list into two halves', 'Storing data in pairs'],
+       ['Binary search on a sorted list of 1,000 names needs at most about how many checks?', '10', '500', '1,000', '100']],
+      [['In most languages, what does the % operator give?', 'The remainder after division', 'A percentage', 'The result of the division', 'A random number'],
+       ['What is 17 % 5?', '2', '3', '3.4', '85']],
+      [['What is a hash map for?', 'Looking up values quickly by a key', 'Drawing graphics', 'Sorting numbers', 'Storing images'],
+       ['You need to check quickly whether a username is taken among a million users. What should you keep them in?', 'A hash set', 'An unsorted list', 'A text file', 'A spreadsheet']],
+      [['A function that calls itself is...', 'Recursive', 'Iterative', 'Asynchronous', 'Compiled'],
+       ['f(n) returns 1 when n is 0, and otherwise n × f(n − 1). What is f(4)?', '24', '10', '16', '4']]],
+    persuasion: [
+      [['In a negotiation, what is your BATNA?', 'Your best alternative if no deal is reached', 'Your opening offer', 'The other side’s lowest price', 'A signed contract'],
+       ['You hold a written offer of $70,000 from one firm and are negotiating with another that offers $65,000. What is your BATNA?', 'The $70,000 offer', 'The $65,000 offer', 'Halfway, at $67,500', 'Staying unemployed']],
+      [['What is anchoring in a negotiation?', 'The first number named shaping the rest of the talks', 'Refusing to move at all', 'Bringing a lawyer along', 'Agreeing quickly'],
+       ['You are selling a car worth about $10,000. Which opening makes the best use of anchoring?', 'Open at $11,500 and give reasons for the price', 'Open at $9,000 to seem fair', 'Open at $25,000', 'Say any price is fine']],
+      [['An argument that attacks the person instead of their point is...', 'An ad hominem', 'A straw man', 'A red herring', 'A fair rebuttal'],
+       ['“You want stricter budgets? So you want everyone to stop eating lunch.” This is...', 'A straw man', 'An ad hominem', 'A fair summary', 'An appeal to authority']],
+      [['Ethos, pathos and logos appeal to credibility, emotion and...', 'Logic', 'Law', 'Loyalty', 'Luck'],
+       ['“As a doctor of twenty years, I can tell you this works.” Which appeal is this?', 'Ethos', 'Pathos', 'Logos', 'None of them']],
+      [['When is a concession in a negotiation best given?', 'In exchange for something in return', 'Right at the start, for free', 'Only by email', 'Never'],
+       ['A client asks for a 10% discount. What is the strongest reply?', 'We can do 5% if you sign for two years', 'Sure, 10% is fine', 'We never give discounts', 'We can do 15%']],
+      [['What makes a presentation easiest to follow?', 'Three clear main points', 'Twenty points of equal weight', 'No structure, so it feels natural', 'Long paragraphs on every slide'],
+       ['You have five minutes to pitch a busy executive. How should you start?', 'With your recommendation and the one number behind it', 'With the company’s history', 'With a long story', 'With every option you considered']]] };
   const GRADES = [[3.85, 'A'], [3.5, 'A-'], [3.15, 'B+'], [2.85, 'B'], [2.5, 'B-'], [2.15, 'C+'], [1.85, 'C'], [1.5, 'C-'], [1.0, 'D'], [-1, 'F']], letter = g => GRADES.find(([v]) => g >= v)[1];
-  const gpa = () => { const R = (S.col && S.col.results) || {}, v = Object.values(R).filter(r => r.final != null).map(r => r.mid != null ? r.mid * .4 + r.final * .6 : r.final); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  const gpa = () => { const R = (S.col && S.col.results) || {}, v = Object.values(R).filter(r => r.final != null).map(r => r.final); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
   function startCollege() { const C = S.col = { classes: [[], []], results: {}, att: {}, robTalk: 0 }; S.week = 1; S.mode = 'college'; }
   // which way the Great Hall is set up: exams on exam mornings, the ceremony on graduation day
   const hallKey = () => { if (!isCol()) return 'hall'; const p = CR.parts(S.time), h = p.h + p.mi / 60; if (S.col.gradDay && h < 14) return 'hallgrad'; if (EXAMWK[S.week] && p.dow === 1 && h >= 8 && h < 12 && !S.col.examDone) return 'hallexam'; return 'hall'; };
   // ---------- enrolling for a semester ----------
   function enrol(then) { const sem = colSem(), pick = [], C = S.col;
-    const draw = () => { menu(`Semester ${sem}: choose your classes`, `Pick three. Each has lectures on Mondays and two exams. ${pick.length} of 3 chosen.`, STATS.map(([k, n]) => ({ t: `${course(k)}${pick.includes(k) ? '  ✓' : ''}`, s: `Builds ${n.toLowerCase()}, ${Math.floor(stat(k))} now`, fn: () => { if (pick.includes(k)) pick.splice(pick.indexOf(k), 1); else if (pick.length < 3) pick.push(k); if (pick.length === 3) { closeMenu(); C.classes[sem - 1] = pick.slice(); toast(`Enrolled: ${pick.map(course).join(', ')}.`, 5); CR.note(S, `Semester ${sem} classes: ${pick.map(course).join(', ')}.`); if (then) then(); return; } draw(); } }))); };
+    const draw = () => { menu(`Semester ${sem}: choose your classes`, `Pick three. Each has lectures on Mondays and a final at the end of the semester. ${pick.length} of 3 chosen.`, STATS.map(([k, n]) => ({ t: `${course(k)}${pick.includes(k) ? '  ✓' : ''}`, s: `Builds ${n.toLowerCase()}, ${Math.floor(stat(k))} now`, fn: () => { if (pick.includes(k)) pick.splice(pick.indexOf(k), 1); else if (pick.length < 3) pick.push(k); if (pick.length === 3) { closeMenu(); C.classes[sem - 1] = pick.slice(); toast(`Enrolled: ${pick.map(course).join(', ')}.`, 5); CR.note(S, `Semester ${sem} classes: ${pick.map(course).join(', ')}.`); if (then) then(); return; } draw(); } }))); };
     draw(); }
   // ---------- the Monday lecture ----------
   function lecture() { const C = S.col, L = C.classes[colSem() - 1]; if (!L.length) return enrol(); const p = CR.parts(S.time), h = p.h + p.mi / 60;
@@ -8515,26 +8531,28 @@ window.GAME = (() => {
     if (p.dow !== 1 || h < 9.5 || h > 10.5) return toast(`Lectures are on Mondays at 10:00. ${h > 10.5 ? 'You missed this week’s.' : ''}`, 3);
     menu('Lecture Theatre', 'Three of your classes have a lecture at 10. Which one do you sit in on?', L.map(k => ({ t: course(k), s: `${STATN[k]} ${Math.floor(stat(k))}`, fn: () => { closeMenu(); attend(k); } }))); }
   function attend(k) { const C = S.col, p = CR.parts(S.time), h = p.h + p.mi / 60, s = INSIDE.mySeat; if (h < 10) CR.passMinutes(S, Math.round((10 - h) * 60));
-    C.att[S.week] = k; ffwd(90, { label: `Lecture: ${course(k)}`, pose: poseAt(s[0], s[1], .48, 0, -1, true), each: m => { gainSkill(k, m / 60 * 1.1, true); need('energy', -1.5 * m / 60); } }).then(() => toast(`${course(k)} done. ${STATN[k]} ${Math.floor(stat(k))}, exam prep ${Math.round(S.player.study || 0)}.`, 3.5)); }
+    C.att[S.week] = k; ffwd(90, { label: `Lecture: ${course(k)}`, pose: poseAt(s[0], s[1], .48, 0, -1, true), each: m => { gainSkill(k, m / 60 * 1.1, true); need('energy', -1.5 * m / 60); } }).then(() => toast(`${course(k)} done. ${STATN[k]} ${Math.floor(stat(k))}, study ${Math.round(S.player.study || 0)}.`, 3.5)); }
   // ---------- exams ----------
+  // Finals follow the design: the study stat decides the paper. Well prepared (70 or more) you get the easy recall version of each
+  // topic, poorly prepared the hard applied version, and in between it could be either. Under 40 the words start to scramble, and with
+  // no prep at all the paper is gibberish, though the right answer is still there. At 85 or more one wrong answer is struck out and you get extra time.
   async function sitExam() { const C = S.col, kind = EXAMWK[S.week], p = CR.parts(S.time), h = p.h + p.mi / 60;
     if (!kind || p.dow !== 1) return toast('There is no exam today.', 2); if (C.examDone) return toast('You have sat this one.', 2); if (h > 9.5) return toast('The doors closed at 9:30. You missed the exam.', 3.5);
-    if (h < 9) CR.passMinutes(S, Math.round((9 - h) * 60)); const classes = C.classes[colSem() - 1];
-    const qs = []; for (const k of classes) { const used = C.used = C.used || {}, pool = QB[k].map((q, i) => i).filter(i => !(used[k] || []).includes(i)).sort(() => Math.random() - .5).slice(0, 2); used[k] = [...(used[k] || []), ...pool]; for (const i of pool) qs.push([k, QB[k][i]]); }
-    qs.sort(() => Math.random() - .5); const right = {}; for (const k of classes) right[k] = 0;
+    if (h < 9) CR.passMinutes(S, Math.round((9 - h) * 60)); const classes = C.classes[colSem() - 1], P0 = S.player.study || 0;
+    const easyOdds = P0 >= 70 ? 1 : P0 < 50 ? 0 : (P0 - 50) / 20, fog = Math.max(0, Math.min(1, (40 - P0) / 40)), strike = P0 >= 85, secs = strike ? 30 : 22, rnd = rngFor(S.time + S.week * 7);
+    const qs = []; for (const k of classes) { const used = C.used = C.used || {}, pool = QB[k].map((q, i) => i).filter(i => !(used[k] || []).includes(i)).sort(() => Math.random() - .5).slice(0, 3); used[k] = [...(used[k] || []), ...pool];
+      for (const i of pool) qs.push([k, QB[k][i][Math.random() < easyOdds ? 0 : 1]]); }
+    qs.sort(() => Math.random() - .5); const right = {}, asked = {}; for (const k of classes) { right[k] = 0; asked[k] = 0; }
+    const jumble = t => t.split(' ').map(w => { const m = w.match(/^([^A-Za-z]*)([A-Za-z]+)([^A-Za-z]*)$/); if (!m || m[2].length < 3 || rnd() >= fog) return w; const L = m[2].split(''); for (let j = L.length - 1; j > 0; j--) { const r = Math.floor(rnd() * (j + 1)); [L[j], L[r]] = [L[r], L[j]]; } return m[1] + L.join('') + m[3]; }).join(' ');
     G.hold = true; const box = document.createElement('div'); box.id = 'exam'; document.body.appendChild(box);
-    // with no prep the paper is a blur: letters jumbled inside the words. Fully prepared (70 or more), every word reads clearly
-    const P0 = S.player.study || 0, fog = Math.max(0, Math.min(1, 1 - P0 / 70)), rnd = rngFor(S.time + S.week);
-    const jumble = t => t.split(' ').map(w => { const m = w.match(/^([^A-Za-z]*)([A-Za-z]+)([^A-Za-z]*)$/); if (!m || m[2].length < 4 || rnd() > fog) return w; const L = m[2].split(''), mid = L.slice(1, -1); for (let j = mid.length - 1; j > 0; j--) { const r = Math.floor(rnd() * (j + 1)); [mid[j], mid[r]] = [mid[r], mid[j]]; } return m[1] + L[0] + mid.join('') + L[L.length - 1] + m[3]; }).join(' ');
-    for (let i = 0; i < qs.length; i++) { const [k, q] = qs[i], opts = q.slice(1).sort(() => Math.random() - .5), secs = 22, shown = opts.map(jumble);
-      const ok = await new Promise(res => { let left = secs; box.innerHTML = `<div class="exbox"><div class="exhead"><b>${kind === 'mid' ? 'Midterm' : 'Final'} exam</b><span>Question ${i + 1} of ${qs.length} · ${esc(course(k))} · prep ${Math.round(P0)}</span></div><h3>${esc(jumble(q[0]))}</h3><div class="exopts">${shown.map((o, j) => `<button data-i="${j}">${esc(o)}</button>`).join('')}</div><div class="extime"><i style="width:100%"></i></div></div>`;
+    for (let i = 0; i < qs.length; i++) { const [k, q] = qs[i], wrong = q.slice(2).sort(() => Math.random() - .5).slice(0, strike ? 2 : 3), opts = [q[1], ...wrong].sort(() => Math.random() - .5); asked[k]++;
+      const ok = await new Promise(res => { let left = secs; box.innerHTML = `<div class="exbox"><div class="exhead"><b>Final exam</b><span>Question ${i + 1} of ${qs.length} · ${esc(course(k))}</span></div><h3>${esc(jumble(q[0]))}</h3><div class="exopts">${opts.map((o, j) => `<button data-i="${j}">${esc(jumble(o))}</button>`).join('')}</div><div class="extime"><i style="width:100%"></i></div></div>`;
         const bar = box.querySelector('.extime i'), t = setInterval(() => { left -= .1; bar.style.width = Math.max(0, left / secs * 100) + '%'; if (left <= 0) { clearInterval(t); res(false); } }, 100);
         box.querySelectorAll('[data-i]').forEach(b => b.onclick = () => { clearInterval(t); const good = opts[+b.dataset.i] === q[1]; b.classList.add(good ? 'ok' : 'no'); setTimeout(() => res(good), 450); }); });
       if (ok) right[k]++; }
-    box.remove(); C.examDone = true; CR.passMinutes(S, 120); S.player.study = Math.round((S.player.study || 0) * .4);
-    const out = []; for (const k of classes) { const g = right[k] / 2 * 4, key = course(k), R = C.results[key] = C.results[key] || { k };
-      R[kind] = g; out.push(`${key}: ${letter(g)}`); }
-    G.hold = false; await say('Invigilator', 'none', `Pens down. Results: ${out.join(', ')}.`, [{ text: 'Hand in the paper' }]); CR.note(S, `${kind === 'mid' ? 'Midterm' : 'Final'} exams, semester ${colSem()}: ${out.join(', ')}.`); }
+    box.remove(); C.examDone = true; CR.passMinutes(S, 150);
+    const out = []; for (const k of classes) { const g = asked[k] ? right[k] / asked[k] * 4 : 0, key = course(k); C.results[key] = { k, final: g }; out.push(`${key}: ${letter(g)}`); }
+    G.hold = false; await say('Invigilator', 'none', `Pens down. Results: ${out.join(', ')}.`, [{ text: 'Hand in the paper' }]); CR.note(S, `Finals, semester ${colSem()}: ${out.join(', ')}.`); }
   // ---------- the end of the week ----------
   function colBed() { const C = S.col, hasGig = !!S.gig, classes = C.classes[colSem() - 1];
     if (!classes.length) return enrol();
@@ -8546,7 +8564,7 @@ window.GAME = (() => {
       ...(hasGig ? [{ t: 'Pick up extra shifts', s: `More hours as ${GIGS[S.gig.id].t.toLowerCase()}, less study`, fn: go({ hrs: 2, mood: -3, shifts: 3, prep: 4 }) }] : [])]); }
   async function endWeek(o) { const C = S.col, classes = C.classes[colSem() - 1], wk = S.week;
     await fadeTo(wk === 12 ? 'Finals are done' : 'The rest of the week', wk === 12 ? 'Graduation is in May' : `Week ${wk + 1}${wk === 6 ? ' after the break' : ''}`, () => {
-      for (const k of classes) gainSkill(k, o.hrs + (C.att[wk] === k ? 1 : .4), true, true); prep(o.prep || 0); need('mood', o.mood || 0); if (o.rob) S.rels.rob.score = Math.min(100, S.rels.rob.score + o.rob);
+      for (const k of classes) gainSkill(k, o.hrs + (C.att[wk] === k ? 1 : .4), true, true); prep((o.prep || 0) - 5 - (C.att[wk] || EXAMWK[wk] ? 0 : 6)); need('mood', o.mood || 0); if (o.rob) S.rels.rob.score = Math.min(100, S.rels.rob.score + o.rob);
       if (o.shifts && S.gig) { const G2 = GIGS[S.gig.id], pay = Math.round(G2.rate * 5 * o.shifts + (G2.tips[0] + G2.tips[1]) / 2 * o.shifts); S.player.bank += pay; txn(`${G2.t} shifts`, pay); S.gig.shifts += o.shifts; S.gig.earned += pay; }
       S.player.bank += 15000; txn('Allowance from home', 15000);
       const t0 = S.time; if (wk === 12) { CR.passMinutes(S, GRADDAY - S.time, { asleep: true, drift: false }); C.gradDay = true; } else { CR.sleep(S); if (wk === 6) CR.passMinutes(S, 14 * 1440, { asleep: true, drift: false }); }
@@ -8556,7 +8574,7 @@ window.GAME = (() => {
   function weekStart() { const C = S.col; if (C.gradDay) return toast('Graduation day. The ceremony starts at 11 in the Great Hall. Gowns are at the door.', 8);
     if (S.week === 7 && !C.classes[1].length) return enrol(weekStart);
     const ex = EXAMWK[S.week];
-    let t = ex ? `${ex === 'mid' ? 'Midterms' : 'Finals'} this morning at 9 in the Great Hall. Exam prep ${Math.round(S.player.study || 0)}.` : `Week ${S.week}. Lectures at 10 in the Lecture Theatre, for any of your classes.`;
+    let t = ex ? `Finals this morning at 9 in the Great Hall. Study ${Math.round(S.player.study || 0)}.` : `Week ${S.week}. Lectures at 10 in the Lecture Theatre, for any of your classes.`;
     if (S.week === RECRUIT[0]) t += ' Graduate recruiting has opened. Firms are taking applications on the Jobs app.'; else if (S.week === RECRUIT[1]) t += ' Last week for graduate applications.';
     toast(t, 8); }
   // ---------- Rob, your roommate ----------
@@ -8599,7 +8617,7 @@ window.GAME = (() => {
   const TUT = [['phone', 'Open your phone with P', 'Phones out, first things first. Press P. Messages, the bank, the Jobs app, a taxi when you need one. Everything lives in there.'],
     ['laptop', 'Use the laptop on your desk (walk up and press E)', 'Your laptop is on your desk. Study apps, the news, the stock market. Later on your work portal lives there too.'],
     ['eat', 'Cook something in the kitchenette', 'You look hungry. Hunger creeps up all day and a hungry you is a grumpy you. The stove in the kitchenette does a cheap meal.'],
-    ['study', 'Study at the College Library', 'Want to get good at something? The library. Every stat grows with study, and so does your exam prep. Turn up to an exam with none and the paper may as well be in another language. Press M for the map.'],
+    ['study', 'Study at the College Library', 'Want to get good at something? The library. Every stat grows with study, and so does your prep for finals. Skip class and the library and it slides. Turn up to a final with none and the paper may as well be in another language. Press M for the map.'],
     ['sleep', 'Sleep in your bed to end the week', 'Energy runs down as you go. Bed puts it back. Here at college, a night in your own bed is the end of the week, so do what you want done first.']];
   function tutStep() { const C = S && S.col; return C && C.tut != null && C.tut < TUT.length ? TUT[C.tut] : null; }
   function tutShow() { let b = $('tut'); const st = tutStep(); if (!st || !isCol()) { if (b) b.hidden = true; return; }
