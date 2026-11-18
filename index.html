@@ -6876,7 +6876,7 @@ window.GAME = (() => {
   const stat = k => (S.player.skills && S.player.skills[k]) || 0;
   // each point costs more than the last: half an hour at 0, about 1.4 hours at 30, 2.8 at 50, 5.7 at 70, 11 at 90
   const hrsTo = p => 14.427 * (Math.pow(2, p / 20) - 1), ptsFrom = h => 20 * Math.log2(h / 14.427 + 1);
-  function gainSkill(k, hrs, study) { if (study && S.mode === 'college') hrs *= .3; const sk = S.player.skills, p = sk[k] || 0; if (study && p >= STUDY_CAP) return 0; let n = Math.min(100, ptsFrom(hrsTo(p) + hrs)); if (study) n = Math.min(n, STUDY_CAP); sk[k] = n; return n - p; }
+  function gainSkill(k, hrs, study, noPrep) { if (study && S.mode === 'college') { if (!noPrep) prep(hrs * 5); hrs *= .3; } const sk = S.player.skills, p = sk[k] || 0; if (study && p >= STUDY_CAP) return 0; let n = Math.min(100, ptsFrom(hrsTo(p) + hrs)); if (study) n = Math.min(n, STUDY_CAP); sk[k] = n; return n - p; }
   const ladOf = co => (S.player.job && S.player.job.co === co && S.player.job.lad) || (coById(co) || COS[0]).lad;
   // prestige sets the bar. The top firms ask for more at every step, the challengers ask the standard amount, the small firms ask less
   // company logos, cut from the brand sheets. Main logo is on white, the icon is a rounded tile. Firms without art keep a colored letter tile
@@ -7120,7 +7120,7 @@ window.GAME = (() => {
     const p = CR.parts(S.time), P0 = S.player, N = P0.needs, J = P0.job, L = J && LAD()[J.level];
     const bar = (n, v, c) => `<div class="need">${n}<i><b style="width:${Math.round(v)}%;background:${c || (v < 25 ? 'var(--bad)' : v < 50 ? 'var(--warn)' : 'var(--good)')}"></b></i></div>`;
     const room = roomKey(), where = room ? roomName(room) : (DNAME[districtAt(player.x, player.y)] || '');
-    let jobLine = ''; if (L) { const h = gHour(); jobLine = S.mode === 'college' ? `Final year, week ${S.week || 1} of 12${J.co ? ` · offer from ${empName()}` : ''}` : J.co ? `${L.t}, ${empName()}` : S.gig ? `${GIGS[S.gig.id].t}, ${S.gig.name}` : 'Unemployed'; if (J.co && S.mode !== 'college' && isWeekday() && h < 9.25 && J.lastShiftDay !== Math.floor(S.time / 1440) && Math.floor(S.time / 1440) >= (J.startDay || 0) && !(J.leaveUntil > Math.floor(S.time / 1440))) jobLine += ` <span style="color:var(--acc)">· shift at 9:00</span>`; } tutShow();
+    let jobLine = ''; if (L) { const h = gHour(); jobLine = S.mode === 'college' ? `Final year, week ${S.week || 1} of 12 · exam prep ${Math.round(S.player.study || 0)}${J.co ? ` · offer from ${empName()}` : ''}` : J.co ? `${L.t}, ${empName()}` : S.gig ? `${GIGS[S.gig.id].t}, ${S.gig.name}` : 'Unemployed'; if (J.co && S.mode !== 'college' && isWeekday() && h < 9.25 && J.lastShiftDay !== Math.floor(S.time / 1440) && Math.floor(S.time / 1440) >= (J.startDay || 0) && !(J.leaveUntil > Math.floor(S.time / 1440))) jobLine += ` <span style="color:var(--acc)">· shift at 9:00</span>`; } tutShow();
     const wx = { clear: 'Clear', rain: 'Rain', snow: 'Snow', fog: 'Fog' }[weather];
     $('ghud').innerHTML = `<div class="t"><span class="clock">${String(p.h).padStart(2, '0')}:${String(p.mi).padStart(2, '0')}</span><span class="date">${CR.fmtDate(S.time)}</span></div>
       <div class="t"><span class="money">${money(P0.cash)}</span><span class="date">Bank ${money(P0.bank)}</span></div>${bar('Energy', N.energy)}${bar('Fed', 100 - N.hunger)}${bar('Mood', N.mood)}${N.health != null && N.health < 85 ? bar('Health', N.health) : ''}
@@ -8442,6 +8442,8 @@ window.GAME = (() => {
   const COURSES = { finance: ['Corporate Finance', 'Investments and Valuation'], strategy: ['Economics of Strategy', 'Competitive Strategy'], management: ['Organizational Behavior', 'Leading Teams'], coding: ['Intro to Programming', 'Data Structures and Algorithms'], persuasion: ['Public Speaking and Debate', 'Negotiation'] };
   const DEGREE = { finance: 'Bachelor of Science in Finance', strategy: 'Bachelor of Arts in Economics', management: 'Bachelor of Business Administration', coding: 'Bachelor of Science in Computer Science', persuasion: 'Bachelor of Arts in Political Science' };
   const EXAMWK = { 3: 'mid', 6: 'final', 9: 'mid', 12: 'final' }, RECRUIT = [4, 10], JOBSTART = CR.fromParts(2026, 7, 6, 9, 0), GRADDAY = CR.fromParts(2026, 5, 16, 9, 0), MOVEIN = CR.fromParts(2026, 7, 5, 10, 0);
+  // exam prep is the study stat, 0 to 100. Lectures, the library and a hard week of study build it. Each exam uses it up
+  const prep = v => { S.player.study = Math.max(0, Math.min(100, (S.player.study || 0) + v)); };
   const isCol = () => S && S.mode === 'college', colSem = () => (S.week || 1) <= 6 ? 1 : 2, course = k => COURSES[k][colSem() - 1];
   const weekClass = () => { const C = S.col, L = C.classes[colSem() - 1]; return L.length ? L[((S.week || 1) - 1) % L.length] : 'finance'; };
   const recruiting = () => isCol() && S.week >= RECRUIT[0] && S.week <= RECRUIT[1];
@@ -8504,15 +8506,16 @@ window.GAME = (() => {
   const hallKey = () => { if (!isCol()) return 'hall'; const p = CR.parts(S.time), h = p.h + p.mi / 60; if (S.col.gradDay && h < 14) return 'hallgrad'; if (EXAMWK[S.week] && p.dow === 1 && h >= 8 && h < 12 && !S.col.examDone) return 'hallexam'; return 'hall'; };
   // ---------- enrolling for a semester ----------
   function enrol(then) { const sem = colSem(), pick = [], C = S.col;
-    const draw = () => { menu(`Semester ${sem}: choose your classes`, `Pick three. Each one is a lecture every week and two exams. ${pick.length} of 3 chosen.`, STATS.map(([k, n]) => ({ t: `${course(k)}${pick.includes(k) ? '  ✓' : ''}`, s: `Builds ${n.toLowerCase()}, ${Math.floor(stat(k))} now`, fn: () => { if (pick.includes(k)) pick.splice(pick.indexOf(k), 1); else if (pick.length < 3) pick.push(k); if (pick.length === 3) { closeMenu(); C.classes[sem - 1] = pick.slice(); toast(`Enrolled: ${pick.map(course).join(', ')}.`, 5); CR.note(S, `Semester ${sem} classes: ${pick.map(course).join(', ')}.`); if (then) then(); return; } draw(); } }))); };
+    const draw = () => { menu(`Semester ${sem}: choose your classes`, `Pick three. Each has lectures on Mondays and two exams. ${pick.length} of 3 chosen.`, STATS.map(([k, n]) => ({ t: `${course(k)}${pick.includes(k) ? '  ✓' : ''}`, s: `Builds ${n.toLowerCase()}, ${Math.floor(stat(k))} now`, fn: () => { if (pick.includes(k)) pick.splice(pick.indexOf(k), 1); else if (pick.length < 3) pick.push(k); if (pick.length === 3) { closeMenu(); C.classes[sem - 1] = pick.slice(); toast(`Enrolled: ${pick.map(course).join(', ')}.`, 5); CR.note(S, `Semester ${sem} classes: ${pick.map(course).join(', ')}.`); if (then) then(); return; } draw(); } }))); };
     draw(); }
   // ---------- the Monday lecture ----------
-  function lecture() { if (!S.col.classes[colSem() - 1].length) return enrol(); const k = weekClass(), p = CR.parts(S.time), h = p.h + p.mi / 60, C = S.col;
-    if (EXAMWK[S.week]) return toast('No lecture this week. Exams are in the Great Hall.', 3);
-    if (C.att[S.week]) return toast('You have been to this week’s lecture.', 2.5);
-    if (p.dow !== 1 || h < 9.5 || h > 10.5) return toast(`${course(k)} is on Mondays at 10:00. ${h > 10.5 ? 'You missed this week’s.' : ''}`, 3);
-    const I = INSIDE, s = I.mySeat; if (h < 10) CR.passMinutes(S, Math.round((10 - h) * 60));
-    C.att[S.week] = true; ffwd(90, { label: `Lecture: ${course(k)}`, pose: poseAt(s[0], s[1], .48, 0, -1, true), each: m => { gainSkill(k, m / 60 * 1.1, true); need('energy', -1.5 * m / 60); } }).then(() => toast(`${course(k)} done. ${STATN[k]} ${Math.floor(stat(k))}.`, 3)); }
+  function lecture() { const C = S.col, L = C.classes[colSem() - 1]; if (!L.length) return enrol(); const p = CR.parts(S.time), h = p.h + p.mi / 60;
+    if (EXAMWK[S.week]) return toast('No lectures this week. Exams are in the Great Hall.', 3);
+    if (C.att[S.week]) return toast('You have been to a lecture this week.', 2.5);
+    if (p.dow !== 1 || h < 9.5 || h > 10.5) return toast(`Lectures are on Mondays at 10:00. ${h > 10.5 ? 'You missed this week’s.' : ''}`, 3);
+    menu('Lecture Theatre', 'Three of your classes have a lecture at 10. Which one do you sit in on?', L.map(k => ({ t: course(k), s: `${STATN[k]} ${Math.floor(stat(k))}`, fn: () => { closeMenu(); attend(k); } }))); }
+  function attend(k) { const C = S.col, p = CR.parts(S.time), h = p.h + p.mi / 60, s = INSIDE.mySeat; if (h < 10) CR.passMinutes(S, Math.round((10 - h) * 60));
+    C.att[S.week] = k; ffwd(90, { label: `Lecture: ${course(k)}`, pose: poseAt(s[0], s[1], .48, 0, -1, true), each: m => { gainSkill(k, m / 60 * 1.1, true); need('energy', -1.5 * m / 60); } }).then(() => toast(`${course(k)} done. ${STATN[k]} ${Math.floor(stat(k))}, exam prep ${Math.round(S.player.study || 0)}.`, 3.5)); }
   // ---------- exams ----------
   async function sitExam() { const C = S.col, kind = EXAMWK[S.week], p = CR.parts(S.time), h = p.h + p.mi / 60;
     if (!kind || p.dow !== 1) return toast('There is no exam today.', 2); if (C.examDone) return toast('You have sat this one.', 2); if (h > 9.5) return toast('The doors closed at 9:30. You missed the exam.', 3.5);
@@ -8520,13 +8523,16 @@ window.GAME = (() => {
     const qs = []; for (const k of classes) { const used = C.used = C.used || {}, pool = QB[k].map((q, i) => i).filter(i => !(used[k] || []).includes(i)).sort(() => Math.random() - .5).slice(0, 2); used[k] = [...(used[k] || []), ...pool]; for (const i of pool) qs.push([k, QB[k][i]]); }
     qs.sort(() => Math.random() - .5); const right = {}; for (const k of classes) right[k] = 0;
     G.hold = true; const box = document.createElement('div'); box.id = 'exam'; document.body.appendChild(box);
-    for (let i = 0; i < qs.length; i++) { const [k, q] = qs[i], sk = stat(k), keep = sk >= 18 ? 1 : sk >= 10 ? 2 : 3, wrong = q.slice(2).sort(() => Math.random() - .5).slice(0, keep), opts = [q[1], ...wrong].sort(() => Math.random() - .5), secs = Math.round(Math.min(26, 12 + sk * .45));
-      const ok = await new Promise(res => { let left = secs; box.innerHTML = `<div class="exbox"><div class="exhead"><b>${kind === 'mid' ? 'Midterm' : 'Final'} exam</b><span>Question ${i + 1} of ${qs.length} · ${esc(course(k))}</span></div><h3>${esc(q[0])}</h3>${keep < 3 ? `<p class="exhint">${keep === 1 ? 'You know this one cold from class.' : 'You remember enough to rule one out.'}</p>` : ''}<div class="exopts">${opts.map((o, j) => `<button data-i="${j}">${esc(o)}</button>`).join('')}</div><div class="extime"><i style="width:100%"></i></div></div>`;
+    // with no prep the paper is a blur: letters jumbled inside the words. Fully prepared (70 or more), every word reads clearly
+    const P0 = S.player.study || 0, fog = Math.max(0, Math.min(1, 1 - P0 / 70)), rnd = rngFor(S.time + S.week);
+    const jumble = t => t.split(' ').map(w => { const m = w.match(/^([^A-Za-z]*)([A-Za-z]+)([^A-Za-z]*)$/); if (!m || m[2].length < 4 || rnd() > fog) return w; const L = m[2].split(''), mid = L.slice(1, -1); for (let j = mid.length - 1; j > 0; j--) { const r = Math.floor(rnd() * (j + 1)); [mid[j], mid[r]] = [mid[r], mid[j]]; } return m[1] + L[0] + mid.join('') + L[L.length - 1] + m[3]; }).join(' ');
+    for (let i = 0; i < qs.length; i++) { const [k, q] = qs[i], opts = q.slice(1).sort(() => Math.random() - .5), secs = 22, shown = opts.map(jumble);
+      const ok = await new Promise(res => { let left = secs; box.innerHTML = `<div class="exbox"><div class="exhead"><b>${kind === 'mid' ? 'Midterm' : 'Final'} exam</b><span>Question ${i + 1} of ${qs.length} · ${esc(course(k))} · prep ${Math.round(P0)}</span></div><h3>${esc(jumble(q[0]))}</h3><div class="exopts">${shown.map((o, j) => `<button data-i="${j}">${esc(o)}</button>`).join('')}</div><div class="extime"><i style="width:100%"></i></div></div>`;
         const bar = box.querySelector('.extime i'), t = setInterval(() => { left -= .1; bar.style.width = Math.max(0, left / secs * 100) + '%'; if (left <= 0) { clearInterval(t); res(false); } }, 100);
         box.querySelectorAll('[data-i]').forEach(b => b.onclick = () => { clearInterval(t); const good = opts[+b.dataset.i] === q[1]; b.classList.add(good ? 'ok' : 'no'); setTimeout(() => res(good), 450); }); });
       if (ok) right[k]++; }
-    box.remove(); C.examDone = true; CR.passMinutes(S, 120);
-    const out = []; for (const k of classes) { const g = Math.max(0, Math.min(4, (right[k] / 2) * 4 * .6 + Math.min(1, stat(k) / 20) * 4 * .4)), key = course(k), R = C.results[key] = C.results[key] || { k };
+    box.remove(); C.examDone = true; CR.passMinutes(S, 120); S.player.study = Math.round((S.player.study || 0) * .4);
+    const out = []; for (const k of classes) { const g = right[k] / 2 * 4, key = course(k), R = C.results[key] = C.results[key] || { k };
       R[kind] = g; out.push(`${key}: ${letter(g)}`); }
     G.hold = false; await say('Invigilator', 'none', `Pens down. Results: ${out.join(', ')}.`, [{ text: 'Hand in the paper' }]); CR.note(S, `${kind === 'mid' ? 'Midterm' : 'Final'} exams, semester ${colSem()}: ${out.join(', ')}.`); }
   // ---------- the end of the week ----------
@@ -8534,13 +8540,13 @@ window.GAME = (() => {
     if (!classes.length) return enrol();
     const go = (o) => () => { closeMenu(); endWeek(o); };
     menu('Your bed', `Week ${S.week} of 12. How do you spend the rest of the week?`, [
-      { t: 'Study hard', s: 'Every class and evenings in the library. The most learning, mood down', fn: go({ hrs: 7, mood: -8 }) },
-      { t: 'Keep a balance', s: 'Classes, some study, a night out', fn: go({ hrs: 4, mood: 2 }) },
-      { t: 'Make the most of college', s: 'Parties, games and late nights with Rob. Mood up, less learning', fn: go({ hrs: 1.5, mood: 10, rob: 4 }) },
-      ...(hasGig ? [{ t: 'Pick up extra shifts', s: `More hours as ${GIGS[S.gig.id].t.toLowerCase()}, less study`, fn: go({ hrs: 2, mood: -3, shifts: 3 }) }] : [])]); }
+      { t: 'Study hard', s: 'Every class and evenings in the library. The most learning, mood down', fn: go({ hrs: 7, mood: -8, prep: 18 }) },
+      { t: 'Keep a balance', s: 'Classes, some study, a night out', fn: go({ hrs: 4, mood: 2, prep: 9 }) },
+      { t: 'Make the most of college', s: 'Parties, games and late nights with Rob. Mood up, less learning', fn: go({ hrs: 1.5, mood: 10, rob: 4, prep: 2 }) },
+      ...(hasGig ? [{ t: 'Pick up extra shifts', s: `More hours as ${GIGS[S.gig.id].t.toLowerCase()}, less study`, fn: go({ hrs: 2, mood: -3, shifts: 3, prep: 4 }) }] : [])]); }
   async function endWeek(o) { const C = S.col, classes = C.classes[colSem() - 1], wk = S.week;
     await fadeTo(wk === 12 ? 'Finals are done' : 'The rest of the week', wk === 12 ? 'Graduation is in May' : `Week ${wk + 1}${wk === 6 ? ' after the break' : ''}`, () => {
-      for (const k of classes) gainSkill(k, o.hrs + (C.att[wk] ? 1 : .4), true); need('mood', o.mood || 0); if (o.rob) S.rels.rob.score = Math.min(100, S.rels.rob.score + o.rob);
+      for (const k of classes) gainSkill(k, o.hrs + (C.att[wk] === k ? 1 : .4), true, true); prep(o.prep || 0); need('mood', o.mood || 0); if (o.rob) S.rels.rob.score = Math.min(100, S.rels.rob.score + o.rob);
       if (o.shifts && S.gig) { const G2 = GIGS[S.gig.id], pay = Math.round(G2.rate * 5 * o.shifts + (G2.tips[0] + G2.tips[1]) / 2 * o.shifts); S.player.bank += pay; txn(`${G2.t} shifts`, pay); S.gig.shifts += o.shifts; S.gig.earned += pay; }
       S.player.bank += 15000; txn('Allowance from home', 15000);
       const t0 = S.time; if (wk === 12) { CR.passMinutes(S, GRADDAY - S.time, { asleep: true, drift: false }); C.gradDay = true; } else { CR.sleep(S); if (wk === 6) CR.passMinutes(S, 14 * 1440, { asleep: true, drift: false }); }
@@ -8549,8 +8555,8 @@ window.GAME = (() => {
   // Monday morning: what is on this week
   function weekStart() { const C = S.col; if (C.gradDay) return toast('Graduation day. The ceremony starts at 11 in the Great Hall. Gowns are at the door.', 8);
     if (S.week === 7 && !C.classes[1].length) return enrol(weekStart);
-    const k = weekClass(), ex = EXAMWK[S.week];
-    let t = ex ? `${ex === 'mid' ? 'Midterms' : 'Finals'} this morning at 9 in the Great Hall.` : `Week ${S.week}. ${course(k)} at 10 in the Lecture Theatre.`;
+    const ex = EXAMWK[S.week];
+    let t = ex ? `${ex === 'mid' ? 'Midterms' : 'Finals'} this morning at 9 in the Great Hall. Exam prep ${Math.round(S.player.study || 0)}.` : `Week ${S.week}. Lectures at 10 in the Lecture Theatre, for any of your classes.`;
     if (S.week === RECRUIT[0]) t += ' Graduate recruiting has opened. Firms are taking applications on the Jobs app.'; else if (S.week === RECRUIT[1]) t += ' Last week for graduate applications.';
     toast(t, 8); }
   // ---------- Rob, your roommate ----------
@@ -8593,7 +8599,7 @@ window.GAME = (() => {
   const TUT = [['phone', 'Open your phone with P', 'Phones out, first things first. Press P. Messages, the bank, the Jobs app, a taxi when you need one. Everything lives in there.'],
     ['laptop', 'Use the laptop on your desk (walk up and press E)', 'Your laptop is on your desk. Study apps, the news, the stock market. Later on your work portal lives there too.'],
     ['eat', 'Cook something in the kitchenette', 'You look hungry. Hunger creeps up all day and a hungry you is a grumpy you. The stove in the kitchenette does a cheap meal.'],
-    ['study', 'Study at the College Library', 'Want to get good at something? The library. Every stat grows with study, and it sticks better there than anywhere else. Press M for the map.'],
+    ['study', 'Study at the College Library', 'Want to get good at something? The library. Every stat grows with study, and so does your exam prep. Turn up to an exam with none and the paper may as well be in another language. Press M for the map.'],
     ['sleep', 'Sleep in your bed to end the week', 'Energy runs down as you go. Bed puts it back. Here at college, a night in your own bed is the end of the week, so do what you want done first.']];
   function tutStep() { const C = S && S.col; return C && C.tut != null && C.tut < TUT.length ? TUT[C.tut] : null; }
   function tutShow() { let b = $('tut'); const st = tutStep(); if (!st || !isCol()) { if (b) b.hidden = true; return; }
